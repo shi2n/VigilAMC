@@ -4,9 +4,9 @@ import { getCurrentUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const auth = await getCurrentUser();
+    const auth = await getCurrentUser(request);
     if (!auth) {
       return NextResponse.json({
         authenticated: false,
@@ -107,7 +107,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const auth = await getCurrentUser();
+    const auth = await getCurrentUser(request);
     if (!auth || !auth.organization) {
       return NextResponse.json({ error: 'Unauthorized: Please log in to add facilities.' }, { status: 401 });
     }

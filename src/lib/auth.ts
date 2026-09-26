@@ -11,33 +11,59 @@ export interface AuthContext {
   organization: any;
 }
 
-export async function getCurrentUser(): Promise<AuthContext | null> {
+export async function getCurrentUser(req?: Request): Promise<AuthContext | null> {
   try {
-    const supabase = createServerSupabaseClient();
-    
-    // 1. Try to get session from cookie
     let authUser: any = null;
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
 
-    if (session?.user) {
-      authUser = session.user;
-    } else {
-      // 2. Fallback: check Authorization Bearer header
+    // 1. Check direct request headers if provided
+    let authHeader = req?.headers?.get('authorization') || req?.headers?.get('Authorization');
+
+    // 2. Check next/headers if not passed
+    if (!authHeader) {
       try {
         const headerStore = headers();
-        const authHeader = headerStore.get('authorization');
-        if (authHeader?.startsWith('Bearer ')) {
-          const token = authHeader.substring(7);
-          const { data: { user } } = await supabase.auth.getUser(token);
-          if (user) {
-            authUser = user;
+        authHeader = headerStore.get('authorization') || headerStore.get('Authorization');
+      } catch (e) {
+        // Ignored
+      }
+    }
+
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.substring(7).trim();
+      try {
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+          if (payload.sub && (!payload.exp || payload.exp * 1000 > Date.now())) {
+            authUser = {
+              id: payload.sub,
+              email: payload.email || '',
+              user_metadata: payload.user_metadata || {},
+            };
           }
         }
-      } catch (e) {
-        // headers() might fail in some contexts, safely ignore
+      } catch (err) {
+        // Fallback to Supabase client
       }
+
+      if (!authUser) {
+        try {
+          const supabase = createServerSupabaseClient();
+          const { data: { user } } = await supabase.auth.getUser(token);
+          if (user) authUser = user;
+        } catch (e) {}
+      }
+    }
+
+    // 3. Fallback: check session from cookie
+    if (!authUser) {
+      try {
+        const supabase = createServerSupabaseClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          authUser = session.user;
+        }
+      } catch (e) {}
     }
 
     if (!authUser) {
