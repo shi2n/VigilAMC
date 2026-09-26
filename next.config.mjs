@@ -4,9 +4,6 @@ const nextConfig = {
   swcMinify: false,
   experimental: {
     webpackBuildWorker: false,
-    outputFileTracingIncludes: {
-      '/api/**/*': ['./prisma/dev.db'],
-    },
   },
 };
 

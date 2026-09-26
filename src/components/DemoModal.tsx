@@ -21,6 +21,8 @@ export function DemoModal({ isOpen, onClose }: DemoModalProps) {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -33,7 +35,7 @@ export function DemoModal({ isOpen, onClose }: DemoModalProps) {
     return errs;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
@@ -42,15 +44,41 @@ export function DemoModal({ isOpen, onClose }: DemoModalProps) {
     }
 
     setErrors({});
-    setIsSubmitted(true);
+    setServerError(null);
+    setIsSubmitting(true);
 
-    setTimeout(() => {
-      // Auto-close after short delay or let user close
-    }, 4000);
+    try {
+      const res = await fetch('/api/enquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'DEMO',
+          name: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          company: formData.company,
+          assetCount: formData.buildingsCount,
+          preferredDate: formData.preferredDate,
+          preferredTime: formData.preferredTime,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to submit demo request');
+      }
+
+      setIsSubmitted(true);
+    } catch (err: any) {
+      setServerError(err.message || 'Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const resetAndClose = () => {
     setIsSubmitted(false);
+    setServerError(null);
     onClose();
   };
 
@@ -217,12 +245,19 @@ export function DemoModal({ isOpen, onClose }: DemoModalProps) {
                 </ul>
               </div>
 
+              {serverError && (
+                <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl">
+                  {serverError}
+                </div>
+              )}
+
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full py-3 px-4 bg-[#0077B6] hover:bg-[#023E8A] text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                  disabled={isSubmitting}
+                  className="w-full py-3 px-4 bg-[#0077B6] hover:bg-[#023E8A] disabled:opacity-60 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
                 >
-                  <span>Confirm Live Walkthrough</span>
+                  <span>{isSubmitting ? 'Booking Walkthrough...' : 'Confirm Live Walkthrough'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>

@@ -92,18 +92,34 @@ export default function HomePage() {
     setLightboxOpen(true);
   };
 
-  const handleQuickInquiry = (e: React.FormEvent) => {
+  const handleQuickInquiry = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inquiryEmail || !inquiryEmail.includes('@')) {
       setInquiryError('Please enter a valid business email');
       return;
     }
     setInquiryError('');
-    setInquirySubmitted(true);
-    setTimeout(() => {
-      setInquiryEmail('');
-      setInquirySubmitted(false);
-    }, 4500);
+    try {
+      const res = await fetch('/api/enquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'QUICK_INQUIRY',
+          email: inquiryEmail,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to submit inquiry');
+      }
+      setInquirySubmitted(true);
+      setTimeout(() => {
+        setInquiryEmail('');
+        setInquirySubmitted(false);
+      }, 5000);
+    } catch (err: any) {
+      setInquiryError(err.message || 'Error submitting. Please try again.');
+    }
   };
 
   // ROI calculations

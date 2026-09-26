@@ -23,14 +23,26 @@ export function CorporateFooter() {
   const [emailInput, setEmailInput] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!emailInput || !emailInput.includes('@')) return;
-    setSubscribed(true);
-    setTimeout(() => {
-      setEmailInput('');
-      setSubscribed(false);
-    }, 4000);
+    try {
+      await fetch('/api/enquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'NEWSLETTER',
+          email: emailInput,
+        }),
+      });
+      setSubscribed(true);
+      setTimeout(() => {
+        setEmailInput('');
+        setSubscribed(false);
+      }, 4000);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   return (

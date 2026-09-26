@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -10,24 +12,43 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'QR Code is required' }, { status: 400 });
     }
 
-    const asset = await db.asset.findUnique({
+    const equipment = await (db as any).equipment.findUnique({
       where: { qrCode: code },
       include: {
         building: {
           include: {
-            company: true,
+            client: true,
           },
         },
-        inspections: {
-          orderBy: { inspectedAt: 'desc' },
+        serviceLogs: {
+          orderBy: { servicedAt: 'desc' },
           take: 10,
         },
       },
     });
 
-    if (!asset) {
-      return NextResponse.json({ error: 'Asset not found for this QR Code' }, { status: 404 });
+    if (!equipment) {
+      return NextResponse.json({ error: 'Equipment not found for this QR Code' }, { status: 404 });
     }
+
+    const asset = {
+      ...equipment,
+      serialNumber: equipment.qrCode,
+      locationFloor: equipment.location,
+      locationWing: '',
+      locationSpecific: equipment.location,
+      brand: 'Standard ISI',
+      lastRefillDate: equipment.lastServiceDate,
+      nextRefillDueDate: equipment.nextDueDate,
+      lastHydroTestDate: equipment.lastServiceDate,
+      nextHydroTestDueDate: equipment.nextDueDate,
+      inspections: (equipment.serviceLogs || []).map((log: any) => ({
+        id: log.id,
+        inspectedAt: log.servicedAt,
+        technicianName: log.technicianName,
+        remarks: log.notes || log.actionType,
+      })),
+    };
 
     return NextResponse.json({ asset });
   } catch (error: any) {
@@ -43,11 +64,6 @@ export async function POST(request: Request) {
       qrCode,
       technicianName,
       actionType,
-      pressureGaugeOk,
-      sealIntact,
-      nozzleHoseOk,
-      weightOk,
-      bodyRustPass,
       remarks,
       newStatus,
     } = body;
@@ -56,78 +72,38 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'QR code required' }, { status: 400 });
     }
 
-    const asset = await db.asset.findUnique({
+    const equipment = await (db as any).equipment.findUnique({
       where: { qrCode },
     });
 
-    if (!asset) {
-      return NextResponse.json({ error: 'Asset not found' }, { status: 404 });
+    if (!equipment) {
+      return NextResponse.json({ error: 'Equipment not found' }, { status: 404 });
     }
 
-    const now = new Date();
-    const isRefill = actionType === 'ANNUAL_REFILL';
-    const isHydro = actionType === 'HYDRO_PRESSURE_TEST';
+    const nextDueDate = new Date(Date.now() + (equipment.serviceIntervalMonths || 12) * 30 * 24 * 60 * 60 * 1000);
 
-    // Calculate new dates based on action
-    const updateData: any = {
-      pressureGaugeOk: Boolean(pressureGaugeOk),
-      safetyPinIntact: Boolean(sealIntact),
-      status: newStatus || (pressureGaugeOk && sealIntact && nozzleHoseOk && bodyRustPass ? 'OPERATIONAL' : 'PRESSURE_LOW'),
-    };
-
-    if (isRefill) {
-      updateData.lastRefillDate = now;
-      // IS 2190 standard: 1 year from refill
-      updateData.nextRefillDueDate = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
-      updateData.status = 'OPERATIONAL';
-    }
-
-    if (isHydro) {
-      updateData.lastHydroTestDate = now;
-      // 3 years (ABC/Foam) or 5 years (CO2)
-      const years = asset.type === 'CO2' || asset.type === 'CLEAN_AGENT_FM200' ? 5 : 3;
-      updateData.nextHydroTestDueDate = new Date(now.getTime() + years * 365 * 24 * 60 * 60 * 1000);
-    }
-
-    // 1. Create inspection log
-    const log = await db.inspectionLog.create({
+    const updatedEquipment = await (db as any).equipment.update({
+      where: { id: equipment.id },
       data: {
-        assetId: asset.id,
-        technicianName: technicianName || 'Certified Technician',
-        actionType: actionType || 'ROUTINE_INSPECTION',
-        pressureGaugeOk: Boolean(pressureGaugeOk),
-        sealIntact: Boolean(sealIntact),
-        nozzleHoseOk: Boolean(nozzleHoseOk),
-        weightOk: Boolean(weightOk),
-        bodyRustPass: Boolean(bodyRustPass),
-        remarks: remarks || `Inspected per IS 2190 guidelines on ${now.toLocaleDateString()}`,
-        inspectedAt: now,
+        lastServiceDate: new Date(),
+        nextDueDate,
+        status: newStatus || 'COMPLIANT',
       },
     });
 
-    // 2. Update asset status and timestamps
-    const updatedAsset = await db.asset.update({
-      where: { id: asset.id },
-      data: updateData,
-      include: {
-        building: true,
-        inspections: {
-          orderBy: { inspectedAt: 'desc' },
-          take: 5,
-        },
+    const log = await (db as any).serviceLog.create({
+      data: {
+        equipmentId: equipment.id,
+        technicianName: technicianName || 'Technician',
+        actionType: actionType || 'Routine Maintenance',
+        nextDueDate,
+        notes: remarks || '',
       },
     });
 
-    return NextResponse.json({
-      success: true,
-      asset: updatedAsset,
-      log,
-      message: isRefill
-        ? 'Refill recorded! Next due date automatically extended by 1 year per IS 2190.'
-        : 'Inspection successfully logged and asset health updated.',
-    });
+    return NextResponse.json({ success: true, equipment: updatedEquipment, log });
   } catch (error: any) {
-    console.error('Error recording inspection:', error);
+    console.error('Error logging scan service:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
