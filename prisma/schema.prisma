@@ -21,9 +21,49 @@ model Enquiry {
   assetCount    String?
   preferredDate String?
   preferredTime String?
+  source        String?  @default("Website")
   status        String   @default("NEW") // NEW, CONTACTED, CONVERTED, ARCHIVED
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+model UserProfile {
+  id             String        @id // matches Supabase auth.users id (UUID)
+  email          String        @unique
+  fullName       String?
+  role           String        @default("ORG_ADMIN") // ORG_ADMIN, TECHNICIAN, CLIENT, SUPER_ADMIN
+  phone          String?
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  inspections    Inspection[]
+  workOrders     WorkOrder[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model Organization {
+  id             String             @id @default(cuid())
+  name           String
+  contactPerson  String?
+  phone          String?
+  email          String?
+  address        String?
+  city           String?
+  state          String?
+  gstin          String?
+  licenseNumber  String?
+  users          UserProfile[]
+  clients        Client[]
+  buildings      Building[]
+  equipments     Equipment[]
+  inspections    Inspection[]
+  defects        Defect[]
+  workOrders     WorkOrder[]
+  reports        ComplianceReport[]
+  notifications  Notification[]
+  activityLogs   ActivityLog[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
 }
 
 model Company {
@@ -38,48 +78,71 @@ model Company {
 }
 
 model Client {
-  id             String     @id @default(cuid())
-  companyId      String
-  company        Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id             String        @id @default(cuid())
+  companyId      String?
+  company        Company?      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   name           String
   contactPerson  String
   phone          String
   email          String?
   buildings      Building[]
-  createdAt      DateTime   @default(now())
+  createdAt      DateTime      @default(now())
 }
 
 model Building {
   id                String             @id @default(cuid())
-  clientId          String
-  client            Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId          String?
+  client            Client?            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  organizationId    String?
+  organization      Organization?      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   name              String
   address           String
+  city              String?
+  state             String?
   complianceCycle   String             @default("Maharashtra Form-B (Half-Yearly)")
   cycleIntervalMos  Int                @default(6)
-  nextFilingDueDate DateTime
+  nextFilingDueDate DateTime?
   equipments        Equipment[]
+  inspections       Inspection[]
+  defects           Defect[]
+  workOrders        WorkOrder[]
   reports           ComplianceReport[]
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 }
 
 model Equipment {
-  id                   String        @id @default(cuid())
-  buildingId           String
-  building             Building      @relation(fields: [buildingId], references: [id], onDelete: Cascade)
-  qrCode               String        @unique
-  type                 String        // Extinguisher, Hydrant, Hose Reel, Alarm Panel
-  capacity             String        // e.g. "ABC 6kg", "CO2 4.5kg", "Single Head 63mm"
-  location             String        // e.g. "Floor 3 - Wing A Lift Lobby"
-  installDate          DateTime      @default(now())
-  lastServiceDate      DateTime
-  nextDueDate          DateTime
-  serviceIntervalMonths Int          @default(12)
-  status               String        @default("COMPLIANT") // COMPLIANT, DUE_SOON, OVERDUE
-  serviceLogs          ServiceLog[]
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
+  id                    String        @id @default(cuid())
+  buildingId            String
+  building              Building      @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  organizationId        String?
+  organization          Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  qrCode                String        @unique
+  type                  String        // Extinguisher, Hydrant, Hose Reel, Alarm Panel, Sprinkler
+  category              String?       // Fire Suppression, Detection, Passive
+  capacity              String        // e.g. "ABC 6kg", "CO2 4.5kg", "Single Head 63mm"
+  location              String        // e.g. "Floor 3 - Wing A Lift Lobby"
+  floor                 String?
+  wing                  String?
+  manufacturer          String?
+  model                 String?
+  serialNumber          String?
+  installDate           DateTime      @default(now())
+  lastServiceDate       DateTime
+  nextDueDate           DateTime
+  refillDueDate         DateTime?
+  hydroDueDate          DateTime?
+  serviceIntervalMonths Int           @default(12)
+  status                String        @default("COMPLIANT") // COMPLIANT, DUE_SOON, OVERDUE, DEFECTIVE
+  photoUrl              String?
+  serviceLogs           ServiceLog[]
+  inspections           Inspection[]
+  defects               Defect[]
+  workOrders            WorkOrder[]
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
 }
 
 model ServiceLog {
@@ -93,16 +156,105 @@ model ServiceLog {
   notes          String?
 }
 
-model ComplianceReport {
-  id             String    @id @default(cuid())
+model Inspection {
+  id             String        @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   buildingId     String
-  building       Building  @relation(fields: [buildingId], references: [id], onDelete: Cascade)
-  reportNumber   String    @unique
+  building       Building      @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  equipmentId    String?
+  equipment      Equipment?    @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
+  technicianId   String?
+  technician     UserProfile?  @relation(fields: [technicianId], references: [id], onDelete: SetNull)
+  technicianName String        @default("Field Technician")
+  date           DateTime      @default(now())
+  status         String        @default("PASSED") // PASSED, FAILED, NEEDS_ATTENTION
+  checklist      String?       // JSON string of checklist items
+  remarks        String?
+  photos         String?       // JSON string array of photo URLs
+  defects        Defect[]
+  createdAt      DateTime      @default(now())
+}
+
+model Defect {
+  id             String        @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  buildingId     String
+  building       Building      @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  equipmentId    String?
+  equipment      Equipment?    @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
+  inspectionId   String?
+  inspection     Inspection?   @relation(fields: [inspectionId], references: [id], onDelete: SetNull)
+  description    String
+  severity       String        @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  status         String        @default("OPEN")   // OPEN, ASSIGNED, IN_PROGRESS, RESOLVED, CLOSED
+  photoUrl       String?
+  reportedAt     DateTime      @default(now())
+  resolvedAt     DateTime?
+  workOrders     WorkOrder[]
+}
+
+model WorkOrder {
+  id             String        @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  buildingId     String
+  building       Building      @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  equipmentId    String?
+  equipment      Equipment?    @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
+  defectId       String?
+  defect         Defect?       @relation(fields: [defectId], references: [id], onDelete: SetNull)
+  assignedToId   String?
+  assignedTo     UserProfile?  @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+  title          String
+  description    String
+  priority       String        @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  status         String        @default("OPEN")   // OPEN, IN_PROGRESS, COMPLETED, CANCELLED
+  dueDate        DateTime?
+  completedAt    DateTime?
+  notes          String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model ComplianceReport {
+  id             String        @id @default(cuid())
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  buildingId     String
+  building       Building      @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  reportNumber   String        @unique
   cyclePeriod    String
-  generatedAt    DateTime  @default(now())
+  generatedAt    DateTime      @default(now())
   totalEquipment Int
   compliantCount Int
   dueCount       Int
   overdueCount   Int
-  status         String    @default("COMPLIANT") // COMPLIANT, ACTION_NEEDED
+  status         String        @default("COMPLIANT") // COMPLIANT, ACTION_NEEDED
+}
+
+model Notification {
+  id             String        @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String?
+  title          String
+  message        String
+  type           String        @default("INFO") // INFO, WARNING, ALERT, SUCCESS
+  read           Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+}
+
+model ActivityLog {
+  id             String        @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String?
+  userEmail      String?
+  action         String
+  entityType     String
+  entityId       String?
+  details        String?
+  createdAt      DateTime      @default(now())
 }

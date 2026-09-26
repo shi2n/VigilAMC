@@ -25,51 +25,51 @@ export default function CustomersPage() {
   const galleryImages: LightboxImage[] = [
     {
       src: 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&w=1200&q=80',
-      title: 'Prestige CyberTech Park — 42 Floors',
+      title: 'Commercial High-Rise Infrastructure',
       category: 'Commercial High-Rise',
-      building: 'Prestige CyberTech Tower A & B, Bengaluru',
-      auditDate: 'September 2026',
-      description: '1,450 life safety assets monitored. Extinguishers, landing valves, and yard hydrants 100% compliant during surprise municipal Fire Directorate audit.',
+      building: 'Multi-Tenant Commercial Complex Architecture',
+      auditDate: 'Reference Architecture',
+      description: 'Centralized life safety monitoring across multiple levels. Extinguishers, landing valves, and yard hydrants mapped to statutory municipal audit cycles.',
     },
     {
       src: 'https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&w=1200&q=80',
-      title: 'MetroHealth Super-Speciality Hospital',
+      title: 'Healthcare & Hospital Facilities',
       category: 'Healthcare Infrastructure',
-      building: 'MetroHealth Central Hospital, Mumbai',
-      auditDate: 'August 2026',
-      description: 'Zero tolerance for life safety lapses. Real-time telemetry on wet risers, clean-agent FM-200 gas suppression in ICU server rooms, and 24/7 digital logs.',
+      building: 'Super-Speciality Healthcare Environment',
+      auditDate: 'Reference Architecture',
+      description: 'Zero tolerance for life safety lapses. Digital logging on wet risers, clean-agent FM-200 gas suppression in ICU server rooms, and 24/7 digital logs.',
     },
     {
       src: 'https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&w=1200&q=80',
-      title: 'Apex Industrial Chemical Logistics Hub',
-      category: 'Hazardous Materials & Warehousing',
-      building: 'Apex Logistics Mega-Hub, Pune',
-      auditDate: 'September 2026',
-      description: 'Class B foam systems, yard hydrants, and flame detectors tracked across 450,000 sq ft. Automated quarterly hydro-pressure testing records.',
+      title: 'Hazardous Materials & Industrial Logistics',
+      category: 'Industrial Warehousing',
+      building: 'Logistics & Warehousing Complex',
+      auditDate: 'Reference Architecture',
+      description: 'Class B foam systems, yard hydrants, and flame detectors tracked across large footprints. Automated quarterly hydro-pressure testing records.',
     },
     {
       src: 'https://images.unsplash.com/photo-1567157577867-05ccb1388e66?auto=format&fit=crop&w=1200&q=80',
-      title: 'Greenfield Heights Residential Township',
+      title: 'Residential High-Rise Communities',
       category: 'Residential Complex',
-      building: 'Greenfield Heights (18 Towers), Gurugram',
-      auditDate: 'September 2026',
-      description: 'All 18 towers certified for Form-B biannual submission. Resident committee dashboard with transparent monthly extinguisher pressure logs.',
+      building: 'Gated Multi-Tower Residential Township',
+      auditDate: 'Reference Architecture',
+      description: 'Form-B biannual certification readiness. Resident welfare association visibility into monthly extinguisher pressure logs.',
     },
     {
       src: 'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?auto=format&fit=crop&w=1200&q=80',
-      title: 'Weatherproof Metal QR Tagging in Action',
+      title: 'Weatherproof QR Tagging Technology',
       category: 'Field Inspection',
-      building: 'Orion Global Tech Hub, Hyderabad',
-      auditDate: 'August 2026',
-      description: 'Anodized aluminum QR label installed on CO2 cylinder. Withstands UV exposure and industrial washdowns.',
+      building: 'Industrial Hardware Standard',
+      auditDate: 'Hardware Specification',
+      description: 'Anodized aluminum and durable vinyl QR labels installed on cylinders. Engineered to withstand UV exposure and industrial washdowns.',
     },
     {
       src: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80',
       title: 'Hydrant Flow & Pressure Gauge Verification',
       category: 'Wet Riser Testing',
-      building: 'Starlight Commercial Tower, Navi Mumbai',
-      auditDate: 'September 2026',
-      description: 'Technician logged 7.5 Bar dynamic pressure using digital transducer sync. Certified Form-B schedule auto-updated.',
+      building: 'Standard Hydraulic Verification',
+      auditDate: 'Technical Benchmark',
+      description: 'Technicians log dynamic pressure at landing valves. Certified Form-B schedule auto-updates upon inspection completion.',
     },
   ];
 
@@ -80,33 +80,33 @@ export default function CustomersPage() {
 
   const caseStudies = [
     {
-      client: 'SafeShield Engineering & Services',
-      type: 'Leading Fire Safety AMC Contractor',
-      portfolio: '38 Commercial Buildings &bull; 8,200 Assets',
-      challenge: 'Previously relied on paper logs and Excel sheets. Lost a major IT park client when an overdue hydrostatic test was flagged during a Fire Directorate inspection.',
-      solution: 'Deployed VigilAMC across their entire 24-technician team. Tagged all 8,200 assets with serialized QR stickers in 3 weeks.',
+      client: 'Fire Protection AMC Agency Model',
+      type: 'Contractor Operations Profile',
+      portfolio: 'Multi-Facility Commercial Deployment',
+      challenge: 'Contractors relying on paper checklists face missed hydro-tests, disputed client billing, and slow manual Form-B report generation.',
+      solution: 'VigilAMC gives agencies unified QR asset registry, technician mobile scan verification, and automated statutory Form-B PDF generation.',
       results: [
-        '100% on-time audit completion across all 38 facilities',
-        '0 client churn in the last 24 months',
-        'Form-B certification time cut from 4 days to 3 seconds',
-        'Increased spare refilling revenue by 42% through automated defect alerts',
+        'Elimination of manual paper log sheets and lost records',
+        'Instant Form-B report compilation from verified field scans',
+        'Automatic 30-day and 7-day refilling alerts sent to clients',
+        'Complete digital audit trail compliant with NBC 2016 Part 4',
       ],
-      quote: 'VigilAMC turned compliance from our biggest liability into our strongest competitive sales weapon. We now show our prospective clients our live dashboard during sales pitches.',
-      author: 'Anand R. Verma, Managing Director',
+      quote: 'Engineered specifically for Indian fire safety service providers to elevate compliance standards and client trust.',
+      author: 'VigilAMC Product & Compliance Team',
     },
     {
-      client: 'CarePoint Healthcare System',
-      type: 'Multi-Location Hospital Network',
-      portfolio: '4 Super-Speciality Hospitals &bull; 1,850 Assets',
-      challenge: 'NABH and municipal fire safety regulations require immaculate audit trails. Basement medical gas plants and ICU wards have zero cell reception.',
-      solution: 'Equipped in-house facility engineers with the VigilAMC offline mobile app. Integrated clean-agent FM-200 and sprinkler valve audits.',
+      client: 'Healthcare & Critical Campus Blueprint',
+      type: 'Campus Facility Safety Profile',
+      portfolio: 'High-Density Life Safety Environment',
+      challenge: 'Hospitals require flawless life safety logs for NABH audits, yet basements and radiation suites often lack cellular connectivity.',
+      solution: 'Technicians scan localized QR tags on suppression cylinders and landing valves, updating centralized compliance status automatically.',
       results: [
-        'Passed NABH Life Safety audit with zero non-conformances',
-        'Offline mobile audits ensure zero gaps in underground radiation bunkers',
-        'Executive clinical dashboard provides 24/7 live fire safety scores',
+        'Zero-trust verification with tamper-evident asset tags',
+        'Complete inspection logs for every fire extinguisher and hose reel',
+        'Central management dashboard with instant exportable audit records',
       ],
-      quote: 'In our hospitals, patient safety is sacred. VigilAMC gives our board complete transparency over every extinguisher, valve, and smoke sensor across all 4 campuses.',
-      author: 'Dr. Sneha Desai, Chief of Infrastructure',
+      quote: 'Patient and occupant safety demands zero-compromise documentation and verifiable field auditing.',
+      author: 'Statutory Safety Framework',
     },
   ];
 
@@ -127,24 +127,24 @@ export default function CustomersPage() {
         </div>
       </section>
 
-      {/* Aggregate Impact Stats */}
+      {/* Platform Architecture Benchmarks */}
       <section className="py-12 px-4 sm:px-6 lg:px-8 border-b border-slate-200 bg-white">
         <div className="max-w-6xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
           <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
-            <div className="text-3xl sm:text-4xl font-black text-[#023E8A]">100%</div>
-            <p className="text-xs text-slate-500 font-semibold mt-1">Fire NOC Audit Pass Rate</p>
+            <div className="text-2xl sm:text-3xl font-black text-[#023E8A]">NBC 2016</div>
+            <p className="text-xs text-slate-500 font-semibold mt-1">Part 4 Life Safety Mandate</p>
           </div>
           <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
-            <div className="text-3xl sm:text-4xl font-black text-[#0077B6]">78%</div>
-            <p className="text-xs text-slate-500 font-semibold mt-1">Faster Audit Execution</p>
+            <div className="text-2xl sm:text-3xl font-black text-[#0077B6]">IS 2190</div>
+            <p className="text-xs text-slate-500 font-semibold mt-1">Maintenance Code Adherence</p>
           </div>
           <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
-            <div className="text-3xl sm:text-4xl font-black text-emerald-600">0</div>
-            <p className="text-xs text-slate-500 font-semibold mt-1">Missed Statutory Deadlines</p>
+            <div className="text-2xl sm:text-3xl font-black text-emerald-600">Zero Paper</div>
+            <p className="text-xs text-slate-500 font-semibold mt-1">100% Digital Inspection Audit</p>
           </div>
           <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
-            <div className="text-3xl sm:text-4xl font-black text-[#023E8A]">450+</div>
-            <p className="text-xs text-slate-500 font-semibold mt-1">Towers Managed on Autopilot</p>
+            <div className="text-2xl sm:text-3xl font-black text-[#023E8A]">Form-B Ready</div>
+            <p className="text-xs text-slate-500 font-semibold mt-1">Automated PDF Certification</p>
           </div>
         </div>
       </section>

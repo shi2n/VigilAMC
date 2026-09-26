@@ -1,11 +1,20 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
+    const auth = await getCurrentUser();
+    if (!auth || !auth.organization) {
+      return NextResponse.json({ certificates: [] });
+    }
+
     const reports = await (db as any).complianceReport.findMany({
+      where: {
+        organizationId: auth.organization.id,
+      },
       include: {
         building: {
           include: {
@@ -23,7 +32,7 @@ export async function GET() {
       period: r.cyclePeriod,
       issueDate: r.generatedAt,
       validUntil: new Date(new Date(r.generatedAt).getTime() + 180 * 24 * 60 * 60 * 1000),
-      licensedAgencyNumber: 'MH/FIRE/LIC/2024/098',
+      licensedAgencyNumber: auth.organization.licenseNumber || 'MH/FIRE/LIC/PENDING',
       overallResult: r.status,
       building: r.building,
     }));

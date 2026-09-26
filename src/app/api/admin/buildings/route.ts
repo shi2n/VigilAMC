@@ -1,22 +1,44 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const company = await db.company.findFirst();
-    const buildings = await db.building.findMany({
+    const auth = await getCurrentUser();
+    if (!auth) {
+      return NextResponse.json({
+        authenticated: false,
+        company: null,
+        summary: {
+          totalBuildings: 0,
+          compliantBuildings: 0,
+          dueSoonBuildings: 0,
+          overdueBuildings: 0,
+          totalEquipments: 0,
+        },
+        buildings: [],
+      }, { status: 401 });
+    }
+
+    const organization = auth.organization;
+    const buildings = await (db as any).building.findMany({
+      where: {
+        organizationId: organization?.id,
+      },
       include: {
         client: true,
         equipments: {
           orderBy: { location: 'asc' },
         },
       },
-      orderBy: { nextFilingDueDate: 'asc' },
+      orderBy: { createdAt: 'desc' },
     });
 
     const now = new Date();
 
-    // Compute building-level compliance status
+    // Compute building-level compliance status from real assets
     const evaluatedBuildings = buildings.map((b: any) => {
       let compliantCount = 0;
       let dueCount = 0;
@@ -33,15 +55,16 @@ export async function GET() {
         }
       });
 
-      // Overall status
       let overallStatus: 'COMPLIANT' | 'DUE_SOON' | 'OVERDUE' = 'COMPLIANT';
       if (overdueCount > 0) {
-        overallStatus = 'OVERDUE'; // RED
+        overallStatus = 'OVERDUE';
       } else if (dueCount > 0) {
-        overallStatus = 'DUE_SOON'; // AMBER
+        overallStatus = 'DUE_SOON';
       }
 
-      const filingDaysRemaining = Math.ceil((new Date(b.nextFilingDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      const filingDaysRemaining = b.nextFilingDueDate
+        ? Math.ceil((new Date(b.nextFilingDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+        : null;
 
       return {
         id: b.id,
@@ -60,7 +83,6 @@ export async function GET() {
       };
     });
 
-    // Summary counts for glanceable dashboard header
     const summary = {
       totalBuildings: evaluatedBuildings.length,
       compliantBuildings: evaluatedBuildings.filter((b: any) => b.overallStatus === 'COMPLIANT').length,
@@ -70,7 +92,10 @@ export async function GET() {
     };
 
     return NextResponse.json({
-      company,
+      authenticated: true,
+      user: auth.user,
+      profile: auth.profile,
+      company: organization,
       summary,
       buildings: evaluatedBuildings,
     });
@@ -82,39 +107,37 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const auth = await getCurrentUser();
+    if (!auth || !auth.organization) {
+      return NextResponse.json({ error: 'Unauthorized: Please log in to add facilities.' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { clientName, contactPerson, phone, email, buildingName, address, complianceCycle, cycleIntervalMos } = body;
 
-    let company = await db.company.findFirst();
-    if (!company) {
-      company = await db.company.create({
-        data: {
-          name: 'Vigil Fire & Safety Solutions',
-          licenseNumber: 'MH/FIRE/LIC/2022/A-412',
-        },
-      });
-    }
+    const organizationId = auth.organization.id;
 
-    // 1. Create or link Client
-    const client = await db.client.create({
+    // 1. Create client associated with user's organization
+    const client = await (db as any).client.create({
       data: {
-        companyId: company.id,
-        name: clientName || 'New Client Enterprise',
-        contactPerson: contactPerson || 'Facility Manager',
-        phone: phone || '+91 98000 00000',
-        email: email || 'contact@client.com',
+        organizationId,
+        name: (clientName || 'Default Facility Group').trim(),
+        contactPerson: (contactPerson || 'Facility Manager').trim(),
+        phone: (phone || '').trim(),
+        email: email ? email.trim() : null,
       },
     });
 
     const interval = Number(cycleIntervalMos) || 6;
     const nextFiling = new Date(Date.now() + interval * 30 * 24 * 60 * 60 * 1000);
 
-    // 2. Create Building
-    const building = await db.building.create({
+    // 2. Create Building associated with user's organization
+    const building = await (db as any).building.create({
       data: {
+        organizationId,
         clientId: client.id,
-        name: buildingName || 'Building Main Block',
-        address: address || 'Mumbai, Maharashtra',
+        name: (buildingName || 'Main Tower').trim(),
+        address: (address || 'Facility Address').trim(),
         complianceCycle: complianceCycle || 'Maharashtra Form-B (Half-Yearly)',
         cycleIntervalMos: interval,
         nextFilingDueDate: nextFiling,
@@ -127,7 +150,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, building });
   } catch (error: any) {
-    console.error('Error creating client & building:', error);
+    console.error('Error creating building:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

@@ -1,19 +1,44 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const buildings = await db.building.findMany({
+    const auth = await getCurrentUser();
+    if (!auth || !auth.organization) {
+      return NextResponse.json({
+        authenticated: false,
+        kpis: {
+          totalBuildings: 0,
+          totalEquipments: 0,
+          compliantCount: 0,
+          dueCount: 0,
+          overdueCount: 0,
+          complianceRate: 100,
+          openDefects: 0,
+          inspectionsCompleted: 0,
+        },
+        buildings: [],
+        equipments: [],
+      });
+    }
+
+    const organizationId = auth.organization.id;
+
+    const buildings = await (db as any).building.findMany({
+      where: { organizationId },
       include: {
         client: true,
         equipments: true,
         reports: true,
       },
+      orderBy: { createdAt: 'desc' },
     });
 
-    const equipments = await db.equipment.findMany({
+    const equipments = await (db as any).equipment.findMany({
+      where: { organizationId },
       include: {
         building: {
           select: { name: true, address: true },
@@ -21,6 +46,17 @@ export async function GET() {
       },
       orderBy: { nextDueDate: 'asc' },
     });
+
+    const inspectionsCount = await (db as any).inspection.count({
+      where: { organizationId },
+    }).catch(() => 0);
+
+    const openDefectsCount = await (db as any).defect.count({
+      where: {
+        organizationId,
+        status: { in: ['OPEN', 'ASSIGNED', 'IN_PROGRESS'] },
+      },
+    }).catch(() => 0);
 
     const now = new Date();
     let compliantCount = 0;
@@ -39,6 +75,10 @@ export async function GET() {
     });
 
     return NextResponse.json({
+      authenticated: true,
+      user: auth.user,
+      profile: auth.profile,
+      organization: auth.organization,
       kpis: {
         totalBuildings: buildings.length,
         totalEquipments: equipments.length,
@@ -46,6 +86,8 @@ export async function GET() {
         dueCount,
         overdueCount,
         complianceRate: equipments.length > 0 ? Math.round((compliantCount / equipments.length) * 100) : 100,
+        openDefects: openDefectsCount,
+        inspectionsCompleted: inspectionsCount,
       },
       buildings,
       equipments,

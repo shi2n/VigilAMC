@@ -1,14 +1,25 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
+    const auth = await getCurrentUser();
+    if (!auth || !auth.organization) {
+      return NextResponse.json({ equipments: [] });
+    }
+
     const { searchParams } = new URL(request.url);
     const buildingId = searchParams.get('buildingId');
     const search = searchParams.get('search');
     const status = searchParams.get('status');
 
-    const where: any = {};
+    const where: any = {
+      organizationId: auth.organization.id,
+    };
+
     if (buildingId && buildingId !== 'ALL') {
       where.buildingId = buildingId;
     }
@@ -16,15 +27,19 @@ export async function GET(request: Request) {
       where.status = status;
     }
     if (search) {
-      where.OR = [
-        { qrCode: { contains: search } },
-        { location: { contains: search } },
-        { capacity: { contains: search } },
-        { type: { contains: search } },
+      where.AND = [
+        {
+          OR: [
+            { qrCode: { contains: search, mode: 'insensitive' } },
+            { location: { contains: search, mode: 'insensitive' } },
+            { capacity: { contains: search, mode: 'insensitive' } },
+            { type: { contains: search, mode: 'insensitive' } },
+          ],
+        },
       ];
     }
 
-    const equipments = await db.equipment.findMany({
+    const equipments = await (db as any).equipment.findMany({
       where,
       include: {
         building: {
@@ -58,6 +73,11 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const auth = await getCurrentUser();
+    if (!auth || !auth.organization) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const {
       isSingle,
@@ -73,13 +93,16 @@ export async function POST(request: Request) {
       lastServiceDate,
     } = body;
 
-    const building = await db.building.findUnique({
-      where: { id: buildingId },
+    const building = await (db as any).building.findFirst({
+      where: {
+        id: buildingId,
+        organizationId: auth.organization.id,
+      },
       include: { equipments: true },
     });
 
     if (!building) {
-      return NextResponse.json({ error: 'Building not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Building not found or access denied' }, { status: 404 });
     }
 
     const intervalMos = Number(serviceIntervalMonths) || 12;
@@ -92,14 +115,14 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'QR Code identifier is required' }, { status: 400 });
       }
 
-      // Check for duplicate QR code
-      const existing = await db.equipment.findUnique({ where: { qrCode: qrCode.trim().toUpperCase() } });
+      const existing = await (db as any).equipment.findUnique({ where: { qrCode: qrCode.trim().toUpperCase() } });
       if (existing) {
         return NextResponse.json({ error: `QR Tag '${qrCode}' already exists in database.` }, { status: 400 });
       }
 
-      const eq = await db.equipment.create({
+      const eq = await (db as any).equipment.create({
         data: {
+          organizationId: auth.organization.id,
           buildingId: building.id,
           qrCode: qrCode.trim().toUpperCase(),
           type: type || 'Fire Extinguisher',
@@ -112,10 +135,10 @@ export async function POST(request: Request) {
         },
       });
 
-      await db.serviceLog.create({
+      await (db as any).serviceLog.create({
         data: {
           equipmentId: eq.id,
-          technicianName: 'Admin Registration',
+          technicianName: auth.profile?.fullName || 'Agency Admin',
           servicedAt: now,
           nextDueDate: nextDue,
           actionType: 'Equipment Commissioning & Tagging',
@@ -139,12 +162,12 @@ export async function POST(request: Request) {
       const floorNum = Math.floor((num - 1) / 3) + 1;
       const loc = locationBase ? `${locationBase} #${num}` : `Floor ${floorNum} - Corridor ${num}`;
 
-      // Skip if tag exists
-      const exists = await db.equipment.findUnique({ where: { qrCode: tag } });
+      const exists = await (db as any).equipment.findUnique({ where: { qrCode: tag } });
       if (exists) continue;
 
-      const eq = await db.equipment.create({
+      const eq = await (db as any).equipment.create({
         data: {
+          organizationId: auth.organization.id,
           buildingId: building.id,
           qrCode: tag,
           type: type || 'Fire Extinguisher',
@@ -157,10 +180,10 @@ export async function POST(request: Request) {
         },
       });
 
-      await db.serviceLog.create({
+      await (db as any).serviceLog.create({
         data: {
           equipmentId: eq.id,
-          technicianName: 'Admin Bulk Import',
+          technicianName: auth.profile?.fullName || 'Agency Admin Bulk Import',
           servicedAt: now,
           nextDueDate: nextDue,
           actionType: 'Initial Commissioning & Tagging',

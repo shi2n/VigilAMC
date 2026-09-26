@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
 import {
   Building2,
   Plus,
@@ -40,8 +41,8 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [expandedBuildingId, setExpandedBuildingId] = useState<string | null>(null);
 
-  // Active view: RADAR (Compliance overview) or DATA_MANAGE (Backend data management)
-  const [activeTab, setActiveTab] = useState<'RADAR' | 'DATA_MANAGE'>('RADAR');
+  // Active view: RADAR (Compliance overview) or DATA_MANAGE (Backend data management) or ENQUIRIES (Website Leads)
+  const [activeTab, setActiveTab] = useState<'RADAR' | 'DATA_MANAGE' | 'ENQUIRIES'>('RADAR');
   const [dataSubTab, setDataSubTab] = useState<'COMPANY' | 'CLIENTS' | 'BUILDINGS' | 'EQUIPMENT' | 'RESET'>('COMPANY');
 
   // Modals
@@ -106,11 +107,24 @@ export default function AdminDashboardPage() {
   const [equipSearch, setEquipSearch] = useState('');
   const [equipFilterBuilding, setEquipFilterBuilding] = useState('ALL');
 
+  // Enquiries & Leads state
+  const [enquiriesList, setEnquiriesList] = useState<any[]>([]);
+  const [enquiryStatusFilter, setEnquiryStatusFilter] = useState('ALL');
+  const [loadingEnquiries, setLoadingEnquiries] = useState(false);
+
   const fetchData = async () => {
     try {
       setLoading(true);
       const res = await fetch('/api/admin/buildings');
+      if (res.status === 401) {
+        window.location.href = '/login?redirect=/dashboard';
+        return;
+      }
       const json = await res.json();
+      if (json.authenticated === false) {
+        window.location.href = '/login?redirect=/dashboard';
+        return;
+      }
       setData(json);
       if (json.company) {
         setCompanyForm({
@@ -124,7 +138,6 @@ export default function AdminDashboardPage() {
       if (!expandedBuildingId && json.buildings?.length > 0) {
         setExpandedBuildingId(json.buildings[0].id);
       }
-      // Also fetch clients list for management
       fetchClients();
     } catch (e) {
       console.error(e);
@@ -160,6 +173,51 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const fetchEnquiries = async () => {
+    try {
+      setLoadingEnquiries(true);
+      const query = new URLSearchParams();
+      if (enquiryStatusFilter !== 'ALL') query.set('status', enquiryStatusFilter);
+      const res = await fetch(`/api/enquiries?${query.toString()}`);
+      const json = await res.json();
+      if (json.enquiries) {
+        setEnquiriesList(json.enquiries);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingEnquiries(false);
+    }
+  };
+
+  const handleUpdateEnquiryStatus = async (id: string, newStatus: string) => {
+    try {
+      const res = await fetch('/api/enquiries', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: newStatus }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        showToast(`Lead status updated to ${newStatus}`);
+        fetchEnquiries();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      window.location.href = '/login';
+    } catch (e) {
+      console.error(e);
+      window.location.href = '/login';
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -168,8 +226,10 @@ export default function AdminDashboardPage() {
     if (activeTab === 'DATA_MANAGE') {
       fetchClients();
       fetchEquipments();
+    } else if (activeTab === 'ENQUIRIES') {
+      fetchEnquiries();
     }
-  }, [activeTab, equipFilterBuilding, equipSearch]);
+  }, [activeTab, equipFilterBuilding, equipSearch, enquiryStatusFilter]);
 
   // Company Profile Update
   const handleSaveCompany = async (e: React.FormEvent) => {
@@ -516,6 +576,22 @@ export default function AdminDashboardPage() {
                 <Database className="w-3.5 h-3.5" />
                 <span>Data Manager</span>
               </button>
+              <button
+                onClick={() => setActiveTab('ENQUIRIES')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  activeTab === 'ENQUIRIES'
+                    ? 'bg-amber-500 text-slate-950 shadow-md'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Mail className="w-3.5 h-3.5" />
+                <span>Website Leads</span>
+                {enquiriesList.filter((e) => e.status === 'NEW').length > 0 && (
+                  <span className="ml-1 px-1.5 py-0.2 rounded-full bg-red-500 text-white text-[10px] font-black">
+                    {enquiriesList.filter((e) => e.status === 'NEW').length}
+                  </span>
+                )}
+              </button>
             </div>
 
             <Link
@@ -533,6 +609,15 @@ export default function AdminDashboardPage() {
               <Scan className="w-4 h-4 text-amber-400" />
               <span className="hidden sm:inline">Scan QR</span>
             </Link>
+
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-800/50 text-xs font-bold transition-all"
+              title="Sign Out"
+            >
+              <LogOut className="w-4 h-4 text-red-400" />
+              <span className="hidden sm:inline">Logout</span>
+            </button>
           </div>
         </div>
 
@@ -1228,6 +1313,150 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
+        </div>
+      )}
+
+      {/* =========================================================================
+          VIEW 3: WEBSITE LEADS & CUSTOMER ENQUIRIES
+      ========================================================================= */}
+      {activeTab === 'ENQUIRIES' && (
+        <div className="tactile-card rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl p-5 sm:p-6 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <Mail className="w-5 h-5 text-amber-400" />
+                <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                  Website Inquiries &amp; Demo Requests
+                </h2>
+                <span className="px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 text-xs font-semibold">
+                  {enquiriesList.length} Leads Captured
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                Real-time submissions from your public website demo and contact forms stored in Supabase PostgreSQL.
+              </p>
+            </div>
+
+            {/* Filter pills */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {['ALL', 'NEW', 'CONTACTED', 'CONVERTED', 'ARCHIVED'].map((st) => (
+                <button
+                  key={st}
+                  onClick={() => setEnquiryStatusFilter(st)}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                    enquiryStatusFilter === st
+                      ? 'bg-amber-500 text-slate-950 shadow'
+                      : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                  }`}
+                >
+                  {st}
+                </button>
+              ))}
+              <button
+                onClick={fetchEnquiries}
+                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+                title="Refresh leads"
+              >
+                <RefreshCw className={`w-4 h-4 ${loadingEnquiries ? 'animate-spin text-amber-400' : ''}`} />
+              </button>
+            </div>
+          </div>
+
+          {loadingEnquiries ? (
+            <div className="py-16 text-center text-slate-400 flex flex-col items-center justify-center gap-2">
+              <RefreshCw className="w-6 h-6 animate-spin text-amber-500" />
+              <p className="text-xs">Loading inbound leads...</p>
+            </div>
+          ) : enquiriesList.length === 0 ? (
+            <div className="py-16 text-center text-slate-400 space-y-3">
+              <Mail className="w-12 h-12 text-slate-600 mx-auto" />
+              <h3 className="text-sm font-bold text-white">No inquiries received yet</h3>
+              <p className="text-xs text-slate-400 max-w-md mx-auto">
+                When prospective clients submit forms on your public website, their contact details, facility type, and requested demo slot will appear here instantly.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-slate-800">
+              <table className="w-full text-left text-xs text-slate-300">
+                <thead className="bg-slate-950 text-slate-400 uppercase font-semibold text-[10px] tracking-wider border-b border-slate-800">
+                  <tr>
+                    <th className="py-3 px-4">Date / Source</th>
+                    <th className="py-3 px-4">Name &amp; Company</th>
+                    <th className="py-3 px-4">Contact</th>
+                    <th className="py-3 px-4">Requirement / Facility</th>
+                    <th className="py-3 px-4">Notes / Message</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 bg-slate-900/60">
+                  {enquiriesList.map((lead: any) => (
+                    <tr key={lead.id} className="hover:bg-slate-850/50 transition-colors">
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <div className="font-semibold text-white">
+                          {new Date(lead.createdAt).toLocaleDateString('en-IN', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          })}
+                        </div>
+                        <span className="text-[10px] text-amber-400/90 font-medium">{lead.source || 'Website'}</span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="font-bold text-white">{lead.name || 'Unnamed Prospect'}</div>
+                        <div className="text-[11px] text-slate-400">{lead.company || lead.city || 'Direct Inquiry'}</div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="text-slate-200">{lead.email}</div>
+                        {lead.phone && <div className="text-[11px] text-slate-400">{lead.phone}</div>}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="font-medium text-slate-200">{lead.facilityType || lead.type || 'Demo'}</div>
+                        {(lead.assetCount || lead.preferredDate) && (
+                          <div className="text-[10px] text-slate-400">
+                            {lead.assetCount && `${lead.assetCount} assets • `}
+                            {lead.preferredDate && `Slot: ${lead.preferredDate} ${lead.preferredTime || ''}`}
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 max-w-xs">
+                        <p className="line-clamp-2 text-slate-400 text-[11px]">
+                          {lead.message || 'No additional message provided.'}
+                        </p>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                            lead.status === 'NEW'
+                              ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
+                              : lead.status === 'CONTACTED'
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                              : lead.status === 'CONVERTED'
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                              : 'bg-slate-700/40 text-slate-400 border border-slate-700'
+                          }`}
+                        >
+                          {lead.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        <select
+                          value={lead.status}
+                          onChange={(e) => handleUpdateEnquiryStatus(lead.id, e.target.value)}
+                          className="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-300 font-semibold focus:outline-none focus:border-amber-500"
+                        >
+                          <option value="NEW">NEW</option>
+                          <option value="CONTACTED">CONTACTED</option>
+                          <option value="CONVERTED">CONVERTED</option>
+                          <option value="ARCHIVED">ARCHIVED</option>
+                        </select>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 

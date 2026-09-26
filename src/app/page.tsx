@@ -55,35 +55,35 @@ export default function HomePage() {
   const galleryImages: LightboxImage[] = [
     {
       src: 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&w=1200&q=80',
-      title: 'Prestige CyberTech Park — 42 Floors',
-      category: 'Commercial High-Rise',
-      building: 'Prestige CyberTech Tower A & B, Bengaluru',
-      auditDate: 'September 2026',
-      description: '1,450 life safety assets monitored. Extinguishers, landing valves, and yard hydrants 100% compliant during surprise municipal Fire Directorate audit.',
+      title: 'Commercial Multi-Story Life Safety Infrastructure',
+      category: 'Commercial Facility',
+      building: 'Standard High-Rise Facility Inspection',
+      auditDate: 'Inspection Protocol',
+      description: 'Extinguishers, landing valves, and yard hydrants monitored with digital timestamping for statutory compliance.',
     },
     {
       src: 'https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&w=1200&q=80',
-      title: 'MetroHealth Super-Speciality Hospital',
-      category: 'Healthcare Infrastructure',
-      building: 'MetroHealth Central Hospital, Mumbai',
-      auditDate: 'August 2026',
-      description: 'Zero tolerance for life safety lapses. Real-time telemetry on wet risers, clean-agent FM-200 gas suppression in ICU server rooms, and 24/7 digital logs.',
+      title: 'Healthcare & Critical Infrastructure Safety Audit',
+      category: 'Healthcare AMC Flow',
+      building: 'Hospital & Critical Care Facility',
+      auditDate: 'Compliance Workflow',
+      description: 'Zero-tolerance safety compliance with real-time logging of wet risers, clean-agent suppression, and 24/7 digital records.',
     },
     {
       src: 'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?auto=format&fit=crop&w=1200&q=80',
       title: 'Weatherproof Metal QR Tagging in Action',
       category: 'Field Inspection',
-      building: 'Orion Global Tech Hub, Hyderabad',
-      auditDate: 'August 2026',
+      building: 'Industrial Plant & Logistics Warehouse',
+      auditDate: 'Field Tagging Standards',
       description: 'Anodized aluminum QR label installed on CO2 cylinder. Withstands UV exposure and industrial washdowns.',
     },
     {
       src: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80',
       title: 'Hydrant Flow & Pressure Gauge Verification',
       category: 'Wet Riser Testing',
-      building: 'Starlight Commercial Tower, Navi Mumbai',
-      auditDate: 'September 2026',
-      description: 'Technician logged 7.5 Bar dynamic pressure using digital transducer sync. Certified Form-B schedule auto-updated.',
+      building: 'Commercial Multi-Tenant Complex',
+      auditDate: 'Pressure Testing Workflow',
+      description: 'Technicians log dynamic pressure readings using digital checklists to keep Form-B certification schedules updated.',
     },
   ];
 
@@ -186,41 +186,41 @@ export default function HomePage() {
           {/* Primary CTA Buttons */}
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
-              href="/contact"
+              href="/login"
               className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[#0077B6] hover:bg-[#023E8A] text-white font-bold text-sm sm:text-base shadow-lg shadow-[#0077B6]/25 hover:shadow-xl hover:shadow-[#0077B6]/35 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2 group"
             >
-              <span>Start 14-Day Free Pilot</span>
+              <span>Create Agency Account</span>
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </Link>
 
-            <a
-              href="#how-it-works"
+            <Link
+              href="/login"
               className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-white hover:bg-slate-50 text-[#023E8A] font-bold text-sm sm:text-base border border-slate-300 hover:border-[#0077B6] shadow-sm transition-all flex items-center justify-center gap-2"
             >
-              <Play className="w-4 h-4 text-[#0077B6] fill-[#0077B6]" />
-              <span>Explore Interactive Demo</span>
-            </a>
+              <ShieldCheck className="w-4 h-4 text-[#0077B6]" />
+              <span>Access Dashboard</span>
+            </Link>
           </div>
 
-          {/* Parallax Floating Metric Badges */}
+          {/* Core System Capabilities Badges */}
           <div className="mt-14 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
             <div className="p-4 rounded-xl bg-white/95 border border-slate-200/90 shadow-sm backdrop-blur-md text-left transition-transform hover:-translate-y-1">
-              <div className="text-2xl sm:text-3xl font-black text-[#023E8A]">99.8%</div>
-              <div className="text-xs font-semibold text-slate-500 mt-0.5">On-Time Inspection Rate</div>
+              <div className="text-2xl sm:text-3xl font-black text-[#023E8A]">100%</div>
+              <div className="text-xs font-semibold text-slate-500 mt-0.5">Audit-Proof Digital Records</div>
             </div>
 
             <div className="p-4 rounded-xl bg-white/95 border border-slate-200/90 shadow-sm backdrop-blur-md text-left transition-transform hover:-translate-y-1">
-              <div className="text-2xl sm:text-3xl font-black text-[#0077B6]">14,800+</div>
-              <div className="text-xs font-semibold text-slate-500 mt-0.5">Life Safety Assets Tagged</div>
+              <div className="text-2xl sm:text-3xl font-black text-[#0077B6]">Instant</div>
+              <div className="text-xs font-semibold text-slate-500 mt-0.5">QR Mobile Field Scanning</div>
             </div>
 
             <div className="p-4 rounded-xl bg-white/95 border border-slate-200/90 shadow-sm backdrop-blur-md text-left transition-transform hover:-translate-y-1">
-              <div className="text-2xl sm:text-3xl font-black text-emerald-600">0</div>
-              <div className="text-xs font-semibold text-slate-500 mt-0.5">Fire NOC Audit Failures</div>
+              <div className="text-2xl sm:text-3xl font-black text-emerald-600">Zero</div>
+              <div className="text-xs font-semibold text-slate-500 mt-0.5">Missed Expiry Deadlines</div>
             </div>
 
             <div className="p-4 rounded-xl bg-white/95 border border-slate-200/90 shadow-sm backdrop-blur-md text-left transition-transform hover:-translate-y-1">
-              <div className="text-2xl sm:text-3xl font-black text-[#023E8A]">3 Sec</div>
+              <div className="text-2xl sm:text-3xl font-black text-[#023E8A]">1-Click</div>
               <div className="text-xs font-semibold text-slate-500 mt-0.5">Form-B PDF Generation</div>
             </div>
           </div>
@@ -794,58 +794,61 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* Testimonial Quote Cards */}
+          {/* Verified Standards & Testimonials Info Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="corp-card p-6 bg-white reveal-on-scroll">
-              <div className="flex items-center gap-1 text-amber-500 mb-3">
-                {'★'.repeat(5)}
+            <div className="corp-card p-6 bg-white reveal-on-scroll border border-slate-100 shadow-sm">
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 mb-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                Regulatory Standard
               </div>
-              <p className="text-sm text-slate-700 leading-relaxed italic">
-                &ldquo;Before VigilAMC, we lost a major tech park contract because a single hydro-test date slipped and the client failed their surprise Fire Directorate audit. Since implementing VigilAMC across 3,200 assets, our audit pass rate is a spotless 100%.&rdquo;
+              <p className="text-sm text-slate-700 leading-relaxed">
+                VigilAMC is engineered specifically to satisfy the strict mandates of the <strong>Maharashtra Fire Act 2006</strong>, <strong>NBC 2016 Part 4</strong>, and <strong>IS 2190</strong> maintenance protocols for AMC providers.
               </p>
               <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#0077B6] text-white flex items-center justify-center font-bold text-sm">
-                  AR
+                <div className="w-10 h-10 rounded-full bg-[#0077B6] text-white flex items-center justify-center font-bold text-xs">
+                  NBC
                 </div>
                 <div>
-                  <h5 className="text-xs font-bold text-slate-900">Anand R. Verma</h5>
-                  <p className="text-[11px] text-slate-500">Managing Director, SafeShield Fire Engineering</p>
+                  <h5 className="text-xs font-bold text-slate-900">Statutory Framework</h5>
+                  <p className="text-[11px] text-slate-500">Form-B & Inspection Compliance</p>
                 </div>
               </div>
             </div>
 
-            <div className="corp-card p-6 bg-white reveal-on-scroll delay-100">
-              <div className="flex items-center gap-1 text-amber-500 mb-3">
-                {'★'.repeat(5)}
+            <div className="corp-card p-6 bg-white reveal-on-scroll delay-100 border border-slate-100 shadow-sm">
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 mb-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                Field Accountability
               </div>
-              <p className="text-sm text-slate-700 leading-relaxed italic">
-                &ldquo;Form-B generation used to consume 3 days of administrative headache every quarter. Now with VigilAMC, it takes literally 3 seconds. The automated WhatsApp alerts have boosted our prompt refilling approval by over 80%.&rdquo;
+              <p className="text-sm text-slate-700 leading-relaxed">
+                Every field technician inspection generates an immutable audit record featuring tamper-evident QR verification, device geolocation, and photographic defect logging.
               </p>
               <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#023E8A] text-white flex items-center justify-center font-bold text-sm">
-                  MK
+                <div className="w-10 h-10 rounded-full bg-[#023E8A] text-white flex items-center justify-center font-bold text-xs">
+                  GPS
                 </div>
                 <div>
-                  <h5 className="text-xs font-bold text-slate-900">Major K. Sengupta (Retd.)</h5>
-                  <p className="text-[11px] text-slate-500">VP Operations, Apex Facility Management</p>
+                  <h5 className="text-xs font-bold text-slate-900">Tamper-Proof Tracking</h5>
+                  <p className="text-[11px] text-slate-500">Zero-Trust Inspection Integrity</p>
                 </div>
               </div>
             </div>
 
-            <div className="corp-card p-6 bg-white reveal-on-scroll delay-200">
-              <div className="flex items-center gap-1 text-amber-500 mb-3">
-                {'★'.repeat(5)}
+            <div className="corp-card p-6 bg-white reveal-on-scroll delay-200 border border-slate-100 shadow-sm">
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 mb-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                Pilot Verification
               </div>
               <p className="text-sm text-slate-700 leading-relaxed italic">
-                &ldquo;In a 400-bed hospital, life safety cannot fail. VigilAMC gave our clinical directors transparent live visibility over every sprinkler, hydrant valve, and smoke detector. It gives us absolute peace of mind.&rdquo;
+                &ldquo;Customer testimonials and case study releases are currently being verified from our active deployment agencies. Real partner reviews will be published shortly.&rdquo;
               </p>
               <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-sm">
-                  DS
+                <div className="w-10 h-10 rounded-full bg-slate-700 text-white flex items-center justify-center font-bold text-xs">
+                  AMC
                 </div>
                 <div>
-                  <h5 className="text-xs font-bold text-slate-900">Dr. Sneha Desai</h5>
-                  <p className="text-[11px] text-slate-500">Chief Infrastructure Officer, CarePoint Hospitals</p>
+                  <h5 className="text-xs font-bold text-slate-900">Customer Testimonials</h5>
+                  <p className="text-[11px] text-slate-500">Coming Soon from Active Agencies</p>
                 </div>
               </div>
             </div>

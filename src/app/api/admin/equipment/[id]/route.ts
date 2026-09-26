@@ -1,13 +1,24 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const equipment = await db.equipment.findUnique({
-      where: { id: params.id },
+    const auth = await getCurrentUser();
+    if (!auth || !auth.organization) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const equipment = await (db as any).equipment.findFirst({
+      where: {
+        id: params.id,
+        organizationId: auth.organization.id,
+      },
       include: {
         building: {
           include: { client: true },
@@ -34,6 +45,11 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    const auth = await getCurrentUser();
+    if (!auth || !auth.organization) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const {
       qrCode,
@@ -47,20 +63,26 @@ export async function PUT(
       buildingId,
     } = body;
 
-    const existing = await db.equipment.findUnique({ where: { id: params.id } });
+    const existing = await (db as any).equipment.findFirst({
+      where: {
+        id: params.id,
+        organizationId: auth.organization.id,
+      },
+    });
+
     if (!existing) {
-      return NextResponse.json({ error: 'Equipment not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Equipment not found or access denied' }, { status: 404 });
     }
 
     // Check if qrCode is being changed and if new code already exists
     if (qrCode && qrCode.trim().toUpperCase() !== existing.qrCode) {
-      const duplicate = await db.equipment.findUnique({ where: { qrCode: qrCode.trim().toUpperCase() } });
+      const duplicate = await (db as any).equipment.findUnique({ where: { qrCode: qrCode.trim().toUpperCase() } });
       if (duplicate) {
         return NextResponse.json({ error: `QR Code '${qrCode}' already in use.` }, { status: 400 });
       }
     }
 
-    const updated = await db.equipment.update({
+    const updated = await (db as any).equipment.update({
       where: { id: params.id },
       data: {
         qrCode: qrCode ? qrCode.trim().toUpperCase() : existing.qrCode,
@@ -87,12 +109,23 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const existing = await db.equipment.findUnique({ where: { id: params.id } });
-    if (!existing) {
-      return NextResponse.json({ error: 'Equipment not found' }, { status: 404 });
+    const auth = await getCurrentUser();
+    if (!auth || !auth.organization) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await db.equipment.delete({ where: { id: params.id } });
+    const existing = await (db as any).equipment.findFirst({
+      where: {
+        id: params.id,
+        organizationId: auth.organization.id,
+      },
+    });
+
+    if (!existing) {
+      return NextResponse.json({ error: 'Equipment not found or access denied' }, { status: 404 });
+    }
+
+    await (db as any).equipment.delete({ where: { id: params.id } });
 
     return NextResponse.json({ success: true, message: 'Equipment deleted' });
   } catch (error: any) {

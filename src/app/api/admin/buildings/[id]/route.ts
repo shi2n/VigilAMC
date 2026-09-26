@@ -1,13 +1,24 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const building = await db.building.findUnique({
-      where: { id: params.id },
+    const auth = await getCurrentUser();
+    if (!auth || !auth.organization) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const building = await (db as any).building.findFirst({
+      where: {
+        id: params.id,
+        organizationId: auth.organization.id,
+      },
       include: {
         client: true,
         equipments: {
@@ -35,15 +46,26 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    const auth = await getCurrentUser();
+    if (!auth || !auth.organization) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { name, address, complianceCycle, cycleIntervalMos, nextFilingDueDate, clientId } = body;
 
-    const existing = await db.building.findUnique({ where: { id: params.id } });
+    const existing = await (db as any).building.findFirst({
+      where: {
+        id: params.id,
+        organizationId: auth.organization.id,
+      },
+    });
+
     if (!existing) {
-      return NextResponse.json({ error: 'Building not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Building not found or access denied' }, { status: 404 });
     }
 
-    const updated = await db.building.update({
+    const updated = await (db as any).building.update({
       where: { id: params.id },
       data: {
         name: name !== undefined ? name.trim() : existing.name,
@@ -68,12 +90,23 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const existing = await db.building.findUnique({ where: { id: params.id } });
-    if (!existing) {
-      return NextResponse.json({ error: 'Building not found' }, { status: 404 });
+    const auth = await getCurrentUser();
+    if (!auth || !auth.organization) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await db.building.delete({ where: { id: params.id } });
+    const existing = await (db as any).building.findFirst({
+      where: {
+        id: params.id,
+        organizationId: auth.organization.id,
+      },
+    });
+
+    if (!existing) {
+      return NextResponse.json({ error: 'Building not found or access denied' }, { status: 404 });
+    }
+
+    await (db as any).building.delete({ where: { id: params.id } });
 
     return NextResponse.json({ success: true, message: 'Building and associated equipment deleted' });
   } catch (error: any) {

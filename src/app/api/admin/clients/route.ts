@@ -1,9 +1,20 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const clients = await db.client.findMany({
+    const auth = await getCurrentUser();
+    if (!auth || !auth.organization) {
+      return NextResponse.json({ clients: [] });
+    }
+
+    const clients = await (db as any).client.findMany({
+      where: {
+        organizationId: auth.organization.id,
+      },
       include: {
         buildings: {
           include: {
@@ -45,6 +56,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const auth = await getCurrentUser();
+    if (!auth || !auth.organization) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { name, contactPerson, phone, email } = body;
 
@@ -52,19 +68,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Client name and phone are required' }, { status: 400 });
     }
 
-    let company = await db.company.findFirst();
-    if (!company) {
-      company = await db.company.create({
-        data: {
-          name: 'Fire Safety AMC Solutions',
-          licenseNumber: 'MH/FIRE/LIC/2024/001',
-        },
-      });
-    }
-
-    const client = await db.client.create({
+    const client = await (db as any).client.create({
       data: {
-        companyId: company.id,
+        organizationId: auth.organization.id,
         name: name.trim(),
         contactPerson: (contactPerson || 'Facility Manager').trim(),
         phone: phone.trim(),

@@ -68,8 +68,8 @@ export default function AboutUsPage() {
     },
     {
       year: '2026',
-      title: 'National Expansion & Middle East Hub',
-      desc: 'Now safeguarding over 450+ towers, 14,800+ assets with a verified 100% audit pass rate and 0 missed compliance deadlines.',
+      title: 'Enterprise Multi-Tenant Cloud Launch',
+      desc: 'Architected for Indian and global fire safety AMC agencies with automated Form-B certification and tamper-evident QR verification.',
     },
   ];
 
@@ -123,12 +123,12 @@ export default function AboutUsPage() {
                 </p>
                 <div className="pt-4 border-t border-white/20 grid grid-cols-2 gap-4 text-xs">
                   <div>
-                    <span className="text-2xl font-black text-white">14,800+</span>
-                    <p className="text-cyan-200 mt-0.5">Assets on Autopilot</p>
+                    <span className="text-xl sm:text-2xl font-black text-white">NBC 2016</span>
+                    <p className="text-cyan-200 mt-0.5">Part 4 Life Safety Code</p>
                   </div>
                   <div>
-                    <span className="text-2xl font-black text-white">0 Failures</span>
-                    <p className="text-cyan-200 mt-0.5">Fire NOC Audit Record</p>
+                    <span className="text-xl sm:text-2xl font-black text-white">IS 2190</span>
+                    <p className="text-cyan-200 mt-0.5">Maintenance Protocol</p>
                   </div>
                 </div>
               </div>
