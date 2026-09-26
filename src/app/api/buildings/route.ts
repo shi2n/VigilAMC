@@ -1,99 +1,53 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const buildings = await db.building.findMany({
       include: {
-        company: true,
-        assets: {
-          select: {
-            id: true,
-            status: true,
-            type: true,
-            nextRefillDueDate: true,
-            nextHydroTestDueDate: true,
-          },
-        },
-        amcs: {
-          where: { status: 'ACTIVE' },
-          take: 1,
-        },
-        certificates: {
-          orderBy: { issueDate: 'desc' },
+        client: true,
+        equipments: true,
+        reports: {
+          orderBy: { generatedAt: 'desc' },
           take: 1,
         },
       },
-      orderBy: { nocExpiryDate: 'asc' }, // Prioritize buildings with nearest NOC expiry!
+      orderBy: { nextFilingDueDate: 'asc' },
     });
 
-    return NextResponse.json({ buildings });
+    const now = new Date();
+    const mapped = buildings.map((b: any) => {
+      let compliantCount = 0;
+      let dueCount = 0;
+      let overdueCount = 0;
+
+      b.equipments.forEach((eq: any) => {
+        const diffDays = Math.ceil((new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays < 0) overdueCount++;
+        else if (diffDays <= 30) dueCount++;
+        else compliantCount++;
+      });
+
+      return {
+        ...b,
+        city: 'New Delhi',
+        occupancyType: 'Commercial Complex',
+        fireNocNumber: 'NOC-2026-DEL-892',
+        nocExpiryDate: b.nextFilingDueDate,
+        totalAssets: b.equipments.length,
+        assets: b.equipments,
+        compliantCount,
+        dueCount,
+        overdueCount,
+        status: overdueCount > 0 ? 'OVERDUE' : (dueCount > 0 ? 'DUE_SOON' : 'COMPLIANT'),
+      };
+    });
+
+    return NextResponse.json({ buildings: mapped });
   } catch (error: any) {
     console.error('Error fetching buildings:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
-
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    let company = await db.company.findFirst();
-
-    if (!company) {
-      company = await db.company.create({
-        data: {
-          name: 'Vigil Fire & Safety Solutions Pvt Ltd',
-          licenseNumber: 'MH/FIRE/LIC/2022/A-412',
-          state: 'Maharashtra',
-          email: 'ops@vigilfire.in',
-          phone: '+91 98201 54321',
-          signatoryName: 'Er. Rajeshwar Patil',
-        },
-      });
-    }
-
-    const {
-      name,
-      address,
-      city,
-      pincode,
-      occupancyType,
-      totalFloors,
-      basements,
-      contactPerson,
-      contactPhone,
-      contactEmail,
-      fireNocNumber,
-      nocAuthority,
-      nocIssueDate,
-      nocExpiryDate,
-      notes,
-    } = body;
-
-    const building = await db.building.create({
-      data: {
-        companyId: company.id,
-        name,
-        address,
-        city: city || 'Mumbai',
-        pincode: pincode || '400001',
-        occupancyType: occupancyType || 'Commercial',
-        totalFloors: Number(totalFloors) || 5,
-        basements: Number(basements) || 1,
-        contactPerson: contactPerson || 'Facility Manager',
-        contactPhone: contactPhone || '+91 98000 00000',
-        contactEmail: contactEmail || 'info@building.com',
-        fireNocNumber: fireNocNumber || `NOC-${Math.floor(1000 + Math.random() * 9000)}`,
-        nocAuthority: nocAuthority || 'Municipal Fire Services',
-        nocIssueDate: new Date(nocIssueDate || new Date()),
-        nocExpiryDate: new Date(nocExpiryDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)),
-        notes,
-      },
-    });
-
-    return NextResponse.json({ success: true, building });
-  } catch (error: any) {
-    console.error('Error creating building:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
