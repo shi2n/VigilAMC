@@ -1,0 +1,89 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Company {
+  id             String    @id @default(cuid())
+  name           String    @default("Vigil Fire & Safety Solutions")
+  licenseNumber  String    @default("MH/FIRE/LIC/2022/A-412")
+  phone          String    @default("+91 98201 54321")
+  email          String    @default("compliance@vigilfire.in")
+  address        String    @default("Plot 24, Mindspace Sector 3, Navi Mumbai, Maharashtra")
+  clients        Client[]
+  createdAt      DateTime  @default(now())
+}
+
+model Client {
+  id             String     @id @default(cuid())
+  companyId      String
+  company        Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name           String
+  contactPerson  String
+  phone          String
+  email          String?
+  buildings      Building[]
+  createdAt      DateTime   @default(now())
+}
+
+model Building {
+  id                String             @id @default(cuid())
+  clientId          String
+  client            Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  name              String
+  address           String
+  complianceCycle   String             @default("Maharashtra Form-B (Half-Yearly)")
+  cycleIntervalMos  Int                @default(6)
+  nextFilingDueDate DateTime
+  equipments        Equipment[]
+  reports           ComplianceReport[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+}
+
+model Equipment {
+  id                   String        @id @default(cuid())
+  buildingId           String
+  building             Building      @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  qrCode               String        @unique
+  type                 String        // Extinguisher, Hydrant, Hose Reel, Alarm Panel
+  capacity             String        // e.g. "ABC 6kg", "CO2 4.5kg", "Single Head 63mm"
+  location             String        // e.g. "Floor 3 - Wing A Lift Lobby"
+  installDate          DateTime      @default(now())
+  lastServiceDate      DateTime
+  nextDueDate          DateTime
+  serviceIntervalMonths Int          @default(12)
+  status               String        @default("COMPLIANT") // COMPLIANT, DUE_SOON, OVERDUE
+  serviceLogs          ServiceLog[]
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+}
+
+model ServiceLog {
+  id             String    @id @default(cuid())
+  equipmentId    String
+  equipment      Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  technicianName String    @default("Field Technician")
+  servicedAt     DateTime  @default(now())
+  nextDueDate    DateTime
+  actionType     String    @default("Routine Refill & Pressure Check")
+  notes          String?
+}
+
+model ComplianceReport {
+  id             String    @id @default(cuid())
+  buildingId     String
+  building       Building  @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  reportNumber   String    @unique
+  cyclePeriod    String
+  generatedAt    DateTime  @default(now())
+  totalEquipment Int
+  compliantCount Int
+  dueCount       Int
+  overdueCount   Int
+  status         String    @default("COMPLIANT") // COMPLIANT, ACTION_NEEDED
+}
