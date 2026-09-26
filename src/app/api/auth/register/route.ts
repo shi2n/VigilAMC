@@ -1,20 +1,71 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
+
+function getSupabaseAdmin() {
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const secretKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  if (!supabaseUrl || !secretKey) {
+    throw new Error('Supabase admin credentials not configured in environment variables');
+  }
+  return createClient(supabaseUrl, secretKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { userId, email, fullName, companyName, phone, city, state, licenseNumber } = body;
+    const { userId: explicitUserId, email, password, fullName, agencyName, companyName, phone, city, state, licenseNumber } = body;
 
-    if (!userId || !email) {
-      return NextResponse.json({ error: 'User ID and email are required' }, { status: 400 });
+    const normalizedEmail = (email || '').trim().toLowerCase();
+    if (!normalizedEmail) {
+      return NextResponse.json({ error: 'Email address is required' }, { status: 400 });
+    }
+
+    let resolvedUserId = explicitUserId;
+
+    // If password provided and no userId yet, create/confirm user via Supabase Admin API
+    if (password && !resolvedUserId) {
+      const supabaseAdmin = getSupabaseAdmin();
+      const { data: createData, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email: normalizedEmail,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: fullName || '',
+          agency_name: agencyName || companyName || '',
+          phone: phone || '',
+        },
+      });
+
+      if (createError) {
+        // If user already exists in auth, find their ID
+        if (createError.message?.toLowerCase().includes('already')) {
+          const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
+          const existingAuth = listData?.users?.find((u) => u.email?.toLowerCase() === normalizedEmail);
+          if (existingAuth) {
+            resolvedUserId = existingAuth.id;
+          } else {
+            return NextResponse.json({ error: createError.message }, { status: 400 });
+          }
+        } else {
+          return NextResponse.json({ error: createError.message }, { status: 400 });
+        }
+      } else if (createData?.user) {
+        resolvedUserId = createData.user.id;
+      }
+    }
+
+    if (!resolvedUserId) {
+      return NextResponse.json({ error: 'User ID could not be resolved.' }, { status: 400 });
     }
 
     // Check if user profile already exists
     let profile = await (db as any).userProfile.findUnique({
-      where: { id: userId },
+      where: { id: resolvedUserId },
       include: { organization: true },
     });
 
@@ -23,14 +74,14 @@ export async function POST(request: Request) {
     }
 
     // 1. Create a dedicated Organization for this user / agency
-    const orgName = (companyName || `${fullName || 'My'}'s Fire Safety AMC`).trim();
+    const orgName = (agencyName || companyName || `${fullName || 'My'}'s Fire Safety AMC`).trim();
     const org = await (db as any).organization.create({
       data: {
         name: orgName,
         phone: phone || '',
-        email: email || '',
-        city: city || 'New Delhi',
-        state: state || 'Delhi',
+        email: normalizedEmail,
+        city: city || '',
+        state: state || '',
         licenseNumber: licenseNumber || '',
       },
     });
@@ -38,9 +89,9 @@ export async function POST(request: Request) {
     // 2. Create the UserProfile linked to the Organization
     profile = await (db as any).userProfile.create({
       data: {
-        id: userId,
-        email: email.trim().toLowerCase(),
-        fullName: fullName || email.split('@')[0],
+        id: resolvedUserId,
+        email: normalizedEmail,
+        fullName: fullName || normalizedEmail.split('@')[0],
         phone: phone || '',
         role: 'ORG_ADMIN',
         organizationId: org.id,
@@ -63,7 +114,7 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json({ success: true, profile, organization: org });
+    return NextResponse.json({ success: true, profile, organization: org, userId: resolvedUserId });
   } catch (error: any) {
     console.error('Error in user registration synchronization:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

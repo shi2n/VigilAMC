@@ -103,42 +103,35 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim().toLowerCase(),
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-            company_name: companyName,
-            phone: phone,
-          },
-        },
+      const regRes = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          password,
+          fullName: fullName.trim(),
+          agencyName: companyName.trim(),
+          companyName: companyName.trim(),
+          phone: phone.trim(),
+        }),
       });
 
-      if (error) {
-        throw error;
+      const regData = await regRes.json();
+      if (!regRes.ok || !regData.success) {
+        throw new Error(regData.error || 'Registration failed');
       }
 
-      if (data.user) {
-        // Create organization & profile in PostgreSQL
-        await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: data.user.id,
-            email: data.user.email,
-            fullName,
-            companyName,
-            phone,
-          }),
-        });
+      // Immediately authenticate session
+      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
 
-        if (data.session) {
-          router.push('/dashboard');
-        } else {
-          setSuccessMsg('Account created successfully! If email confirmation is required, please check your inbox to activate your account.');
-          setMode('SIGN_IN');
-        }
+      if (loginError) {
+        setSuccessMsg('Agency account created successfully! Please sign in with your credentials.');
+        setMode('SIGN_IN');
+      } else if (loginData.session) {
+        router.push('/dashboard');
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'Registration failed. Please check your information.');
