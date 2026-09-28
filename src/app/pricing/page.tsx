@@ -78,10 +78,10 @@ export default function PricingPage() {
           <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-white px-3.5 py-1.5 rounded-full border border-ocean-200 shadow-sm">
             Transparent Corporate Pricing
           </span>
-          <h1 className="text-4xl sm:text-5xl font-black text-[#023E8A] tracking-tight mt-4">
+          <h1 className="font-display text-4xl sm:text-5xl font-black text-[#023E8A] tracking-[-0.03em] mt-4 text-balance">
             Predictable Plans for Fleets of Any Size
           </h1>
-          <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
+          <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto text-pretty">
             Choose the right plan to eliminate missed audits, automate Form-B reports, and lock in your client renewals.
           </p>
 
@@ -118,10 +118,10 @@ export default function PricingPage() {
       <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
           {/* Plan 1: Basic AMC */}
-          <div className="corp-card p-8 bg-white flex flex-col justify-between">
+          <div className="corp-card p-8 bg-white flex flex-col justify-between h-full border border-slate-200/90 shadow-card hover:shadow-card-hover">
             <div>
               <div className="flex justify-between items-center">
-                <h3 className="text-xl font-bold text-slate-900">Basic AMC</h3>
+                <h3 className="font-display text-xl font-bold text-slate-900">Basic AMC</h3>
                 <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md">
                   Up to 3 Towers
                 </span>
@@ -131,7 +131,7 @@ export default function PricingPage() {
               </p>
 
               <div className="mt-6 flex items-baseline gap-1">
-                <span className="text-4xl font-black text-[#023E8A]">
+                <span className="font-display text-4xl font-black text-[#023E8A] tabular-nums tracking-tight">
                   ₹{billingCycle === 'annual' ? '3,999' : '4,999'}
                 </span>
                 <span className="text-xs text-slate-500 font-medium">/ month</span>
@@ -167,10 +167,10 @@ export default function PricingPage() {
               </div>
             </div>
 
-            <div className="mt-8 pt-6 border-t border-slate-100">
+            <div className="mt-auto pt-8 border-t border-slate-100">
               <Link
                 href="/contact"
-                className="w-full py-3 px-4 rounded-xl text-xs font-bold text-[#0077B6] bg-ocean-50 hover:bg-ocean-100 text-center block transition-colors border border-ocean-200"
+                className="w-full py-3 px-4 rounded-xl text-xs font-bold text-[#0077B6] bg-ocean-50 hover:bg-ocean-100 text-center block transition-all border border-ocean-200 active:scale-[0.98]"
               >
                 Start 14-Day Free Pilot
               </Link>
@@ -178,14 +178,14 @@ export default function PricingPage() {
           </div>
 
           {/* Plan 2: Pro Fleet */}
-          <div className="corp-card p-8 bg-white border-2 border-[#0077B6] shadow-xl relative flex flex-col justify-between">
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-[#0077B6] text-white text-xs font-extrabold uppercase tracking-wider shadow">
+          <div className="corp-card p-8 bg-white border-2 border-[#0077B6] shadow-xl ring-4 ring-[#0077B6]/15 relative flex flex-col justify-between h-full">
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-[#0077B6] to-[#023E8A] text-white text-[11px] font-extrabold uppercase tracking-wider shadow-md">
               Most Popular for AMC Fleets
             </div>
 
             <div>
               <div className="flex justify-between items-center mt-1">
-                <h3 className="text-xl font-bold text-[#023E8A]">Pro Fleet AMC</h3>
+                <h3 className="font-display text-xl font-bold text-[#023E8A]">Pro Fleet AMC</h3>
                 <span className="text-xs font-semibold px-2.5 py-1 bg-ocean-50 text-[#0077B6] rounded-md border border-ocean-200">
                   Up to 15 Towers
                 </span>
@@ -195,7 +195,7 @@ export default function PricingPage() {
               </p>
 
               <div className="mt-6 flex items-baseline gap-1">
-                <span className="text-4xl font-black text-[#023E8A]">
+                <span className="font-display text-4xl font-black text-[#023E8A] tabular-nums tracking-tight">
                   ₹{billingCycle === 'annual' ? '6,399' : '7,999'}
                 </span>
                 <span className="text-xs text-slate-500 font-medium">/ month</span>
@@ -235,10 +235,10 @@ export default function PricingPage() {
               </div>
             </div>
 
-            <div className="mt-8 pt-6 border-t border-slate-100">
+            <div className="mt-auto pt-8 border-t border-slate-100">
               <Link
                 href="/contact"
-                className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white bg-[#0077B6] hover:bg-[#023E8A] text-center block transition-all shadow-md hover:shadow-lg"
+                className="w-full py-3.5 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#0077B6] to-[#023E8A] hover:from-[#006494] hover:to-[#011F48] text-center block transition-all shadow-md hover:shadow-lg active:scale-[0.98]"
               >
                 Start 14-Day Free Pilot
               </Link>
@@ -246,10 +246,10 @@ export default function PricingPage() {
           </div>
 
           {/* Plan 3: Custom / Enterprise */}
-          <div className="corp-card p-8 bg-white flex flex-col justify-between">
+          <div className="corp-card p-8 bg-white flex flex-col justify-between h-full border border-slate-200/90 shadow-card hover:shadow-card-hover">
             <div>
               <div className="flex justify-between items-center">
-                <h3 className="text-xl font-bold text-slate-900">Custom / Enterprise AMC</h3>
+                <h3 className="font-display text-xl font-bold text-slate-900">Custom / Enterprise AMC</h3>
                 <span className="text-xs font-semibold px-2.5 py-1 bg-navy-50 text-[#023E8A] rounded-md">
                   Unlimited
                 </span>
@@ -259,7 +259,7 @@ export default function PricingPage() {
               </p>
 
               <div className="mt-6 flex items-baseline gap-1">
-                <span className="text-4xl font-black text-[#023E8A]">Custom</span>
+                <span className="font-display text-4xl font-black text-[#023E8A] tracking-tight">Custom</span>
                 <span className="text-xs text-slate-500 font-medium">tailored to fleet size</span>
               </div>
               <p className="text-[11px] text-slate-400 mt-1">
@@ -293,10 +293,10 @@ export default function PricingPage() {
               </div>
             </div>
 
-            <div className="mt-8 pt-6 border-t border-slate-100">
+            <div className="mt-auto pt-8 border-t border-slate-100">
               <Link
                 href="/contact"
-                className="w-full py-3 px-4 rounded-xl text-xs font-bold text-[#023E8A] bg-slate-100 hover:bg-slate-200 text-center block transition-colors"
+                className="w-full py-3 px-4 rounded-xl text-xs font-bold text-[#023E8A] bg-slate-100 hover:bg-slate-200 text-center block transition-all active:scale-[0.98]"
               >
                 Contact Enterprise Sales
               </Link>

@@ -33,10 +33,15 @@ model UserProfile {
   fullName       String?
   role           String        @default("ORG_ADMIN") // ORG_ADMIN, TECHNICIAN, CLIENT, SUPER_ADMIN
   phone          String?
+  employeeId     String?       @unique
+  assignedRegion String?
+  avatarUrl      String?
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   inspections    Inspection[]
   workOrders     WorkOrder[]
+  assignedJobs   Job[]         @relation("TechnicianJobs")
+  syncQueueItems SyncQueue[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 }
@@ -56,6 +61,7 @@ model Organization {
   clients        Client[]
   buildings      Building[]
   equipments     Equipment[]
+  jobs           Job[]
   inspections    Inspection[]
   defects        Defect[]
   workOrders     WorkOrder[]
@@ -88,6 +94,7 @@ model Client {
   phone          String
   email          String?
   buildings      Building[]
+  jobs           Job[]
   createdAt      DateTime      @default(now())
 }
 
@@ -105,6 +112,7 @@ model Building {
   cycleIntervalMos  Int                @default(6)
   nextFilingDueDate DateTime?
   equipments        Equipment[]
+  jobs              Job[]
   inspections       Inspection[]
   defects           Defect[]
   workOrders        WorkOrder[]
@@ -114,35 +122,77 @@ model Building {
 }
 
 model Equipment {
-  id                    String        @id @default(cuid())
+  id                    String            @id @default(cuid())
   buildingId            String
-  building              Building      @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  building              Building          @relation(fields: [buildingId], references: [id], onDelete: Cascade)
   organizationId        String?
-  organization          Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  qrCode                String        @unique
-  type                  String        // Extinguisher, Hydrant, Hose Reel, Alarm Panel, Sprinkler
-  category              String?       // Fire Suppression, Detection, Passive
-  capacity              String        // e.g. "ABC 6kg", "CO2 4.5kg", "Single Head 63mm"
-  location              String        // e.g. "Floor 3 - Wing A Lift Lobby"
+  organization          Organization?     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  qrCode                String            @unique
+  type                  String            // Extinguisher, Hydrant, Hose Reel, Alarm Panel, Sprinkler
+  category              String?           // Fire Suppression, Detection, Passive
+  capacity              String            // e.g. "ABC 6kg", "CO2 4.5kg", "Single Head 63mm"
+  location              String            // e.g. "Floor 3 - Wing A Lift Lobby"
   floor                 String?
   wing                  String?
   manufacturer          String?
   model                 String?
   serialNumber          String?
-  installDate           DateTime      @default(now())
+  installDate           DateTime          @default(now())
   lastServiceDate       DateTime
   nextDueDate           DateTime
   refillDueDate         DateTime?
   hydroDueDate          DateTime?
-  serviceIntervalMonths Int           @default(12)
-  status                String        @default("COMPLIANT") // COMPLIANT, DUE_SOON, OVERDUE, DEFECTIVE
+  serviceIntervalMonths Int               @default(12)
+  status                String            @default("COMPLIANT") // COMPLIANT, DUE_SOON, OVERDUE, DEFECTIVE
   photoUrl              String?
   serviceLogs           ServiceLog[]
   inspections           Inspection[]
   defects               Defect[]
   workOrders            WorkOrder[]
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
+  jobAssets             JobAsset[]
+  inspectionPhotos      InspectionPhoto[]
+  inspectionIssues      InspectionIssue[]
+  inspectionParts       InspectionPart[]
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+}
+
+model Job {
+  id             String        @id @default(cuid())
+  jobNumber      String        @unique // e.g. "JOB-2026-001"
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  clientId       String
+  client         Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  buildingId     String
+  building       Building      @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  technicianId   String
+  technician     UserProfile   @relation("TechnicianJobs", fields: [technicianId], references: [id], onDelete: Cascade)
+  title          String?
+  serviceType    String        @default("Fire Extinguisher Inspection") // Fire Extinguisher Inspection, AMC Quarterly Audit, Annual Overhaul
+  scheduledDate  DateTime
+  priority       String        @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  status         String        @default("ASSIGNED") // ASSIGNED, IN_PROGRESS, COMPLETED, OVERDUE, CANCELLED
+  notes          String?
+  completedAt    DateTime?
+  jobAssets      JobAsset[]
+  inspections    Inspection[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model JobAsset {
+  id          String    @id @default(cuid())
+  jobId       String
+  job         Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  equipmentId String
+  equipment   Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  status      String    @default("PENDING") // PENDING, INSPECTED, SKIPPED
+  inspectedAt DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
+
+  @@unique([jobId, equipmentId])
 }
 
 model ServiceLog {
@@ -157,23 +207,72 @@ model ServiceLog {
 }
 
 model Inspection {
-  id             String        @id @default(cuid())
-  organizationId String
-  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  buildingId     String
-  building       Building      @relation(fields: [buildingId], references: [id], onDelete: Cascade)
-  equipmentId    String?
-  equipment      Equipment?    @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
-  technicianId   String?
-  technician     UserProfile?  @relation(fields: [technicianId], references: [id], onDelete: SetNull)
-  technicianName String        @default("Field Technician")
-  date           DateTime      @default(now())
-  status         String        @default("PASSED") // PASSED, FAILED, NEEDS_ATTENTION
-  checklist      String?       // JSON string of checklist items
-  remarks        String?
-  photos         String?       // JSON string array of photo URLs
-  defects        Defect[]
-  createdAt      DateTime      @default(now())
+  id                  String            @id @default(cuid())
+  organizationId      String
+  organization        Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  buildingId          String
+  building            Building          @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  equipmentId         String?
+  equipment           Equipment?        @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
+  technicianId        String?
+  technician          UserProfile?      @relation(fields: [technicianId], references: [id], onDelete: SetNull)
+  technicianName      String            @default("Field Technician")
+  jobId               String?
+  job                 Job?              @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  date                DateTime          @default(now())
+  status              String            @default("PASSED") // PASSED, FAILED, SERVICE_REQUIRED, REPLACEMENT_REQUIRED
+  checklist           String?           // JSON string of all checklist values
+  pressureGauge       String?           @default("NORMAL") // NORMAL, LOW, HIGH, NA
+  overallCondition    String?           @default("GOOD")   // GOOD, NEEDS_ATTENTION, DAMAGED
+  remarks             String?
+  customerName        String?
+  customerDesignation String?
+  customerSignature   String?           // Digital signature data URL
+  technicianSignature String?           // Technician signature data URL
+  photos              String?           // Legacy JSON array of URLs
+  inspectionPhotos    InspectionPhoto[]
+  issues              InspectionIssue[]
+  partsUsed           InspectionPart[]
+  defects             Defect[]
+  createdAt           DateTime          @default(now())
+}
+
+model InspectionPhoto {
+  id           String      @id @default(cuid())
+  inspectionId String
+  inspection   Inspection  @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  equipmentId  String?
+  equipment    Equipment?  @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
+  category     String      @default("OTHER") // FRONT, GAUGE, SEAL, SERIAL, DAMAGE, LOCATION, OTHER
+  photoUrl     String      // Base64 data URL or remote URL
+  caption      String?
+  createdAt    DateTime    @default(now())
+}
+
+model InspectionIssue {
+  id           String      @id @default(cuid())
+  inspectionId String
+  inspection   Inspection  @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  equipmentId  String?
+  equipment    Equipment?  @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
+  category     String      // LOW_PRESSURE, DAMAGED_CYLINDER, CORROSION, MISSING_PIN, BROKEN_SEAL, DAMAGED_HOSE, EXPIRED_UNIT, REFILL_REQUIRED, HYDRO_TEST_REQUIRED, RELOCATION_REQUIRED, REPLACEMENT_REQUIRED, OTHER
+  description  String
+  severity     String      @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  status       String      @default("OPEN")   // OPEN, RESOLVED
+  createdAt    DateTime    @default(now())
+}
+
+model InspectionPart {
+  id           String      @id @default(cuid())
+  inspectionId String
+  inspection   Inspection  @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  equipmentId  String?
+  equipment    Equipment?  @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
+  partName     String      // ABC Powder, Safety Pin, Discharge Hose, Pressure Gauge, Seal, etc.
+  quantity     Int         @default(1)
+  serialNumber String?
+  remarks      String?
+  createdAt    DateTime    @default(now())
 }
 
 model Defect {
@@ -236,14 +335,28 @@ model ComplianceReport {
 
 model Notification {
   id             String        @id @default(cuid())
-  organizationId String
-  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   userId         String?
   title          String
   message        String
   type           String        @default("INFO") // INFO, WARNING, ALERT, SUCCESS
+  link           String?
   read           Boolean       @default(false)
   createdAt      DateTime      @default(now())
+}
+
+model SyncQueue {
+  id             String       @id @default(cuid())
+  technicianId   String
+  technician     UserProfile  @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  clientSyncId   String       @unique
+  actionType     String       // COMPLETE_INSPECTION, UPDATE_STATUS, UPLOAD_PHOTO
+  payload        String       // JSON data of the action
+  status         String       @default("PENDING") // PENDING, SYNCED, FAILED
+  errorMessage   String?
+  createdAt      DateTime     @default(now())
+  syncedAt       DateTime?
 }
 
 model ActivityLog {

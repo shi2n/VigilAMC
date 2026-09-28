@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -19,10 +21,29 @@ body {
   color: #0F172A;
   background-color: #FFFFFF;
   min-height: 100vh;
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+/* Typography Enhancements */
+.font-display {
+  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.text-pretty {
+  text-wrap: pretty;
 }
 
 /* Smooth scrolling */
@@ -32,16 +53,16 @@ html {
 
 /* Custom scrollbar in corporate Ocean Blue */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 ::-webkit-scrollbar-track {
-  background: #F1F5F9;
+  background: #F8FAFC;
 }
 ::-webkit-scrollbar-thumb {
-  background: #90E0EF;
+  background: #CBD5E1;
   border-radius: 9999px;
-  border: 2px solid #F1F5F9;
+  border: 2px solid #F8FAFC;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #0077B6;
@@ -158,47 +179,54 @@ html {
 
 .corp-card {
   background: #FFFFFF;
-  border: 1px solid #E2E8F0;
+  border: 1px solid rgba(226, 232, 240, 0.85);
   border-radius: 1rem;
-  box-shadow: 0 4px 6px -1px rgba(2, 62, 138, 0.04), 0 2px 4px -2px rgba(2, 62, 138, 0.03);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px 0 rgba(2, 62, 138, 0.03), 0 8px 24px -4px rgba(2, 62, 138, 0.05), inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .corp-card:hover {
-  border-color: #90E0EF;
-  box-shadow: 0 20px 25px -5px rgba(0, 119, 182, 0.08), 0 8px 10px -6px rgba(0, 119, 182, 0.04);
-  transform: translateY(-4px);
+  border-color: rgba(56, 189, 248, 0.45);
+  box-shadow: 0 16px 36px -8px rgba(0, 119, 182, 0.11), 0 4px 12px -2px rgba(0, 119, 182, 0.05), inset 0 1px 0 0 rgba(255, 255, 255, 1);
+  transform: translateY(-3px);
 }
 
 .corp-card-elevated {
   background: #FFFFFF;
-  border: 1px solid #CBD5E1;
+  border: 1px solid rgba(203, 213, 225, 0.8);
   border-radius: 1.25rem;
-  box-shadow: 0 10px 30px -10px rgba(2, 62, 138, 0.09);
+  box-shadow: 0 20px 48px -12px rgba(2, 62, 138, 0.09), 0 4px 12px -2px rgba(2, 62, 138, 0.04), inset 0 1px 0 0 rgba(255, 255, 255, 0.95);
 }
 
 /* Subtle gradient mesh background */
 .ocean-mesh {
   background-image: 
-    radial-gradient(at 0% 0%, rgba(202, 240, 248, 0.45) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(144, 224, 239, 0.3) 0px, transparent 50%),
-    radial-gradient(at 50% 50%, rgba(240, 249, 255, 0.6) 0px, transparent 50%);
+    radial-gradient(at 10% 10%, rgba(224, 242, 254, 0.6) 0px, transparent 45%),
+    radial-gradient(at 90% 90%, rgba(186, 230, 253, 0.35) 0px, transparent 45%),
+    radial-gradient(at 50% 40%, rgba(240, 249, 255, 0.8) 0px, transparent 50%);
 }
 
 .navy-gradient-bg {
-  background: linear-gradient(135deg, #03045E 0%, #023E8A 50%, #0077B6 100%);
+  background: linear-gradient(135deg, #03045E 0%, #023E8A 55%, #0077B6 100%);
 }
 
 /* Timeline Vertical Line Connector */
 .timeline-track {
-  background: linear-gradient(180deg, #0077B6 0%, #0096C7 50%, #48CAE4 100%);
+  background: linear-gradient(180deg, #0077B6 0%, #0096C7 50%, #7DD3FC 100%);
 }
 
 /* Glassmorphism for floating overlays */
 .glass-header {
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4px 20px -4px rgba(2, 62, 138, 0.05);
+}
+
+/* Noise overlay utility */
+.noise-overlay {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.025'/%3E%3C/svg%3E");
 }
 
 /* Text Gradients */
@@ -208,7 +236,12 @@ html {
   -webkit-text-fill-color: transparent;
 }
 
-/* Focus styles for accessibility */
+/* Active & Focus button micro-interactions */
+button:active:not(:disabled),
+a:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
   outline: 2px solid #0077B6;
   outline-offset: 2px;

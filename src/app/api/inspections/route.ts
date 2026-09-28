@@ -24,8 +24,12 @@ export async function GET(request: Request) {
     const inspections = await (db as any).inspection.findMany({
       where,
       include: {
-        building: { select: { id: true, name: true } },
-        equipment: { select: { id: true, qrCode: true, type: true, location: true } },
+        building: { select: { id: true, name: true, address: true } },
+        equipment: { select: { id: true, qrCode: true, type: true, capacity: true, location: true, status: true } },
+        issues: true,
+        partsUsed: true,
+        inspectionPhotos: true,
+        job: { select: { id: true, jobNumber: true, title: true } },
         defects: true,
       },
       orderBy: { date: 'desc' },

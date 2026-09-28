@@ -61,7 +61,19 @@ const config: Config = {
           emerald: '#10b981',
           blue: '#2563eb',
           dark: '#0f172a',
-        }
+        },
+      },
+      fontFamily: {
+        sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        display: ['Outfit', '"Plus Jakarta Sans"', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+      },
+      boxShadow: {
+        'card': '0 2px 8px -2px rgba(2, 62, 138, 0.05), 0 12px 24px -6px rgba(2, 62, 138, 0.06)',
+        'card-hover': '0 16px 36px -8px rgba(0, 119, 182, 0.12), 0 4px 12px -2px rgba(0, 119, 182, 0.06)',
+        'elevated': '0 24px 48px -12px rgba(2, 62, 138, 0.14), 0 8px 16px -4px rgba(2, 62, 138, 0.06)',
+        'glass': '0 8px 30px rgba(2, 62, 138, 0.06), inset 0 1px 1px rgba(255, 255, 255, 0.8)',
+        'glow-ocean': '0 0 30px rgba(0, 119, 182, 0.25)',
       },
     },
   },

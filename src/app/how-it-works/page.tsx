@@ -36,10 +36,10 @@ export default function HowItWorksPage() {
           <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-white px-3.5 py-1.5 rounded-full border border-ocean-200 shadow-sm">
             End-To-End Implementation Blueprint
           </span>
-          <h1 className="text-4xl sm:text-5xl font-black text-[#023E8A] tracking-tight mt-4">
+          <h1 className="font-display text-4xl sm:text-5xl font-black text-[#023E8A] tracking-[-0.03em] mt-4 text-balance">
             How VigilAMC Puts Fire Compliance on Autopilot
           </h1>
-          <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
+          <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto text-pretty">
             From sticking your first tamper-resistant QR code to generating statutory Form-B certificates for the Fire Directorate — here is exactly how our 4-phase autopilot works.
           </p>
         </div>
@@ -51,25 +51,25 @@ export default function HowItWorksPage() {
           {/* Step 1 */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-5 order-2 lg:order-1">
-              <div className="corp-card p-6 bg-slate-50 border-ocean-200 shadow-md">
+              <div className="corp-card p-6 bg-slate-50 border-ocean-200/80 shadow-card">
                 <div className="flex items-center justify-between pb-4 border-b border-slate-200">
                   <div className="flex items-center gap-2">
                     <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
                     <span className="text-xs font-bold text-slate-800">Bulk Asset Importer</span>
                   </div>
-                  <span className="text-[11px] font-mono text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded font-bold">
+                  <span className="text-[11px] font-mono text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded font-bold tabular-nums">
                     420 ASSETS PARSED
                   </span>
                 </div>
                 <div className="mt-4 space-y-2 text-xs">
-                  <div className="p-3 bg-white rounded-lg border border-slate-200 flex justify-between items-center">
+                  <div className="p-3 bg-white rounded-lg border border-slate-200 flex justify-between items-center shadow-xs">
                     <div>
                       <p className="font-bold text-[#023E8A]">North Tower — Floor 04</p>
                       <p className="text-slate-500">6kg ABC Powder #EXT-401 to #EXT-415</p>
                     </div>
                     <span className="text-emerald-600 font-bold">✓ Geo-tagged</span>
                   </div>
-                  <div className="p-3 bg-white rounded-lg border border-slate-200 flex justify-between items-center">
+                  <div className="p-3 bg-white rounded-lg border border-slate-200 flex justify-between items-center shadow-xs">
                     <div>
                       <p className="font-bold text-[#023E8A]">Basement 2 Pump Room</p>
                       <p className="text-slate-500">Wet Riser Landing Valves &amp; Jockey Pump</p>
@@ -84,13 +84,13 @@ export default function HowItWorksPage() {
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ocean-50 text-[#0077B6] text-xs font-extrabold border border-ocean-200">
                 Phase 01 &bull; 24-Hour Onboarding
               </div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#023E8A] tracking-tight">
+              <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-[#023E8A] tracking-tight">
                 Bulk Import &amp; 12-Second QR Tagging
               </h2>
-              <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
+              <p className="text-sm sm:text-base text-slate-600 leading-relaxed text-pretty">
                 Upload your existing Excel equipment registries into VigilAMC in one click. Our AI validation engine maps each equipment type, capacity, manufacture date, and last hydrostatic test date.
               </p>
-              <p className="text-sm text-slate-600 leading-relaxed">
+              <p className="text-sm text-slate-600 leading-relaxed text-pretty">
                 We supply pre-printed, industrial-grade serialized metallic QR stickers built to withstand outdoor grease, heat, and sunlight. Your field team sticks the QR onto the cylinder or hydrant valve and pairs it with the mobile camera in 12 seconds.
               </p>
               <div className="grid grid-cols-2 gap-4 pt-2 text-xs font-medium text-slate-700">

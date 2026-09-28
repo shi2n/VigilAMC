@@ -10,10 +10,8 @@ import {
   ArrowRight,
   CheckCircle2,
   Linkedin,
-  Twitter,
+  Instagram,
   Youtube,
-  Github,
-  Facebook,
   FileCheck2,
   Clock,
   Send
@@ -46,16 +44,16 @@ export function CorporateFooter() {
   };
 
   return (
-    <footer className="bg-[#03045E] text-slate-200 border-t-4 border-[#0077B6] pt-16 pb-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <footer className="bg-[#080d1a] text-slate-300 border-t border-slate-800/80 pt-16 pb-12 relative overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Top Highlight Banner */}
-        <div className="bg-[#023E8A] rounded-2xl p-6 sm:p-8 mb-16 shadow-xl border border-navy-400/30 flex flex-col lg:flex-row items-center justify-between gap-6">
+        <div className="bg-gradient-to-r from-[#023E8A] via-[#004B6E] to-[#011F48] rounded-2xl p-6 sm:p-8 mb-16 shadow-xl border border-cyan-400/20 flex flex-col lg:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-[#0077B6] flex items-center justify-center text-white shrink-0 shadow-md">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#0077B6] to-[#023E8A] flex items-center justify-center text-white shrink-0 shadow-md border border-cyan-300/30">
               <FileCheck2 className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-lg sm:text-xl font-bold text-white tracking-tight">
+              <h3 className="font-display text-lg sm:text-xl font-bold text-white tracking-tight">
                 Worried about your upcoming Fire NOC audit deadline?
               </h3>
               <p className="text-sm text-cyan-100 mt-1">
@@ -66,93 +64,91 @@ export function CorporateFooter() {
           <div className="flex items-center gap-3 w-full lg:w-auto">
             <Link
               href="/contact"
-              className="w-full lg:w-auto inline-flex items-center justify-center px-6 py-3 text-sm font-bold text-[#023E8A] bg-white hover:bg-slate-100 rounded-xl shadow transition-all whitespace-nowrap"
+              className="w-full lg:w-auto inline-flex items-center justify-center px-6 py-3 text-sm font-bold text-[#023E8A] bg-white hover:bg-slate-100 rounded-xl shadow transition-all whitespace-nowrap active:scale-[0.98]"
             >
-              Get Free AMC Health Check
+              <span>Get Free AMC Health Check</span>
               <ArrowRight className="w-4 h-4 ml-2" />
             </Link>
           </div>
         </div>
 
         {/* Multi-column grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-navy-700/60">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-slate-800/70">
           {/* Column 1: About VigilAMC */}
           <div className="lg:col-span-2 space-y-4">
-            <Link href="/" className="inline-block bg-white p-2.5 rounded-xl shadow-md group">
+            <Link href="/" className="inline-block bg-white p-2 rounded-xl shadow-md group border border-slate-700/50">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/logo.jpg"
                 alt="VigilAMC - Premium AMC Services"
-                className="h-12 sm:h-14 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+                className="h-10 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105 mix-blend-multiply"
               />
             </Link>
 
-            <p className="text-sm text-slate-300 leading-relaxed max-w-sm">
+            <p className="text-sm text-slate-400 leading-relaxed max-w-sm text-pretty">
               AMC teams track hundreds of extinguishers, hydrants and panels across dozens of buildings — on paper and Excel. Renewals slip, clients fail their fire NOC audit, and the contract goes to a competitor. VigilAMC puts every asset, due date and client report on autopilot.
             </p>
 
             <div className="pt-2 flex flex-wrap items-center gap-2 text-xs">
-              <span className="px-2.5 py-1 rounded-md bg-navy-800 text-cyan-200 border border-navy-600 font-medium">
+              <span className="px-2.5 py-1 rounded-md bg-slate-900/90 text-cyan-200 border border-slate-700/70 font-medium">
                 ISO 9001:2015
               </span>
-              <span className="px-2.5 py-1 rounded-md bg-navy-800 text-cyan-200 border border-navy-600 font-medium">
+              <span className="px-2.5 py-1 rounded-md bg-slate-900/90 text-cyan-200 border border-slate-700/70 font-medium">
                 NFPA 10/25/72
               </span>
-              <span className="px-2.5 py-1 rounded-md bg-navy-800 text-cyan-200 border border-navy-600 font-medium">
+              <span className="px-2.5 py-1 rounded-md bg-slate-900/90 text-cyan-200 border border-slate-700/70 font-medium">
                 NBC 2016 Compliant
               </span>
             </div>
 
             {/* Social Media Links */}
             <div className="pt-3">
-              <p className="text-xs uppercase font-bold text-slate-400 tracking-wider mb-2.5">
-                Connect With Us
+              <p className="text-xs uppercase font-bold text-slate-400 tracking-wider mb-2.5 flex items-center gap-1.5">
+                <span>Connect With Us</span>
+                <span className="text-[11px] font-medium text-cyan-300 normal-case tracking-normal">(@vigilamc)</span>
               </p>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2">
                 <a
-                  href="https://linkedin.com"
+                  href="https://www.linkedin.com/company/vigilamc/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-lg bg-navy-800 hover:bg-[#0077B6] flex items-center justify-center text-slate-300 hover:text-white transition-colors"
+                  className="w-8 h-8 rounded-lg bg-navy-800 hover:bg-[#0A66C2] flex items-center justify-center text-slate-300 hover:text-white transition-all border border-slate-700/60 hover:border-cyan-400/40 hover:scale-105"
                   aria-label="LinkedIn"
+                  title="LinkedIn: vigilamc"
                 >
                   <Linkedin className="w-4 h-4" />
                 </a>
                 <a
-                  href="https://twitter.com"
+                  href="https://www.instagram.com/vigilamc"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-lg bg-navy-800 hover:bg-[#0077B6] flex items-center justify-center text-slate-300 hover:text-white transition-colors"
-                  aria-label="Twitter"
+                  className="w-8 h-8 rounded-lg bg-navy-800 hover:bg-gradient-to-tr hover:from-[#f09433] hover:via-[#dc2743] hover:to-[#bc1888] flex items-center justify-center text-slate-300 hover:text-white transition-all border border-slate-700/60 hover:border-pink-500/40 hover:scale-105"
+                  aria-label="Instagram (@vigilamc)"
+                  title="Instagram: @vigilamc"
                 >
-                  <Twitter className="w-4 h-4" />
+                  <Instagram className="w-4 h-4" />
                 </a>
                 <a
-                  href="https://youtube.com"
+                  href="https://x.com/vigilamc"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-lg bg-navy-800 hover:bg-[#0077B6] flex items-center justify-center text-slate-300 hover:text-white transition-colors"
-                  aria-label="YouTube"
+                  className="w-8 h-8 rounded-lg bg-navy-800 hover:bg-black flex items-center justify-center text-slate-300 hover:text-white transition-all border border-slate-700/60 hover:border-slate-500 hover:scale-105"
+                  aria-label="X / Twitter (@vigilamc)"
+                  title="X (Twitter): @vigilamc"
+                >
+                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 24.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                  </svg>
+                </a>
+                <a
+                  href="https://www.youtube.com/@vigilamc"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-lg bg-navy-800 hover:bg-[#FF0000] flex items-center justify-center text-slate-300 hover:text-white transition-all border border-slate-700/60 hover:border-red-500/40 hover:scale-105"
+                  aria-label="YouTube (@vigilamc)"
+                  title="YouTube: @vigilamc"
                 >
                   <Youtube className="w-4 h-4" />
-                </a>
-                <a
-                  href="https://facebook.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-lg bg-navy-800 hover:bg-[#0077B6] flex items-center justify-center text-slate-300 hover:text-white transition-colors"
-                  aria-label="Facebook"
-                >
-                  <Facebook className="w-4 h-4" />
-                </a>
-                <a
-                  href="https://github.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-lg bg-navy-800 hover:bg-[#0077B6] flex items-center justify-center text-slate-300 hover:text-white transition-colors"
-                  aria-label="GitHub"
-                >
-                  <Github className="w-4 h-4" />
                 </a>
               </div>
             </div>

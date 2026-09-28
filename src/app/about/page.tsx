@@ -14,7 +14,10 @@ import {
   FileCheck2,
   Calendar,
   Globe2,
-  HeartHandshake
+  HeartHandshake,
+  Linkedin,
+  Instagram,
+  Youtube
 } from 'lucide-react';
 
 export default function AboutUsPage() {
@@ -275,6 +278,55 @@ export default function AboutUsPage() {
               <span>Schedule a Meeting With Our Team</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
+          </div>
+
+          {/* Social Channels Strip */}
+          <div className="pt-8 border-t border-navy-700/60 flex flex-col sm:flex-row items-center justify-center gap-4 text-xs text-cyan-200">
+            <span className="font-semibold text-slate-200">Follow Our Journey (@vigilamc):</span>
+            <div className="flex items-center gap-3">
+              <a
+                href="https://www.linkedin.com/company/vigilamc/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 rounded-lg bg-white/10 hover:bg-[#0A66C2] flex items-center justify-center text-white transition-colors"
+                aria-label="LinkedIn"
+                title="LinkedIn: vigilamc"
+              >
+                <Linkedin className="w-4 h-4" />
+              </a>
+              <a
+                href="https://www.instagram.com/vigilamc"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 rounded-lg bg-white/10 hover:bg-gradient-to-tr hover:from-[#f09433] hover:via-[#dc2743] hover:to-[#bc1888] flex items-center justify-center text-white transition-colors"
+                aria-label="Instagram"
+                title="Instagram: @vigilamc"
+              >
+                <Instagram className="w-4 h-4" />
+              </a>
+              <a
+                href="https://x.com/vigilamc"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 rounded-lg bg-white/10 hover:bg-black flex items-center justify-center text-white transition-colors"
+                aria-label="X (Twitter)"
+                title="X (Twitter): @vigilamc"
+              >
+                <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 24.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+              </a>
+              <a
+                href="https://www.youtube.com/@vigilamc"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 rounded-lg bg-white/10 hover:bg-[#FF0000] flex items-center justify-center text-white transition-colors"
+                aria-label="YouTube"
+                title="YouTube: @vigilamc"
+              >
+                <Youtube className="w-4 h-4" />
+              </a>
+            </div>
           </div>
         </div>
       </section>

@@ -26,7 +26,10 @@ import {
   Play,
   Send,
   Sliders,
-  DollarSign
+  DollarSign,
+  Linkedin,
+  Instagram,
+  Youtube
 } from 'lucide-react';
 import { CanvasHero } from '@/components/CanvasHero';
 import { ImageLightbox, LightboxImage } from '@/components/ImageLightbox';
@@ -156,7 +159,7 @@ export default function HomePage() {
       {/* =========================================================================
           HERO SECTION: Interactive Canvas, Corporate Ocean Blue (#0077B6) & Navy
           ========================================================================= */}
-      <section className="relative min-h-[640px] lg:min-h-[720px] flex items-center justify-center pt-8 pb-20 px-4 sm:px-6 lg:px-8 ocean-mesh border-b border-slate-200">
+      <section className="relative min-h-[640px] lg:min-h-[720px] flex items-center justify-center pt-10 pb-20 px-4 sm:px-6 lg:px-8 ocean-mesh border-b border-slate-200/80">
         {/* Animated Particle & Connected Safety Node Canvas */}
         <CanvasHero />
 
@@ -166,20 +169,20 @@ export default function HomePage() {
 
         <div className="relative z-10 max-w-5xl mx-auto text-center">
           {/* Compliance Assurance Pill */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 border border-ocean-200 shadow-sm text-xs font-semibold text-[#023E8A] mb-6 backdrop-blur-md">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/95 border border-ocean-200/90 shadow-sm text-xs font-semibold text-[#023E8A] mb-8 backdrop-blur-md transition-all hover:border-[#0077B6]/50">
             <span className="flex h-2 w-2 rounded-full bg-[#0077B6] animate-pulse" />
-            <span>Trusted by 450+ Certified Fire Safety AMC Agencies</span>
+            <span className="font-medium text-slate-700">Trusted by <strong className="text-[#023E8A]">450+ Certified Fire AMC Agencies</strong></span>
             <span className="text-slate-300">|</span>
             <span className="text-[#0077B6] font-bold">100% Audit Readiness</span>
           </div>
 
           {/* Primary Main Headline */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#023E8A] tracking-tight leading-[1.15] max-w-4xl mx-auto">
+          <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-black text-[#023E8A] tracking-[-0.03em] leading-[1.12] max-w-4xl mx-auto text-balance">
             Never miss a compliance deadline again.
           </h1>
 
           {/* Prompt Persona Subtitle */}
-          <p className="mt-6 text-base sm:text-lg lg:text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed font-normal">
+          <p className="mt-6 text-base sm:text-lg lg:text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed font-normal text-pretty">
             AMC teams track hundreds of extinguishers, hydrants and panels across dozens of buildings — on paper and Excel. Renewals slip, clients fail their fire NOC audit, and the contract goes to a competitor. <strong className="text-[#023E8A] font-semibold">VigilAMC puts every asset, due date and client report on autopilot.</strong>
           </p>
 
@@ -187,7 +190,7 @@ export default function HomePage() {
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/login"
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[#0077B6] hover:bg-[#023E8A] text-white font-bold text-sm sm:text-base shadow-lg shadow-[#0077B6]/25 hover:shadow-xl hover:shadow-[#0077B6]/35 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2 group"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-[#0077B6] to-[#023E8A] hover:from-[#006494] hover:to-[#011F48] text-white font-bold text-sm sm:text-base shadow-lg shadow-[#0077B6]/25 hover:shadow-xl hover:shadow-[#0077B6]/35 transition-all transform hover:-translate-y-0.5 active:scale-[0.98] flex items-center justify-center gap-2 group"
             >
               <span>Create Agency Account</span>
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -195,33 +198,75 @@ export default function HomePage() {
 
             <Link
               href="/login"
-              className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-white hover:bg-slate-50 text-[#023E8A] font-bold text-sm sm:text-base border border-slate-300 hover:border-[#0077B6] shadow-sm transition-all flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-white hover:bg-slate-50 text-[#023E8A] font-bold text-sm sm:text-base border border-slate-300 hover:border-[#0077B6] shadow-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2"
             >
               <ShieldCheck className="w-4 h-4 text-[#0077B6]" />
               <span>Access Dashboard</span>
             </Link>
+
+            <a
+              href="#launch-demo"
+              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-ocean-50/90 hover:bg-ocean-100 text-[#0077B6] hover:text-[#023E8A] font-bold text-sm sm:text-base border border-ocean-200/90 shadow-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+            >
+              <Play className="w-4 h-4 text-[#0077B6] fill-current" />
+              <span>Watch 20s Launch Demo</span>
+            </a>
           </div>
 
           {/* Core System Capabilities Badges */}
           <div className="mt-14 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-            <div className="p-4 rounded-xl bg-white/95 border border-slate-200/90 shadow-sm backdrop-blur-md text-left transition-transform hover:-translate-y-1">
-              <div className="text-2xl sm:text-3xl font-black text-[#023E8A]">100%</div>
-              <div className="text-xs font-semibold text-slate-500 mt-0.5">Audit-Proof Digital Records</div>
+            <div className="corp-card p-5 bg-white/95 backdrop-blur-md text-left transition-all hover:-translate-y-1 hover:shadow-card-hover border border-slate-200/90">
+              <div className="font-display text-2xl sm:text-3xl font-black text-[#023E8A] tabular-nums tracking-tight">100%</div>
+              <div className="text-xs font-semibold text-slate-500 mt-1">Audit-Proof Digital Records</div>
             </div>
 
-            <div className="p-4 rounded-xl bg-white/95 border border-slate-200/90 shadow-sm backdrop-blur-md text-left transition-transform hover:-translate-y-1">
-              <div className="text-2xl sm:text-3xl font-black text-[#0077B6]">Instant</div>
-              <div className="text-xs font-semibold text-slate-500 mt-0.5">QR Mobile Field Scanning</div>
+            <div className="corp-card p-5 bg-white/95 backdrop-blur-md text-left transition-all hover:-translate-y-1 hover:shadow-card-hover border border-slate-200/90">
+              <div className="font-display text-2xl sm:text-3xl font-black text-[#0077B6] tracking-tight">Instant</div>
+              <div className="text-xs font-semibold text-slate-500 mt-1">QR Mobile Field Scanning</div>
             </div>
 
-            <div className="p-4 rounded-xl bg-white/95 border border-slate-200/90 shadow-sm backdrop-blur-md text-left transition-transform hover:-translate-y-1">
-              <div className="text-2xl sm:text-3xl font-black text-emerald-600">Zero</div>
-              <div className="text-xs font-semibold text-slate-500 mt-0.5">Missed Expiry Deadlines</div>
+            <div className="corp-card p-5 bg-white/95 backdrop-blur-md text-left transition-all hover:-translate-y-1 hover:shadow-card-hover border border-slate-200/90">
+              <div className="font-display text-2xl sm:text-3xl font-black text-emerald-600 tracking-tight">Zero</div>
+              <div className="text-xs font-semibold text-slate-500 mt-1">Missed Expiry Deadlines</div>
             </div>
 
-            <div className="p-4 rounded-xl bg-white/95 border border-slate-200/90 shadow-sm backdrop-blur-md text-left transition-transform hover:-translate-y-1">
-              <div className="text-2xl sm:text-3xl font-black text-[#023E8A]">1-Click</div>
-              <div className="text-xs font-semibold text-slate-500 mt-0.5">Form-B PDF Generation</div>
+            <div className="corp-card p-5 bg-white/95 backdrop-blur-md text-left transition-all hover:-translate-y-1 hover:shadow-card-hover border border-slate-200/90">
+              <div className="font-display text-2xl sm:text-3xl font-black text-[#023E8A] tracking-tight">1-Click</div>
+              <div className="text-xs font-semibold text-slate-500 mt-1">Form-B PDF Generation</div>
+            </div>
+          </div>
+
+          {/* =========================================================================
+              FEATURED PRODUCT LAUNCH VIDEO
+              ========================================================================= */}
+          <div id="launch-demo" className="mt-16 max-w-4xl mx-auto scroll-mt-24">
+            <div className="relative rounded-2xl p-2.5 sm:p-3.5 bg-gradient-to-b from-white/95 via-ocean-50/40 to-slate-100/90 backdrop-blur-md border border-ocean-200/90 shadow-elevated overflow-hidden group">
+              <div className="flex items-center justify-between px-3.5 py-2.5 bg-[#021B3A] text-white rounded-xl mb-2.5 text-xs font-semibold shadow-inner">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="font-display tracking-wider uppercase text-[11px] text-cyan-200 font-bold">
+                    VigilAMC In Action &bull; 20-Second Product Tour
+                  </span>
+                </div>
+                <div className="hidden sm:flex items-center gap-3 text-[11px] text-cyan-100/80">
+                  <span className="px-2 py-0.5 rounded bg-ocean-800/80 text-cyan-200 border border-ocean-600/50">100% Offline QR Scanning</span>
+                  <span className="text-slate-500">&bull;</span>
+                  <span className="px-2 py-0.5 rounded bg-ocean-800/80 text-cyan-200 border border-ocean-600/50">1-Click Form-B Compliance</span>
+                </div>
+              </div>
+
+              <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-slate-950 shadow-2xl border border-slate-800/50">
+                <video
+                  src="/brag.mp4"
+                  poster="/brag.jpg"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  controls
+                  className="w-full h-full object-cover"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -510,106 +555,148 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
             {/* Feature 1 */}
-            <div className="corp-card p-8 bg-white reveal-on-scroll">
-              <div className="w-12 h-12 rounded-xl bg-ocean-50 text-[#0077B6] flex items-center justify-center mb-6 border border-ocean-100">
-                <QrCode className="w-6 h-6 stroke-[2.2]" />
+            <div className="corp-card p-8 bg-white reveal-on-scroll flex flex-col justify-between h-full border border-slate-200/80 shadow-card hover:shadow-card-hover group">
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-ocean-50 text-[#0077B6] flex items-center justify-center border border-ocean-100 shadow-xs group-hover:scale-105 transition-transform">
+                    <QrCode className="w-6 h-6 stroke-[2.2]" />
+                  </div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-ocean-50 text-[#0077B6] border border-ocean-200">
+                    Field Tagging
+                  </span>
+                </div>
+                <h3 className="font-display text-xl font-bold text-[#023E8A] tracking-tight group-hover:text-[#0077B6] transition-colors">
+                  Asset QR Registry &amp; Floor Maps
+                </h3>
+                <p className="mt-3 text-sm text-slate-600 leading-relaxed text-pretty">
+                  Scan, register, and tag fire extinguishers, landing valves, hose reels, and smoke heads in seconds. View color-coded compliance status directly on interactive floor architectural diagrams.
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-[#023E8A] tracking-tight">
-                Asset QR Registry &amp; Floor Maps
-              </h3>
-              <p className="mt-3 text-sm text-slate-600 leading-relaxed">
-                Scan, register, and tag fire extinguishers, landing valves, hose reels, and smoke heads in seconds. View color-coded compliance status directly on interactive floor architectural diagrams.
-              </p>
-              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center text-xs font-semibold text-[#0077B6]">
+              <div className="mt-8 pt-4 border-t border-slate-100 flex items-center text-xs font-bold text-[#0077B6] group-hover:text-[#023E8A] transition-colors">
                 <span>Explore QR Registry</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform group-hover:translate-x-1" />
               </div>
             </div>
 
             {/* Feature 2 */}
-            <div className="corp-card p-8 bg-white reveal-on-scroll delay-100">
-              <div className="w-12 h-12 rounded-xl bg-navy-50 text-[#023E8A] flex items-center justify-center mb-6 border border-navy-100">
-                <BellRing className="w-6 h-6 stroke-[2.2]" />
+            <div className="corp-card p-8 bg-white reveal-on-scroll delay-100 flex flex-col justify-between h-full border border-slate-200/80 shadow-card hover:shadow-card-hover group">
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-navy-50 text-[#023E8A] flex items-center justify-center border border-navy-100 shadow-xs group-hover:scale-105 transition-transform">
+                    <BellRing className="w-6 h-6 stroke-[2.2]" />
+                  </div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                    Automated
+                  </span>
+                </div>
+                <h3 className="font-display text-xl font-bold text-[#023E8A] tracking-tight group-hover:text-[#0077B6] transition-colors">
+                  Renewal &amp; WhatsApp Alerts
+                </h3>
+                <p className="mt-3 text-sm text-slate-600 leading-relaxed text-pretty">
+                  Never let an extinguisher refilling date slip. VigilAMC automatically sends WhatsApp, SMS, and email alerts to clients and technicians 60, 30, and 7 days prior to expiry.
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-[#023E8A] tracking-tight">
-                Automated Renewal &amp; WhatsApp Alerts
-              </h3>
-              <p className="mt-3 text-sm text-slate-600 leading-relaxed">
-                Never let an extinguisher refilling date slip. VigilAMC automatically sends WhatsApp, SMS, and email alerts to clients and technicians 60, 30, and 7 days prior to expiry.
-              </p>
-              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center text-xs font-semibold text-[#0077B6]">
+              <div className="mt-8 pt-4 border-t border-slate-100 flex items-center text-xs font-bold text-[#0077B6] group-hover:text-[#023E8A] transition-colors">
                 <span>Explore Alert Workflows</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform group-hover:translate-x-1" />
               </div>
             </div>
 
             {/* Feature 3 */}
-            <div className="corp-card p-8 bg-white reveal-on-scroll delay-200">
-              <div className="w-12 h-12 rounded-xl bg-ocean-50 text-[#0077B6] flex items-center justify-center mb-6 border border-ocean-100">
-                <FileCheck2 className="w-6 h-6 stroke-[2.2]" />
+            <div className="corp-card p-8 bg-white reveal-on-scroll delay-200 flex flex-col justify-between h-full border border-slate-200/80 shadow-card hover:shadow-card-hover group">
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-ocean-50 text-[#0077B6] flex items-center justify-center border border-ocean-100 shadow-xs group-hover:scale-105 transition-transform">
+                    <FileCheck2 className="w-6 h-6 stroke-[2.2]" />
+                  </div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Statutory NOC
+                  </span>
+                </div>
+                <h3 className="font-display text-xl font-bold text-[#023E8A] tracking-tight group-hover:text-[#0077B6] transition-colors">
+                  1-Click Form-B Compliance Filing
+                </h3>
+                <p className="mt-3 text-sm text-slate-600 leading-relaxed text-pretty">
+                  Instant generation of statutory Biannual Form-B certificates compliant with State Fire Directorate laws, complete with digital signatures and full equipment inspection audit trails.
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-[#023E8A] tracking-tight">
-                1-Click Form-B Compliance Filing
-              </h3>
-              <p className="mt-3 text-sm text-slate-600 leading-relaxed">
-                Instant generation of statutory Biannual Form-B certificates compliant with State Fire Directorate laws, complete with digital signatures and full equipment inspection audit trails.
-              </p>
-              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center text-xs font-semibold text-[#0077B6]">
+              <div className="mt-8 pt-4 border-t border-slate-100 flex items-center text-xs font-bold text-[#0077B6] group-hover:text-[#023E8A] transition-colors">
                 <span>View Sample Form-B PDF</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform group-hover:translate-x-1" />
               </div>
             </div>
 
             {/* Feature 4 */}
-            <div className="corp-card p-8 bg-white reveal-on-scroll">
-              <div className="w-12 h-12 rounded-xl bg-navy-50 text-[#023E8A] flex items-center justify-center mb-6 border border-navy-100">
-                <Smartphone className="w-6 h-6 stroke-[2.2]" />
+            <div className="corp-card p-8 bg-white reveal-on-scroll flex flex-col justify-between h-full border border-slate-200/80 shadow-card hover:shadow-card-hover group">
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-navy-50 text-[#023E8A] flex items-center justify-center border border-navy-100 shadow-xs group-hover:scale-105 transition-transform">
+                    <Smartphone className="w-6 h-6 stroke-[2.2]" />
+                  </div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-cyan-50 text-cyan-800 border border-cyan-200">
+                    Offline Ready
+                  </span>
+                </div>
+                <h3 className="font-display text-xl font-bold text-[#023E8A] tracking-tight group-hover:text-[#0077B6] transition-colors">
+                  Offline Technician Mobile App
+                </h3>
+                <p className="mt-3 text-sm text-slate-600 leading-relaxed text-pretty">
+                  Technicians work uninterrupted in deep underground pump rooms, basements, or shielded stairwells. All data syncs automatically once reconnected with tamper-proof timestamps.
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-[#023E8A] tracking-tight">
-                Offline-First Technician Mobile App
-              </h3>
-              <p className="mt-3 text-sm text-slate-600 leading-relaxed">
-                Technicians work uninterrupted in deep underground pump rooms, basements, or shielded stairwells. All data syncs automatically once reconnected with tamper-proof timestamps.
-              </p>
-              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center text-xs font-semibold text-[#0077B6]">
+              <div className="mt-8 pt-4 border-t border-slate-100 flex items-center text-xs font-bold text-[#0077B6] group-hover:text-[#023E8A] transition-colors">
                 <span>Mobile App Features</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform group-hover:translate-x-1" />
               </div>
             </div>
 
             {/* Feature 5 */}
-            <div className="corp-card p-8 bg-white reveal-on-scroll delay-100">
-              <div className="w-12 h-12 rounded-xl bg-ocean-50 text-[#0077B6] flex items-center justify-center mb-6 border border-ocean-100">
-                <Building2 className="w-6 h-6 stroke-[2.2]" />
+            <div className="corp-card p-8 bg-white reveal-on-scroll delay-100 flex flex-col justify-between h-full border border-slate-200/80 shadow-card hover:shadow-card-hover group">
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-ocean-50 text-[#0077B6] flex items-center justify-center border border-ocean-100 shadow-xs group-hover:scale-105 transition-transform">
+                    <Building2 className="w-6 h-6 stroke-[2.2]" />
+                  </div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    Multi-Tower
+                  </span>
+                </div>
+                <h3 className="font-display text-xl font-bold text-[#023E8A] tracking-tight group-hover:text-[#0077B6] transition-colors">
+                  Operations Command Dashboard
+                </h3>
+                <p className="mt-3 text-sm text-slate-600 leading-relaxed text-pretty">
+                  Manage 5 or 500 buildings on a unified executive dashboard. Track technician routes, inspection throughput, pending defect repair workorders, and portfolio-wide audit readiness.
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-[#023E8A] tracking-tight">
-                Multi-Building Operations Command
-              </h3>
-              <p className="mt-3 text-sm text-slate-600 leading-relaxed">
-                Manage 5 or 500 buildings on a unified executive dashboard. Track technician routes, inspection throughput, pending defect repair workorders, and portfolio-wide audit readiness.
-              </p>
-              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center text-xs font-semibold text-[#0077B6]">
+              <div className="mt-8 pt-4 border-t border-slate-100 flex items-center text-xs font-bold text-[#0077B6] group-hover:text-[#023E8A] transition-colors">
                 <span>Enterprise Multi-Tower</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform group-hover:translate-x-1" />
               </div>
             </div>
 
             {/* Feature 6 */}
-            <div className="corp-card p-8 bg-white reveal-on-scroll delay-200">
-              <div className="w-12 h-12 rounded-xl bg-navy-50 text-[#023E8A] flex items-center justify-center mb-6 border border-navy-100">
-                <Users className="w-6 h-6 stroke-[2.2]" />
+            <div className="corp-card p-8 bg-white reveal-on-scroll delay-200 flex flex-col justify-between h-full border border-slate-200/80 shadow-card hover:shadow-card-hover group">
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-navy-50 text-[#023E8A] flex items-center justify-center border border-navy-100 shadow-xs group-hover:scale-105 transition-transform">
+                    <Users className="w-6 h-6 stroke-[2.2]" />
+                  </div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Retention
+                  </span>
+                </div>
+                <h3 className="font-display text-xl font-bold text-[#023E8A] tracking-tight group-hover:text-[#0077B6] transition-colors">
+                  Client Transparency Portal
+                </h3>
+                <p className="mt-3 text-sm text-slate-600 leading-relaxed text-pretty">
+                  Delight your clients with their own branded compliance portal. Facility directors can view live equipment health, download certificates 24/7, and approve refilling quotes in 1 click.
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-[#023E8A] tracking-tight">
-                Client Transparency Portal
-              </h3>
-              <p className="mt-3 text-sm text-slate-600 leading-relaxed">
-                Delight your clients with their own branded compliance portal. Facility directors can view live equipment health, download certificates 24/7, and approve refilling quotes in 1 click.
-              </p>
-              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center text-xs font-semibold text-[#0077B6]">
+              <div className="mt-8 pt-4 border-t border-slate-100 flex items-center text-xs font-bold text-[#0077B6] group-hover:text-[#023E8A] transition-colors">
                 <span>Client Portal Preview</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform group-hover:translate-x-1" />
               </div>
             </div>
           </div>
@@ -620,15 +707,15 @@ export default function HomePage() {
           INTERACTIVE FEATURE: Live ROI & Asset Savings Calculator
           ========================================================================= */}
       <section className="py-24 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-5xl mx-auto corp-card-elevated p-8 sm:p-12 border-ocean-200 ocean-mesh">
+        <div className="max-w-5xl mx-auto corp-card-elevated p-8 sm:p-12 border-ocean-200/80 ocean-mesh">
           <div className="text-center max-w-2xl mx-auto mb-10">
-            <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-ocean-50 px-3 py-1 rounded-full border border-ocean-200">
+            <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-ocean-50 px-3.5 py-1.5 rounded-full border border-ocean-200/80">
               Interactive ROI Calculator
             </span>
-            <h3 className="text-2xl sm:text-3xl font-extrabold text-[#023E8A] tracking-tight mt-3">
+            <h3 className="font-display text-2xl sm:text-3xl font-extrabold text-[#023E8A] tracking-tight mt-3 text-balance">
               Calculate Your Operational Hours &amp; Cost Savings
             </h3>
-            <p className="text-sm text-slate-600 mt-2">
+            <p className="text-sm text-slate-600 mt-2 text-pretty">
               Slide to match your portfolio size and see how much time and money VigilAMC saves your AMC business.
             </p>
           </div>
@@ -641,8 +728,8 @@ export default function HomePage() {
                   <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                     Buildings / Towers Managed
                   </label>
-                  <span className="px-3 py-1 bg-white border border-slate-300 rounded-lg text-sm font-black text-[#023E8A]">
-                    {calcBuildings} Buildings
+                  <span className="px-3 py-1 bg-white border border-slate-300 rounded-lg text-sm font-black text-[#023E8A] font-display tabular-nums shadow-xs">
+                    {calcBuildings} Towers
                   </span>
                 </div>
                 <input
@@ -651,9 +738,9 @@ export default function HomePage() {
                   max="40"
                   value={calcBuildings}
                   onChange={(e) => setCalcBuildings(parseInt(e.target.value))}
-                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#0077B6]"
+                  className="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#0077B6]"
                 />
-                <div className="flex justify-between text-[11px] text-slate-400 mt-1">
+                <div className="flex justify-between text-[11px] text-slate-400 mt-1 font-mono">
                   <span>1 Tower</span>
                   <span>20 Towers</span>
                   <span>40+ Towers</span>
@@ -665,7 +752,7 @@ export default function HomePage() {
                   <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                     Total Fire Safety Assets (Extinguishers, Hydrants, Panels)
                   </label>
-                  <span className="px-3 py-1 bg-white border border-slate-300 rounded-lg text-sm font-black text-[#0077B6]">
+                  <span className="px-3 py-1 bg-white border border-slate-300 rounded-lg text-sm font-black text-[#0077B6] font-display tabular-nums shadow-xs">
                     {calcAssets} Assets
                   </span>
                 </div>
@@ -676,56 +763,57 @@ export default function HomePage() {
                   step="50"
                   value={calcAssets}
                   onChange={(e) => setCalcAssets(parseInt(e.target.value))}
-                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#0077B6]"
+                  className="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#0077B6]"
                 />
-                <div className="flex justify-between text-[11px] text-slate-400 mt-1">
+                <div className="flex justify-between text-[11px] text-slate-400 mt-1 font-mono">
                   <span>50 Assets</span>
                   <span>1,500 Assets</span>
                   <span>3,000+ Assets</span>
                 </div>
               </div>
 
-              <div className="p-4 bg-white/80 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-1.5">
+              <div className="p-4 bg-white/90 backdrop-blur-xs rounded-xl border border-slate-200 text-xs text-slate-600 space-y-2 shadow-xs">
                 <div className="flex items-center gap-2 text-[#023E8A] font-semibold">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  Eliminates 100% of Excel double-entry data errors
+                  <span>Eliminates 100% of Excel double-entry data errors</span>
                 </div>
                 <div className="flex items-center gap-2 text-[#023E8A] font-semibold">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  Prevents expensive contract churn &amp; audit penalty notices
+                  <span>Prevents expensive contract churn &amp; audit penalty notices</span>
                 </div>
               </div>
             </div>
 
             {/* Calculated Results Card */}
-            <div className="bg-[#023E8A] text-white p-8 rounded-2xl shadow-xl flex flex-col justify-between space-y-6">
+            <div className="bg-gradient-to-br from-[#023E8A] via-[#022A5E] to-[#011F48] text-white p-8 rounded-2xl shadow-xl flex flex-col justify-between space-y-6 border border-cyan-500/20">
               <div>
-                <div className="text-xs uppercase font-extrabold tracking-wider text-cyan-200">
+                <div className="text-xs uppercase font-extrabold tracking-wider text-cyan-200 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
                   Estimated Annual Value Delivered
                 </div>
                 <div className="mt-4 flex items-baseline gap-2">
-                  <span className="text-4xl sm:text-5xl font-black text-white">
+                  <span className="font-display text-4xl sm:text-5xl font-black text-white tabular-nums tracking-tight">
                     {hoursSavedPerYear}
                   </span>
                   <span className="text-base text-cyan-200 font-semibold">Hours Saved / Year</span>
                 </div>
-                <p className="text-xs text-slate-200 mt-1">
+                <p className="text-xs text-slate-300 mt-1 leading-relaxed">
                   Replaces manual paperwork, lost logbooks, and Excel reconciliation.
                 </p>
               </div>
 
-              <div className="pt-4 border-t border-navy-400/40">
+              <div className="pt-4 border-t border-navy-400/30">
                 <div className="text-xs text-cyan-200 font-semibold">
                   Estimated Financial Savings &amp; Penalty Prevention
                 </div>
-                <div className="text-2xl sm:text-3xl font-black text-white mt-1">
+                <div className="font-display text-2xl sm:text-3xl font-black text-white mt-1 tabular-nums tracking-tight">
                   ₹{costSavingsPerYear} <span className="text-xs text-slate-300 font-normal">equivalent / yr</span>
                 </div>
               </div>
 
               <Link
                 href="/contact"
-                className="w-full py-3 bg-[#0077B6] hover:bg-white hover:text-[#023E8A] text-white font-bold text-xs uppercase tracking-wider rounded-xl text-center transition-colors shadow"
+                className="w-full py-3.5 bg-[#0077B6] hover:bg-white hover:text-[#023E8A] text-white font-bold text-xs uppercase tracking-wider rounded-xl text-center transition-all shadow-md active:scale-[0.98]"
               >
                 Claim Your Free Operational Assessment
               </Link>
@@ -903,10 +991,10 @@ export default function HomePage() {
           {/* Pricing Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
             {/* Tier 1: Basic AMC */}
-            <div className="corp-card p-8 bg-white flex flex-col justify-between reveal-on-scroll">
+            <div className="corp-card p-8 bg-white flex flex-col justify-between h-full reveal-on-scroll border border-slate-200/90 shadow-card hover:shadow-card-hover">
               <div>
                 <div className="flex justify-between items-center">
-                  <h3 className="text-xl font-bold text-slate-900">Basic AMC</h3>
+                  <h3 className="font-display text-xl font-bold text-slate-900">Basic AMC</h3>
                   <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md">
                     Up to 3 Towers
                   </span>
@@ -916,7 +1004,7 @@ export default function HomePage() {
                 </p>
 
                 <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-black text-[#023E8A]">
+                  <span className="font-display text-4xl font-black text-[#023E8A] tabular-nums tracking-tight">
                     ₹{billingCycle === 'annual' ? '3,999' : '4,999'}
                   </span>
                   <span className="text-xs text-slate-500 font-medium">/ month</span>
@@ -952,10 +1040,10 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="mt-8 pt-6 border-t border-slate-100">
+              <div className="mt-auto pt-8 border-t border-slate-100">
                 <Link
                   href="/contact"
-                  className="w-full py-3 px-4 rounded-xl text-xs font-bold text-[#0077B6] bg-ocean-50 hover:bg-ocean-100 text-center block transition-colors border border-ocean-200"
+                  className="w-full py-3 px-4 rounded-xl text-xs font-bold text-[#0077B6] bg-ocean-50 hover:bg-ocean-100 text-center block transition-all border border-ocean-200 active:scale-[0.98]"
                 >
                   Start 14-Day Free Pilot
                 </Link>
@@ -963,14 +1051,14 @@ export default function HomePage() {
             </div>
 
             {/* Tier 2: Pro Fleet AMC (Most Popular) */}
-            <div className="corp-card p-8 bg-white border-2 border-[#0077B6] shadow-xl relative flex flex-col justify-between reveal-on-scroll delay-100">
-              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-[#0077B6] text-white text-xs font-extrabold uppercase tracking-wider shadow">
+            <div className="corp-card p-8 bg-white border-2 border-[#0077B6] shadow-xl ring-4 ring-[#0077B6]/15 relative flex flex-col justify-between h-full reveal-on-scroll delay-100">
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-[#0077B6] to-[#023E8A] text-white text-[11px] font-extrabold uppercase tracking-wider shadow-md">
                 Most Popular for AMC Fleets
               </div>
 
               <div>
                 <div className="flex justify-between items-center mt-1">
-                  <h3 className="text-xl font-bold text-[#023E8A]">Pro Fleet AMC</h3>
+                  <h3 className="font-display text-xl font-bold text-[#023E8A]">Pro Fleet AMC</h3>
                   <span className="text-xs font-semibold px-2.5 py-1 bg-ocean-50 text-[#0077B6] rounded-md border border-ocean-200">
                     Up to 15 Towers
                   </span>
@@ -980,7 +1068,7 @@ export default function HomePage() {
                 </p>
 
                 <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-black text-[#023E8A]">
+                  <span className="font-display text-4xl font-black text-[#023E8A] tabular-nums tracking-tight">
                     ₹{billingCycle === 'annual' ? '6,399' : '7,999'}
                   </span>
                   <span className="text-xs text-slate-500 font-medium">/ month</span>
@@ -1020,10 +1108,10 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="mt-8 pt-6 border-t border-slate-100">
+              <div className="mt-auto pt-8 border-t border-slate-100">
                 <Link
                   href="/contact"
-                  className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white bg-[#0077B6] hover:bg-[#023E8A] text-center block transition-all shadow-md hover:shadow-lg"
+                  className="w-full py-3.5 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#0077B6] to-[#023E8A] hover:from-[#006494] hover:to-[#011F48] text-center block transition-all shadow-md hover:shadow-lg active:scale-[0.98]"
                 >
                   Start 14-Day Free Pilot
                 </Link>
@@ -1031,10 +1119,10 @@ export default function HomePage() {
             </div>
 
             {/* Tier 3: Enterprise / Custom AMC */}
-            <div className="corp-card p-8 bg-white flex flex-col justify-between reveal-on-scroll delay-200">
+            <div className="corp-card p-8 bg-white flex flex-col justify-between h-full reveal-on-scroll delay-200 border border-slate-200/90 shadow-card hover:shadow-card-hover">
               <div>
                 <div className="flex justify-between items-center">
-                  <h3 className="text-xl font-bold text-slate-900">Custom / Enterprise AMC</h3>
+                  <h3 className="font-display text-xl font-bold text-slate-900">Custom / Enterprise AMC</h3>
                   <span className="text-xs font-semibold px-2.5 py-1 bg-navy-50 text-[#023E8A] rounded-md">
                     Unlimited
                   </span>
@@ -1044,7 +1132,7 @@ export default function HomePage() {
                 </p>
 
                 <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-black text-[#023E8A]">Custom</span>
+                  <span className="font-display text-4xl font-black text-[#023E8A] tracking-tight">Custom</span>
                   <span className="text-xs text-slate-500 font-medium">tailored to fleet size</span>
                 </div>
                 <p className="text-[11px] text-slate-400 mt-1">
@@ -1078,10 +1166,10 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="mt-8 pt-6 border-t border-slate-100">
+              <div className="mt-auto pt-8 border-t border-slate-100">
                 <Link
                   href="/contact"
-                  className="w-full py-3 px-4 rounded-xl text-xs font-bold text-[#023E8A] bg-slate-100 hover:bg-slate-200 text-center block transition-colors"
+                  className="w-full py-3 px-4 rounded-xl text-xs font-bold text-[#023E8A] bg-slate-100 hover:bg-slate-200 text-center block transition-all active:scale-[0.98]"
                 >
                   Contact Enterprise Sales
                 </Link>
@@ -1097,13 +1185,13 @@ export default function HomePage() {
       <section className="py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-slate-50 border-t border-slate-200">
         <div className="max-w-4xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-16 reveal-on-scroll">
-            <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-white px-3 py-1 rounded-full border border-slate-200 shadow-sm">
+            <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-white px-3.5 py-1.5 rounded-full border border-slate-200 shadow-sm">
               Got Questions?
             </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#023E8A] tracking-tight mt-4">
+            <h2 className="font-display text-3xl sm:text-4xl font-extrabold text-[#023E8A] tracking-tight mt-4 text-balance">
               Frequently Asked Questions
             </h2>
-            <p className="mt-3 text-base text-slate-600 leading-relaxed">
+            <p className="mt-3 text-base text-slate-600 leading-relaxed text-pretty">
               Everything you need to know about switching from paper logs to VigilAMC autopilot.
             </p>
           </div>
@@ -1114,11 +1202,13 @@ export default function HomePage() {
               return (
                 <div
                   key={idx}
-                  className="corp-card overflow-hidden bg-white border border-slate-200 transition-all"
+                  className={`corp-card overflow-hidden bg-white transition-all ${
+                    isOpen ? 'border-[#0077B6]/40 shadow-card' : 'border-slate-200'
+                  }`}
                 >
                   <button
                     onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
-                    className="w-full py-5 px-6 text-left flex items-center justify-between gap-4 focus:outline-none"
+                    className="w-full py-5 px-6 text-left flex items-center justify-between gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0077B6]"
                     aria-expanded={isOpen}
                   >
                     <span className="text-base font-bold text-slate-900 hover:text-[#0077B6] transition-colors">
@@ -1144,7 +1234,7 @@ export default function HomePage() {
           {/* Quick contact reassurance */}
           <div className="mt-12 text-center text-xs text-slate-500">
             Have a unique facility setup or custom Fire Directorate requirement?{' '}
-            <Link href="/contact" className="text-[#0077B6] font-bold underline hover:text-[#023E8A]">
+            <Link href="/contact" className="text-[#0077B6] font-bold underline hover:text-[#023E8A] transition-colors">
               Speak directly with our Chief Compliance Architect
             </Link>
           </div>
@@ -1154,18 +1244,18 @@ export default function HomePage() {
       {/* =========================================================================
           FAST CONTACT / DEMO INQUIRY SECTION
           ========================================================================= */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-[#023E8A] text-white">
-        <div className="max-w-4xl mx-auto text-center space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-navy-700 text-cyan-200 text-xs font-bold border border-navy-500">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[#023E8A] via-[#022A5E] to-[#011F48] text-white relative overflow-hidden border-t border-navy-700/60">
+        <div className="max-w-4xl mx-auto text-center space-y-6 relative z-10">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-navy-800/80 text-cyan-200 text-xs font-bold border border-cyan-400/20 shadow-sm">
             <Sparkles className="w-3.5 h-3.5 text-cyan-300" />
-            Zero Setup Fee &bull; 14-Day Full Access Pilot
+            <span>Zero Setup Fee &bull; 14-Day Full Access Pilot</span>
           </div>
 
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+          <h2 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-balance">
             Stop Losing AMC Contracts Over Missed Deadlines
           </h2>
 
-          <p className="text-sm sm:text-base text-cyan-100 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-sm sm:text-base text-cyan-100 max-w-2xl mx-auto leading-relaxed text-pretty">
             Join hundreds of certified fire safety agencies that put their entire equipment inventory, technician audits, and Form-B certifications on autopilot.
           </p>
 
@@ -1177,11 +1267,11 @@ export default function HomePage() {
                 value={inquiryEmail}
                 onChange={(e) => setInquiryEmail(e.target.value)}
                 placeholder="Enter your work email address"
-                className="w-full px-4 py-3 rounded-xl bg-white text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
+                className="w-full px-4 py-3 rounded-xl bg-white text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0077B6] shadow-sm"
               />
               <button
                 type="submit"
-                className="px-6 py-3 bg-[#0077B6] hover:bg-[#0096C7] text-white font-bold text-sm rounded-xl shadow-lg transition-colors whitespace-nowrap"
+                className="px-6 py-3 bg-[#0077B6] hover:bg-[#0096C7] text-white font-bold text-sm rounded-xl shadow-lg transition-all whitespace-nowrap active:scale-[0.98]"
               >
                 Get Started
               </button>
@@ -1199,6 +1289,73 @@ export default function HomePage() {
             <span>✓ No credit card required</span>
             <span>✓ Pre-printed QR labels included</span>
             <span>✓ 24-hour spreadsheet migration</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Social Media & Community Bar */}
+      <section className="py-12 px-4 sm:px-6 lg:px-8 bg-slate-50 border-t border-slate-200">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="text-center md:text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ocean-50 text-[#0077B6] text-xs font-bold border border-ocean-200 mb-2">
+              <span>Official Channels</span>
+              <span className="text-slate-400">&bull;</span>
+              <span>@vigilamc</span>
+            </div>
+            <h3 className="text-lg font-bold text-slate-900">
+              Join the VigilAMC Fire Safety &amp; AMC Community
+            </h3>
+            <p className="text-xs text-slate-500 mt-1">
+              Watch real-time compliance tutorials, Form-B statutory updates, and industry insights.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <a
+              href="https://www.linkedin.com/company/vigilamc/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-white hover:bg-[#0A66C2] text-slate-700 hover:text-white border border-slate-200 hover:border-[#0A66C2] text-xs font-bold transition-all shadow-xs group"
+            >
+              <Linkedin className="w-4 h-4 text-[#0A66C2] group-hover:text-white transition-colors" />
+              <span>LinkedIn</span>
+              <span className="text-[10px] text-slate-400 group-hover:text-blue-100 font-normal">vigilamc</span>
+            </a>
+
+            <a
+              href="https://www.instagram.com/vigilamc"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-white hover:bg-gradient-to-tr hover:from-[#f09433] hover:via-[#dc2743] hover:to-[#bc1888] text-slate-700 hover:text-white border border-slate-200 hover:border-pink-500 text-xs font-bold transition-all shadow-xs group"
+            >
+              <Instagram className="w-4 h-4 text-pink-600 group-hover:text-white transition-colors" />
+              <span>Instagram</span>
+              <span className="text-[10px] text-slate-400 group-hover:text-pink-100 font-normal">@vigilamc</span>
+            </a>
+
+            <a
+              href="https://x.com/vigilamc"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-white hover:bg-black text-slate-700 hover:text-white border border-slate-200 hover:border-slate-800 text-xs font-bold transition-all shadow-xs group"
+            >
+              <svg className="w-3.5 h-3.5 fill-current text-slate-800 group-hover:text-white transition-colors" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 24.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+              <span>X (Twitter)</span>
+              <span className="text-[10px] text-slate-400 group-hover:text-slate-300 font-normal">@vigilamc</span>
+            </a>
+
+            <a
+              href="https://www.youtube.com/@vigilamc"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-white hover:bg-[#FF0000] text-slate-700 hover:text-white border border-slate-200 hover:border-red-500 text-xs font-bold transition-all shadow-xs group"
+            >
+              <Youtube className="w-4 h-4 text-red-600 group-hover:text-white transition-colors" />
+              <span>YouTube</span>
+              <span className="text-[10px] text-slate-400 group-hover:text-red-100 font-normal">@vigilamc</span>
+            </a>
           </div>
         </div>
       </section>

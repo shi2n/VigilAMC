@@ -17,7 +17,10 @@ import {
   MessageSquare,
   Sparkles,
   Layers,
-  AlertCircle
+  AlertCircle,
+  Linkedin,
+  Instagram,
+  Youtube
 } from 'lucide-react';
 
 export default function ContactPage() {
@@ -173,6 +176,84 @@ export default function ContactPage() {
                     <span className="font-semibold text-emerald-600">Within 15 minutes during business hours</span>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Official Social Media Channels */}
+            <div className="corp-card p-6 bg-slate-50 border-ocean-200">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-xs font-bold text-[#023E8A] uppercase tracking-wider">
+                  Connect On Social Media
+                </h4>
+                <span className="text-[11px] font-semibold text-[#0077B6] bg-ocean-50 px-2 py-0.5 rounded-full border border-ocean-200">
+                  @vigilamc
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 mb-4 leading-relaxed">
+                Follow our official company channels for fire compliance updates, Form-B statutory guides, and live demos:
+              </p>
+              <div className="grid grid-cols-2 gap-2.5">
+                <a
+                  href="https://www.linkedin.com/company/vigilamc/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white border border-slate-200 hover:border-[#0A66C2] hover:bg-sky-50/50 transition-all text-xs font-semibold text-slate-700 hover:text-[#0A66C2] shadow-xs group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-sky-50 flex items-center justify-center text-[#0A66C2] group-hover:bg-[#0A66C2] group-hover:text-white transition-colors shrink-0">
+                    <Linkedin className="w-4 h-4" />
+                  </div>
+                  <div className="truncate">
+                    <span className="block font-bold">LinkedIn</span>
+                    <span className="text-[10px] text-slate-500 font-normal">vigilamc</span>
+                  </div>
+                </a>
+
+                <a
+                  href="https://www.instagram.com/vigilamc"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white border border-slate-200 hover:border-pink-500 hover:bg-pink-50/40 transition-all text-xs font-semibold text-slate-700 hover:text-pink-600 shadow-xs group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-pink-50 flex items-center justify-center text-pink-600 group-hover:bg-gradient-to-tr group-hover:from-[#f09433] group-hover:via-[#dc2743] group-hover:to-[#bc1888] group-hover:text-white transition-all shrink-0">
+                    <Instagram className="w-4 h-4" />
+                  </div>
+                  <div className="truncate">
+                    <span className="block font-bold">Instagram</span>
+                    <span className="text-[10px] text-slate-500 font-normal">@vigilamc</span>
+                  </div>
+                </a>
+
+                <a
+                  href="https://x.com/vigilamc"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white border border-slate-200 hover:border-slate-800 hover:bg-slate-100/60 transition-all text-xs font-semibold text-slate-700 hover:text-slate-900 shadow-xs group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-800 group-hover:bg-black group-hover:text-white transition-colors shrink-0">
+                    <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 24.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                    </svg>
+                  </div>
+                  <div className="truncate">
+                    <span className="block font-bold">X (Twitter)</span>
+                    <span className="text-[10px] text-slate-500 font-normal">@vigilamc</span>
+                  </div>
+                </a>
+
+                <a
+                  href="https://www.youtube.com/@vigilamc"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white border border-slate-200 hover:border-red-500 hover:bg-red-50/40 transition-all text-xs font-semibold text-slate-700 hover:text-red-600 shadow-xs group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-600 group-hover:bg-[#FF0000] group-hover:text-white transition-colors shrink-0">
+                    <Youtube className="w-4 h-4" />
+                  </div>
+                  <div className="truncate">
+                    <span className="block font-bold">YouTube</span>
+                    <span className="text-[10px] text-slate-500 font-normal">@vigilamc</span>
+                  </div>
+                </a>
               </div>
             </div>
 
