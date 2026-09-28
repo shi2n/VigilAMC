@@ -257,15 +257,18 @@ export default function HomePage() {
 
               <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-slate-950 shadow-2xl border border-slate-800/50">
                 <video
-                  src="/brag.mp4"
                   poster="/brag.jpg"
                   autoPlay
                   muted
                   loop
                   playsInline
                   controls
+                  preload="metadata"
                   className="w-full h-full object-cover"
-                />
+                >
+                  <source src="/brag.mp4" type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
               </div>
             </div>
           </div>
