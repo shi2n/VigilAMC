@@ -39,6 +39,7 @@ next-env.d.ts
 !prisma/dev.db
 *.db-journal
 .env*
+!.env.example
 brag-output/
 .agents/
 skills-lock.json

@@ -17,6 +17,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { getResetPasswordRedirectUrl } from '@/lib/auth-helpers';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -50,6 +51,14 @@ export default function LoginPage() {
       }
     }
     checkUser();
+
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('reset') === 'success') {
+        setSuccessMsg('Your password has been successfully updated! Please sign in with your new password.');
+        setMode('SIGN_IN');
+      }
+    }
   }, [supabase]);
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -147,13 +156,14 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      const redirectUrl = getResetPasswordRedirectUrl();
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-        redirectTo: `${window.location.origin}/login`,
+        redirectTo: redirectUrl,
       });
 
       if (error) throw error;
 
-      setSuccessMsg('Password reset instructions have been sent to your email.');
+      setSuccessMsg('Password reset instructions have been sent to your email. Click the link in the email to set a new password.');
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to send password reset email.');
     } finally {
