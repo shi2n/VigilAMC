@@ -27,6 +27,26 @@ export async function GET(request: Request) {
 
     const organizationId = auth.organization.id;
 
+    // Real database counts
+    const [totalClients, totalBuildings, totalEquipments, activeTechnicians, openWorkOrders] = await Promise.all([
+      (db as any).client.count({ where: { organizationId } }).catch(() => 0),
+      (db as any).building.count({ where: { organizationId } }).catch(() => 0),
+      (db as any).equipment.count({ where: { organizationId } }).catch(() => 0),
+      (db as any).userProfile.count({
+        where: {
+          organizationId,
+          role: 'TECHNICIAN',
+          status: 'ACTIVE',
+        },
+      }).catch(() => 0),
+      (db as any).workOrder.count({
+        where: {
+          organizationId,
+          status: { in: ['OPEN', 'ASSIGNED', 'IN_PROGRESS'] },
+        },
+      }).catch(() => 0),
+    ]);
+
     const buildings = await (db as any).building.findMany({
       where: { organizationId },
       include: {
@@ -47,17 +67,6 @@ export async function GET(request: Request) {
       orderBy: { nextDueDate: 'asc' },
     });
 
-    const inspectionsCount = await (db as any).inspection.count({
-      where: { organizationId },
-    }).catch(() => 0);
-
-    const openDefectsCount = await (db as any).defect.count({
-      where: {
-        organizationId,
-        status: { in: ['OPEN', 'ASSIGNED', 'IN_PROGRESS'] },
-      },
-    }).catch(() => 0);
-
     const now = new Date();
     let compliantCount = 0;
     let dueCount = 0;
@@ -74,20 +83,22 @@ export async function GET(request: Request) {
       }
     });
 
+    const complianceRate = equipments.length > 0 ? Math.round((compliantCount / equipments.length) * 100) : 100;
+
     return NextResponse.json({
       authenticated: true,
       user: auth.user,
       profile: auth.profile,
       organization: auth.organization,
       kpis: {
-        totalBuildings: buildings.length,
-        totalEquipments: equipments.length,
-        compliantCount,
-        dueCount,
-        overdueCount,
-        complianceRate: equipments.length > 0 ? Math.round((compliantCount / equipments.length) * 100) : 100,
-        openDefects: openDefectsCount,
-        inspectionsCompleted: inspectionsCount,
+        totalClients,
+        totalBuildings,
+        totalEquipments,
+        activeTechnicians,
+        openWorkOrders,
+        dueInspections: dueCount,
+        overdueInspections: overdueCount,
+        complianceRate,
       },
       buildings,
       equipments,

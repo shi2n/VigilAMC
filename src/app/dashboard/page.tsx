@@ -38,29 +38,58 @@ import {
   Users,
   CreditCard,
   Zap,
-  LayoutDashboard
+  LayoutDashboard,
+  Menu,
+  FileSpreadsheet
 } from 'lucide-react';
+import { AdminSidebar, AdminNavTab } from '@/components/admin/AdminSidebar';
+import { DashboardOverview } from '@/components/admin/DashboardOverview';
+import { ExportModal } from '@/components/admin/ExportModal';
 import { TechnicianManagement } from '@/components/admin/TechnicianManagement';
 import { TechnicianAssignments } from '@/components/admin/TechnicianAssignments';
 import { TechnicianActivityLog } from '@/components/admin/TechnicianActivityLog';
 import { SubscriptionManager } from '@/components/admin/SubscriptionManager';
-import { SeatCounter } from '@/components/admin/SeatCounter';
 import { AdminUsersView } from '@/components/admin/AdminUsersView';
 import { WorkOrdersView } from '@/components/admin/WorkOrdersView';
 import { InspectionsView } from '@/components/admin/InspectionsView';
 import { ReportsView } from '@/components/admin/ReportsView';
+import { ClientsView } from '@/components/admin/ClientsView';
+import { BuildingsView } from '@/components/admin/BuildingsView';
+import { FireAssetsView } from '@/components/admin/FireAssetsView';
+import { SettingsView } from '@/components/admin/SettingsView';
 
 export default function AdminDashboardPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [expandedBuildingId, setExpandedBuildingId] = useState<string | null>(null);
 
-  // Active view: RADAR | TECHNICIANS | WORK_ORDERS | INSPECTIONS | REPORTS | DATA_MANAGE | AGENCY | ADMIN_USERS | ENQUIRIES
-  const [activeTab, setActiveTab] = useState<
-    'RADAR' | 'TECHNICIANS' | 'WORK_ORDERS' | 'INSPECTIONS' | 'REPORTS' | 'DATA_MANAGE' | 'AGENCY' | 'ADMIN_USERS' | 'ENQUIRIES'
-  >('RADAR');
+  // Authenticated Admin OS Navigation Tab
+  const [activeTab, setActiveTab] = useState<AdminNavTab>('DASHBOARD');
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [techSubTab, setTechSubTab] = useState<'ROSTER' | 'ASSIGNMENTS' | 'AUDIT_LOG'>('ROSTER');
+  const [settingsSubTab, setSettingsSubTab] = useState<'LEADS' | 'TOOLS' | 'AGENCY'>('LEADS');
   const [subscriptionData, setSubscriptionData] = useState<any>(null);
+
+  // Export Modal Dialog State
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [exportConfigKey, setExportConfigKey] = useState<string>('FIRE_ASSETS');
+
+  // Real Database Operational KPIs
+  const [kpis, setKpis] = useState({
+    totalClients: 0,
+    totalBuildings: 0,
+    totalEquipments: 0,
+    activeTechnicians: 0,
+    openWorkOrders: 0,
+    dueInspections: 0,
+    overdueInspections: 0,
+    complianceRate: 100,
+  });
+
+  // Cached collections for Excel export
+  const [techniciansList, setTechniciansList] = useState<any[]>([]);
+  const [workOrdersList, setWorkOrdersList] = useState<any[]>([]);
+  const [inspectionsList, setInspectionsList] = useState<any[]>([]);
   const [dataSubTab, setDataSubTab] = useState<'COMPANY' | 'CLIENTS' | 'BUILDINGS' | 'EQUIPMENT' | 'RESET'>('COMPANY');
 
   // Modals
@@ -177,10 +206,58 @@ export default function AdminDashboardPage() {
       }
       fetchClients();
       fetchSubscription();
+      fetchKpis();
+      fetchEquipments();
+      fetchTechnicians();
+      fetchWorkOrders();
+      fetchInspections();
+      fetchEnquiries();
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchKpis = async () => {
+    try {
+      const res = await fetch('/api/dashboard');
+      const json = await res.json();
+      if (json.kpis) {
+        setKpis(json.kpis);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchTechnicians = async () => {
+    try {
+      const res = await fetch('/api/admin/technicians');
+      const json = await res.json();
+      if (json.technicians) setTechniciansList(json.technicians);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchWorkOrders = async () => {
+    try {
+      const res = await fetch('/api/work-orders');
+      const json = await res.json();
+      if (json.workOrders) setWorkOrdersList(json.workOrders);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchInspections = async () => {
+    try {
+      const res = await fetch('/api/inspections');
+      const json = await res.json();
+      if (json.inspections) setInspectionsList(json.inspections);
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -228,6 +305,24 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleOpenExport = (key?: string) => {
+    if (key) {
+      setExportConfigKey(key);
+    } else {
+      const tabMap: Record<string, string> = {
+        CLIENTS: 'CLIENTS',
+        BUILDINGS: 'BUILDINGS',
+        FIRE_ASSETS: 'FIRE_ASSETS',
+        TECHNICIANS: 'TECHNICIANS',
+        INSPECTIONS: 'INSPECTIONS',
+        WORK_ORDERS: 'WORK_ORDERS',
+        REPORTS: 'FIRE_ASSETS',
+      };
+      setExportConfigKey(tabMap[activeTab] || 'FIRE_ASSETS');
+    }
+    setExportModalOpen(true);
+  };
+
   const handleUpdateEnquiryStatus = async (id: string, newStatus: string) => {
     try {
       const res = await fetch('/api/enquiries', {
@@ -261,11 +356,20 @@ export default function AdminDashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'DATA_MANAGE') {
+    if (activeTab === 'CLIENTS') {
       fetchClients();
+    } else if (activeTab === 'FIRE_ASSETS') {
       fetchEquipments();
-    } else if (activeTab === 'ENQUIRIES') {
+    } else if (activeTab === 'SETTINGS') {
       fetchEnquiries();
+    } else if (activeTab === 'DASHBOARD') {
+      fetchKpis();
+    } else if (activeTab === 'TECHNICIANS') {
+      fetchTechnicians();
+    } else if (activeTab === 'WORK_ORDERS') {
+      fetchWorkOrders();
+    } else if (activeTab === 'INSPECTIONS') {
+      fetchInspections();
     }
   }, [activeTab, equipFilterBuilding, equipSearch, enquiryStatusFilter]);
 
@@ -555,8 +659,17 @@ export default function AdminDashboardPage() {
 
   const { summary, buildings, company } = data;
 
+  const exportDataMap: Record<string, any[]> = {
+    CLIENTS: clientsList,
+    BUILDINGS: buildings || [],
+    FIRE_ASSETS: equipmentsList,
+    TECHNICIANS: techniciansList,
+    WORK_ORDERS: workOrdersList,
+    INSPECTIONS: inspectionsList,
+  };
+
   return (
-    <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 text-slate-100">
+    <div className="min-h-screen bg-[#080d1a] flex flex-col lg:flex-row text-slate-100 selection:bg-amber-500 selection:text-slate-950">
       
       {/* Toast Alert */}
       {toastMessage && (
@@ -566,51 +679,83 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* =========================================================================
-          1. HEADER & MODE SWITCHER (Compliance Radar vs. Data Manager)
-      ========================================================================= */}
-      <div className="tactile-card rounded-2xl bg-slate-900/90 border border-slate-800 p-5 sm:p-6 shadow-2xl space-y-5">
+      {/* Admin OS Sidebar */}
+      <AdminSidebar
+        activeTab={activeTab}
+        onSelectTab={(tab) => {
+          setActiveTab(tab);
+          setMobileSidebarOpen(false);
+        }}
+        onOpenExport={() => handleOpenExport()}
+        unreadLeadsCount={enquiriesList.filter((e) => e.status === 'NEW').length}
+        subscription={subscriptionData}
+        isMobileOpen={mobileSidebarOpen}
+        onCloseMobile={() => setMobileSidebarOpen(false)}
+        onLogout={handleLogout}
+      />
+
+      {/* Main Content Area */}
+      <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-6 overflow-y-auto">
         
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-slate-950 font-black shadow-md">
-                <ShieldCheck className="w-5 h-5 text-slate-950 stroke-[2.5]" />
+        {/* Top Header Bar */}
+        <div className="tactile-card rounded-2xl bg-slate-900/90 border border-slate-800 p-4 sm:p-5 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setMobileSidebarOpen(true)}
+              className="lg:hidden p-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 hover:text-white"
+              aria-label="Open navigation menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-400">Admin OS</span>
+                <span className="text-slate-600">/</span>
+                <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">
+                  {activeTab === 'DASHBOARD' && 'Executive Overview'}
+                  {activeTab === 'AGENCY' && 'Agency Profile & Subscription'}
+                  {activeTab === 'ADMIN_USERS' && 'Admin Users & Roles'}
+                  {activeTab === 'TECHNICIANS' && 'Technician Workforce'}
+                  {activeTab === 'CLIENTS' && 'Client Societies & Accounts'}
+                  {activeTab === 'BUILDINGS' && 'Buildings & Towers'}
+                  {activeTab === 'FIRE_ASSETS' && 'Fire Assets & QR Tags'}
+                  {activeTab === 'INSPECTIONS' && 'Inspection Logs & Compliance'}
+                  {activeTab === 'WORK_ORDERS' && 'Work Orders & Dispatch'}
+                  {activeTab === 'REPORTS' && 'Statutory Reports & Form-B'}
+                  {activeTab === 'SETTINGS' && 'System Settings & Inquiries'}
+                </h1>
               </div>
-              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                {company?.name || 'Fire Safety AMC Solutions'}
-              </h1>
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[10px] font-extrabold uppercase tracking-wider">
-                Admin OS
-              </span>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {company?.name || 'VigilAMC Operating System'} • License:{' '}
+                <strong className="text-slate-300 font-semibold">{company?.licenseNumber || 'MH/FIRE/LIC/2024'}</strong>
+              </p>
             </div>
-            <p className="text-xs text-slate-400">
-              License: <strong className="text-slate-300">{company?.licenseNumber || 'MH/FIRE/LIC/2024'}</strong> • {company?.address || 'Official Registered Service Center'}
-            </p>
           </div>
 
-          {/* Quick Action Navigation */}
-          <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Quick Actions */}
+          <div className="flex items-center gap-2.5 flex-wrap self-end md:self-auto">
+            <button
+              onClick={() => handleOpenExport()}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition-all shadow-sm"
+              title="Export Current View Data to Excel (.xlsx)"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+              <span>Export Excel</span>
+            </button>
+
             <Link
               href="/assets/print-qr"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 hover:border-amber-500/40 text-xs font-bold transition-all"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-200 border border-slate-800 hover:border-amber-500/40 text-xs font-bold transition-all"
             >
               <Printer className="w-4 h-4 text-amber-400" />
               <span className="hidden sm:inline">Print QR Labels</span>
             </Link>
 
-            <Link
-              href="/scan"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 hover:border-amber-500/40 text-xs font-bold transition-all"
-            >
-              <Scan className="w-4 h-4 text-amber-400" />
-              <span className="hidden sm:inline">Scan QR</span>
-            </Link>
-
             <button
               onClick={handleLogout}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-800/50 text-xs font-bold transition-all"
-              title="Sign Out"
+              title="Sign Out of Admin OS"
             >
               <LogOut className="w-4 h-4 text-red-400" />
               <span className="hidden sm:inline">Logout</span>
@@ -619,585 +764,39 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* =========================================================================
-            ADMIN PANEL NAVIGATION STRUCTURE (Responsive Tabs)
+            VIEW: DASHBOARD (EXECUTIVE OVERVIEW WITH 8 REAL DB KPIS)
         ========================================================================= */}
-        <div className="flex items-center gap-1.5 overflow-x-auto p-1.5 bg-slate-950 rounded-2xl border border-slate-800 w-full scrollbar-thin">
-          {[
-            { id: 'RADAR', label: 'Compliance Radar', icon: ShieldCheck },
-            {
-              id: 'TECHNICIANS',
-              label: 'Technicians',
-              icon: Users,
-              badge: subscriptionData?.usage?.technicians
-                ? `${subscriptionData.usage.technicians.active}/${
-                    subscriptionData.usage.technicians.maxNumeric >= 999999
-                      ? '∞'
-                      : subscriptionData.usage.technicians.max
-                  }`
-                : undefined,
-            },
-            { id: 'WORK_ORDERS', label: 'Work Orders', icon: Wrench },
-            { id: 'INSPECTIONS', label: 'Inspections', icon: CheckCircle2 },
-            { id: 'REPORTS', label: 'Reports', icon: FileText },
-            { id: 'DATA_MANAGE', label: 'Data & Assets', icon: Database },
-            {
-              id: 'AGENCY',
-              label: 'Agency & Plan',
-              icon: CreditCard,
-              badge: subscriptionData?.plan?.name?.replace(' AMC', ''),
-              badgeColor: 'bg-amber-500/20 text-amber-300 border border-amber-500/30',
-            },
-            { id: 'ADMIN_USERS', label: 'Admin Users', icon: UserCheck },
-            {
-              id: 'ENQUIRIES',
-              label: 'Website Leads',
-              icon: Mail,
-              badge:
-                enquiriesList.filter((e) => e.status === 'NEW').length > 0
-                  ? enquiriesList.filter((e) => e.status === 'NEW').length
-                  : undefined,
-              badgeColor: 'bg-red-500 text-white',
-            },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                  isActive
-                    ? 'bg-amber-500 text-slate-950 shadow-md font-black'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-900/60'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{tab.label}</span>
-                {tab.badge && (
-                  <span
-                    className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-black ${
-                      tab.badgeColor || (isActive ? 'bg-slate-950 text-amber-300' : 'bg-slate-800 text-slate-300')
-                    }`}
-                  >
-                    {tab.badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Subscription & Resource Quota Bar (Radar View) */}
-        {activeTab === 'RADAR' && subscriptionData && (
-          <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800/90 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
-                <Sparkles className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-white">{subscriptionData.plan?.name || 'Basic AMC'}</span>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
-                    {subscriptionData.subscription?.billingCycle || 'ANNUAL'}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400">
-                  Seat &amp; facility limits actively enforced across your tenant.
-                </p>
-              </div>
-            </div>
-
-            {/* Quota Progress */}
-            <div className="flex items-center gap-4 flex-wrap text-xs">
-              {/* Technicians */}
-              <div className="space-y-1 min-w-[130px]">
-                <div className="flex justify-between text-[11px]">
-                  <span className="text-slate-400 font-semibold">Tech Seats:</span>
-                  <span className="text-white font-bold">
-                    {subscriptionData.usage?.technicians?.active} / {subscriptionData.usage?.technicians?.maxNumeric >= 999999 ? '∞' : subscriptionData.usage?.technicians?.max}
-                  </span>
-                </div>
-                <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full ${
-                      subscriptionData.usage?.technicians?.isAtLimit ? 'bg-amber-500' : 'bg-cyan-500'
-                    }`}
-                    style={{ width: `${Math.min(100, subscriptionData.usage?.technicians?.percentUsed || 0)}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Towers */}
-              <div className="space-y-1 min-w-[130px]">
-                <div className="flex justify-between text-[11px]">
-                  <span className="text-slate-400 font-semibold">Towers:</span>
-                  <span className="text-white font-bold">
-                    {subscriptionData.usage?.towers?.count} / {subscriptionData.usage?.towers?.maxNumeric >= 999999 ? '∞' : subscriptionData.usage?.towers?.max}
-                  </span>
-                </div>
-                <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full ${
-                      subscriptionData.usage?.towers?.isAtLimit ? 'bg-amber-500' : 'bg-emerald-500'
-                    }`}
-                    style={{ width: `${Math.min(100, subscriptionData.usage?.towers?.percentUsed || 0)}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Assets */}
-              <div className="space-y-1 min-w-[130px]">
-                <div className="flex justify-between text-[11px]">
-                  <span className="text-slate-400 font-semibold">Assets:</span>
-                  <span className="text-white font-bold">
-                    {subscriptionData.usage?.assets?.count} / {subscriptionData.usage?.assets?.maxNumeric >= 999999 ? '∞' : subscriptionData.usage?.assets?.max}
-                  </span>
-                </div>
-                <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full ${
-                      subscriptionData.usage?.assets?.isAtLimit ? 'bg-amber-500' : 'bg-purple-500'
-                    }`}
-                    style={{ width: `${Math.min(100, subscriptionData.usage?.assets?.percentUsed || 0)}%` }}
-                  />
-                </div>
-              </div>
-
-              <button
-                onClick={() => setActiveTab('AGENCY')}
-                className="px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold transition-colors"
-              >
-                Manage Plan →
-              </button>
-            </div>
-          </div>
+        {activeTab === 'DASHBOARD' && (
+          <DashboardOverview
+            kpis={kpis}
+            subscription={subscriptionData}
+            buildings={buildings}
+            onNavigate={(tab) => setActiveTab(tab)}
+            onOpenExport={() => handleOpenExport('FIRE_ASSETS')}
+          />
         )}
 
-        {/* 4 Status Metrics Strip (Shown on Radar View) */}
-        {activeTab === 'RADAR' && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 pt-4 border-t border-slate-800/80">
-            {/* Total Buildings */}
-            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                Total Buildings
-              </span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl sm:text-3xl font-black text-white">{summary.totalBuildings}</span>
-                <span className="text-xs text-slate-400 font-medium">({summary.totalEquipments} assets)</span>
-              </div>
-            </div>
-
-            {/* Green Status: All Current */}
-            <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/30 space-y-1">
-              <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                All Current
-              </span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl sm:text-3xl font-black text-emerald-400">{summary.compliantBuildings}</span>
-                <span className="text-xs text-emerald-300/80 font-medium">100% Compliant</span>
-              </div>
-            </div>
-
-            {/* Amber Status: Due Within 30d */}
-            <div className="p-4 rounded-xl bg-amber-950/20 border border-amber-500/30 space-y-1">
-              <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                Due Soon (&lt;30d)
-              </span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl sm:text-3xl font-black text-amber-400">{summary.dueSoonBuildings}</span>
-                <span className="text-xs text-amber-300/80 font-medium">Action Pending</span>
-              </div>
-            </div>
-
-            {/* Red Status: Overdue */}
-            <div className="p-4 rounded-xl bg-red-950/20 border border-red-500/30 space-y-1">
-              <span className="text-[11px] font-bold text-red-400 uppercase tracking-wider flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
-                Overdue
-              </span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl sm:text-3xl font-black text-red-400">{summary.overdueBuildings}</span>
-                <span className="text-xs text-red-300/80 font-medium">Non-Compliant</span>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* =========================================================================
-          VIEW 1: RADAR VIEW (Managed Buildings & Compliance Telemetry)
-      ========================================================================= */}
-      {activeTab === 'RADAR' && (
-        <div className="tactile-card rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl overflow-hidden">
-          
-          {/* List Header */}
-          <div className="p-4 sm:p-5 border-b border-slate-800 bg-slate-950/80 flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-2.5">
-              <Building2 className="w-5 h-5 text-amber-400" />
-              <h2 className="text-sm sm:text-base font-bold text-white tracking-tight">
-                Managed Buildings &amp; Societies
-              </h2>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setAddBuildingModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-xs font-black shadow hover:scale-[1.02] active:scale-[0.98] transition-all"
-              >
-                <Plus className="w-4 h-4 stroke-[3]" />
-                <span>Add Client &amp; Building</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Building List Rows */}
-          {buildings.length === 0 ? (
-            <div className="p-12 text-center text-slate-400 space-y-3">
-              <Building2 className="w-12 h-12 text-slate-600 mx-auto" />
-              <p className="text-sm font-bold text-white">No buildings registered yet</p>
-              <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                Add your first building society or load clean template data in the Data Manager.
-              </p>
-              <button
-                onClick={() => setAddBuildingModalOpen(true)}
-                className="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs"
-              >
-                + Register First Building
-              </button>
-            </div>
-          ) : (
-            <div className="divide-y divide-slate-800/60">
-              {buildings.map((b: any) => {
-                const isExpanded = expandedBuildingId === b.id;
-
-                return (
-                  <div key={b.id} className="transition-colors hover:bg-slate-850/40">
-                    
-                    {/* Building Header Row */}
-                    <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div className="flex items-start gap-3">
-                        <button
-                          onClick={() => setExpandedBuildingId(isExpanded ? null : b.id)}
-                          className="p-1 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-white mt-0.5 transition-colors shrink-0"
-                          aria-label="Toggle building equipment"
-                        >
-                          {isExpanded ? <ChevronDown className="w-5 h-5 text-amber-400" /> : <ChevronRight className="w-5 h-5" />}
-                        </button>
-
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2.5 flex-wrap">
-                            <span className="text-base font-bold text-white tracking-tight">{b.name}</span>
-                            
-                            {/* Status Badge */}
-                            <span
-                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
-                                b.overallStatus === 'COMPLIANT'
-                                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                                  : b.overallStatus === 'DUE_SOON'
-                                  ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                                  : 'bg-red-500/10 text-red-400 border border-red-500/30'
-                              }`}
-                            >
-                              {b.overallStatus === 'COMPLIANT'
-                                ? '✓ 100% Compliant'
-                                : b.overallStatus === 'DUE_SOON'
-                                ? '⚠ Due Soon (30d)'
-                                : '✕ Action Needed (Overdue)'}
-                            </span>
-                          </div>
-
-                          <p className="text-xs text-slate-400">
-                            Client: <strong className="text-slate-200 font-semibold">{b.client?.name}</strong> • {b.address}
-                          </p>
-
-                          <div className="flex items-center gap-3 text-xs text-slate-400 pt-0.5">
-                            <span className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 font-mono text-[11px] text-slate-300">
-                              {b.complianceCycle}
-                            </span>
-                            <span>•</span>
-                            <span>
-                              Filing Due:{' '}
-                              <strong className={b.filingDaysRemaining <= 30 ? 'text-amber-400 font-bold' : 'text-slate-200'}>
-                                {new Date(b.nextFilingDueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                {' '}({b.filingDaysRemaining > 0 ? `${b.filingDaysRemaining}d left` : `${Math.abs(b.filingDaysRemaining)}d overdue`})
-                              </strong>
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Actions & Equipment Breakdown Pill */}
-                      <div className="flex items-center gap-2.5 self-end md:self-auto flex-wrap">
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-medium">
-                          <span className="text-white font-bold">{b.totalEquipments} Units:</span>
-                          <span className="text-emerald-400 font-semibold">{b.compliantCount} Fit</span>
-                          {b.dueCount > 0 && <span className="text-amber-400 font-semibold">• {b.dueCount} Due</span>}
-                          {b.overdueCount > 0 && <span className="text-red-400 font-bold">• {b.overdueCount} Overdue</span>}
-                        </div>
-
-                        <button
-                          onClick={() => setBulkAddModalOpen(b)}
-                          className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 hover:border-amber-500/40 text-xs font-bold transition-all"
-                        >
-                          + Bulk Add
-                        </button>
-
-                        <button
-                          onClick={() => setSingleAddEquipModalOpen(b)}
-                          className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 hover:border-amber-500/40 text-xs font-bold transition-all"
-                        >
-                          + Single Tag
-                        </button>
-
-                        <Link
-                          href={`/report/${b.id}`}
-                          className="flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/30 text-xs font-bold transition-all hover:scale-[1.02]"
-                        >
-                          <FileText className="w-3.5 h-3.5" />
-                          <span>Form-B Report</span>
-                        </Link>
-                      </div>
-                    </div>
-
-                    {/* Expanded Equipment Breakdown Table */}
-                    {isExpanded && (
-                      <div className="bg-slate-950/90 border-t border-slate-800 p-4 sm:p-6 space-y-4">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-2">
-                            <Layers className="w-4 h-4" />
-                            <span>Equipment Registry ({b.equipments.length} Assets)</span>
-                          </h3>
-                        </div>
-
-                        {b.equipments.length === 0 ? (
-                          <div className="p-8 text-center text-slate-400 bg-slate-900/60 rounded-xl border border-slate-800 space-y-2">
-                            <p>No equipment registered for this building yet.</p>
-                            <button
-                              onClick={() => setBulkAddModalOpen(b)}
-                              className="px-3.5 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold text-xs"
-                            >
-                              + Bulk Generate QR Tags
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="bg-slate-900/80 rounded-xl border border-slate-800 overflow-x-auto shadow-md">
-                            <table className="w-full text-left text-xs">
-                              <thead className="bg-slate-950/90 text-slate-400 uppercase text-[10px] font-bold tracking-wider border-b border-slate-800">
-                                <tr>
-                                  <th className="py-3 px-4">QR Tag</th>
-                                  <th className="py-3 px-4">Type &amp; Spec</th>
-                                  <th className="py-3 px-4">Location</th>
-                                  <th className="py-3 px-4">Last Service</th>
-                                  <th className="py-3 px-4">Next Due Date</th>
-                                  <th className="py-3 px-4">Status</th>
-                                  <th className="py-3 px-4 text-right">Action</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-800/60">
-                                {b.equipments.map((eq: any) => {
-                                  const diffDays = Math.ceil((new Date(eq.nextDueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-                                  const status = diffDays < 0 ? 'OVERDUE' : diffDays <= 30 ? 'DUE_SOON' : 'COMPLIANT';
-
-                                  return (
-                                    <tr key={eq.id} className="hover:bg-slate-850/50 transition-colors">
-                                      <td className="py-3 px-4 font-mono font-bold">
-                                        <Link href={`/scan/${eq.qrCode}`} className="text-amber-400 hover:underline bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
-                                          {eq.qrCode}
-                                        </Link>
-                                      </td>
-                                      <td className="py-3 px-4 font-semibold text-white">
-                                        {eq.capacity} ({eq.type})
-                                      </td>
-                                      <td className="py-3 px-4 text-slate-300">{eq.location}</td>
-                                      <td className="py-3 px-4 text-slate-400">
-                                        {new Date(eq.lastServiceDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                      </td>
-                                      <td className="py-3 px-4 font-semibold text-slate-200">
-                                        {new Date(eq.nextDueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                        <span className={`block text-[10px] font-normal ${diffDays < 0 ? 'text-red-400 font-bold' : diffDays <= 30 ? 'text-amber-400 font-bold' : 'text-slate-400'}`}>
-                                          {diffDays < 0 ? `${Math.abs(diffDays)}d overdue` : diffDays <= 30 ? `Due in ${diffDays}d` : `${Math.round(diffDays / 30)} mos left`}
-                                        </span>
-                                      </td>
-                                      <td className="py-3 px-4">
-                                        <span
-                                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                                            status === 'COMPLIANT'
-                                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                                              : status === 'DUE_SOON'
-                                              ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                                              : 'bg-red-500/10 text-red-400 border border-red-500/30'
-                                          }`}
-                                        >
-                                          {status === 'COMPLIANT' ? 'Current' : status === 'DUE_SOON' ? 'Due Soon' : 'Overdue'}
-                                        </span>
-                                      </td>
-                                      <td className="py-3 px-4 text-right">
-                                        <Link
-                                          href={`/scan/${eq.qrCode}`}
-                                          className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black shadow transition-all hover:scale-105"
-                                        >
-                                          <Scan className="w-3 h-3 stroke-[2.5]" />
-                                          <span>Service</span>
-                                        </Link>
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* =========================================================================
-          VIEW: TECHNICIAN MANAGEMENT (Roster, Seat Usage, Assignments & Audit)
-      ========================================================================= */}
-      {activeTab === 'TECHNICIANS' && (
-        <div className="space-y-6">
-          {/* Sub Navigation Bar for Technicians */}
-          <div className="tactile-card rounded-2xl bg-slate-900/90 border border-slate-800 p-4 shadow-xl flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-2 overflow-x-auto">
-              {[
-                { id: 'ROSTER', label: 'Technician Roster & Seats', icon: Users },
-                { id: 'ASSIGNMENTS', label: 'Facility Assignments', icon: Building2 },
-                { id: 'AUDIT_LOG', label: 'Compliance Audit Trail', icon: Clock },
-              ].map((sub) => {
-                const Icon = sub.icon;
-                const active = techSubTab === sub.id;
-                return (
-                  <button
-                    key={sub.id}
-                    onClick={() => setTechSubTab(sub.id as any)}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                      active
-                        ? 'bg-amber-500 text-slate-950 shadow-md font-black'
-                        : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                    <span>{sub.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <button
-              onClick={() => {
-                fetchData();
-                fetchSubscription();
-              }}
-              className="p-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800"
-              title="Refresh Technicians"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
-          </div>
-
-          {techSubTab === 'ROSTER' && (
-            <TechnicianManagement
-              onNavigateToSubscription={() => setActiveTab('AGENCY')}
-              showToast={showToast}
-            />
-          )}
-
-          {techSubTab === 'ASSIGNMENTS' && (
-            <TechnicianAssignments showToast={showToast} />
-          )}
-
-          {techSubTab === 'AUDIT_LOG' && (
-            <TechnicianActivityLog />
-          )}
-        </div>
-      )}
-
-      {/* =========================================================================
-          VIEW: WORK ORDERS & DISPATCH
-      ========================================================================= */}
-      {activeTab === 'WORK_ORDERS' && (
-        <WorkOrdersView showToast={showToast} />
-      )}
-
-      {/* =========================================================================
-          VIEW: INSPECTIONS LOGS & COMPLIANCE
-      ========================================================================= */}
-      {activeTab === 'INSPECTIONS' && (
-        <InspectionsView showToast={showToast} />
-      )}
-
-      {/* =========================================================================
-          VIEW: STATUTORY REPORTS & QR LABELS
-      ========================================================================= */}
-      {activeTab === 'REPORTS' && (
-        <ReportsView buildings={buildings} summary={summary} company={company} />
-      )}
-
-      {/* =========================================================================
-          VIEW 2: DATA MANAGER & BACKEND SETTINGS
-      ========================================================================= */}
-      {activeTab === 'DATA_MANAGE' && (
-        <div className="tactile-card rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl p-5 sm:p-6 space-y-6">
-          
-          {/* Sub Navigation Bar */}
-          <div className="flex items-center justify-between border-b border-slate-800 pb-4 flex-wrap gap-3">
-            <div className="flex items-center gap-2 overflow-x-auto">
-              {[
-                { id: 'COMPANY', label: 'AMC Company Profile', icon: Settings },
-                { id: 'CLIENTS', label: `Clients & Societies (${clientsList.length})`, icon: UserCheck },
-                { id: 'BUILDINGS', label: `Buildings (${buildings.length})`, icon: Building2 },
-                { id: 'EQUIPMENT', label: `Equipment Registry (${equipmentsList.length})`, icon: Layers },
-                { id: 'RESET', label: 'Wipe & Reset Tools', icon: Trash2 },
-              ].map((sub) => {
-                const Icon = sub.icon;
-                const active = dataSubTab === sub.id;
-                return (
-                  <button
-                    key={sub.id}
-                    onClick={() => setDataSubTab(sub.id as any)}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                      active
-                        ? 'bg-amber-500 text-slate-950 shadow-md'
-                        : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                    <span>{sub.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <button
-              onClick={fetchData}
-              className="p-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800"
-              title="Refresh Data"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* SUB-PANEL 1: AMC COMPANY PROFILE SETTINGS */}
-          {dataSubTab === 'COMPANY' && (
-            <div className="space-y-4 max-w-2xl">
-              <div>
-                <h3 className="text-base font-bold text-white">AMC Company Profile</h3>
-                <p className="text-xs text-slate-400">
-                  Update your official company details. These details automatically brand all Form-B Compliance PDFs, Technician sticker sheets, and audit reports.
-                </p>
+        {/* =========================================================================
+            VIEW: AGENCY & SUBSCRIPTION PLAN TIER
+        ========================================================================= */}
+        {activeTab === 'AGENCY' && (
+          <div className="space-y-8">
+            <div className="tactile-card rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl p-5 sm:p-6 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div>
+                  <h2 className="text-base font-bold text-white flex items-center gap-2">
+                    <Building2 className="w-5 h-5 text-amber-400" />
+                    <span>Agency Organization Profile</span>
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Official statutory credentials printed on Maharashtra Form-B inspection certificates.
+                  </p>
+                </div>
               </div>
 
               <form onSubmit={handleSaveCompany} className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-4 text-xs">
                 <div>
-                  <label className="block text-slate-300 font-bold mb-1">Company / Business Name *</label>
+                  <label className="block text-slate-300 font-bold mb-1">Company / Agency Name *</label>
                   <input
                     type="text"
                     required
@@ -1233,574 +832,261 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-slate-300 font-bold mb-1">Official Service Email *</label>
-                  <input
-                    type="email"
-                    required
-                    value={companyForm.email}
-                    onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })}
-                    placeholder="e.g. service@nationalfireamc.in"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 font-bold mb-1">Registered Service Office Address *</label>
-                  <textarea
-                    rows={2}
-                    required
-                    value={companyForm.address}
-                    onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })}
-                    placeholder="e.g. Plot 18, Commercial Zone, Navi Mumbai, Maharashtra - 400708"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
-                  />
-                </div>
-
-                <div className="pt-2 flex justify-end">
-                  <button
-                    type="submit"
-                    className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 transition-all hover:scale-[1.02]"
-                  >
-                    Save Company Profile
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {/* SUB-PANEL 2: CLIENTS & SOCIETIES */}
-          {dataSubTab === 'CLIENTS' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between flex-wrap gap-3">
-                <div>
-                  <h3 className="text-base font-bold text-white">Client Societies &amp; Corporate Accounts</h3>
-                  <p className="text-xs text-slate-400">Manage real customer societies, contact persons, and building links.</p>
-                </div>
-                <button
-                  onClick={() => setAddBuildingModalOpen(true)}
-                  className="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-black text-xs flex items-center gap-1.5"
-                >
-                  <Plus className="w-4 h-4 stroke-[3]" />
-                  <span>Add New Client</span>
-                </button>
-              </div>
-
-              <div className="bg-slate-950/80 rounded-xl border border-slate-800 overflow-x-auto shadow">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-900/90 text-slate-400 uppercase text-[10px] font-bold tracking-wider border-b border-slate-800">
-                    <tr>
-                      <th className="py-3 px-4">Client / Society Name</th>
-                      <th className="py-3 px-4">Contact Person</th>
-                      <th className="py-3 px-4">Phone</th>
-                      <th className="py-3 px-4">Email</th>
-                      <th className="py-3 px-4">Buildings</th>
-                      <th className="py-3 px-4">Total Assets</th>
-                      <th className="py-3 px-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/60">
-                    {clientsList.map((c) => (
-                      <tr key={c.id} className="hover:bg-slate-850/40">
-                        <td className="py-3 px-4 font-bold text-white">{c.name}</td>
-                        <td className="py-3 px-4 text-slate-300">{c.contactPerson}</td>
-                        <td className="py-3 px-4 text-amber-400 font-mono">{c.phone}</td>
-                        <td className="py-3 px-4 text-slate-400">{c.email || '—'}</td>
-                        <td className="py-3 px-4 font-bold text-white">{c.buildingCount}</td>
-                        <td className="py-3 px-4 text-slate-300">{c.totalEquipments} units</td>
-                        <td className="py-3 px-4 text-right space-x-2">
-                          <button
-                            onClick={() => setEditClientModal(c)}
-                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white"
-                            title="Edit Client"
-                          >
-                            <Edit className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClient(c.id, c.name)}
-                            className="p-1.5 rounded-lg bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-500/30"
-                            title="Delete Client"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* SUB-PANEL 3: BUILDINGS & SITES */}
-          {dataSubTab === 'BUILDINGS' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between flex-wrap gap-3">
-                <div>
-                  <h3 className="text-base font-bold text-white">Buildings &amp; Properties</h3>
-                  <p className="text-xs text-slate-400">Configured premises under fire compliance contracts.</p>
-                </div>
-                <button
-                  onClick={() => setAddBuildingModalOpen(true)}
-                  className="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-black text-xs flex items-center gap-1.5"
-                >
-                  <Plus className="w-4 h-4 stroke-[3]" />
-                  <span>Add Building</span>
-                </button>
-              </div>
-
-              <div className="bg-slate-950/80 rounded-xl border border-slate-800 overflow-x-auto shadow">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-900/90 text-slate-400 uppercase text-[10px] font-bold tracking-wider border-b border-slate-800">
-                    <tr>
-                      <th className="py-3 px-4">Building Name</th>
-                      <th className="py-3 px-4">Society / Client</th>
-                      <th className="py-3 px-4">Address</th>
-                      <th className="py-3 px-4">Compliance Cycle</th>
-                      <th className="py-3 px-4">Next Filing Due</th>
-                      <th className="py-3 px-4">Assets</th>
-                      <th className="py-3 px-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/60">
-                    {buildings.map((b: any) => (
-                      <tr key={b.id} className="hover:bg-slate-850/40">
-                        <td className="py-3 px-4 font-bold text-white">{b.name}</td>
-                        <td className="py-3 px-4 text-slate-300">{b.client?.name}</td>
-                        <td className="py-3 px-4 text-slate-400 max-w-xs truncate">{b.address}</td>
-                        <td className="py-3 px-4 font-mono text-[11px] text-amber-300">{b.complianceCycle}</td>
-                        <td className="py-3 px-4 font-semibold text-slate-200">
-                          {new Date(b.nextFilingDueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </td>
-                        <td className="py-3 px-4 font-bold text-white">{b.totalEquipments} units</td>
-                        <td className="py-3 px-4 text-right space-x-2">
-                          <button
-                            onClick={() => setEditBuildingModal(b)}
-                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white"
-                            title="Edit Building"
-                          >
-                            <Edit className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteBuilding(b.id, b.name)}
-                            className="p-1.5 rounded-lg bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-500/30"
-                            title="Delete Building"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* SUB-PANEL 4: EQUIPMENT REGISTRY */}
-          {dataSubTab === 'EQUIPMENT' && (
-            <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h3 className="text-base font-bold text-white">Equipment QR Inventory</h3>
-                  <p className="text-xs text-slate-400">Search and manage individual fire extinguishers, hydrants, and valves.</p>
-                </div>
-
-                <div className="flex items-center gap-2 flex-wrap">
-                  {/* Building Filter */}
-                  <select
-                    value={equipFilterBuilding}
-                    onChange={(e) => setEquipFilterBuilding(e.target.value)}
-                    className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
-                  >
-                    <option value="ALL">All Buildings</option>
-                    {buildings.map((b: any) => (
-                      <option key={b.id} value={b.id}>{b.name}</option>
-                    ))}
-                  </select>
-
-                  {/* Search Bar */}
-                  <div className="relative">
-                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-300 font-bold mb-1">Official Service Email *</label>
+                    <input
+                      type="email"
+                      required
+                      value={companyForm.email}
+                      onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })}
+                      placeholder="e.g. service@nationalfireamc.in"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 font-bold mb-1">Registered Service Office Address</label>
                     <input
                       type="text"
-                      placeholder="Search QR or location..."
-                      value={equipSearch}
-                      onChange={(e) => setEquipSearch(e.target.value)}
-                      className="bg-slate-950 border border-slate-700 rounded-xl pl-8 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                      value={companyForm.address}
+                      onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })}
+                      placeholder="e.g. Unit 402, Trade Tower, Mumbai 400001"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
                     />
                   </div>
                 </div>
-              </div>
 
-              <div className="bg-slate-950/80 rounded-xl border border-slate-800 overflow-x-auto shadow">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-900/90 text-slate-400 uppercase text-[10px] font-bold tracking-wider border-b border-slate-800">
-                    <tr>
-                      <th className="py-3 px-4">QR Code Tag</th>
-                      <th className="py-3 px-4">Building</th>
-                      <th className="py-3 px-4">Type &amp; Capacity</th>
-                      <th className="py-3 px-4">Location</th>
-                      <th className="py-3 px-4">Next Due</th>
-                      <th className="py-3 px-4">Live Status</th>
-                      <th className="py-3 px-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/60">
-                    {equipmentsList.map((eq) => (
-                      <tr key={eq.id} className="hover:bg-slate-850/40">
-                        <td className="py-3 px-4 font-mono font-bold">
-                          <Link href={`/scan/${eq.qrCode}`} className="text-amber-400 hover:underline bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
-                            {eq.qrCode}
-                          </Link>
-                        </td>
-                        <td className="py-3 px-4 font-medium text-slate-300">{eq.building?.name}</td>
-                        <td className="py-3 px-4 text-white font-semibold">{eq.capacity} ({eq.type})</td>
-                        <td className="py-3 px-4 text-slate-400">{eq.location}</td>
-                        <td className="py-3 px-4 font-semibold text-slate-200">
-                          {new Date(eq.nextDueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                              eq.liveStatus === 'COMPLIANT'
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                                : eq.liveStatus === 'DUE_SOON'
-                                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                                : 'bg-red-500/10 text-red-400 border border-red-500/30'
-                            }`}
-                          >
-                            {eq.liveStatus}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-right space-x-2">
-                          <button
-                            onClick={() => setEditEquipmentModal(eq)}
-                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white"
-                            title="Edit Equipment"
-                          >
-                            <Edit className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteEquipment(eq.id, eq.qrCode)}
-                            className="p-1.5 rounded-lg bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-500/30"
-                            title="Delete Equipment"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* SUB-PANEL 5: WIPE ALL DEMO DATA & RESET */}
-          {dataSubTab === 'RESET' && (
-            <div className="space-y-6 max-w-2xl">
-              <div>
-                <h3 className="text-base font-bold text-white">Database Reset &amp; Demo Data Removal</h3>
-                <p className="text-xs text-slate-400">
-                  Safely remove demo entities, wipe sample buildings, or restore clean starter templates.
-                </p>
-              </div>
-
-              {/* Danger Zone: Wipe All Demo Data */}
-              <div className="p-5 rounded-2xl bg-red-950/20 border-2 border-red-500/40 space-y-3">
-                <div className="flex items-center gap-2 text-red-400 font-bold text-sm">
-                  <AlertTriangle className="w-5 h-5 text-red-400" />
-                  <span>Wipe All Demo Companies &amp; Data</span>
-                </div>
-                <p className="text-xs text-slate-300">
-                  This permanently removes all existing demo client societies, demo buildings, demo equipment records, and test service logs. Your database will be completely empty and 100% clean so you can register your actual real-world AMC contracts.
-                </p>
-                <div className="pt-1">
-                  <button
-                    onClick={handleWipeAllDemo}
-                    className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black text-xs shadow-md transition-all hover:scale-[1.02]"
-                  >
-                    Confirm: Wipe All Demo Records
-                  </button>
-                </div>
-              </div>
-
-              {/* Template Starter: Seed Clean Unbranded Data */}
-              <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
-                <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
-                  <Sparkles className="w-5 h-5 text-amber-400" />
-                  <span>Load Clean Starter Template (No Brand Names)</span>
-                </div>
-                <p className="text-xs text-slate-400">
-                  Seeds a clean, unbranded reference structure with generic facilities (Horizon Tech IT Tower &amp; Emerald Heights Society) to test QR code scanning, inspection logs, and Maharashtra Form-B PDF generation.
-                </p>
-                <div className="pt-1">
-                  <button
-                    onClick={handleSeedCleanData}
-                    className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/40 font-bold text-xs transition-colors"
-                  >
-                    Load Clean Template Data
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-        </div>
-      )}
-
-      {/* =========================================================================
-          VIEW: AGENCY & SUBSCRIPTION PLAN TIER
-      ========================================================================= */}
-      {activeTab === 'AGENCY' && (
-        <div className="space-y-8">
-          {/* Agency Profile */}
-          <div className="tactile-card rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl p-5 sm:p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div>
-                <h2 className="text-base font-bold text-white flex items-center gap-2">
-                  <Building2 className="w-5 h-5 text-amber-400" />
-                  <span>Agency Organization Profile</span>
-                </h2>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Official statutory credentials printed on Maharashtra Form-B inspection certificates.
-                </p>
-              </div>
-            </div>
-
-            <form onSubmit={handleSaveCompany} className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-4 text-xs">
-              <div>
-                <label className="block text-slate-300 font-bold mb-1">Company / Agency Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={companyForm.name}
-                  onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
-                  placeholder="e.g. National Fire Safety & AMC Services"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-300 font-bold mb-1">Govt. Fire License Number *</label>
-                  <input
-                    type="text"
-                    required
-                    value={companyForm.licenseNumber}
-                    onChange={(e) => setCompanyForm({ ...companyForm, licenseNumber: e.target.value })}
-                    placeholder="e.g. MH/FIRE/LIC/2024/098"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-300 font-bold mb-1">Emergency Dispatch Phone *</label>
-                  <input
-                    type="text"
-                    required
-                    value={companyForm.phone}
-                    onChange={(e) => setCompanyForm({ ...companyForm, phone: e.target.value })}
-                    placeholder="e.g. +91 98200 11223"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-300 font-bold mb-1">Official Service Email *</label>
-                  <input
-                    type="email"
-                    required
-                    value={companyForm.email}
-                    onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })}
-                    placeholder="e.g. service@nationalfireamc.in"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-300 font-bold mb-1">Registered Service Office Address</label>
-                  <input
-                    type="text"
-                    value={companyForm.address}
-                    onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })}
-                    placeholder="e.g. Unit 402, Trade Tower, Mumbai 400001"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow transition-all hover:scale-[1.01]"
-              >
-                Save Agency Profile
-              </button>
-            </form>
-          </div>
-
-          {/* Subscription Manager */}
-          <SubscriptionManager
-            showToast={showToast}
-            onPlanChanged={() => {
-              fetchSubscription();
-              fetchData();
-            }}
-          />
-        </div>
-      )}
-
-      {/* =========================================================================
-          VIEW: ADMIN USERS & RBAC PERMISSIONS
-      ========================================================================= */}
-      {activeTab === 'ADMIN_USERS' && (
-        <AdminUsersView currentUser={data?.user} company={company} />
-      )}
-
-      {/* =========================================================================
-          VIEW 3: WEBSITE LEADS & CUSTOMER ENQUIRIES
-      ========================================================================= */}
-      {activeTab === 'ENQUIRIES' && (
-        <div className="tactile-card rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl p-5 sm:p-6 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <Mail className="w-5 h-5 text-amber-400" />
-                <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
-                  Website Inquiries &amp; Demo Requests
-                </h2>
-                <span className="px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 text-xs font-semibold">
-                  {enquiriesList.length} Leads Captured
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 mt-1">
-                Real-time submissions from your public website demo and contact forms stored in Supabase PostgreSQL.
-              </p>
-            </div>
-
-            {/* Filter pills */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {['ALL', 'NEW', 'CONTACTED', 'CONVERTED', 'ARCHIVED'].map((st) => (
                 <button
-                  key={st}
-                  onClick={() => setEnquiryStatusFilter(st)}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                    enquiryStatusFilter === st
-                      ? 'bg-amber-500 text-slate-950 shadow'
-                      : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
-                  }`}
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow transition-all hover:scale-[1.01]"
                 >
-                  {st}
+                  Save Agency Profile
                 </button>
-              ))}
+              </form>
+            </div>
+
+            <SubscriptionManager
+              showToast={showToast}
+              onPlanChanged={() => {
+                fetchSubscription();
+                fetchData();
+              }}
+            />
+          </div>
+        )}
+
+        {/* =========================================================================
+            VIEW: ADMIN USERS & RBAC PERMISSIONS
+        ========================================================================= */}
+        {activeTab === 'ADMIN_USERS' && (
+          <AdminUsersView currentUser={data?.user} company={company} />
+        )}
+
+        {/* =========================================================================
+            VIEW: TECHNICIAN MANAGEMENT (ROSTER, SEATS, ASSIGNMENTS, AUDIT)
+        ========================================================================= */}
+        {activeTab === 'TECHNICIANS' && (
+          <div className="space-y-6">
+            <div className="tactile-card rounded-2xl bg-slate-900/90 border border-slate-800 p-4 shadow-xl flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-2 overflow-x-auto">
+                {[
+                  { id: 'ROSTER', label: 'Technician Roster & Seats', icon: Users },
+                  { id: 'ASSIGNMENTS', label: 'Facility Assignments', icon: Building2 },
+                  { id: 'AUDIT_LOG', label: 'Compliance Audit Trail', icon: Clock },
+                ].map((sub) => {
+                  const Icon = sub.icon;
+                  const active = techSubTab === sub.id;
+                  return (
+                    <button
+                      key={sub.id}
+                      onClick={() => setTechSubTab(sub.id as any)}
+                      className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                        active
+                          ? 'bg-amber-500 text-slate-950 shadow-md font-black'
+                          : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      <span>{sub.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleOpenExport('TECHNICIANS')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-all shadow-sm"
+                  title="Export Technicians to Excel (.xlsx)"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                  <span>Export Excel</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    fetchData();
+                    fetchSubscription();
+                  }}
+                  className="p-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800"
+                  title="Refresh Technicians"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {techSubTab === 'ROSTER' && (
+              <TechnicianManagement
+                onNavigateToSubscription={() => setActiveTab('AGENCY')}
+                showToast={showToast}
+              />
+            )}
+
+            {techSubTab === 'ASSIGNMENTS' && (
+              <TechnicianAssignments showToast={showToast} />
+            )}
+
+            {techSubTab === 'AUDIT_LOG' && (
+              <TechnicianActivityLog />
+            )}
+          </div>
+        )}
+
+        {/* =========================================================================
+            VIEW: CLIENT SOCIETIES & ACCOUNTS
+        ========================================================================= */}
+        {activeTab === 'CLIENTS' && (
+          <ClientsView
+            clientsList={clientsList}
+            onAddClient={() => setAddBuildingModalOpen(true)}
+            onEditClient={(c) => setEditClientModal(c)}
+            onDeleteClient={handleDeleteClient}
+            onOpenExport={() => handleOpenExport('CLIENTS')}
+          />
+        )}
+
+        {/* =========================================================================
+            VIEW: BUILDINGS & TOWERS
+        ========================================================================= */}
+        {activeTab === 'BUILDINGS' && (
+          <BuildingsView
+            buildings={buildings}
+            summary={summary}
+            expandedBuildingId={expandedBuildingId}
+            setExpandedBuildingId={setExpandedBuildingId}
+            onAddBuilding={() => setAddBuildingModalOpen(true)}
+            onEditBuilding={(b) => setEditBuildingModal(b)}
+            onDeleteBuilding={handleDeleteBuilding}
+            onBulkAdd={(b) => setBulkAddModalOpen(b)}
+            onSingleAdd={(b) => setSingleAddEquipModalOpen(b)}
+            onOpenExport={() => handleOpenExport('BUILDINGS')}
+          />
+        )}
+
+        {/* =========================================================================
+            VIEW: FIRE ASSETS & QR INVENTORY
+        ========================================================================= */}
+        {activeTab === 'FIRE_ASSETS' && (
+          <FireAssetsView
+            equipmentsList={equipmentsList}
+            buildings={buildings}
+            equipFilterBuilding={equipFilterBuilding}
+            setEquipFilterBuilding={setEquipFilterBuilding}
+            equipSearch={equipSearch}
+            setEquipSearch={setEquipSearch}
+            onEditEquipment={(eq) => setEditEquipmentModal(eq)}
+            onDeleteEquipment={handleDeleteEquipment}
+            onOpenExport={() => handleOpenExport('FIRE_ASSETS')}
+          />
+        )}
+
+        {/* =========================================================================
+            VIEW: INSPECTION LOGS & COMPLIANCE
+        ========================================================================= */}
+        {activeTab === 'INSPECTIONS' && (
+          <div className="space-y-4">
+            <div className="flex justify-end">
               <button
-                onClick={fetchEnquiries}
-                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
-                title="Refresh leads"
+                onClick={() => handleOpenExport('INSPECTIONS')}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-all shadow-sm"
+                title="Export Inspections to Excel (.xlsx)"
               >
-                <RefreshCw className={`w-4 h-4 ${loadingEnquiries ? 'animate-spin text-amber-400' : ''}`} />
+                <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                <span>Export Excel</span>
               </button>
             </div>
+            <InspectionsView showToast={showToast} />
           </div>
+        )}
 
-          {loadingEnquiries ? (
-            <div className="py-16 text-center text-slate-400 flex flex-col items-center justify-center gap-2">
-              <RefreshCw className="w-6 h-6 animate-spin text-amber-500" />
-              <p className="text-xs">Loading inbound leads...</p>
+        {/* =========================================================================
+            VIEW: WORK ORDERS & DISPATCH
+        ========================================================================= */}
+        {activeTab === 'WORK_ORDERS' && (
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <button
+                onClick={() => handleOpenExport('WORK_ORDERS')}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-all shadow-sm"
+                title="Export Work Orders to Excel (.xlsx)"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                <span>Export Excel</span>
+              </button>
             </div>
-          ) : enquiriesList.length === 0 ? (
-            <div className="py-16 text-center text-slate-400 space-y-3">
-              <Mail className="w-12 h-12 text-slate-600 mx-auto" />
-              <h3 className="text-sm font-bold text-white">No inquiries received yet</h3>
-              <p className="text-xs text-slate-400 max-w-md mx-auto">
-                When prospective clients submit forms on your public website, their contact details, facility type, and requested demo slot will appear here instantly.
-              </p>
+            <WorkOrdersView showToast={showToast} />
+          </div>
+        )}
+
+        {/* =========================================================================
+            VIEW: STATUTORY REPORTS & FORM-B
+        ========================================================================= */}
+        {activeTab === 'REPORTS' && (
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <button
+                onClick={() => handleOpenExport('REPORTS')}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-all shadow-sm"
+                title="Export Report Data to Excel (.xlsx)"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                <span>Export Excel</span>
+              </button>
             </div>
-          ) : (
-            <div className="overflow-x-auto rounded-xl border border-slate-800">
-              <table className="w-full text-left text-xs text-slate-300">
-                <thead className="bg-slate-950 text-slate-400 uppercase font-semibold text-[10px] tracking-wider border-b border-slate-800">
-                  <tr>
-                    <th className="py-3 px-4">Date / Source</th>
-                    <th className="py-3 px-4">Name &amp; Company</th>
-                    <th className="py-3 px-4">Contact</th>
-                    <th className="py-3 px-4">Requirement / Facility</th>
-                    <th className="py-3 px-4">Notes / Message</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60 bg-slate-900/60">
-                  {enquiriesList.map((lead: any) => (
-                    <tr key={lead.id} className="hover:bg-slate-850/50 transition-colors">
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        <div className="font-semibold text-white">
-                          {new Date(lead.createdAt).toLocaleDateString('en-IN', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                          })}
-                        </div>
-                        <span className="text-[10px] text-amber-400/90 font-medium">{lead.source || 'Website'}</span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="font-bold text-white">{lead.name || 'Unnamed Prospect'}</div>
-                        <div className="text-[11px] text-slate-400">{lead.company || lead.city || 'Direct Inquiry'}</div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="text-slate-200">{lead.email}</div>
-                        {lead.phone && <div className="text-[11px] text-slate-400">{lead.phone}</div>}
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="font-medium text-slate-200">{lead.facilityType || lead.type || 'Demo'}</div>
-                        {(lead.assetCount || lead.preferredDate) && (
-                          <div className="text-[10px] text-slate-400">
-                            {lead.assetCount && `${lead.assetCount} assets • `}
-                            {lead.preferredDate && `Slot: ${lead.preferredDate} ${lead.preferredTime || ''}`}
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 max-w-xs">
-                        <p className="line-clamp-2 text-slate-400 text-[11px]">
-                          {lead.message || 'No additional message provided.'}
-                        </p>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                            lead.status === 'NEW'
-                              ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
-                              : lead.status === 'CONTACTED'
-                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                              : lead.status === 'CONVERTED'
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                              : 'bg-slate-700/40 text-slate-400 border border-slate-700'
-                          }`}
-                        >
-                          {lead.status}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
-                        <select
-                          value={lead.status}
-                          onChange={(e) => handleUpdateEnquiryStatus(lead.id, e.target.value)}
-                          className="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-300 font-semibold focus:outline-none focus:border-amber-500"
-                        >
-                          <option value="NEW">NEW</option>
-                          <option value="CONTACTED">CONTACTED</option>
-                          <option value="CONVERTED">CONVERTED</option>
-                          <option value="ARCHIVED">ARCHIVED</option>
-                        </select>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
+            <ReportsView buildings={buildings} summary={summary} company={company} />
+          </div>
+        )}
+
+        {/* =========================================================================
+            VIEW: SETTINGS (LEADS, TOOLS & AGENCY PROFILE)
+        ========================================================================= */}
+        {activeTab === 'SETTINGS' && (
+          <SettingsView
+            subTab={settingsSubTab}
+            setSubTab={setSettingsSubTab}
+            enquiriesList={enquiriesList}
+            enquiryStatusFilter={enquiryStatusFilter}
+            setEnquiryStatusFilter={setEnquiryStatusFilter}
+            loadingEnquiries={loadingEnquiries}
+            onRefreshEnquiries={fetchEnquiries}
+            onUpdateEnquiryStatus={handleUpdateEnquiryStatus}
+            onWipeAllDemo={handleWipeAllDemo}
+            onSeedCleanData={handleSeedCleanData}
+            companyForm={companyForm}
+            setCompanyForm={setCompanyForm}
+            handleSaveCompany={handleSaveCompany}
+          />
+        )}
+
+        {/* Excel Export Dialog */}
+        <ExportModal
+          isOpen={exportModalOpen}
+          onClose={() => setExportModalOpen(false)}
+          initialDataType={exportConfigKey}
+          dataMap={exportDataMap}
+          showToast={showToast}
+        />
 
       {/* =========================================================================
           MODAL 1: ADD CLIENT & BUILDING
@@ -2331,6 +1617,7 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
+      </main>
     </div>
   );
 }
