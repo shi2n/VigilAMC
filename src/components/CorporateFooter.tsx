@@ -86,18 +86,18 @@ export function CorporateFooter() {
             </Link>
 
             <p className="text-sm text-slate-400 leading-relaxed max-w-sm text-pretty">
-              AMC teams track hundreds of extinguishers, hydrants and panels across dozens of buildings — on paper and Excel. Renewals slip, clients fail their fire NOC audit, and the contract goes to a competitor. VigilAMC puts every asset, due date and client report on autopilot.
+              VigilAMC helps fire-safety AMC and service teams track assets, service schedules, QR-based visits, evidence and client compliance reports from one platform.
             </p>
 
             <div className="pt-2 flex flex-wrap items-center gap-2 text-xs">
               <span className="px-2.5 py-1 rounded-md bg-slate-900/90 text-cyan-200 border border-slate-700/70 font-medium">
-                ISO 9001:2015
+                Built for Fire AMC
               </span>
               <span className="px-2.5 py-1 rounded-md bg-slate-900/90 text-cyan-200 border border-slate-700/70 font-medium">
-                NFPA 10/25/72
+                QR Service Verification
               </span>
               <span className="px-2.5 py-1 rounded-md bg-slate-900/90 text-cyan-200 border border-slate-700/70 font-medium">
-                NBC 2016 Compliant
+                Form-B Structuring
               </span>
             </div>
 
@@ -176,23 +176,23 @@ export function CorporateFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/customers" className="text-slate-300 hover:text-cyan-300 transition-colors">
-                  Customer Case Studies
+                <Link href="/sample-report" className="text-slate-300 hover:text-cyan-300 transition-colors">
+                  Sample Report (PDF)
                 </Link>
               </li>
               <li>
                 <Link href="/pricing" className="text-slate-300 hover:text-cyan-300 transition-colors">
-                  Pricing &amp; Plans
+                  Pricing &amp; Pilot
                 </Link>
               </li>
               <li>
                 <Link href="/about" className="text-slate-300 hover:text-cyan-300 transition-colors">
-                  About Our Team
+                  About &amp; Mission
                 </Link>
               </li>
               <li>
                 <Link href="/contact" className="text-slate-300 hover:text-cyan-300 transition-colors">
-                  Contact &amp; Book Demo
+                  Contact &amp; Support
                 </Link>
               </li>
             </ul>
@@ -201,7 +201,7 @@ export function CorporateFooter() {
           {/* Column 3: AMC Solutions */}
           <div className="space-y-3">
             <h4 className="text-sm font-bold uppercase tracking-wider text-white">
-              Solutions
+              Capabilities
             </h4>
             <ul className="space-y-2 text-sm text-slate-300">
               <li>
@@ -211,32 +211,27 @@ export function CorporateFooter() {
               </li>
               <li>
                 <Link href="/features" className="hover:text-cyan-300 transition-colors">
-                  Hydrant &amp; Wet Riser Telemetry
+                  Hydrant &amp; Riser Maintenance Logs
                 </Link>
               </li>
               <li>
                 <Link href="/features" className="hover:text-cyan-300 transition-colors">
-                  Fire Alarm Panel Audit Hub
+                  Fire Alarm Panel Inspection Hub
                 </Link>
               </li>
               <li>
-                <Link href="/how-it-works" className="hover:text-cyan-300 transition-colors">
-                  Form-B Automated PDF Reports
+                <Link href="/sample-report" className="hover:text-cyan-300 transition-colors">
+                  Model Form-B Compliance Reports
                 </Link>
               </li>
               <li>
-                <Link href="/customers" className="hover:text-cyan-300 transition-colors">
-                  Commercial Towers &amp; IT Parks
-                </Link>
-              </li>
-              <li>
-                <Link href="/customers" className="hover:text-cyan-300 transition-colors">
-                  Hospitals &amp; Healthcare Facilities
+                <Link href="/security" className="hover:text-cyan-300 transition-colors">
+                  Security &amp; Data Architecture
                 </Link>
               </li>
               <li>
                 <Link href="/scan" className="hover:text-cyan-300 transition-colors">
-                  Technician Mobile Scanner App
+                  Technician Mobile Scanner
                 </Link>
               </li>
             </ul>
@@ -251,7 +246,7 @@ export function CorporateFooter() {
               <li className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-[#48CAE4] shrink-0 mt-0.5" />
                 <span>
-                  New Delhi 110092
+                  New Delhi 110092, India
                 </span>
               </li>
               <li className="flex items-center gap-2.5">
@@ -268,14 +263,14 @@ export function CorporateFooter() {
               </li>
               <li className="flex items-center gap-2.5">
                 <Clock className="w-4 h-4 text-[#48CAE4] shrink-0" />
-                <span>Support: 24/7 Fire Audit Dispatch</span>
+                <span>Mon &ndash; Sat: 9:00 AM &ndash; 7:00 PM IST</span>
               </li>
             </ul>
 
-            {/* Newsletter / NOC deadline tracker */}
+            {/* Newsletter / Regulatory notice */}
             <div className="pt-3">
               <p className="text-xs font-semibold text-white mb-1.5">
-                Fire Safety Regulatory Newsletter
+                Fire Safety Regulatory Updates
               </p>
               <form onSubmit={handleSubscribe} className="space-y-2">
                 <div className="flex">
@@ -284,7 +279,7 @@ export function CorporateFooter() {
                     required
                     value={emailInput}
                     onChange={(e) => setEmailInput(e.target.value)}
-                    placeholder="Enter business email"
+                    placeholder="Enter work email"
                     className="w-full text-xs px-3 py-2 rounded-l-lg bg-navy-900 border border-navy-700 text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0077B6]"
                   />
                   <button
@@ -309,25 +304,34 @@ export function CorporateFooter() {
         {/* Bottom row: Disclaimers and copyright */}
         <div className="pt-8 flex flex-col md:flex-row items-center justify-between text-xs text-slate-400 gap-4">
           <p>
-            &copy; {new Date().getFullYear()} VigilAMC Technologies Private Limited. All rights reserved.
+            &copy; {new Date().getFullYear()} VigilAMC. [ADD COMPANY LEGAL DETAILS]. All rights reserved.
           </p>
           <div className="flex flex-wrap items-center gap-4 text-xs">
-            <Link href="/about" className="hover:text-slate-200 transition-colors">
+            <Link href="/privacy" className="hover:text-slate-200 transition-colors">
               Privacy Policy
             </Link>
             <span>&bull;</span>
-            <Link href="/about" className="hover:text-slate-200 transition-colors">
+            <Link href="/terms" className="hover:text-slate-200 transition-colors">
               Terms of Service
             </Link>
             <span>&bull;</span>
-            <Link href="/about" className="hover:text-slate-200 transition-colors">
-              NOC Audit Warranty
+            <Link href="/security" className="hover:text-slate-200 transition-colors">
+              Security &amp; Data
             </Link>
             <span>&bull;</span>
-            <Link href="/about" className="hover:text-slate-200 transition-colors">
-              Security &amp; Data Protection
+            <Link href="/sample-report" className="hover:text-slate-200 transition-colors">
+              Sample Report
+            </Link>
+            <span>&bull;</span>
+            <Link href="/contact" className="hover:text-slate-200 transition-colors">
+              Support
             </Link>
           </div>
+        </div>
+
+        {/* Statutory Fire Safety Disclaimer Notice */}
+        <div className="pt-4 text-[10px] text-slate-500 text-center leading-relaxed">
+          Requirements, report formats, and inspection cadences vary by state, municipal jurisdiction, building occupancy type, and applicable fire regulations. VigilAMC is software for organizing service records and workflow documentation. Compliance information should be reviewed with a qualified fire-compliance professional and applicable local authorities.
         </div>
       </div>
     </footer>

@@ -49,9 +49,9 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
     { name: 'Home', href: '/' },
     { name: 'How It Works', href: '/how-it-works' },
     { name: 'Features', href: '/features' },
-    { name: 'Customers', href: '/customers' },
+    { name: 'Sample Report', href: '/sample-report' },
     { name: 'Pricing', href: '/pricing' },
-    { name: 'About Us', href: '/about' },
+    { name: 'About', href: '/about' },
     { name: 'Contact', href: '/contact' },
   ];
 
@@ -63,11 +63,11 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
           <div className="flex items-center gap-2.5 sm:gap-3 truncate">
             <span className="inline-flex items-center gap-1.5 font-medium text-cyan-200 shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              Govt. Directorate &amp; NFPA 10/25/72 Compliant
+              Built for Fire-Safety AMC &amp; Service Teams
             </span>
             <span className="hidden md:inline text-navy-300">|</span>
             <span className="hidden lg:inline text-slate-200 truncate">
-              Automating 14,800+ life safety assets across 450+ towers
+              QR-Based Service Verification &bull; Client Compliance Reports
             </span>
           </div>
 
@@ -205,16 +205,16 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
                 <span>Scan QR</span>
               </Link>
               <Link
-                href="/contact"
+                href="/#pilot-form"
                 className="text-xs font-semibold text-[#023E8A] hover:text-[#0077B6] px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors"
               >
-                Free Audit
+                Join Pilot
               </Link>
               <button
                 onClick={onOpenDemoModal}
                 className="inline-flex items-center justify-center px-4 py-2 text-xs font-bold rounded-xl text-white bg-gradient-to-r from-[#0077B6] to-[#023E8A] hover:from-[#006494] hover:to-[#011F48] shadow-sm hover:shadow transition-all group active:scale-[0.98]"
               >
-                <span>Book Demo</span>
+                <span>Workflow Review</span>
                 <ArrowRight className="w-3.5 h-3.5 ml-1 transition-transform group-hover:translate-x-0.5" />
               </button>
             </div>
@@ -225,7 +225,7 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
                 onClick={onOpenDemoModal}
                 className="text-xs font-bold text-white bg-[#0077B6] px-3 py-1.5 rounded-lg active:scale-95"
               >
-                Demo
+                Review
               </button>
               <button
                 type="button"
@@ -283,7 +283,7 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
                 }}
                 className="w-full text-center py-2.5 text-xs font-bold text-white bg-gradient-to-r from-[#0077B6] to-[#023E8A] rounded-lg shadow active:scale-[0.98]"
               >
-                Book 15-Min Live Walkthrough
+                Book 15-Minute Workflow Review
               </button>
               <div className="text-center pt-2 text-xs text-slate-500">
                 Helpline: <a href="tel:+918383890483" className="text-[#0077B6] font-bold">+91 83838 90483</a>

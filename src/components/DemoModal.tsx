@@ -98,9 +98,9 @@ export function DemoModal({ isOpen, onClose }: DemoModalProps) {
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-xl font-bold">Schedule 15-Minute Live Demo</h3>
+              <h3 className="text-xl font-bold">Book a 15-Minute Workflow Review</h3>
               <p className="text-xs text-cyan-200 mt-0.5">
-                See how VigilAMC eliminates missed Fire NOC deadlines
+                Review your asset rosters, inspection schedules, and compliance workflows directly with our product team
               </p>
             </div>
           </div>
@@ -121,10 +121,10 @@ export function DemoModal({ isOpen, onClose }: DemoModalProps) {
                 <CheckCircle2 className="w-10 h-10" />
               </div>
               <h4 className="text-2xl font-extrabold text-[#023E8A]">
-                Demo Invitation Confirmed!
+                Workflow Review Requested!
               </h4>
-              <p className="text-sm text-slate-600 max-w-md mx-auto">
-                Thank you, <strong>{formData.fullName}</strong>. A dedicated Fire Safety Solutions Engineer from VigilAMC has reserved your live walkthrough. We have sent the calendar invite and dial-in link to <strong>{formData.email}</strong>.
+              <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+                Thank you, <strong>{formData.fullName}</strong>. A member of the VigilAMC team will reach out with the calendar invite and dial-in link to <strong>{formData.email}</strong>.
               </p>
               <div className="pt-4">
                 <button
@@ -257,7 +257,7 @@ export function DemoModal({ isOpen, onClose }: DemoModalProps) {
                   disabled={isSubmitting}
                   className="w-full py-3 px-4 bg-[#0077B6] hover:bg-[#023E8A] disabled:opacity-60 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
                 >
-                  <span>{isSubmitting ? 'Booking Walkthrough...' : 'Confirm Live Walkthrough'}</span>
+                  <span>{isSubmitting ? 'Reserving Review Session...' : 'Confirm 15-Minute Workflow Review'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>

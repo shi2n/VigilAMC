@@ -37,16 +37,16 @@ export function StickyCTA({ onOpenDemo }: StickyCTAProps) {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-300 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-400"></span>
           </span>
-          <span>Schedule Live Demo</span>
+          <span>Workflow Review</span>
           <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
         </button>
 
         <div className="hidden sm:flex flex-col pr-3 text-left">
           <span className="text-[11px] font-bold text-[#023E8A] leading-tight">
-            Stop Missed Audits
+            15-Min Workflow Review
           </span>
           <span className="text-[10px] text-slate-500 leading-tight">
-            15-min guided pilot
+            Free pilot onboarding
           </span>
         </div>
       </div>

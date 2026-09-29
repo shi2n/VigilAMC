@@ -52,7 +52,14 @@ export async function POST(request: Request) {
     const assetCount = (body.assetCount || body.buildingsCount || '').trim();
     const preferredDate = (body.preferredDate || '').trim();
     const preferredTime = (body.preferredTime || '').trim();
-    const message = (body.message || '').trim();
+    const rawMessage = (body.message || '').trim();
+    const technicianCount = (body.technicianCount || '').trim();
+    const trackingMethod = (body.trackingMethod || '').trim();
+    const message = [
+      rawMessage,
+      technicianCount ? `Technicians: ${technicianCount}` : null,
+      trackingMethod ? `Current tracking method: ${trackingMethod}` : null,
+    ].filter(Boolean).join(' | ');
     const source = (body.source || 'Website Lead Form').trim();
 
     // Store in Supabase PostgreSQL via Prisma

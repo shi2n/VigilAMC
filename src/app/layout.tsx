@@ -3,23 +3,53 @@ import "./globals.css";
 import { SiteLayout } from "@/components/SiteLayout";
 
 export const metadata: Metadata = {
-  title: "VigilAMC — Never Miss a Compliance Deadline Again | Fire Safety AMC Autopilot",
-  description: "VigilAMC puts every fire extinguisher, hydrant, alarm panel, due date, and client Form-B compliance report on autopilot. Zero missed audits. Guaranteed compliance.",
+  metadataBase: new URL("https://vigilamc.vercel.app"),
+  title: "VigilAMC — Never Miss a Compliance Deadline Again | Fire Safety AMC Software",
+  description: "VigilAMC helps fire protection agencies track annual maintenance contracts, log inspections with QR codes, and generate client-ready Form-B reports in minutes.",
   keywords: [
-    "Fire Safety AMC",
-    "Fire NOC Compliance",
+    "Fire Safety AMC Software",
+    "Fire Protection Maintenance",
     "Form-B Certification",
     "Extinguisher QR Tracking",
     "Hydrant Inspection Software",
-    "NFPA Compliance Tracker",
+    "NBC 2016 Fire Compliance",
+    "IS 2190 Maintenance",
+    "Maharashtra Fire Prevention Act",
     "VigilAMC"
   ],
-  authors: [{ name: "VigilAMC Technologies" }],
+  authors: [{ name: "Shaizan", url: "https://vigilamc.vercel.app" }],
+  creator: "VigilAMC",
+  publisher: "VigilAMC",
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     title: "VigilAMC — Never Miss a Compliance Deadline Again",
-    description: "Enterprise fire safety equipment tracking, automated inspection scheduling, and 1-click Form-B NOC filing.",
+    description: "VigilAMC helps fire protection agencies track annual maintenance contracts, log inspections with QR codes, and generate client-ready Form-B reports in minutes.",
+    url: "https://vigilamc.vercel.app",
+    siteName: "VigilAMC",
+    images: [
+      {
+        url: "/brag.jpg",
+        width: 1200,
+        height: 630,
+        alt: "VigilAMC Fire Safety AMC Operations Platform",
+      },
+    ],
+    locale: "en_IN",
     type: "website",
-  }
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "VigilAMC — Never Miss a Compliance Deadline Again",
+    description: "VigilAMC helps fire protection agencies track annual maintenance contracts, log inspections with QR codes, and generate client-ready Form-B reports in minutes.",
+    creator: "@vigilamc",
+    images: ["/brag.jpg"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

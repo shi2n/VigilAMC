@@ -16,8 +16,10 @@ import {
   FileCheck2,
   Building2,
   Clock,
-  PhoneCall
+  PhoneCall,
+  AlertTriangle
 } from 'lucide-react';
+import { StatusBadge } from '@/components/StatusBadge';
 
 export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
@@ -29,44 +31,42 @@ export default function PricingPage() {
   const estimatedCost = Math.round(assetCount * (billingCycle === 'annual' ? baseMonthlyPricePerAsset * 0.8 : baseMonthlyPricePerAsset));
 
   const comparisonRows = [
-    { name: 'Fire Assets Included', starter: 'Up to 300 Assets', pro: 'Up to 1,800 Assets', ent: 'Unlimited Assets' },
-    { name: 'Buildings / Sites Supported', starter: 'Up to 3 Sites', pro: 'Up to 15 Sites', ent: 'Unlimited Multi-Branch' },
-    { name: 'Technician Mobile App (Offline Mode)', starter: true, pro: true, ent: true },
-    { name: 'Tamper-Resistant Metallic QR Labels', starter: '50 Free Labels', pro: '250 Free Labels', ent: '1,000+ Custom Branded' },
-    { name: 'Statutory Form-B PDF Certification', starter: true, pro: true, ent: true },
-    { name: 'Automated WhatsApp Expiry Alerts', starter: false, pro: true, ent: true },
-    { name: 'Automated SMS & Email Renewal Alerts', starter: true, pro: true, ent: true },
-    { name: 'Client Self-Service Compliance Portal', starter: 'Standard', pro: 'Branded', ent: 'Custom Domain White-Label' },
-    { name: 'Defect Workorder & Spare Parts Flow', starter: 'Basic', pro: true, ent: true },
-    { name: 'GPS Anti-Proxy Check-In Verification', starter: true, pro: true, ent: true },
-    { name: 'Hydrostatic Pressure Test 3-Yr Scheduler', starter: true, pro: true, ent: true },
-    { name: 'Multi-Technician Route Dispatching', starter: false, pro: true, ent: true },
-    { name: 'IoT Pressure & Reservoir Sensor Integration', starter: false, pro: 'Add-on', ent: true },
-    { name: 'Dedicated Compliance Account Manager', starter: false, pro: false, ent: true },
-    { name: 'Custom ERP / SAP & API Data Sync', starter: false, pro: false, ent: true },
-    { name: 'Support SLA', starter: 'Email (24-hr)', pro: 'Priority Phone (2-hr)', ent: '24/7 Dedicated (15-min)' },
+    { name: 'Fire Assets Included', starter: 'Up to 300 Assets', pro: 'Up to 1,800 Assets', ent: 'High Volume Fleet' },
+    { name: 'Facilities / Sites Supported', starter: 'Up to 3 Sites', pro: 'Up to 15 Sites', ent: 'Enterprise Custom' },
+    { name: 'Technician Mobile App (Offline Mode)', starter: true, starterBadge: 'BETA', pro: true, proBadge: 'BETA', ent: true, entBadge: 'BETA' },
+    { name: 'Weatherproof Serialized QR Labels', starter: 'Included in Pilot', pro: 'Included in Pilot', ent: 'Custom Branded' },
+    { name: 'Statutory Form-B PDF Generation', starter: true, starterBadge: 'LIVE', pro: true, proBadge: 'LIVE', ent: true, entBadge: 'LIVE' },
+    { name: 'Automated Renewal Alerts (Email)', starter: true, pro: true, ent: true },
+    { name: 'SMS & WhatsApp Renewal Alerts', starter: false, pro: true, ent: true },
+    { name: 'Client Self-Service Compliance Portal', starter: false, pro: 'When Live', proBadge: 'COMING SOON', ent: 'When Live', entBadge: 'COMING SOON' },
+    { name: 'Defect Summary & Photo Logs', starter: 'Basic', pro: true, ent: true },
+    { name: 'Timestamp & Geolocation Logging', starter: true, pro: true, ent: true },
+    { name: 'Hydrostatic Pressure Test Scheduler', starter: true, pro: true, ent: true },
+    { name: 'Bulk Spreadsheet Asset Importer', starter: true, pro: true, ent: true },
+    { name: 'Dedicated Technical Onboarding Support', starter: false, pro: true, ent: true },
+    { name: 'Support Target', starter: 'Email (Next Business Day)', pro: 'Priority Email & Phone', ent: 'Direct Account Lead' },
   ];
 
   const pricingFaqs = [
     {
+      q: 'What is included in the Free Pilot program?',
+      a: 'The Free Pilot gives your agency full access to the QR asset registry, technician mobile checklist, and Form-B PDF generation engine for up to 3 facilities. You also get a dedicated 1-on-1 onboarding session with our founder to calibrate your workflows.',
+    },
+    {
       q: 'What counts as an "Asset" in the pricing tiers?',
-      a: 'An asset is any individual piece of life-safety equipment tracked with a unique QR code. This includes portable fire extinguishers (ABC, CO2, Foam), wet riser landing valves, first-aid hose reels, fire alarm control panels (FACP), and main sprinkler jockey pumps.',
+      a: 'An asset is any individual piece of life-safety equipment tracked with a unique QR code. This includes portable fire extinguishers (ABC, CO2, Foam, Clean Agent), wet riser landing valves, first-aid hose reels, fire alarm control panels (FACP), and main sprinkler jockey pumps.',
     },
     {
-      q: 'Are the physical QR stickers included with my subscription?',
-      a: 'Yes! Every paid subscription comes with a complimentary starter batch of pre-printed, industrial-grade anodized metallic QR stickers. They feature high-strength 3M outdoor adhesive, UV resistance, and tamper-evident backing. Additional batches can be ordered directly from your dashboard at cost price (₹12 per label).',
+      q: 'Are physical QR stickers included with subscriptions?',
+      a: 'Yes. During your pilot, we provide guidance on printing standard weatherproof QR labels or provide a starter kit of pre-printed, serialized QR stickers suitable for field application.',
     },
     {
-      q: 'Can I add or remove buildings and assets mid-cycle?',
-      a: 'Absolutely. VigilAMC uses prorated billing. If you win a new 10-tower client contract halfway through the month, you can scale your asset limit instantly with one click, and you will only be charged the prorated difference for the remainder of the billing cycle.',
+      q: 'Can I add or remove facilities mid-cycle?',
+      a: 'Yes. When you take on new client maintenance contracts or conclude an existing facility term, you can adjust your tier and asset allocation accordingly.',
     },
     {
-      q: 'Is there a setup fee or implementation cost?',
-      a: 'Zero setup fees for our Starter and Pro Fleet plans. We provide free CSV spreadsheet templates and our AI bulk importer gets your entire inventory live within 24 hours. For Enterprise multi-city deployments, custom on-site technician training and API integrations are scoped with your account director.',
-    },
-    {
-      q: 'What payment methods do you accept?',
-      a: 'We accept all major credit cards, corporate bank transfers (ACH / NEFT / RTGS), and automated e-mandates. Annual subscriptions can also be invoiced with net-30 corporate purchase orders.',
+      q: 'Does VigilAMC charge a setup fee?',
+      a: 'No. There are no setup fees for our standard tiers or the Free Pilot. We assist you in importing your existing Excel equipment inventory so your team can test the platform without friction.',
     },
   ];
 
@@ -76,20 +76,20 @@ export default function PricingPage() {
       <section className="bg-gradient-to-b from-ocean-50 to-white py-20 px-4 sm:px-6 lg:px-8 border-b border-slate-200">
         <div className="max-w-4xl mx-auto text-center">
           <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-white px-3.5 py-1.5 rounded-full border border-ocean-200 shadow-sm">
-            Transparent Corporate Pricing
+            Transparent Pricing
           </span>
           <h1 className="font-display text-4xl sm:text-5xl font-black text-[#023E8A] tracking-[-0.03em] mt-4 text-balance">
-            Predictable Plans for Fleets of Any Size
+            Predictable Plans for Modern Fire AMC Operations
           </h1>
           <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto text-pretty">
-            Choose the right plan to eliminate missed audits, automate Form-B reports, and lock in your client renewals.
+            Choose the right plan to eliminate forgotten maintenance cycles, standardize field inspections, and generate client-ready Form-B reports.
           </p>
 
           {/* Monthly / Annual Toggle Switch */}
           <div className="mt-8 inline-flex items-center p-1 rounded-xl bg-slate-100 border border-slate-300">
             <button
               onClick={() => setBillingCycle('monthly')}
-              className={`px-5 py-2 text-xs font-bold rounded-lg transition-all ${
+              className={`px-5 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                 billingCycle === 'monthly'
                   ? 'bg-white text-[#023E8A] shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
@@ -99,7 +99,7 @@ export default function PricingPage() {
             </button>
             <button
               onClick={() => setBillingCycle('annual')}
-              className={`px-5 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${
+              className={`px-5 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
                 billingCycle === 'annual'
                   ? 'bg-[#0077B6] text-white shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
@@ -117,13 +117,13 @@ export default function PricingPage() {
       {/* Pricing Cards Grid */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-          {/* Plan 1: Basic AMC */}
-          <div className="corp-card p-8 bg-white flex flex-col justify-between h-full border border-slate-200/90 shadow-card hover:shadow-card-hover">
+          {/* Plan 1: Starter AMC */}
+          <div className="corp-card p-8 bg-white flex flex-col justify-between h-full border border-slate-200 shadow-card hover:shadow-card-hover">
             <div>
               <div className="flex justify-between items-center">
-                <h3 className="font-display text-xl font-bold text-slate-900">Basic AMC</h3>
+                <h3 className="font-display text-xl font-bold text-slate-900">Starter AMC</h3>
                 <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md">
-                  Up to 3 Towers
+                  Up to 3 Facilities
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-2">
@@ -154,25 +154,25 @@ export default function PricingPage() {
                 </div>
                 <div className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>Standard Form-B PDF Generator</span>
+                  <span>Form-B PDF Generation Engine</span>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>Email Expiry &amp; Renewal Notifications</span>
+                  <span>Automated Email Expiry Notifications</span>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>50 Free Pre-printed Weatherproof QR Labels</span>
+                  <span>Bulk Excel Data Import Template</span>
                 </div>
               </div>
             </div>
 
             <div className="mt-auto pt-8 border-t border-slate-100">
               <Link
-                href="/contact"
+                href="/#pilot-section"
                 className="w-full py-3 px-4 rounded-xl text-xs font-bold text-[#0077B6] bg-ocean-50 hover:bg-ocean-100 text-center block transition-all border border-ocean-200 active:scale-[0.98]"
               >
-                Start 14-Day Free Pilot
+                Apply for Free Pilot
               </Link>
             </div>
           </div>
@@ -180,14 +180,14 @@ export default function PricingPage() {
           {/* Plan 2: Pro Fleet */}
           <div className="corp-card p-8 bg-white border-2 border-[#0077B6] shadow-xl ring-4 ring-[#0077B6]/15 relative flex flex-col justify-between h-full">
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-[#0077B6] to-[#023E8A] text-white text-[11px] font-extrabold uppercase tracking-wider shadow-md">
-              Most Popular for AMC Fleets
+              Recommended for AMC Fleets
             </div>
 
             <div>
               <div className="flex justify-between items-center mt-1">
                 <h3 className="font-display text-xl font-bold text-[#023E8A]">Pro Fleet AMC</h3>
                 <span className="text-xs font-semibold px-2.5 py-1 bg-ocean-50 text-[#0077B6] rounded-md border border-ocean-200">
-                  Up to 15 Towers
+                  Up to 15 Facilities
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-2">
@@ -206,7 +206,7 @@ export default function PricingPage() {
 
               <div className="mt-8 space-y-3 text-xs text-slate-700">
                 <p className="font-bold text-[#023E8A] uppercase tracking-wider text-[11px]">
-                  Everything in Basic, plus:
+                  Everything in Starter, plus:
                 </p>
                 <div className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
@@ -214,39 +214,35 @@ export default function PricingPage() {
                 </div>
                 <div className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>Automated WhatsApp &amp; SMS Renewal Engine</span>
+                  <span>Automated WhatsApp &amp; SMS Renewal Alerts</span>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>Client Transparency Web Portal with Live Scores</span>
+                  <span>Client Compliance Portal Access (When Live)</span>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>Instant Defect Quotation &amp; Repair Workorders</span>
+                  <span>Defect Quotation Summaries &amp; Photo Logs</span>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>250 Free Pre-printed Weatherproof QR Labels</span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>Priority 24/7 Telephone Technical Support</span>
+                  <span>Priority Technical Onboarding Support</span>
                 </div>
               </div>
             </div>
 
             <div className="mt-auto pt-8 border-t border-slate-100">
               <Link
-                href="/contact"
+                href="/#pilot-section"
                 className="w-full py-3.5 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#0077B6] to-[#023E8A] hover:from-[#006494] hover:to-[#011F48] text-center block transition-all shadow-md hover:shadow-lg active:scale-[0.98]"
               >
-                Start 14-Day Free Pilot
+                Apply for Free Pilot
               </Link>
             </div>
           </div>
 
           {/* Plan 3: Custom / Enterprise */}
-          <div className="corp-card p-8 bg-white flex flex-col justify-between h-full border border-slate-200/90 shadow-card hover:shadow-card-hover">
+          <div className="corp-card p-8 bg-white flex flex-col justify-between h-full border border-slate-200 shadow-card hover:shadow-card-hover">
             <div>
               <div className="flex justify-between items-center">
                 <h3 className="font-display text-xl font-bold text-slate-900">Custom / Enterprise AMC</h3>
@@ -255,7 +251,7 @@ export default function PricingPage() {
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-2">
-                For large facility conglomerates, airport authorities, and multi-city AMC operations.
+                For large facility conglomerates, industrial complexes, and multi-city operations.
               </p>
 
               <div className="mt-6 flex items-baseline gap-1">
@@ -263,32 +259,28 @@ export default function PricingPage() {
                 <span className="text-xs text-slate-500 font-medium">tailored to fleet size</span>
               </div>
               <p className="text-[11px] text-slate-400 mt-1">
-                {billingCycle === 'annual' ? 'Volume licensing discount • Annual SLA' : 'Flexible monthly fleet deployment'}
+                {billingCycle === 'annual' ? 'Volume licensing discount • Annual agreements' : 'Flexible monthly fleet rollout'}
               </p>
 
               <div className="mt-8 space-y-3 text-xs text-slate-700">
                 <p className="font-bold text-slate-900 uppercase tracking-wider text-[11px]">
-                  Enterprise-Grade Infrastructure:
+                  Enterprise-Grade Features:
                 </p>
                 <div className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span><strong>Unlimited Assets &amp; Unlimited Facilities</strong></span>
+                  <span><strong>High Volume Asset Registry &amp; Multi-Branch</strong></span>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>Dedicated Fire Compliance Engineer / Account Manager</span>
+                  <span>Dedicated Technical Account Lead</span>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>Custom ERP / SAP &amp; Facility Management API Sync</span>
+                  <span>Custom CSV Data Mapping &amp; Migration Assistance</span>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>White-label Client Portal on your own custom domain</span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>99.99% Guaranteed SLA &amp; On-Site Training Workshops</span>
+                  <span>99.9% Platform Availability Target</span>
                 </div>
               </div>
             </div>
@@ -298,7 +290,7 @@ export default function PricingPage() {
                 href="/contact"
                 className="w-full py-3 px-4 rounded-xl text-xs font-bold text-[#023E8A] bg-slate-100 hover:bg-slate-200 text-center block transition-all active:scale-[0.98]"
               >
-                Contact Enterprise Sales
+                Contact for Enterprise Quote
               </Link>
             </div>
           </div>
@@ -316,7 +308,7 @@ export default function PricingPage() {
               Have a Custom Equipment Fleet Count?
             </h3>
             <p className="text-xs text-slate-500 mt-1">
-              Drag the slider to calculate your estimated monthly rate.
+              Adjust the slider to view an estimated monthly rate.
             </p>
           </div>
 
@@ -339,7 +331,7 @@ export default function PricingPage() {
                 onChange={(e) => setAssetCount(parseInt(e.target.value))}
                 className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#0077B6]"
               />
-              <div className="flex justify-between text-[11px] text-slate-400 mt-1">
+              <div className="flex justify-between text-[11px] text-slate-400 mt-1 font-mono">
                 <span>100 Assets</span>
                 <span>2,500 Assets</span>
                 <span>5,000+ Assets</span>
@@ -348,7 +340,7 @@ export default function PricingPage() {
 
             <div className="p-4 bg-ocean-50 rounded-xl border border-ocean-200 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div>
-                <p className="text-xs text-slate-600">Estimated Investment</p>
+                <p className="text-xs text-slate-600">Estimated Monthly Investment</p>
                 <div className="flex items-baseline gap-1 mt-0.5">
                   <span className="text-3xl font-black text-[#023E8A]">
                     ₹{estimatedCost.toLocaleString('en-IN')}
@@ -356,29 +348,29 @@ export default function PricingPage() {
                   <span className="text-xs text-slate-500 font-medium">/ month</span>
                 </div>
                 <p className="text-[11px] text-[#0077B6] font-semibold mt-0.5">
-                  Includes full Form-B engine &amp; mobile offline app
+                  Includes Form-B engine &amp; mobile offline checklist
                 </p>
               </div>
 
               <Link
-                href="/contact"
+                href="/#pilot-section"
                 className="px-6 py-2.5 bg-[#0077B6] hover:bg-[#023E8A] text-white text-xs font-bold rounded-xl shadow transition-colors whitespace-nowrap"
               >
-                Lock In This Rate
+                Apply for Pilot Cohort
               </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Complete Feature Comparison Table */}
+      {/* Feature Comparison Matrix */}
       <section className="py-24 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-2xl sm:text-3xl font-extrabold text-[#023E8A]">
             Comprehensive Plan Comparison Matrix
           </h2>
           <p className="text-sm text-slate-600 mt-2">
-            Detailed breakdown of every feature, quota, and integration across our three tiers.
+            Detailed breakdown of features across our three tiers.
           </p>
         </div>
 
@@ -387,8 +379,8 @@ export default function PricingPage() {
             <thead className="bg-slate-100 text-slate-900 border-b border-slate-200">
               <tr>
                 <th className="py-4 px-6 font-bold text-sm">Feature / Quota</th>
-                <th className="py-4 px-6 font-bold text-slate-700">Basic AMC</th>
-                <th className="py-4 px-6 font-black text-[#0077B6] bg-ocean-50/50">Pro Fleet (Most Popular)</th>
+                <th className="py-4 px-6 font-bold text-slate-700">Starter AMC</th>
+                <th className="py-4 px-6 font-black text-[#0077B6] bg-ocean-50/50">Pro Fleet (Recommended)</th>
                 <th className="py-4 px-6 font-bold text-[#023E8A]">Custom / Enterprise</th>
               </tr>
             </thead>
@@ -399,7 +391,10 @@ export default function PricingPage() {
                   <td className="py-3 px-6">
                     {typeof row.starter === 'boolean' ? (
                       row.starter ? (
-                        <Check className="w-4 h-4 text-emerald-600" />
+                        <div className="flex items-center gap-1.5">
+                          <Check className="w-4 h-4 text-emerald-600" />
+                          {row.starterBadge && <StatusBadge status={row.starterBadge as any} />}
+                        </div>
                       ) : (
                         <X className="w-4 h-4 text-slate-300" />
                       )
@@ -410,23 +405,35 @@ export default function PricingPage() {
                   <td className="py-3 px-6 bg-ocean-50/30 font-semibold text-[#0077B6]">
                     {typeof row.pro === 'boolean' ? (
                       row.pro ? (
-                        <Check className="w-4 h-4 text-emerald-600" />
+                        <div className="flex items-center gap-1.5">
+                          <Check className="w-4 h-4 text-emerald-600" />
+                          {row.proBadge && <StatusBadge status={row.proBadge as any} />}
+                        </div>
                       ) : (
                         <X className="w-4 h-4 text-slate-300" />
                       )
                     ) : (
-                      row.pro
+                      <div className="flex items-center gap-1.5">
+                        <span>{row.pro}</span>
+                        {row.proBadge && <StatusBadge status={row.proBadge as any} />}
+                      </div>
                     )}
                   </td>
                   <td className="py-3 px-6 font-bold text-[#023E8A]">
                     {typeof row.ent === 'boolean' ? (
                       row.ent ? (
-                        <Check className="w-4 h-4 text-emerald-600" />
+                        <div className="flex items-center gap-1.5">
+                          <Check className="w-4 h-4 text-emerald-600" />
+                          {row.entBadge && <StatusBadge status={row.entBadge as any} />}
+                        </div>
                       ) : (
                         <X className="w-4 h-4 text-slate-300" />
                       )
                     ) : (
-                      row.ent
+                      <div className="flex items-center gap-1.5">
+                        <span>{row.ent}</span>
+                        {row.entBadge && <StatusBadge status={row.entBadge as any} />}
+                      </div>
                     )}
                   </td>
                 </tr>
@@ -444,7 +451,7 @@ export default function PricingPage() {
               Frequently Asked Pricing Questions
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-2">
-              Common questions on billing, hardware stickers, and contract upgrades.
+              Common questions on pilot participation, hardware tags, and subscription tiers.
             </p>
           </div>
 
@@ -454,15 +461,15 @@ export default function PricingPage() {
               return (
                 <div
                   key={idx}
-                  className="corp-card overflow-hidden bg-white border border-slate-200"
+                  className={`corp-card overflow-hidden bg-white transition-all ${
+                    isOpen ? 'border-[#0077B6]/40 shadow-card' : 'border-slate-200'
+                  }`}
                 >
                   <button
                     onClick={() => setOpenFaq(isOpen ? null : idx)}
-                    className="w-full py-4 px-6 text-left flex items-center justify-between gap-4 focus:outline-none"
+                    className="w-full py-5 px-6 text-left flex items-center justify-between gap-4 focus:outline-none cursor-pointer"
                   >
-                    <span className="text-sm font-bold text-slate-900 hover:text-[#0077B6] transition-colors">
-                      {faq.q}
-                    </span>
+                    <span className="text-sm font-bold text-slate-900">{faq.q}</span>
                     <ChevronDown
                       className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${
                         isOpen ? 'rotate-180 text-[#0077B6]' : ''
@@ -470,7 +477,7 @@ export default function PricingPage() {
                     />
                   </button>
                   {isOpen && (
-                    <div className="px-6 pb-5 text-xs text-slate-600 leading-relaxed border-t border-slate-100 pt-3">
+                    <div className="px-6 pb-6 text-xs text-slate-600 leading-relaxed border-t border-slate-100 pt-3">
                       {faq.a}
                     </div>
                   )}
@@ -481,22 +488,13 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* Bottom CTA */}
-      <section className="py-20 px-4 bg-[#023E8A] text-white text-center">
-        <div className="max-w-3xl mx-auto space-y-4">
-          <h2 className="text-3xl font-extrabold">Ready to Start Your 14-Day Free Pilot?</h2>
-          <p className="text-cyan-100 text-sm">
-            Experience the peace of mind that comes with zero missed compliance deadlines.
+      {/* Statutory Disclaimer Box */}
+      <section className="py-8 px-4 max-w-4xl mx-auto">
+        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <p className="leading-relaxed">
+            <strong>Statutory Compliance Note:</strong> VigilAMC software subscriptions cover software tools, data storage, and report formatting. They do not constitute fire safety certification, licensed inspection services, or statutory approvals. All statutory certificates must be signed by an authorized licensed agency in accordance with local Fire Safety Acts.
           </p>
-          <div className="pt-2">
-            <Link
-              href="/contact"
-              className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#0077B6] hover:bg-white hover:text-[#023E8A] font-bold text-sm rounded-xl transition-all shadow-lg"
-            >
-              <span>Get Started with Free Pilot</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
         </div>
       </section>
     </div>

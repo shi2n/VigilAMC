@@ -40,3 +40,5 @@ next-env.d.ts
 *.db-journal
 .env*
 brag-output/
+.agents/
+skills-lock.json

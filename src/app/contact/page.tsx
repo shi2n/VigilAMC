@@ -301,7 +301,7 @@ export default function ContactPage() {
                   <div className="p-4 bg-ocean-50 rounded-xl border border-ocean-200 text-xs text-[#023E8A] max-w-md mx-auto text-left">
                     <p className="font-bold">Next Steps:</p>
                     <p className="text-slate-600 mt-1">
-                      Our Lead Fire Compliance Specialist (K. V. Rao) will share their screen to demonstrate asset QR tagging, offline mobile auditing, and legal Form-B PDF generation tailored to <strong>{formData.company}</strong>.
+                      Our product & compliance team will connect with you to demonstrate asset QR tagging, offline mobile auditing, and legal Form-B PDF generation tailored to <strong>{formData.company}</strong>.
                     </p>
                   </div>
                   <div className="pt-4">

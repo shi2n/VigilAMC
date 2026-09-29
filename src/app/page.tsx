@@ -29,12 +29,25 @@ import {
   DollarSign,
   Linkedin,
   Instagram,
-  Youtube
+  Youtube,
+  FileText,
+  Download,
+  AlertTriangle
 } from 'lucide-react';
 import { CanvasHero } from '@/components/CanvasHero';
 import { ImageLightbox, LightboxImage } from '@/components/ImageLightbox';
+import { StatusBadge } from '@/components/StatusBadge';
+import { ProductWorkflowSection } from '@/components/ProductWorkflowSection';
+import { ProductInterfacePreview } from '@/components/ProductInterfacePreview';
+import { FounderSection } from '@/components/FounderSection';
+import { TrustTransparencySection } from '@/components/TrustTransparencySection';
+import { FreePilotForm } from '@/components/FreePilotForm';
+import { DemoModal } from '@/components/DemoModal';
 
 export default function HomePage() {
+  // Demo / Workflow review modal
+  const [workflowModalOpen, setWorkflowModalOpen] = useState(false);
+
   // Billing cycle state for pricing section
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
 
@@ -49,44 +62,38 @@ export default function HomePage() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
-  // Quick inquiry form states
-  const [inquiryEmail, setInquiryEmail] = useState('');
-  const [inquiryBuildings, setInquiryBuildings] = useState('3-10');
-  const [inquirySubmitted, setInquirySubmitted] = useState(false);
-  const [inquiryError, setInquiryError] = useState('');
-
   const galleryImages: LightboxImage[] = [
     {
       src: 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&w=1200&q=80',
       title: 'Commercial Multi-Story Life Safety Infrastructure',
-      category: 'Commercial Facility',
-      building: 'Standard High-Rise Facility Inspection',
-      auditDate: 'Inspection Protocol',
-      description: 'Extinguishers, landing valves, and yard hydrants monitored with digital timestamping for statutory compliance.',
+      category: 'Reference Inspection Scenario [Sample]',
+      building: 'High-Rise Commercial Facility (Representative)',
+      auditDate: 'Scheduled Inspection Protocol',
+      description: 'Extinguishers, landing valves, and yard hydrants monitored with digital timestamping for statutory compliance workflows.',
     },
     {
       src: 'https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&w=1200&q=80',
       title: 'Healthcare & Critical Infrastructure Safety Audit',
-      category: 'Healthcare AMC Flow',
-      building: 'Hospital & Critical Care Facility',
-      auditDate: 'Compliance Workflow',
-      description: 'Zero-tolerance safety compliance with real-time logging of wet risers, clean-agent suppression, and 24/7 digital records.',
+      category: 'Healthcare AMC Scenario [Sample]',
+      building: 'Hospital & Healthcare Center (Representative)',
+      auditDate: 'Compliance Logging Flow',
+      description: 'Systematic safety tracking with logging of wet risers, clean-agent suppression, and verifiable digital records.',
     },
     {
       src: 'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?auto=format&fit=crop&w=1200&q=80',
       title: 'Weatherproof Metal QR Tagging in Action',
-      category: 'Field Inspection',
-      building: 'Industrial Plant & Logistics Warehouse',
+      category: 'Field Equipment Tagging [Sample]',
+      building: 'Industrial Logistics Warehouse (Representative)',
       auditDate: 'Field Tagging Standards',
-      description: 'Anodized aluminum QR label installed on CO2 cylinder. Withstands UV exposure and industrial washdowns.',
+      description: 'Anodized aluminum QR label installed on CO2 cylinder. Resistant to UV exposure, dust, and washdowns.',
     },
     {
       src: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80',
       title: 'Hydrant Flow & Pressure Gauge Verification',
-      category: 'Wet Riser Testing',
-      building: 'Commercial Multi-Tenant Complex',
-      auditDate: 'Pressure Testing Workflow',
-      description: 'Technicians log dynamic pressure readings using digital checklists to keep Form-B certification schedules updated.',
+      category: 'Wet Riser Testing [Sample]',
+      building: 'Multi-Tenant Commercial Complex (Representative)',
+      auditDate: 'Pressure Verification Flow',
+      description: 'Technicians log dynamic pressure readings using digital checklists to keep Form-B certification schedules accurate.',
     },
   ];
 
@@ -95,72 +102,46 @@ export default function HomePage() {
     setLightboxOpen(true);
   };
 
-  const handleQuickInquiry = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inquiryEmail || !inquiryEmail.includes('@')) {
-      setInquiryError('Please enter a valid business email');
-      return;
-    }
-    setInquiryError('');
-    try {
-      const res = await fetch('/api/enquiries', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'QUICK_INQUIRY',
-          email: inquiryEmail,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to submit inquiry');
-      }
-      setInquirySubmitted(true);
-      setTimeout(() => {
-        setInquiryEmail('');
-        setInquirySubmitted(false);
-      }, 5000);
-    } catch (err: any) {
-      setInquiryError(err.message || 'Error submitting. Please try again.');
-    }
-  };
-
   // ROI calculations
   const manualHoursSpentPerMonth = Math.round((calcAssets * 0.45) + (calcBuildings * 8));
-  const vigilHoursSpentPerMonth = Math.round(manualHoursSpentPerMonth * 0.18);
+  const vigilHoursSpentPerMonth = Math.round(manualHoursSpentPerMonth * 0.22);
   const hoursSavedPerYear = (manualHoursSpentPerMonth - vigilHoursSpentPerMonth) * 12;
-  const costSavingsPerYear = (hoursSavedPerYear * 650).toLocaleString('en-IN');
+  const costSavingsPerYear = (hoursSavedPerYear * 600).toLocaleString('en-IN');
 
   const faqs = [
     {
-      q: 'How does VigilAMC prevent our clients from failing their Fire NOC audit?',
-      a: 'VigilAMC tracks every statutory renewal, hydrostatic pressure test, refilling date, and quarterly inspection cycle automatically. 60, 30, and 7 days prior to any deadline, our system triggers automated alerts to your technicians and client facility heads. When audit day comes, our 1-click Form-B report compiles full photographic proof, calibration logs, and certified technician sign-offs ready for immediate Fire Directorate sign-off.',
+      q: 'How does VigilAMC help fire protection agencies avoid missed compliance deadlines?',
+      a: 'VigilAMC tracks every statutory inspection cycle, refilling date, and hydrostatic pressure testing window in a centralised schedule. Automated reminders notify your operations team 60, 30, and 7 days prior to expiry so technician visits can be dispatched well in advance of audit deadlines.',
     },
     {
-      q: 'Can technicians inspect assets offline in basements with zero mobile network?',
-      a: 'Yes! The VigilAMC technician mobile web application operates fully offline. Technicians can scan QR codes, log gauge readings, take inspection photos, and record defects even in deep subterranean basement pump rooms or shielded riser shafts. Once the device re-enters cellular or Wi-Fi range, all audit records sync automatically with encrypted timestamp validation.',
+      q: 'Can technicians inspect assets offline in basements with poor mobile reception?',
+      a: 'Yes. Our technician mobile field interface stores inspection checklists and QR data locally in the browser. When technicians work in underground pump rooms or shielded riser shafts, checks are recorded with local timestamps and synchronize automatically when network connectivity is restored.',
     },
     {
-      q: 'How difficult is it to migrate from our current Excel spreadsheets?',
-      a: 'Migration takes less than 24 hours. You can upload your existing equipment spreadsheets via our Bulk Asset Importer CSV/Excel template. Our AI validation engine maps floor locations, equipment types, and last test dates automatically. We also provide pre-printed, serialized industrial weatherproof QR labels ready to stick onto extinguishers, hydrants, and panels.',
+      q: 'Does VigilAMC replace a licensed fire safety contractor or certify buildings directly?',
+      a: 'No. VigilAMC is an operational software platform. It does not replace licensed fire safety engineers, licensed agency sign-offs, or municipal fire authorities. Statutory Form-B documents generated on VigilAMC must be reviewed, verified, and signed by authorized personnel holding valid state fire agency licenses.',
     },
     {
-      q: 'Does VigilAMC support official Form-B certification and Indian Fire Directorate standards?',
-      a: 'Yes. VigilAMC is engineered specifically to comply with the Maharashtra Fire Prevention and Life Safety Measures Act, National Building Code (NBC 2016 Part 4), and NFPA 10, 25, and 72 standards. The platform generates legally formatted Form-B certificates containing licensed agency registration numbers, digital supervisor stamps, and asset schedules.',
+      q: 'How does migration from Excel or paper logbooks work?',
+      a: 'We provide structured CSV/Excel templates to import your existing building lists, equipment counts, and last test dates. During the Free Pilot, we assist your team in uploading your initial facility inventory and preparing corresponding QR tags.',
+    },
+    {
+      q: 'What is included in the Free Pilot program?',
+      a: 'The Free Pilot gives your agency full access to the QR asset registry, technician mobile checklist, and Form-B PDF generation engine for up to 3 pilot facilities. You also get a dedicated 1-on-1 onboarding session with our founder to calibrate your workflows.',
     },
     {
       q: 'What happens when a critical defect is spotted during an inspection?',
-      a: 'When a technician marks an extinguisher as depressurized, or notes a leaking landing valve, VigilAMC instantly generates a high-priority Defect Ticket. An immediate WhatsApp and email alert is dispatched to your service manager, along with an instant quotation line item that can be forwarded to the client facility manager for fast repair approval.',
+      a: 'When a technician marks an extinguisher as depressurized or flags a leaking hydrant valve, VigilAMC immediately creates a Defect Ticket with attached photo evidence. Service managers can track pending repairs and generate client estimate summaries directly from the dashboard.',
     },
   ];
 
   return (
     <div className="w-full bg-white overflow-hidden">
       {/* =========================================================================
-          HERO SECTION: Interactive Canvas, Corporate Ocean Blue (#0077B6) & Navy
+          HERO SECTION: Truthful B2B Messaging & Verified Status Indicators
           ========================================================================= */}
       <section className="relative min-h-[640px] lg:min-h-[720px] flex items-center justify-center pt-10 pb-20 px-4 sm:px-6 lg:px-8 ocean-mesh border-b border-slate-200/80">
-        {/* Animated Particle & Connected Safety Node Canvas */}
+        {/* Animated Particle Canvas */}
         <CanvasHero />
 
         {/* Ambient Decorative Glows */}
@@ -168,41 +149,41 @@ export default function HomePage() {
         <div className="absolute bottom-10 right-10 w-72 h-72 bg-[#023E8A]/10 rounded-full blur-2xl pointer-events-none" />
 
         <div className="relative z-10 max-w-5xl mx-auto text-center">
-          {/* Compliance Assurance Pill */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/95 border border-ocean-200/90 shadow-sm text-xs font-semibold text-[#023E8A] mb-8 backdrop-blur-md transition-all hover:border-[#0077B6]/50">
+          {/* Truthful positioning pill */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/95 border border-ocean-200/90 shadow-sm text-xs font-semibold text-[#023E8A] mb-8 backdrop-blur-md">
             <span className="flex h-2 w-2 rounded-full bg-[#0077B6] animate-pulse" />
-            <span className="font-medium text-slate-700">Trusted by <strong className="text-[#023E8A]">450+ Certified Fire AMC Agencies</strong></span>
+            <span className="font-medium text-slate-700">Fire Protection Operations &amp; Maintenance Software</span>
             <span className="text-slate-300">|</span>
-            <span className="text-[#0077B6] font-bold">100% Audit Readiness</span>
+            <span className="text-[#0077B6] font-bold">Maharashtra Fire Act &amp; NBC Framework</span>
           </div>
 
           {/* Primary Main Headline */}
           <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-black text-[#023E8A] tracking-[-0.03em] leading-[1.12] max-w-4xl mx-auto text-balance">
-            Never miss a compliance deadline again.
+            Never Miss a Compliance Deadline Again
           </h1>
 
-          {/* Prompt Persona Subtitle */}
+          {/* Required Supporting Copy */}
           <p className="mt-6 text-base sm:text-lg lg:text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed font-normal text-pretty">
-            AMC teams track hundreds of extinguishers, hydrants and panels across dozens of buildings — on paper and Excel. Renewals slip, clients fail their fire NOC audit, and the contract goes to a competitor. <strong className="text-[#023E8A] font-semibold">VigilAMC puts every asset, due date and client report on autopilot.</strong>
+            VigilAMC helps fire protection agencies track annual maintenance contracts, log inspections with QR codes, and generate client-ready Form-B reports in minutes.
           </p>
 
-          {/* Primary CTA Buttons */}
+          {/* Primary CTAs */}
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href="/login"
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-[#0077B6] to-[#023E8A] hover:from-[#006494] hover:to-[#011F48] text-white font-bold text-sm sm:text-base shadow-lg shadow-[#0077B6]/25 hover:shadow-xl hover:shadow-[#0077B6]/35 transition-all transform hover:-translate-y-0.5 active:scale-[0.98] flex items-center justify-center gap-2 group"
+            <button
+              onClick={() => setWorkflowModalOpen(true)}
+              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-[#0077B6] to-[#023E8A] hover:from-[#006494] hover:to-[#011F48] text-white font-bold text-sm sm:text-base shadow-lg shadow-[#0077B6]/25 hover:shadow-xl hover:shadow-[#0077B6]/35 transition-all transform hover:-translate-y-0.5 active:scale-[0.98] flex items-center justify-center gap-2 group cursor-pointer"
             >
-              <span>Create Agency Account</span>
+              <span>Book a 15-Minute Workflow Review</span>
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-            </Link>
+            </button>
 
-            <Link
-              href="/login"
-              className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-white hover:bg-slate-50 text-[#023E8A] font-bold text-sm sm:text-base border border-slate-300 hover:border-[#0077B6] shadow-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+            <a
+              href="#pilot-section"
+              className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-white hover:bg-slate-50 text-[#023E8A] font-bold text-sm sm:text-base border border-slate-300 hover:border-[#0077B6] shadow-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
             >
               <ShieldCheck className="w-4 h-4 text-[#0077B6]" />
-              <span>Access Dashboard</span>
-            </Link>
+              <span>Join the Free Pilot</span>
+            </a>
 
             <a
               href="#launch-demo"
@@ -213,45 +194,75 @@ export default function HomePage() {
             </a>
           </div>
 
-          {/* Core System Capabilities Badges */}
-          <div className="mt-14 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-            <div className="corp-card p-5 bg-white/95 backdrop-blur-md text-left transition-all hover:-translate-y-1 hover:shadow-card-hover border border-slate-200/90">
-              <div className="font-display text-2xl sm:text-3xl font-black text-[#023E8A] tabular-nums tracking-tight">100%</div>
-              <div className="text-xs font-semibold text-slate-500 mt-1">Audit-Proof Digital Records</div>
+          {/* 4 Feature-Status Cards Under Hero */}
+          <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto text-left">
+            <div className="p-5 rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200 shadow-sm hover:shadow-md transition-all">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Field Audits</span>
+                <StatusBadge status="LIVE" />
+              </div>
+              <h3 className="font-display text-base font-bold text-[#023E8A]">
+                QR-Verified Inspections
+              </h3>
+              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                Scan on-site tags to verify equipment presence, pressure, and physical condition.
+              </p>
             </div>
 
-            <div className="corp-card p-5 bg-white/95 backdrop-blur-md text-left transition-all hover:-translate-y-1 hover:shadow-card-hover border border-slate-200/90">
-              <div className="font-display text-2xl sm:text-3xl font-black text-[#0077B6] tracking-tight">Instant</div>
-              <div className="text-xs font-semibold text-slate-500 mt-1">QR Mobile Field Scanning</div>
+            <div className="p-5 rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200 shadow-sm hover:shadow-md transition-all">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Statutory Filing</span>
+                <StatusBadge status="LIVE" />
+              </div>
+              <h3 className="font-display text-base font-bold text-[#023E8A]">
+                Automated Form-B Reports
+              </h3>
+              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                Compile full asset registers and test logs into official Form-B PDF certificates in minutes.
+              </p>
             </div>
 
-            <div className="corp-card p-5 bg-white/95 backdrop-blur-md text-left transition-all hover:-translate-y-1 hover:shadow-card-hover border border-slate-200/90">
-              <div className="font-display text-2xl sm:text-3xl font-black text-emerald-600 tracking-tight">Zero</div>
-              <div className="text-xs font-semibold text-slate-500 mt-1">Missed Expiry Deadlines</div>
+            <div className="p-5 rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200 shadow-sm hover:shadow-md transition-all">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Route Ops</span>
+                <StatusBadge status="BETA" />
+              </div>
+              <h3 className="font-display text-base font-bold text-[#023E8A]">
+                Technician Geo-Tracking
+              </h3>
+              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                Validate technician arrival coordinates and inspection timestamps on site.
+              </p>
             </div>
 
-            <div className="corp-card p-5 bg-white/95 backdrop-blur-md text-left transition-all hover:-translate-y-1 hover:shadow-card-hover border border-slate-200/90">
-              <div className="font-display text-2xl sm:text-3xl font-black text-[#023E8A] tracking-tight">1-Click</div>
-              <div className="text-xs font-semibold text-slate-500 mt-1">Form-B PDF Generation</div>
+            <div className="p-5 rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200 shadow-sm hover:shadow-md transition-all">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Client Access</span>
+                <StatusBadge status="COMING SOON" />
+              </div>
+              <h3 className="font-display text-base font-bold text-[#023E8A]">
+                Client Compliance Portal
+              </h3>
+              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                Self-service compliance dashboard for building facility managers to view certificate history.
+              </p>
             </div>
           </div>
 
-          {/* =========================================================================
-              FEATURED PRODUCT LAUNCH VIDEO
-              ========================================================================= */}
+          {/* Featured Product Launch Video */}
           <div id="launch-demo" className="mt-16 max-w-4xl mx-auto scroll-mt-24">
             <div className="relative rounded-2xl p-2.5 sm:p-3.5 bg-gradient-to-b from-white/95 via-ocean-50/40 to-slate-100/90 backdrop-blur-md border border-ocean-200/90 shadow-elevated overflow-hidden group">
               <div className="flex items-center justify-between px-3.5 py-2.5 bg-[#021B3A] text-white rounded-xl mb-2.5 text-xs font-semibold shadow-inner">
                 <div className="flex items-center gap-2.5">
                   <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse" />
                   <span className="font-display tracking-wider uppercase text-[11px] text-cyan-200 font-bold">
-                    VigilAMC In Action &bull; 20-Second Product Tour
+                    VigilAMC In Action &bull; Product Overview
                   </span>
                 </div>
                 <div className="hidden sm:flex items-center gap-3 text-[11px] text-cyan-100/80">
-                  <span className="px-2 py-0.5 rounded bg-ocean-800/80 text-cyan-200 border border-ocean-600/50">100% Offline QR Scanning</span>
+                  <span className="px-2 py-0.5 rounded bg-ocean-800/80 text-cyan-200 border border-ocean-600/50">Mobile QR Scanning</span>
                   <span className="text-slate-500">&bull;</span>
-                  <span className="px-2 py-0.5 rounded bg-ocean-800/80 text-cyan-200 border border-ocean-600/50">1-Click Form-B Compliance</span>
+                  <span className="px-2 py-0.5 rounded bg-ocean-800/80 text-cyan-200 border border-ocean-600/50">Form-B PDF Generation</span>
                 </div>
               </div>
 
@@ -276,263 +287,171 @@ export default function HomePage() {
       </section>
 
       {/* =========================================================================
-          CONTENT LAYOUT: Timeline / Scroll-based Storytelling Layout
-          "From Paper & Excel Chaos to Autopilot Compliance"
+          SECTION 4: REAL 7-STEP PRODUCT WORKFLOW
           ========================================================================= */}
-      <section id="how-it-works" className="py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-white relative">
-        <div className="max-w-6xl mx-auto">
-          {/* Section Header with generous whitespace */}
-          <div className="text-center max-w-3xl mx-auto mb-20 reveal-on-scroll">
-            <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-ocean-50 px-3 py-1 rounded-full border border-ocean-200">
-              The AMC Transformation Storyline
+      <ProductWorkflowSection />
+
+      {/* =========================================================================
+          SECTION 5: REAL PRODUCT INTERFACE PREVIEW (SAMPLE DATA WATERMARKED)
+          ========================================================================= */}
+      <ProductInterfacePreview />
+
+      {/* =========================================================================
+          SECTION 6: "SEE WHAT YOUR CLIENT RECEIVES"
+          ========================================================================= */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-50 border-t border-slate-200">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-white px-3.5 py-1.5 rounded-full border border-slate-200 shadow-sm">
+              Client Deliverables &amp; Transparency
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-[#023E8A] tracking-tight mt-4">
-              How VigilAMC Transforms Broken AMC Operations
+              See What Your Client Receives
             </h2>
             <p className="mt-3 text-base text-slate-600 leading-relaxed">
-              Step through the journey of how leading fire safety agencies replaced lost clipboards, missed refill dates, and frantic audit panics with an ironclad digital autopilot.
+              When facility managers and audit authorities ask for proof of maintenance, give them professional, client-ready reports instead of messy paper logbooks.
             </p>
           </div>
 
-          {/* Timeline Vertical Container */}
-          <div className="relative">
-            {/* Center Track Line */}
-            <div className="hidden md:block absolute left-1/2 top-4 bottom-12 -translate-x-1/2 w-1 timeline-track rounded-full opacity-30" />
-
-            {/* Timeline Item 1: The Paper Chaos */}
-            <div className="relative mb-16 md:mb-24 reveal-on-scroll">
-              <div className="flex flex-col md:flex-row items-center gap-8">
-                <div className="md:w-1/2 text-left md:text-right md:pr-12">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-50 text-red-700 text-xs font-bold border border-red-200 mb-2">
-                    <ShieldAlert className="w-3.5 h-3.5 text-red-600" />
-                    Stage 01: The Old Way
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            {/* Left Column: Key Deliverables List */}
+            <div className="lg:col-span-6 space-y-6">
+              <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm hover:border-[#0077B6]/40 transition-colors">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-ocean-50 text-[#0077B6] flex items-center justify-center shrink-0 border border-ocean-100">
+                    <FileCheck2 className="w-6 h-6" />
                   </div>
-                  <h3 className="text-2xl font-bold text-slate-900 tracking-tight">
-                    The Paper &amp; Excel Trap
-                  </h3>
-                  <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-                    Extinguishers sit hidden behind stairwells with faded paper inspection tags. Technicians check boxes from memory. Hydrostatic pressure renewals slip by weeks. When the Fire Officer conducts a surprise audit, the client fails, faces heavy fines, and fires the AMC contractor.
-                  </p>
-                  <ul className="mt-3 space-y-1.5 text-xs text-red-600 inline-block text-left font-medium">
-                    <li className="flex items-center gap-2">
-                      <X className="w-4 h-4 text-red-500 shrink-0" />
-                      Unverified inspections with zero proof
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <X className="w-4 h-4 text-red-500 shrink-0" />
-                      Client loses trust &amp; switches to competitors
-                    </li>
-                  </ul>
-                </div>
-
-                {/* Timeline Center Node Badge */}
-                <div className="relative z-10 w-12 h-12 rounded-full bg-red-100 border-4 border-white shadow-md flex items-center justify-center text-red-600 shrink-0">
-                  <Flame className="w-5 h-5" />
-                </div>
-
-                <div className="md:w-1/2 md:pl-12">
-                  <div className="corp-card p-6 bg-slate-50 border-red-100">
-                    <div className="flex items-center justify-between text-xs text-slate-500 pb-3 border-b border-slate-200">
-                      <span className="font-mono text-red-700 font-bold">LEGACY_AUDIT_LOG.XLSX</span>
-                      <span className="text-red-600 font-semibold">STATUS: 42 DAYS OVERDUE</span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-slate-900">
+                        Official Form-B Compliance Certificate
+                      </h3>
+                      <StatusBadge status="LIVE" />
                     </div>
-                    <div className="mt-3 space-y-2 text-xs">
-                      <div className="flex justify-between p-2 rounded bg-white border border-slate-200 text-slate-700">
-                        <span>Extinguisher #EX-084 (Basement 2)</span>
-                        <span className="text-red-600 font-bold">Depressurized (Unreported)</span>
-                      </div>
-                      <div className="flex justify-between p-2 rounded bg-white border border-slate-200 text-slate-700">
-                        <span>Hydrant Yard Landing Valve 4</span>
-                        <span className="text-amber-600 font-bold">Gland Packing Leaking</span>
-                      </div>
-                      <div className="flex justify-between p-2 rounded bg-white border border-slate-200 text-slate-700">
-                        <span>Fire NOC Renewal Window</span>
-                        <span className="text-red-700 font-black">EXPIRED 14 DAYS AGO</span>
-                      </div>
+                    <p className="text-sm text-slate-600 mt-1 leading-relaxed">
+                      Structured under Section 3(1) of the Maharashtra Fire Prevention &amp; Life Safety Measures Act, formatted for licensed contractor sign-off.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm hover:border-[#0077B6]/40 transition-colors">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
+                    <BarChart3 className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-slate-900">
+                        Color-Coded Asset Health Schedule
+                      </h3>
+                      <StatusBadge status="SAMPLE" />
                     </div>
+                    <p className="text-sm text-slate-600 mt-1 leading-relaxed">
+                      Full breakdown of extinguishers, wet riser landing valves, and alarms categorized as Operational, Requires Refill, or Needs Hydrostatic Testing.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm hover:border-[#0077B6]/40 transition-colors">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 border border-purple-100">
+                    <QrCode className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-slate-900">
+                        QR-Accessible Digital Audit Trail
+                      </h3>
+                      <StatusBadge status="LIVE" />
+                    </div>
+                    <p className="text-sm text-slate-600 mt-1 leading-relaxed">
+                      Every certificate includes a verification QR code allowing auditors or building committees to check inspection dates and technician sign-offs.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm hover:border-[#0077B6]/40 transition-colors">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-100">
+                    <AlertTriangle className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-slate-900">
+                        Defect Remediation &amp; Quote Summary
+                      </h3>
+                      <StatusBadge status="SAMPLE" />
+                    </div>
+                    <p className="text-sm text-slate-600 mt-1 leading-relaxed">
+                      Clear list of defective equipment with photo evidence, allowing facility managers to quickly approve necessary repairs and parts replacements.
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Timeline Item 2: QR Tagging & Calibration */}
-            <div className="relative mb-16 md:mb-24 reveal-on-scroll">
-              <div className="flex flex-col md:flex-row-reverse items-center gap-8">
-                <div className="md:w-1/2 text-left md:pl-12">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-ocean-50 text-[#0077B6] text-xs font-bold border border-ocean-200 mb-2">
-                    <QrCode className="w-3.5 h-3.5 text-[#0077B6]" />
-                    Stage 02: 12-Second Setup
+            {/* Right Column: Interactive Report Download Card */}
+            <div className="lg:col-span-6">
+              <div className="rounded-3xl p-8 bg-gradient-to-br from-[#023E8A] via-[#022A5E] to-[#011F48] text-white shadow-xl border border-cyan-500/20 relative overflow-hidden">
+                <div className="flex items-center justify-between pb-6 border-b border-navy-400/30">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#0077B6] flex items-center justify-center text-white font-black text-sm">
+                      PDF
+                    </div>
+                    <div>
+                      <h4 className="font-display font-bold text-base text-white">
+                        Sample Form-B Compliance Certificate
+                      </h4>
+                      <p className="text-xs text-cyan-200">
+                        Document Ref: VIGIL-CERT-2026-DEMO
+                      </p>
+                    </div>
                   </div>
-                  <h3 className="text-2xl font-bold text-[#023E8A] tracking-tight">
-                    Instant Smart QR Tagging
-                  </h3>
-                  <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-                    Every fire asset receives a tamper-resistant industrial QR code. In 12 seconds per extinguisher or hydrant, your team scans the code, records capacity, chemical type, manufacturing date, and geo-tags the exact pillar or corridor location.
+                  <StatusBadge status="SAMPLE" />
+                </div>
+
+                <div className="py-6 space-y-4 text-xs">
+                  <div className="p-4 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10 space-y-2">
+                    <div className="flex justify-between text-slate-200">
+                      <span>Representative Building:</span>
+                      <strong className="text-white">Apex Business Towers (Tower B)</strong>
+                    </div>
+                    <div className="flex justify-between text-slate-200">
+                      <span>Representative City:</span>
+                      <strong className="text-white">BKC, Mumbai, Maharashtra</strong>
+                    </div>
+                    <div className="flex justify-between text-slate-200">
+                      <span>Equipments Documented:</span>
+                      <strong className="text-cyan-300">48 Units (44 OK / 4 Defect)</strong>
+                    </div>
+                    <div className="flex justify-between text-slate-200">
+                      <span>Biannual Cycle:</span>
+                      <strong className="text-white">Period 01 (Jan - Jun 2026)</strong>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-cyan-100/90 leading-relaxed italic">
+                    &ldquo;Review the complete layout, equipment schedule, inspector declaration, and verification QR code of our standardized report.&rdquo;
                   </p>
-                  <ul className="mt-3 space-y-1.5 text-xs text-slate-700 font-medium">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      Weatherproof, grease-proof anodized metallic QR stickers
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      Bulk Excel import auto-creates entire building directories
-                    </li>
-                  </ul>
                 </div>
 
-                {/* Timeline Center Node Badge */}
-                <div className="relative z-10 w-12 h-12 rounded-full bg-[#0077B6] border-4 border-white shadow-md flex items-center justify-center text-white shrink-0">
-                  <QrCode className="w-5 h-5" />
-                </div>
+                <div className="pt-4 border-t border-navy-400/30 space-y-3">
+                  <Link
+                    href="/sample-report"
+                    className="w-full py-3.5 px-6 rounded-xl bg-[#0077B6] hover:bg-[#0096C7] text-white font-bold text-sm text-center flex items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98]"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download &amp; Inspect Sample Report</span>
+                  </Link>
 
-                <div className="md:w-1/2 md:pr-12">
-                  <div className="corp-card p-6 bg-gradient-to-br from-white to-ocean-50 border-ocean-200">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-lg bg-white border border-slate-300 p-1 flex items-center justify-center shadow-inner">
-                        <QrCode className="w-10 h-10 text-[#023E8A]" />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-[#023E8A]">ASSET TAG: VIGIL-MH-4019</h4>
-                        <p className="text-xs text-slate-500">6kg ABC Dry Powder Extinguisher</p>
-                      </div>
-                    </div>
-                    <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                      <div className="p-2 rounded bg-white border border-slate-200">
-                        <span className="text-slate-400 block">Location</span>
-                        <span className="font-semibold text-slate-800">4th Floor North Wing</span>
-                      </div>
-                      <div className="p-2 rounded bg-white border border-slate-200">
-                        <span className="text-slate-400 block">Hydrostatic Test</span>
-                        <span className="font-semibold text-emerald-600">Valid till Nov 2027</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Timeline Item 3: Mobile Auditing & Proof */}
-            <div className="relative mb-16 md:mb-24 reveal-on-scroll">
-              <div className="flex flex-col md:flex-row items-center gap-8">
-                <div className="md:w-1/2 text-left md:text-right md:pr-12">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-ocean-50 text-[#0077B6] text-xs font-bold border border-ocean-200 mb-2">
-                    <Smartphone className="w-3.5 h-3.5 text-[#0077B6]" />
-                    Stage 03: Field Inspections
-                  </div>
-                  <h3 className="text-2xl font-bold text-[#023E8A] tracking-tight">
-                    GPS &amp; Photo-Verified Audits
-                  </h3>
-                  <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-                    Technicians scan each asset QR code on their smartphone. The app enforces NFPA-compliant visual checks: pressure gauge in green zone, nozzle clear, seal intact, hose uncracked. Zero fake proxy check-ins are allowed — geo-fencing confirms physical presence.
-                  </p>
-                  <ul className="mt-3 space-y-1.5 text-xs text-slate-700 inline-block text-left font-medium">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      100% offline capability for underground basement plant rooms
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      Instant defect escalation with attached high-res photo proof
-                    </li>
-                  </ul>
-                </div>
-
-                {/* Timeline Center Node Badge */}
-                <div className="relative z-10 w-12 h-12 rounded-full bg-[#023E8A] border-4 border-white shadow-md flex items-center justify-center text-white shrink-0">
-                  <Smartphone className="w-5 h-5" />
-                </div>
-
-                <div className="md:w-1/2 md:pl-12">
-                  <div className="corp-card p-6 bg-white border-slate-200">
-                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                      <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                        Technician: Suresh P. (ID: TECH-108)
-                      </span>
-                      <span className="text-[11px] font-mono bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold">
-                        GPS VERIFIED
-                      </span>
-                    </div>
-                    <div className="mt-3 space-y-2 text-xs">
-                      <div className="flex items-center justify-between p-2 rounded bg-slate-50">
-                        <span>Pressure Gauge Indicator</span>
-                        <span className="text-emerald-600 font-bold">✓ 14.5 Bar (Normal)</span>
-                      </div>
-                      <div className="flex items-center justify-between p-2 rounded bg-slate-50">
-                        <span>Tamper Seal &amp; Safety Pin</span>
-                        <span className="text-emerald-600 font-bold">✓ Intact / Original</span>
-                      </div>
-                      <div className="flex items-center justify-between p-2 rounded bg-slate-50">
-                        <span>Discharge Horn &amp; Hose</span>
-                        <span className="text-emerald-600 font-bold">✓ No Obstructions</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Timeline Item 4: 1-Click Form-B Certification */}
-            <div className="relative reveal-on-scroll">
-              <div className="flex flex-col md:flex-row-reverse items-center gap-8">
-                <div className="md:w-1/2 text-left md:pl-12">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-200 mb-2">
-                    <Award className="w-3.5 h-3.5 text-emerald-600" />
-                    Stage 04: The Autopilot
-                  </div>
-                  <h3 className="text-2xl font-bold text-[#023E8A] tracking-tight">
-                    1-Click Form-B &amp; Contract Retained
-                  </h3>
-                  <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-                    Generate the government-mandated Form-B Biannual Fire Safety Certificate in 3 seconds. The report automatically aggregates every extinguisher, hydrant flow test, and panel loop audit with licensed supervisor signatures. Your client passes every audit, and renews your contract year after year.
-                  </p>
-                  <ul className="mt-3 space-y-1.5 text-xs text-slate-700 font-medium">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      Direct PDF download compliant with State Fire Directorate
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      Client portal access with live compliance score (98.4%)
-                    </li>
-                  </ul>
-                </div>
-
-                {/* Timeline Center Node Badge */}
-                <div className="relative z-10 w-12 h-12 rounded-full bg-emerald-600 border-4 border-white shadow-md flex items-center justify-center text-white shrink-0">
-                  <FileCheck2 className="w-5 h-5" />
-                </div>
-
-                <div className="md:w-1/2 md:pr-12">
-                  <div className="corp-card p-6 bg-gradient-to-br from-emerald-50/40 to-white border-emerald-200">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <FileCheck2 className="w-6 h-6 text-emerald-600" />
-                        <div>
-                          <h4 className="text-sm font-bold text-slate-900">FORM-B CERTIFICATE</h4>
-                          <p className="text-[11px] text-slate-500">Sec 3(1) Fire Safety Act 2006</p>
-                        </div>
-                      </div>
-                      <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black">
-                        APPROVED
-                      </span>
-                    </div>
-
-                    <div className="mt-4 p-3 bg-white rounded-lg border border-slate-200 text-xs text-slate-600 space-y-1">
-                      <div className="flex justify-between">
-                        <span>Total Assets Inspected:</span>
-                        <strong className="text-slate-800">420 of 420 (100%)</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Licenced Agency Reg No:</span>
-                        <strong className="text-[#023E8A]">MH/FIRE/LIC/2022/A-412</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Fire NOC Audit Validity:</span>
-                        <strong className="text-emerald-700">Valid through March 2027</strong>
-                      </div>
-                    </div>
+                  <div className="p-3 rounded-lg bg-navy-900/60 border border-navy-700/60 text-[11px] text-slate-300 flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Note:</strong> Sample Form-B report generated using synthetic facility data for demonstration purposes. Official certification requires valid licensed agency endorsement.
+                    </span>
                   </div>
                 </div>
               </div>
@@ -542,164 +461,149 @@ export default function HomePage() {
       </section>
 
       {/* =========================================================================
-          FEATURES SECTION: Corporate Grid with Breathing Room & Tabs
+          SECTION: FEATURES GRID WITH STATUS BADGES
           ========================================================================= */}
-      <section id="features" className="py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-slate-50 border-y border-slate-200">
+      <section id="features" className="py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-white border-t border-slate-200">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center max-w-3xl mx-auto mb-20 reveal-on-scroll">
-            <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-white px-3 py-1 rounded-full border border-slate-200 shadow-sm">
-              Complete AMC Control
+          <div className="text-center max-w-3xl mx-auto mb-20">
+            <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-ocean-50 px-3 py-1 rounded-full border border-ocean-200">
+              Platform Capabilities
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-[#023E8A] tracking-tight mt-4">
-              Everything Your Fire AMC Operation Needs to Scale
+              Purpose-Built for Fire Safety AMC Operations
             </h2>
             <p className="mt-3 text-base text-slate-600 leading-relaxed">
-              Designed hand-in-hand with leading Fire Safety Service Engineers and Facility Operations Heads.
+              Every feature is built around the practical realities of field technicians, service supervisors, and compliance managers.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
             {/* Feature 1 */}
-            <div className="corp-card p-8 bg-white reveal-on-scroll flex flex-col justify-between h-full border border-slate-200/80 shadow-card hover:shadow-card-hover group">
+            <div className="corp-card p-8 bg-white flex flex-col justify-between h-full border border-slate-200 shadow-card hover:shadow-card-hover group">
               <div>
                 <div className="flex items-center justify-between mb-6">
-                  <div className="w-12 h-12 rounded-xl bg-ocean-50 text-[#0077B6] flex items-center justify-center border border-ocean-100 shadow-xs group-hover:scale-105 transition-transform">
+                  <div className="w-12 h-12 rounded-xl bg-ocean-50 text-[#0077B6] flex items-center justify-center border border-ocean-100 shadow-xs">
                     <QrCode className="w-6 h-6 stroke-[2.2]" />
                   </div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-ocean-50 text-[#0077B6] border border-ocean-200">
-                    Field Tagging
-                  </span>
+                  <StatusBadge status="LIVE" />
                 </div>
-                <h3 className="font-display text-xl font-bold text-[#023E8A] tracking-tight group-hover:text-[#0077B6] transition-colors">
-                  Asset QR Registry &amp; Floor Maps
+                <h3 className="font-display text-xl font-bold text-[#023E8A] tracking-tight">
+                  Asset QR Registry &amp; Tagging
                 </h3>
-                <p className="mt-3 text-sm text-slate-600 leading-relaxed text-pretty">
-                  Scan, register, and tag fire extinguishers, landing valves, hose reels, and smoke heads in seconds. View color-coded compliance status directly on interactive floor architectural diagrams.
+                <p className="mt-3 text-sm text-slate-600 leading-relaxed">
+                  Register extinguishers, landing valves, hose reels, and alarm panels. Assign unique serialized QR labels to identify each asset instantly on site.
                 </p>
               </div>
-              <div className="mt-8 pt-4 border-t border-slate-100 flex items-center text-xs font-bold text-[#0077B6] group-hover:text-[#023E8A] transition-colors">
-                <span>Explore QR Registry</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform group-hover:translate-x-1" />
+              <div className="mt-8 pt-4 border-t border-slate-100 flex items-center text-xs font-bold text-[#0077B6]">
+                <span>Full Asset Lifecycle Tracking</span>
               </div>
             </div>
 
             {/* Feature 2 */}
-            <div className="corp-card p-8 bg-white reveal-on-scroll delay-100 flex flex-col justify-between h-full border border-slate-200/80 shadow-card hover:shadow-card-hover group">
+            <div className="corp-card p-8 bg-white flex flex-col justify-between h-full border border-slate-200 shadow-card hover:shadow-card-hover group">
               <div>
                 <div className="flex items-center justify-between mb-6">
-                  <div className="w-12 h-12 rounded-xl bg-navy-50 text-[#023E8A] flex items-center justify-center border border-navy-100 shadow-xs group-hover:scale-105 transition-transform">
+                  <div className="w-12 h-12 rounded-xl bg-navy-50 text-[#023E8A] flex items-center justify-center border border-navy-100 shadow-xs">
                     <BellRing className="w-6 h-6 stroke-[2.2]" />
                   </div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                    Automated
-                  </span>
+                  <StatusBadge status="LIVE" />
                 </div>
-                <h3 className="font-display text-xl font-bold text-[#023E8A] tracking-tight group-hover:text-[#0077B6] transition-colors">
-                  Renewal &amp; WhatsApp Alerts
+                <h3 className="font-display text-xl font-bold text-[#023E8A] tracking-tight">
+                  Scheduled Expiry Alerts
                 </h3>
-                <p className="mt-3 text-sm text-slate-600 leading-relaxed text-pretty">
-                  Never let an extinguisher refilling date slip. VigilAMC automatically sends WhatsApp, SMS, and email alerts to clients and technicians 60, 30, and 7 days prior to expiry.
+                <p className="mt-3 text-sm text-slate-600 leading-relaxed">
+                  Automatic email and notifications 60, 30, and 7 days prior to hydrostatic pressure test expiry or annual chemical refill deadlines.
                 </p>
               </div>
-              <div className="mt-8 pt-4 border-t border-slate-100 flex items-center text-xs font-bold text-[#0077B6] group-hover:text-[#023E8A] transition-colors">
-                <span>Explore Alert Workflows</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform group-hover:translate-x-1" />
+              <div className="mt-8 pt-4 border-t border-slate-100 flex items-center text-xs font-bold text-[#0077B6]">
+                <span>Multi-Tier Renewal Schedules</span>
               </div>
             </div>
 
             {/* Feature 3 */}
-            <div className="corp-card p-8 bg-white reveal-on-scroll delay-200 flex flex-col justify-between h-full border border-slate-200/80 shadow-card hover:shadow-card-hover group">
+            <div className="corp-card p-8 bg-white flex flex-col justify-between h-full border border-slate-200 shadow-card hover:shadow-card-hover group">
               <div>
                 <div className="flex items-center justify-between mb-6">
-                  <div className="w-12 h-12 rounded-xl bg-ocean-50 text-[#0077B6] flex items-center justify-center border border-ocean-100 shadow-xs group-hover:scale-105 transition-transform">
+                  <div className="w-12 h-12 rounded-xl bg-ocean-50 text-[#0077B6] flex items-center justify-center border border-ocean-100 shadow-xs">
                     <FileCheck2 className="w-6 h-6 stroke-[2.2]" />
                   </div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    Statutory NOC
-                  </span>
+                  <StatusBadge status="LIVE" />
                 </div>
-                <h3 className="font-display text-xl font-bold text-[#023E8A] tracking-tight group-hover:text-[#0077B6] transition-colors">
-                  1-Click Form-B Compliance Filing
+                <h3 className="font-display text-xl font-bold text-[#023E8A] tracking-tight">
+                  Form-B Report Generator
                 </h3>
-                <p className="mt-3 text-sm text-slate-600 leading-relaxed text-pretty">
-                  Instant generation of statutory Biannual Form-B certificates compliant with State Fire Directorate laws, complete with digital signatures and full equipment inspection audit trails.
+                <p className="mt-3 text-sm text-slate-600 leading-relaxed">
+                  Generate statutory Biannual Form-B certificates compliant with State Fire Directorate formats, complete with equipment schedules and inspector logs.
                 </p>
               </div>
-              <div className="mt-8 pt-4 border-t border-slate-100 flex items-center text-xs font-bold text-[#0077B6] group-hover:text-[#023E8A] transition-colors">
-                <span>View Sample Form-B PDF</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform group-hover:translate-x-1" />
+              <div className="mt-8 pt-4 border-t border-slate-100 flex items-center text-xs font-bold text-[#0077B6]">
+                <Link href="/sample-report" className="hover:underline flex items-center gap-1">
+                  <span>View Sample Form-B PDF</span>
+                  <ArrowRight className="w-3 h-3" />
+                </Link>
               </div>
             </div>
 
             {/* Feature 4 */}
-            <div className="corp-card p-8 bg-white reveal-on-scroll flex flex-col justify-between h-full border border-slate-200/80 shadow-card hover:shadow-card-hover group">
+            <div className="corp-card p-8 bg-white flex flex-col justify-between h-full border border-slate-200 shadow-card hover:shadow-card-hover group">
               <div>
                 <div className="flex items-center justify-between mb-6">
-                  <div className="w-12 h-12 rounded-xl bg-navy-50 text-[#023E8A] flex items-center justify-center border border-navy-100 shadow-xs group-hover:scale-105 transition-transform">
+                  <div className="w-12 h-12 rounded-xl bg-navy-50 text-[#023E8A] flex items-center justify-center border border-navy-100 shadow-xs">
                     <Smartphone className="w-6 h-6 stroke-[2.2]" />
                   </div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-cyan-50 text-cyan-800 border border-cyan-200">
-                    Offline Ready
-                  </span>
+                  <StatusBadge status="BETA" />
                 </div>
-                <h3 className="font-display text-xl font-bold text-[#023E8A] tracking-tight group-hover:text-[#0077B6] transition-colors">
-                  Offline Technician Mobile App
+                <h3 className="font-display text-xl font-bold text-[#023E8A] tracking-tight">
+                  Offline Mobile Field Checklist
                 </h3>
-                <p className="mt-3 text-sm text-slate-600 leading-relaxed text-pretty">
-                  Technicians work uninterrupted in deep underground pump rooms, basements, or shielded stairwells. All data syncs automatically once reconnected with tamper-proof timestamps.
+                <p className="mt-3 text-sm text-slate-600 leading-relaxed">
+                  Enables technicians to record inspection checks in subterranean pump rooms and basements without continuous cellular connectivity.
                 </p>
               </div>
-              <div className="mt-8 pt-4 border-t border-slate-100 flex items-center text-xs font-bold text-[#0077B6] group-hover:text-[#023E8A] transition-colors">
-                <span>Mobile App Features</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform group-hover:translate-x-1" />
+              <div className="mt-8 pt-4 border-t border-slate-100 flex items-center text-xs font-bold text-[#0077B6]">
+                <span>In Active Pilot Testing</span>
               </div>
             </div>
 
             {/* Feature 5 */}
-            <div className="corp-card p-8 bg-white reveal-on-scroll delay-100 flex flex-col justify-between h-full border border-slate-200/80 shadow-card hover:shadow-card-hover group">
+            <div className="corp-card p-8 bg-white flex flex-col justify-between h-full border border-slate-200 shadow-card hover:shadow-card-hover group">
               <div>
                 <div className="flex items-center justify-between mb-6">
-                  <div className="w-12 h-12 rounded-xl bg-ocean-50 text-[#0077B6] flex items-center justify-center border border-ocean-100 shadow-xs group-hover:scale-105 transition-transform">
+                  <div className="w-12 h-12 rounded-xl bg-ocean-50 text-[#0077B6] flex items-center justify-center border border-ocean-100 shadow-xs">
                     <Building2 className="w-6 h-6 stroke-[2.2]" />
                   </div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
-                    Multi-Tower
-                  </span>
+                  <StatusBadge status="BETA" />
                 </div>
-                <h3 className="font-display text-xl font-bold text-[#023E8A] tracking-tight group-hover:text-[#0077B6] transition-colors">
-                  Operations Command Dashboard
+                <h3 className="font-display text-xl font-bold text-[#023E8A] tracking-tight">
+                  Multi-Facility Operations Dashboard
                 </h3>
-                <p className="mt-3 text-sm text-slate-600 leading-relaxed text-pretty">
-                  Manage 5 or 500 buildings on a unified executive dashboard. Track technician routes, inspection throughput, pending defect repair workorders, and portfolio-wide audit readiness.
+                <p className="mt-3 text-sm text-slate-600 leading-relaxed">
+                  Track inspection throughput, open defect tickets, and scheduled maintenance across multiple client buildings in one centralised interface.
                 </p>
               </div>
-              <div className="mt-8 pt-4 border-t border-slate-100 flex items-center text-xs font-bold text-[#0077B6] group-hover:text-[#023E8A] transition-colors">
-                <span>Enterprise Multi-Tower</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform group-hover:translate-x-1" />
+              <div className="mt-8 pt-4 border-t border-slate-100 flex items-center text-xs font-bold text-[#0077B6]">
+                <span>Portfolio Overview &amp; Tracking</span>
               </div>
             </div>
 
             {/* Feature 6 */}
-            <div className="corp-card p-8 bg-white reveal-on-scroll delay-200 flex flex-col justify-between h-full border border-slate-200/80 shadow-card hover:shadow-card-hover group">
+            <div className="corp-card p-8 bg-white flex flex-col justify-between h-full border border-slate-200 shadow-card hover:shadow-card-hover group">
               <div>
                 <div className="flex items-center justify-between mb-6">
-                  <div className="w-12 h-12 rounded-xl bg-navy-50 text-[#023E8A] flex items-center justify-center border border-navy-100 shadow-xs group-hover:scale-105 transition-transform">
+                  <div className="w-12 h-12 rounded-xl bg-navy-50 text-[#023E8A] flex items-center justify-center border border-navy-100 shadow-xs">
                     <Users className="w-6 h-6 stroke-[2.2]" />
                   </div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    Retention
-                  </span>
+                  <StatusBadge status="COMING SOON" />
                 </div>
-                <h3 className="font-display text-xl font-bold text-[#023E8A] tracking-tight group-hover:text-[#0077B6] transition-colors">
-                  Client Transparency Portal
+                <h3 className="font-display text-xl font-bold text-[#023E8A] tracking-tight">
+                  Client Self-Service Portal
                 </h3>
-                <p className="mt-3 text-sm text-slate-600 leading-relaxed text-pretty">
-                  Delight your clients with their own branded compliance portal. Facility directors can view live equipment health, download certificates 24/7, and approve refilling quotes in 1 click.
+                <p className="mt-3 text-sm text-slate-600 leading-relaxed">
+                  Dedicated read-only access for facility management committees to view equipment readiness, download certificates, and approve quotes online.
                 </p>
               </div>
-              <div className="mt-8 pt-4 border-t border-slate-100 flex items-center text-xs font-bold text-[#0077B6] group-hover:text-[#023E8A] transition-colors">
-                <span>Client Portal Preview</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform group-hover:translate-x-1" />
+              <div className="mt-8 pt-4 border-t border-slate-100 flex items-center text-xs font-bold text-slate-500">
+                <span>In Active Development</span>
               </div>
             </div>
           </div>
@@ -707,19 +611,19 @@ export default function HomePage() {
       </section>
 
       {/* =========================================================================
-          INTERACTIVE FEATURE: Live ROI & Asset Savings Calculator
+          INTERACTIVE ROI & OPERATIONAL TIME SAVINGS CALCULATOR
           ========================================================================= */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-5xl mx-auto corp-card-elevated p-8 sm:p-12 border-ocean-200/80 ocean-mesh">
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-50 border-t border-slate-200">
+        <div className="max-w-5xl mx-auto corp-card-elevated p-8 sm:p-12 border-ocean-200/80 ocean-mesh bg-white">
           <div className="text-center max-w-2xl mx-auto mb-10">
             <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-ocean-50 px-3.5 py-1.5 rounded-full border border-ocean-200/80">
-              Interactive ROI Calculator
+              Operational Impact Estimator
             </span>
             <h3 className="font-display text-2xl sm:text-3xl font-extrabold text-[#023E8A] tracking-tight mt-3 text-balance">
-              Calculate Your Operational Hours &amp; Cost Savings
+              Estimate Your Operational Time &amp; Cost Savings
             </h3>
             <p className="text-sm text-slate-600 mt-2 text-pretty">
-              Slide to match your portfolio size and see how much time and money VigilAMC saves your AMC business.
+              Adjust the sliders to match your active facility portfolio and evaluate potential time saved from manual logbook tracking.
             </p>
           </div>
 
@@ -729,10 +633,10 @@ export default function HomePage() {
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Buildings / Towers Managed
+                    Buildings / Facilities Under AMC
                   </label>
                   <span className="px-3 py-1 bg-white border border-slate-300 rounded-lg text-sm font-black text-[#023E8A] font-display tabular-nums shadow-xs">
-                    {calcBuildings} Towers
+                    {calcBuildings} Facilities
                   </span>
                 </div>
                 <input
@@ -744,16 +648,16 @@ export default function HomePage() {
                   className="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#0077B6]"
                 />
                 <div className="flex justify-between text-[11px] text-slate-400 mt-1 font-mono">
-                  <span>1 Tower</span>
-                  <span>20 Towers</span>
-                  <span>40+ Towers</span>
+                  <span>1 Facility</span>
+                  <span>20 Facilities</span>
+                  <span>40+ Facilities</span>
                 </div>
               </div>
 
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Total Fire Safety Assets (Extinguishers, Hydrants, Panels)
+                    Total Fire Assets (Extinguishers, Hydrants, Panels)
                   </label>
                   <span className="px-3 py-1 bg-white border border-slate-300 rounded-lg text-sm font-black text-[#0077B6] font-display tabular-nums shadow-xs">
                     {calcAssets} Assets
@@ -775,14 +679,14 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="p-4 bg-white/90 backdrop-blur-xs rounded-xl border border-slate-200 text-xs text-slate-600 space-y-2 shadow-xs">
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-2 shadow-xs">
                 <div className="flex items-center gap-2 text-[#023E8A] font-semibold">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Eliminates 100% of Excel double-entry data errors</span>
+                  <span>Drastically reduces manual Excel data entry and reconciliation errors</span>
                 </div>
                 <div className="flex items-center gap-2 text-[#023E8A] font-semibold">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Prevents expensive contract churn &amp; audit penalty notices</span>
+                  <span>Helps avoid missed inspection cycles and frantic pre-audit rushes</span>
                 </div>
               </div>
             </div>
@@ -792,7 +696,7 @@ export default function HomePage() {
               <div>
                 <div className="text-xs uppercase font-extrabold tracking-wider text-cyan-200 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-                  Estimated Annual Value Delivered
+                  Estimated Time Reclaimed
                 </div>
                 <div className="mt-4 flex items-baseline gap-2">
                   <span className="font-display text-4xl sm:text-5xl font-black text-white tabular-nums tracking-tight">
@@ -801,44 +705,44 @@ export default function HomePage() {
                   <span className="text-base text-cyan-200 font-semibold">Hours Saved / Year</span>
                 </div>
                 <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                  Replaces manual paperwork, lost logbooks, and Excel reconciliation.
+                  Calculated based on average manual logbook compilation, travel reconciliation, and report preparation.
                 </p>
               </div>
 
               <div className="pt-4 border-t border-navy-400/30">
                 <div className="text-xs text-cyan-200 font-semibold">
-                  Estimated Financial Savings &amp; Penalty Prevention
+                  Estimated Operational Efficiency Value
                 </div>
                 <div className="font-display text-2xl sm:text-3xl font-black text-white mt-1 tabular-nums tracking-tight">
                   ₹{costSavingsPerYear} <span className="text-xs text-slate-300 font-normal">equivalent / yr</span>
                 </div>
               </div>
 
-              <Link
-                href="/contact"
-                className="w-full py-3.5 bg-[#0077B6] hover:bg-white hover:text-[#023E8A] text-white font-bold text-xs uppercase tracking-wider rounded-xl text-center transition-all shadow-md active:scale-[0.98]"
+              <button
+                onClick={() => setWorkflowModalOpen(true)}
+                className="w-full py-3.5 bg-[#0077B6] hover:bg-white hover:text-[#023E8A] text-white font-bold text-xs uppercase tracking-wider rounded-xl text-center transition-all shadow-md active:scale-[0.98] cursor-pointer"
               >
-                Claim Your Free Operational Assessment
-              </Link>
+                Schedule 15-Minute Workflow Review
+              </button>
             </div>
           </div>
         </div>
       </section>
 
       {/* =========================================================================
-          CUSTOMERS SECTION: Case Studies & Interactive Image Lightbox Gallery
+          REFERENCE FIELD SCENARIOS & LIGHTBOX (SAMPLE DEMONSTRATION DATA)
           ========================================================================= */}
-      <section id="customers" className="py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-slate-50 border-t border-slate-200">
+      <section id="customers" className="py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-white border-t border-slate-200">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center max-w-3xl mx-auto mb-16 reveal-on-scroll">
-            <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-white px-3 py-1 rounded-full border border-slate-200 shadow-sm">
-              Proven Across Mission-Critical Sites
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-ocean-50 px-3 py-1 rounded-full border border-ocean-200">
+              Inspection Protocols &amp; Field Scenarios
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-[#023E8A] tracking-tight mt-4">
-              Trusted by Premier Commercial Towers, Hospitals &amp; Industry
+              Designed for Real-World Field Conditions
             </h2>
             <p className="mt-3 text-base text-slate-600 leading-relaxed">
-              Click any audit preview below to inspect actual field QR labels, pressure verifications, and compliance sign-offs in our high-res interactive gallery.
+              Explore how QR tagging, physical gauge verifications, and digital compliance logging apply to diverse facility types.
             </p>
           </div>
 
@@ -848,7 +752,7 @@ export default function HomePage() {
               <div
                 key={idx}
                 onClick={() => handleOpenLightbox(idx)}
-                className="corp-card overflow-hidden group cursor-pointer bg-white transition-all transform hover:-translate-y-1.5"
+                className="corp-card overflow-hidden group cursor-pointer bg-white transition-all transform hover:-translate-y-1.5 border border-slate-200"
               >
                 <div className="relative h-48 overflow-hidden bg-slate-100">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -856,9 +760,6 @@ export default function HomePage() {
                     src={img.src}
                     alt={img.title}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&w=1200&q=80';
-                    }}
                   />
                   <div className="absolute inset-0 bg-slate-900/30 group-hover:bg-slate-900/10 transition-colors" />
                   <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full bg-white/95 text-[#023E8A] text-[10px] font-bold shadow-sm">
@@ -878,68 +779,69 @@ export default function HomePage() {
                   </p>
                   <p className="text-[11px] text-[#0077B6] font-semibold mt-2 flex items-center gap-1">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    Verified Audit Log
+                    Inspection Flow Preview
                   </p>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Verified Standards & Testimonials Info Cards */}
+          {/* Verified Standards & Testimonials Placeholder Info Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="corp-card p-6 bg-white reveal-on-scroll border border-slate-100 shadow-sm">
-              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 mb-3">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                Regulatory Standard
+            <div className="corp-card p-6 bg-slate-50 border border-slate-200 shadow-sm">
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 mb-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                Statutory Framework
               </div>
               <p className="text-sm text-slate-700 leading-relaxed">
-                VigilAMC is engineered specifically to satisfy the strict mandates of the <strong>Maharashtra Fire Act 2006</strong>, <strong>NBC 2016 Part 4</strong>, and <strong>IS 2190</strong> maintenance protocols for AMC providers.
+                VigilAMC aligns its equipment schedules with the <strong>Maharashtra Fire Prevention &amp; Life Safety Measures Act 2006</strong>, <strong>NBC 2016 Part 4</strong>, and <strong>IS 2190</strong> maintenance protocols.
               </p>
-              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-3">
+              <div className="mt-6 pt-4 border-t border-slate-200 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-[#0077B6] text-white flex items-center justify-center font-bold text-xs">
                   NBC
                 </div>
                 <div>
-                  <h5 className="text-xs font-bold text-slate-900">Statutory Framework</h5>
-                  <p className="text-[11px] text-slate-500">Form-B & Inspection Compliance</p>
+                  <h5 className="text-xs font-bold text-slate-900">Standardized Schedules</h5>
+                  <p className="text-[11px] text-slate-500">IS 2190 &amp; NBC Part 4 Guidelines</p>
                 </div>
               </div>
             </div>
 
-            <div className="corp-card p-6 bg-white reveal-on-scroll delay-100 border border-slate-100 shadow-sm">
-              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 mb-3">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                Field Accountability
+            <div className="corp-card p-6 bg-slate-50 border border-slate-200 shadow-sm">
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 mb-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                Field Traceability
               </div>
               <p className="text-sm text-slate-700 leading-relaxed">
-                Every field technician inspection generates an immutable audit record featuring tamper-evident QR verification, device geolocation, and photographic defect logging.
+                Every field technician log includes QR verification timestamps, optional device coordinates, and photographic records for transparent defect communication.
               </p>
-              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-3">
+              <div className="mt-6 pt-4 border-t border-slate-200 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-[#023E8A] text-white flex items-center justify-center font-bold text-xs">
-                  GPS
+                  QR
                 </div>
                 <div>
-                  <h5 className="text-xs font-bold text-slate-900">Tamper-Proof Tracking</h5>
-                  <p className="text-[11px] text-slate-500">Zero-Trust Inspection Integrity</p>
+                  <h5 className="text-xs font-bold text-slate-900">Digital Verification</h5>
+                  <p className="text-[11px] text-slate-500">Physical Tagging &amp; Time Log</p>
                 </div>
               </div>
             </div>
 
-            <div className="corp-card p-6 bg-white reveal-on-scroll delay-200 border border-slate-100 shadow-sm">
-              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 mb-3">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                Pilot Verification
+            {/* Testimonials Placeholder */}
+            <div className="corp-card p-6 bg-amber-50/50 border border-amber-200 shadow-sm">
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 mb-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                Pilot Feedback Program
               </div>
               <p className="text-sm text-slate-700 leading-relaxed italic">
-                &ldquo;Customer testimonials and case study releases are currently being verified from our active deployment agencies. Real partner reviews will be published shortly.&rdquo;
+                [ADD VERIFIED CUSTOMER TESTIMONIAL] &bull; Customer case studies and testimonials from active pilot agencies are currently being documented and will be published with client authorization.
               </p>
-              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-slate-700 text-white flex items-center justify-center font-bold text-xs">
-                  AMC
+              <div className="mt-6 pt-4 border-t border-amber-200 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold text-xs">
+                  PILOT
                 </div>
                 <div>
-                  <h5 className="text-xs font-bold text-slate-900">Customer Testimonials</h5>
-                  <p className="text-[11px] text-slate-500">Coming Soon from Active Agencies</p>
+                  <h5 className="text-xs font-bold text-slate-900">Partner Feedback</h5>
+                  <p className="text-[11px] text-slate-500">Documentation In Progress</p>
                 </div>
               </div>
             </div>
@@ -948,19 +850,29 @@ export default function HomePage() {
       </section>
 
       {/* =========================================================================
-          PRICING TABLE SECTION: Interactive Monthly/Annual Switch
+          SECTION 7: FOUNDER STORY & VIDEO PLACEHOLDER
+          ========================================================================= */}
+      <FounderSection />
+
+      {/* =========================================================================
+          SECTION 8 & 9: TRUST, TRANSPARENCY & STATUTORY DISCLAIMERS
+          ========================================================================= */}
+      <TrustTransparencySection />
+
+      {/* =========================================================================
+          PRICING TABLE SECTION
           ========================================================================= */}
       <section id="pricing" className="py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-white border-t border-slate-200">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center max-w-3xl mx-auto mb-16 reveal-on-scroll">
+          <div className="text-center max-w-3xl mx-auto mb-16">
             <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-ocean-50 px-3 py-1 rounded-full border border-ocean-200">
-              Clear, Predictable Pricing
+              Transparent Pricing
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-[#023E8A] tracking-tight mt-4">
-              Invest in Compliance. Eliminate Contract Churn.
+              Simple Plans to Modernize Your AMC Fleet
             </h2>
             <p className="mt-3 text-base text-slate-600 leading-relaxed">
-              Every plan includes the complete Fire NOC engine, technician mobile app, and automated WhatsApp alert matrix.
+              Every plan includes the core asset registry, QR tagging capabilities, and Form-B PDF generation.
             </p>
 
             {/* Monthly / Annual Toggle Switch */}
@@ -993,17 +905,17 @@ export default function HomePage() {
 
           {/* Pricing Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-            {/* Tier 1: Basic AMC */}
-            <div className="corp-card p-8 bg-white flex flex-col justify-between h-full reveal-on-scroll border border-slate-200/90 shadow-card hover:shadow-card-hover">
+            {/* Tier 1: Starter AMC */}
+            <div className="corp-card p-8 bg-white flex flex-col justify-between h-full border border-slate-200 shadow-card hover:shadow-card-hover">
               <div>
                 <div className="flex justify-between items-center">
-                  <h3 className="font-display text-xl font-bold text-slate-900">Basic AMC</h3>
+                  <h3 className="font-display text-xl font-bold text-slate-900">Starter AMC</h3>
                   <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md">
-                    Up to 3 Towers
+                    Up to 3 Facilities
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 mt-2">
-                  Ideal for independent fire safety contractors and small facility operations.
+                  Suitable for independent fire contractors and small maintenance teams.
                 </p>
 
                 <div className="mt-6 flex items-baseline gap-1">
@@ -1030,40 +942,40 @@ export default function HomePage() {
                   </div>
                   <div className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                    <span>Standard Form-B PDF Generator</span>
+                    <span>Form-B PDF Generation Engine</span>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                    <span>Email Expiry &amp; Renewal Notifications</span>
+                    <span>Automated Email Expiry Notifications</span>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                    <span>50 Free Pre-printed Weatherproof QR Labels</span>
+                    <span>Standard Email Support</span>
                   </div>
                 </div>
               </div>
 
               <div className="mt-auto pt-8 border-t border-slate-100">
-                <Link
-                  href="/contact"
+                <a
+                  href="#pilot-section"
                   className="w-full py-3 px-4 rounded-xl text-xs font-bold text-[#0077B6] bg-ocean-50 hover:bg-ocean-100 text-center block transition-all border border-ocean-200 active:scale-[0.98]"
                 >
-                  Start 14-Day Free Pilot
-                </Link>
+                  Apply for Free Pilot
+                </a>
               </div>
             </div>
 
-            {/* Tier 2: Pro Fleet AMC (Most Popular) */}
-            <div className="corp-card p-8 bg-white border-2 border-[#0077B6] shadow-xl ring-4 ring-[#0077B6]/15 relative flex flex-col justify-between h-full reveal-on-scroll delay-100">
+            {/* Tier 2: Pro Fleet AMC */}
+            <div className="corp-card p-8 bg-white border-2 border-[#0077B6] shadow-xl ring-4 ring-[#0077B6]/15 relative flex flex-col justify-between h-full">
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-[#0077B6] to-[#023E8A] text-white text-[11px] font-extrabold uppercase tracking-wider shadow-md">
-                Most Popular for AMC Fleets
+                Recommended for AMC Fleets
               </div>
 
               <div>
                 <div className="flex justify-between items-center mt-1">
                   <h3 className="font-display text-xl font-bold text-[#023E8A]">Pro Fleet AMC</h3>
                   <span className="text-xs font-semibold px-2.5 py-1 bg-ocean-50 text-[#0077B6] rounded-md border border-ocean-200">
-                    Up to 15 Towers
+                    Up to 15 Facilities
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 mt-2">
@@ -1082,7 +994,7 @@ export default function HomePage() {
 
                 <div className="mt-8 space-y-3 text-xs text-slate-700">
                   <p className="font-bold text-[#023E8A] uppercase tracking-wider text-[11px]">
-                    Everything in Basic, plus:
+                    Everything in Starter, plus:
                   </p>
                   <div className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
@@ -1090,48 +1002,44 @@ export default function HomePage() {
                   </div>
                   <div className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                    <span>Automated WhatsApp &amp; SMS Renewal Engine</span>
+                    <span>Automated Email &amp; SMS Renewal Alerts</span>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                    <span>Client Transparency Web Portal with Live Scores</span>
+                    <span>Client Portal (When Live) Included at No Extra Cost</span>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                    <span>Instant Defect Quotation &amp; Repair Workorders</span>
+                    <span>Defect Quotation Summaries &amp; Photo Logs</span>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                    <span>250 Free Pre-printed Weatherproof QR Labels</span>
-                  </div>
-                  <div className="flex items-start gap-2.5">
-                    <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                    <span>Priority 24/7 Telephone Technical Support</span>
+                    <span>Priority Technical &amp; Onboarding Support</span>
                   </div>
                 </div>
               </div>
 
               <div className="mt-auto pt-8 border-t border-slate-100">
-                <Link
-                  href="/contact"
+                <a
+                  href="#pilot-section"
                   className="w-full py-3.5 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#0077B6] to-[#023E8A] hover:from-[#006494] hover:to-[#011F48] text-center block transition-all shadow-md hover:shadow-lg active:scale-[0.98]"
                 >
-                  Start 14-Day Free Pilot
-                </Link>
+                  Apply for Free Pilot
+                </a>
               </div>
             </div>
 
             {/* Tier 3: Enterprise / Custom AMC */}
-            <div className="corp-card p-8 bg-white flex flex-col justify-between h-full reveal-on-scroll delay-200 border border-slate-200/90 shadow-card hover:shadow-card-hover">
+            <div className="corp-card p-8 bg-white flex flex-col justify-between h-full border border-slate-200 shadow-card hover:shadow-card-hover">
               <div>
                 <div className="flex justify-between items-center">
-                  <h3 className="font-display text-xl font-bold text-slate-900">Custom / Enterprise AMC</h3>
+                  <h3 className="font-display text-xl font-bold text-slate-900">Enterprise Operations</h3>
                   <span className="text-xs font-semibold px-2.5 py-1 bg-navy-50 text-[#023E8A] rounded-md">
-                    Unlimited
+                    Custom Fleet
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 mt-2">
-                  For large facility conglomerates, airport authorities, and multi-city AMC operations.
+                  For large facility conglomerates, multi-city operations, and specialized industrial facilities.
                 </p>
 
                 <div className="mt-6 flex items-baseline gap-1">
@@ -1139,32 +1047,28 @@ export default function HomePage() {
                   <span className="text-xs text-slate-500 font-medium">tailored to fleet size</span>
                 </div>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  {billingCycle === 'annual' ? 'Volume licensing discount • Annual SLA' : 'Flexible monthly fleet deployment'}
+                  {billingCycle === 'annual' ? 'Annual contract with volume terms' : 'Flexible monthly rollout'}
                 </p>
 
                 <div className="mt-8 space-y-3 text-xs text-slate-700">
                   <p className="font-bold text-slate-900 uppercase tracking-wider text-[11px]">
-                    Enterprise-Grade Infrastructure:
+                    Enterprise-Grade Features:
                   </p>
                   <div className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                    <span><strong>Unlimited Assets &amp; Unlimited Facilities</strong></span>
+                    <span><strong>High Volume Asset Registry</strong></span>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                    <span>Dedicated Fire Compliance Engineer / Account Manager</span>
+                    <span>Dedicated Technical Onboarding Support</span>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                    <span>Custom ERP / SAP &amp; Facility Management API Sync</span>
+                    <span>Custom Bulk Asset Migration Assistance</span>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                    <span>White-label Client Portal on your own custom domain</span>
-                  </div>
-                  <div className="flex items-start gap-2.5">
-                    <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                    <span>99.99% Guaranteed SLA &amp; On-Site Training Workshops</span>
+                    <span>99.9% Platform Availability Target</span>
                   </div>
                 </div>
               </div>
@@ -1174,7 +1078,7 @@ export default function HomePage() {
                   href="/contact"
                   className="w-full py-3 px-4 rounded-xl text-xs font-bold text-[#023E8A] bg-slate-100 hover:bg-slate-200 text-center block transition-all active:scale-[0.98]"
                 >
-                  Contact Enterprise Sales
+                  Contact for Custom Quote
                 </Link>
               </div>
             </div>
@@ -1183,19 +1087,19 @@ export default function HomePage() {
       </section>
 
       {/* =========================================================================
-          FAQ ACCORDION SECTION: Expandable with Fluid Animation
+          FAQ ACCORDION SECTION
           ========================================================================= */}
       <section className="py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-slate-50 border-t border-slate-200">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto mb-16 reveal-on-scroll">
+          <div className="text-center max-w-2xl mx-auto mb-16">
             <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-white px-3.5 py-1.5 rounded-full border border-slate-200 shadow-sm">
-              Got Questions?
+              Common Inquiries
             </span>
             <h2 className="font-display text-3xl sm:text-4xl font-extrabold text-[#023E8A] tracking-tight mt-4 text-balance">
               Frequently Asked Questions
             </h2>
             <p className="mt-3 text-base text-slate-600 leading-relaxed text-pretty">
-              Everything you need to know about switching from paper logs to VigilAMC autopilot.
+              Clear answers regarding statutory compliance, field workflows, and getting started with VigilAMC.
             </p>
           </div>
 
@@ -1211,7 +1115,7 @@ export default function HomePage() {
                 >
                   <button
                     onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
-                    className="w-full py-5 px-6 text-left flex items-center justify-between gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0077B6]"
+                    className="w-full py-5 px-6 text-left flex items-center justify-between gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0077B6] cursor-pointer"
                     aria-expanded={isOpen}
                   >
                     <span className="text-base font-bold text-slate-900 hover:text-[#0077B6] transition-colors">
@@ -1236,62 +1140,34 @@ export default function HomePage() {
 
           {/* Quick contact reassurance */}
           <div className="mt-12 text-center text-xs text-slate-500">
-            Have a unique facility setup or custom Fire Directorate requirement?{' '}
+            Have a specific statutory or municipal fire jurisdiction question?{' '}
             <Link href="/contact" className="text-[#0077B6] font-bold underline hover:text-[#023E8A] transition-colors">
-              Speak directly with our Chief Compliance Architect
+              Speak directly with our team
             </Link>
           </div>
         </div>
       </section>
 
       {/* =========================================================================
-          FAST CONTACT / DEMO INQUIRY SECTION
+          SECTION 11: JOIN THE FREE PILOT (8-FIELD APPLICATION FORM)
           ========================================================================= */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[#023E8A] via-[#022A5E] to-[#011F48] text-white relative overflow-hidden border-t border-navy-700/60">
-        <div className="max-w-4xl mx-auto text-center space-y-6 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-navy-800/80 text-cyan-200 text-xs font-bold border border-cyan-400/20 shadow-sm">
-            <Sparkles className="w-3.5 h-3.5 text-cyan-300" />
-            <span>Zero Setup Fee &bull; 14-Day Full Access Pilot</span>
+      <section id="pilot-section" className="py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[#023E8A] via-[#022A5E] to-[#011F48] text-white relative overflow-hidden border-t border-navy-700/60 scroll-mt-16">
+        <div className="max-w-4xl mx-auto relative z-10">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-navy-800/80 text-cyan-200 text-xs font-bold border border-cyan-400/20 shadow-sm mb-4">
+              <Sparkles className="w-3.5 h-3.5 text-cyan-300" />
+              <span>Pilot Cohort &bull; Free Access</span>
+            </div>
+            <h2 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+              Join the Free Pilot Program
+            </h2>
+            <p className="text-sm sm:text-base text-cyan-100 mt-3 leading-relaxed">
+              We are onboarding selected fire protection agencies into our hands-on pilot. Test QR tagging and Form-B generation across up to 3 of your facilities with direct founder onboarding.
+            </p>
           </div>
 
-          <h2 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-balance">
-            Stop Losing AMC Contracts Over Missed Deadlines
-          </h2>
-
-          <p className="text-sm sm:text-base text-cyan-100 max-w-2xl mx-auto leading-relaxed text-pretty">
-            Join hundreds of certified fire safety agencies that put their entire equipment inventory, technician audits, and Form-B certifications on autopilot.
-          </p>
-
-          <form onSubmit={handleQuickInquiry} className="max-w-md mx-auto space-y-3 pt-4">
-            <div className="flex flex-col sm:flex-row gap-2">
-              <input
-                type="email"
-                required
-                value={inquiryEmail}
-                onChange={(e) => setInquiryEmail(e.target.value)}
-                placeholder="Enter your work email address"
-                className="w-full px-4 py-3 rounded-xl bg-white text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0077B6] shadow-sm"
-              />
-              <button
-                type="submit"
-                className="px-6 py-3 bg-[#0077B6] hover:bg-[#0096C7] text-white font-bold text-sm rounded-xl shadow-lg transition-all whitespace-nowrap active:scale-[0.98]"
-              >
-                Get Started
-              </button>
-            </div>
-            {inquiryError && <p className="text-xs text-red-300 text-left">{inquiryError}</p>}
-            {inquirySubmitted && (
-              <p className="text-xs text-emerald-300 font-semibold flex items-center justify-center gap-1.5 pt-1">
-                <CheckCircle2 className="w-4 h-4" />
-                Thank you! We will reach out within 15 minutes.
-              </p>
-            )}
-          </form>
-
-          <div className="pt-4 flex flex-wrap items-center justify-center gap-6 text-xs text-cyan-200">
-            <span>✓ No credit card required</span>
-            <span>✓ Pre-printed QR labels included</span>
-            <span>✓ 24-hour spreadsheet migration</span>
+          <div className="bg-white rounded-3xl p-6 sm:p-10 shadow-2xl text-slate-900 border border-slate-100">
+            <FreePilotForm />
           </div>
         </div>
       </section>
@@ -1306,10 +1182,10 @@ export default function HomePage() {
               <span>@vigilamc</span>
             </div>
             <h3 className="text-lg font-bold text-slate-900">
-              Join the VigilAMC Fire Safety &amp; AMC Community
+              Follow VigilAMC for Fire Safety &amp; AMC Operations Updates
             </h3>
             <p className="text-xs text-slate-500 mt-1">
-              Watch real-time compliance tutorials, Form-B statutory updates, and industry insights.
+              Field operational tips, statutory compliance developments, and software updates.
             </p>
           </div>
 
@@ -1369,6 +1245,12 @@ export default function HomePage() {
         initialIndex={activeImageIndex}
         isOpen={lightboxOpen}
         onClose={() => setLightboxOpen(false)}
+      />
+
+      {/* Workflow Review Modal */}
+      <DemoModal
+        isOpen={workflowModalOpen}
+        onClose={() => setWorkflowModalOpen(false)}
       />
     </div>
   );
