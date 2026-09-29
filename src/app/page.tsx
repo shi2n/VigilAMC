@@ -122,8 +122,8 @@ export default function HomePage() {
       a: 'No. VigilAMC is an operational software platform. It does not replace licensed fire safety engineers, licensed agency sign-offs, or municipal fire authorities. Statutory Form-B documents generated on VigilAMC must be reviewed, verified, and signed by authorized personnel holding valid state fire agency licenses.',
     },
     {
-      q: 'How does migration from Excel or paper logbooks work?',
-      a: 'We provide structured CSV/Excel templates to import your existing building lists, equipment counts, and last test dates. During the Free Pilot, we assist your team in uploading your initial facility inventory and preparing corresponding QR tags.',
+      q: 'Already managing your fire assets in Excel or spreadsheets?',
+      a: 'Already managing your assets in Excel? Import your existing data into VigilAMC in minutes. Upload your .xlsx or .csv files, review smart column mapping (Clients → Buildings → Assets), inspect validation warnings, and batch import your complete equipment inventory without manual data re-entry.',
     },
     {
       q: 'What is included in the Free Pilot program?',
@@ -154,7 +154,7 @@ export default function HomePage() {
             <span className="flex h-2 w-2 rounded-full bg-[#0077B6] animate-pulse" />
             <span className="font-medium text-slate-700">Fire Protection Operations &amp; Maintenance Software</span>
             <span className="text-slate-300">|</span>
-            <span className="text-[#0077B6] font-bold">Maharashtra Fire Act &amp; NBC Framework</span>
+            <span className="text-[#0077B6] font-bold">Delhi NCR • Delhi • Noida • Gurugram</span>
           </div>
 
           {/* Primary Main Headline */}
@@ -329,7 +329,7 @@ export default function HomePage() {
                       <StatusBadge status="LIVE" />
                     </div>
                     <p className="text-sm text-slate-600 mt-1 leading-relaxed">
-                      Structured under Section 3(1) of the Maharashtra Fire Prevention &amp; Life Safety Measures Act, formatted for licensed contractor sign-off.
+                      Structured under Delhi Fire Service Rules, NBC 2016 Part 4 &amp; applicable NCR bylaws, formatted for licensed contractor sign-off.
                     </p>
                   </div>
                 </div>
@@ -421,7 +421,7 @@ export default function HomePage() {
                     </div>
                     <div className="flex justify-between text-slate-200">
                       <span>Representative City:</span>
-                      <strong className="text-white">BKC, Mumbai, Maharashtra</strong>
+                      <strong className="text-white">Cyber City, Gurugram, Delhi NCR</strong>
                     </div>
                     <div className="flex justify-between text-slate-200">
                       <span>Equipments Documented:</span>
@@ -794,7 +794,7 @@ export default function HomePage() {
                 Statutory Framework
               </div>
               <p className="text-sm text-slate-700 leading-relaxed">
-                VigilAMC aligns its equipment schedules with the <strong>Maharashtra Fire Prevention &amp; Life Safety Measures Act 2006</strong>, <strong>NBC 2016 Part 4</strong>, and <strong>IS 2190</strong> maintenance protocols.
+                VigilAMC aligns its equipment schedules with the <strong>Delhi Fire Prevention and Fire Safety Act &amp; NCR Rules</strong>, <strong>NBC 2016 Part 4</strong>, and <strong>IS 2190</strong> maintenance protocols.
               </p>
               <div className="mt-6 pt-4 border-t border-slate-200 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-[#0077B6] text-white flex items-center justify-center font-bold text-xs">

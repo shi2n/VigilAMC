@@ -94,7 +94,7 @@ export default function CertificateDetailPage() {
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              Official certificate ready for municipal submission to Brihanmumbai / Municipal Fire Brigade.
+              Official certificate ready for municipal submission to Delhi Fire Service (DFS) / Local Authority.
             </p>
           </div>
 
@@ -115,10 +115,10 @@ export default function CertificateDetailPage() {
         {/* Document Header */}
         <div className="text-center border-b-2 border-slate-900 pb-6 mb-6 space-y-1">
           <div className="text-xs font-black uppercase tracking-widest text-red-700">
-            MAHARASHTRA FIRE PREVENTION AND LIFE SAFETY MEASURES ACT, 2006
+            DELHI FIRE SAFETY &amp; LIFE SAFETY COMPLIANCE STATUTORY FORMAT
           </div>
           <div className="text-[11px] text-slate-600 font-semibold">
-            [See Section 3(1) and Rule 4(2)]
+            [Under Delhi Fire Prevention and Fire Safety Rules / NBC 2016 Part 4]
           </div>
           <h2 className="text-2xl font-black tracking-tight text-slate-900 pt-1">
             FORM &apos;B&apos;
@@ -134,7 +134,7 @@ export default function CertificateDetailPage() {
             <div className="text-[10px] font-bold text-slate-500 uppercase">Licensed Agency Details:</div>
             <div className="font-bold text-sm text-slate-900">{company?.name || 'Vigil Fire & Safety Solutions Pvt Ltd'}</div>
             <div className="text-slate-600 text-[11px]">License No: <strong className="text-slate-900">{cert.licensedAgencyNumber}</strong></div>
-            <div className="text-slate-600 text-[11px]">State / Region: {company?.state || 'Maharashtra'}</div>
+            <div className="text-slate-600 text-[11px]">State / Region: {company?.state || 'Delhi NCR'}</div>
           </div>
 
           <div className="text-right space-y-1">
@@ -170,7 +170,7 @@ export default function CertificateDetailPage() {
         {/* Legal Declaration */}
         <div className="py-5 border-b border-slate-200 text-xs text-slate-800 leading-relaxed space-y-3 text-justify">
           <p>
-            Certified that we have carried out the bi-annual / annual inspection and maintenance of the fire prevention and life safety measures installed in the aforesaid building / premises as required under the Maharashtra Fire Prevention and Life Safety Measures Act, 2006.
+            Certified that we have carried out the bi-annual / periodic inspection and maintenance of the fire prevention and life safety measures installed in the aforesaid building / premises as required under the Delhi Fire Prevention and Fire Safety Act, 2007, Haryana Fire Safety Rules, and NBC 2016 Part 4.
           </p>
           <p>
             We further certify that the fire fighting installations, including stored pressure ABC dry powder extinguishers, CO2 gas cylinders, mechanical foam equipment, landing hydrants, and life safety gear, have been thoroughly inspected, hydrostatically pressure-tested per <strong>Indian Standard IS 2190 / IS 15683</strong>, and are in <strong>good repair and efficient working condition</strong>.

@@ -101,7 +101,7 @@ export async function POST(request: Request) {
         name: name.trim(),
         address: (address || city || 'Facility Address').trim(),
         city: (city || '').trim(),
-        complianceCycle: occupancyType || 'Maharashtra Form-B (Half-Yearly)',
+        complianceCycle: occupancyType || 'Delhi NCR Statutory Form-B (Half-Yearly)',
         nextFilingDueDate: nocExpiryDate ? new Date(nocExpiryDate) : new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
       },
       include: {

@@ -38,6 +38,7 @@ interface DashboardOverviewProps {
   onNavigateTab?: (tab: string) => void;
   onNavigate?: (tab: any) => void;
   onOpenExport?: (type?: string) => void;
+  onOpenImport?: (type?: any) => void;
   onAddBuilding?: () => void;
 }
 
@@ -50,6 +51,7 @@ export function DashboardOverview({
   onNavigateTab,
   onNavigate,
   onOpenExport = () => {},
+  onOpenImport,
   onAddBuilding,
 }: DashboardOverviewProps) {
   const currentSub = subscription ?? subscriptionData;
@@ -77,6 +79,17 @@ export function DashboardOverview({
             </h2>
             <p className="text-xs text-slate-400">Live aggregated metrics across your contracted facilities and workforce.</p>
           </div>
+
+          {onOpenImport && (
+            <button
+              onClick={() => onOpenImport('FIRE_ASSETS')}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-400 border border-amber-500/30 text-xs font-bold transition-all shadow-sm"
+              title="Import Data from Excel (.xlsx)"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-amber-400" />
+              <span>Import Excel</span>
+            </button>
+          )}
 
           <button
             onClick={() => onOpenExport('FIRE_ASSETS')}
@@ -368,7 +381,7 @@ export function DashboardOverview({
               <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
               <p className="text-sm font-bold text-white">All Contracted Facilities Compliant</p>
               <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                No facilities have overdue services. All inspection logs are up to date under Maharashtra Fire Prevention regulations.
+                No facilities have overdue services. All inspection logs are up to date under Delhi Fire Safety Rules and NBC 2016 regulations.
               </p>
             </div>
           ) : (

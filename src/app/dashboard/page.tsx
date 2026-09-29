@@ -45,6 +45,8 @@ import {
 import { AdminSidebar, AdminNavTab } from '@/components/admin/AdminSidebar';
 import { DashboardOverview } from '@/components/admin/DashboardOverview';
 import { ExportModal } from '@/components/admin/ExportModal';
+import { ImportModal } from '@/components/admin/ImportModal';
+import { ImportType } from '@/lib/excelImport';
 import { TechnicianManagement } from '@/components/admin/TechnicianManagement';
 import { TechnicianAssignments } from '@/components/admin/TechnicianAssignments';
 import { TechnicianActivityLog } from '@/components/admin/TechnicianActivityLog';
@@ -73,6 +75,15 @@ export default function AdminDashboardPage() {
   // Export Modal Dialog State
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [exportConfigKey, setExportConfigKey] = useState<string>('FIRE_ASSETS');
+
+  // Excel Import Modal State
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [importDataType, setImportDataType] = useState<ImportType>('FIRE_ASSETS');
+
+  const handleOpenImport = (type: ImportType = 'FIRE_ASSETS') => {
+    setImportDataType(type);
+    setImportModalOpen(true);
+  };
 
   // Real Database Operational KPIs
   const [kpis, setKpis] = useState({
@@ -116,7 +127,7 @@ export default function AdminDashboardPage() {
     email: '',
     buildingName: '',
     address: '',
-    complianceCycle: 'Maharashtra Form-B (Half-Yearly)',
+    complianceCycle: 'Delhi NCR Statutory Form-B (Half-Yearly)',
     cycleIntervalMos: 6,
   });
 
@@ -414,7 +425,7 @@ export default function AdminDashboardPage() {
           email: '',
           buildingName: '',
           address: '',
-          complianceCycle: 'Maharashtra Form-B (Half-Yearly)',
+          complianceCycle: 'Delhi NCR Statutory Form-B (Half-Yearly)',
           cycleIntervalMos: 6,
         });
         fetchData();
@@ -687,6 +698,7 @@ export default function AdminDashboardPage() {
           setMobileSidebarOpen(false);
         }}
         onOpenExport={() => handleOpenExport()}
+        onOpenImport={() => handleOpenImport()}
         unreadLeadsCount={enquiriesList.filter((e) => e.status === 'NEW').length}
         subscription={subscriptionData}
         isMobileOpen={mobileSidebarOpen}
@@ -728,13 +740,22 @@ export default function AdminDashboardPage() {
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
                 {company?.name || 'VigilAMC Operating System'} • License:{' '}
-                <strong className="text-slate-300 font-semibold">{company?.licenseNumber || 'MH/FIRE/LIC/2024'}</strong>
+                <strong className="text-slate-300 font-semibold">{company?.licenseNumber || 'DL/FIRE/LIC/2026'}</strong>
               </p>
             </div>
           </div>
 
           {/* Quick Actions */}
           <div className="flex items-center gap-2.5 flex-wrap self-end md:self-auto">
+            <button
+              onClick={() => handleOpenImport('FIRE_ASSETS')}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all shadow-sm"
+              title="Import Existing Data from Excel (.xlsx)"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-amber-400" />
+              <span>Import Excel</span>
+            </button>
+
             <button
               onClick={() => handleOpenExport()}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition-all shadow-sm"
@@ -773,6 +794,7 @@ export default function AdminDashboardPage() {
             buildings={buildings}
             onNavigate={(tab) => setActiveTab(tab)}
             onOpenExport={() => handleOpenExport('FIRE_ASSETS')}
+            onOpenImport={() => handleOpenImport('FIRE_ASSETS')}
           />
         )}
 
@@ -789,7 +811,7 @@ export default function AdminDashboardPage() {
                     <span>Agency Organization Profile</span>
                   </h2>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Official statutory credentials printed on Maharashtra Form-B inspection certificates.
+                    Official statutory credentials printed on Delhi Fire Service &amp; NBC inspection certificates.
                   </p>
                 </div>
               </div>
@@ -815,7 +837,7 @@ export default function AdminDashboardPage() {
                       required
                       value={companyForm.licenseNumber}
                       onChange={(e) => setCompanyForm({ ...companyForm, licenseNumber: e.target.value })}
-                      placeholder="e.g. MH/FIRE/LIC/2024/098"
+                      placeholder="e.g. DL/FIRE/LIC/2026/042"
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
                     />
                   </div>
@@ -850,7 +872,7 @@ export default function AdminDashboardPage() {
                       type="text"
                       value={companyForm.address}
                       onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })}
-                      placeholder="e.g. Unit 402, Trade Tower, Mumbai 400001"
+                      placeholder="e.g. Plot 24, Okhla Industrial Area Phase III, New Delhi 110020"
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
                     />
                   </div>
@@ -940,6 +962,7 @@ export default function AdminDashboardPage() {
               <TechnicianManagement
                 onNavigateToSubscription={() => setActiveTab('AGENCY')}
                 showToast={showToast}
+                onOpenImport={() => handleOpenImport('TECHNICIANS')}
               />
             )}
 
@@ -963,6 +986,7 @@ export default function AdminDashboardPage() {
             onEditClient={(c) => setEditClientModal(c)}
             onDeleteClient={handleDeleteClient}
             onOpenExport={() => handleOpenExport('CLIENTS')}
+            onOpenImport={() => handleOpenImport('CLIENTS')}
           />
         )}
 
@@ -981,6 +1005,7 @@ export default function AdminDashboardPage() {
             onBulkAdd={(b) => setBulkAddModalOpen(b)}
             onSingleAdd={(b) => setSingleAddEquipModalOpen(b)}
             onOpenExport={() => handleOpenExport('BUILDINGS')}
+            onOpenImport={() => handleOpenImport('BUILDINGS')}
           />
         )}
 
@@ -998,6 +1023,7 @@ export default function AdminDashboardPage() {
             onEditEquipment={(eq) => setEditEquipmentModal(eq)}
             onDeleteEquipment={handleDeleteEquipment}
             onOpenExport={() => handleOpenExport('FIRE_ASSETS')}
+            onOpenImport={() => handleOpenImport('FIRE_ASSETS')}
           />
         )}
 
@@ -1016,7 +1042,10 @@ export default function AdminDashboardPage() {
                 <span>Export Excel</span>
               </button>
             </div>
-            <InspectionsView showToast={showToast} />
+            <InspectionsView
+              showToast={showToast}
+              onOpenImport={() => handleOpenImport('INSPECTIONS')}
+            />
           </div>
         )}
 
@@ -1035,7 +1064,10 @@ export default function AdminDashboardPage() {
                 <span>Export Excel</span>
               </button>
             </div>
-            <WorkOrdersView showToast={showToast} />
+            <WorkOrdersView
+              showToast={showToast}
+              onOpenImport={() => handleOpenImport('WORK_ORDERS')}
+            />
           </div>
         )}
 
@@ -1076,6 +1108,7 @@ export default function AdminDashboardPage() {
             companyForm={companyForm}
             setCompanyForm={setCompanyForm}
             handleSaveCompany={handleSaveCompany}
+            onOpenImport={(type) => handleOpenImport(type || 'CLIENTS')}
           />
         )}
 
@@ -1086,6 +1119,17 @@ export default function AdminDashboardPage() {
           initialDataType={exportConfigKey}
           dataMap={exportDataMap}
           showToast={showToast}
+        />
+
+        {/* Excel Import Dialog */}
+        <ImportModal
+          isOpen={importModalOpen}
+          initialType={importDataType}
+          onClose={() => setImportModalOpen(false)}
+          onSuccess={() => {
+            fetchData();
+            fetchSubscription();
+          }}
         />
 
       {/* =========================================================================
@@ -1178,9 +1222,9 @@ export default function AdminDashboardPage() {
                     onChange={(e) => setBuildingForm({ ...buildingForm, complianceCycle: e.target.value })}
                     className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-amber-500 focus:outline-none"
                   >
-                    <option value="Maharashtra Form-B (Half-Yearly)">Maharashtra Form-B (Half-Yearly · Jan &amp; Jul)</option>
+                    <option value="Delhi NCR Statutory Form-B (Half-Yearly)">Delhi NCR Statutory Form-B (DFS / NBC 2016)</option>
                     <option value="Delhi Fire NOC Rule 33 (Annual)">Delhi Fire NOC Rule 33 (Annual)</option>
-                    <option value="Karnataka Fire Safety Form-2 (Annual)">Karnataka Fire Safety Form-2 (Annual)</option>
+                    <option value="Haryana Fire Safety Rules (Annual)">Haryana Fire Safety Rules (Annual)</option>
                     <option value="National Building Code Part 4 (Annual)">National Building Code Part 4 (Annual)</option>
                   </select>
                 </div>
@@ -1518,9 +1562,9 @@ export default function AdminDashboardPage() {
                   onChange={(e) => setEditBuildingModal({ ...editBuildingModal, complianceCycle: e.target.value })}
                   className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
                 >
-                  <option value="Maharashtra Form-B (Half-Yearly)">Maharashtra Form-B (Half-Yearly)</option>
+                  <option value="Delhi NCR Statutory Form-B (Half-Yearly)">Delhi NCR Statutory Form-B (Half-Yearly)</option>
                   <option value="Delhi Fire NOC Rule 33 (Annual)">Delhi Fire NOC Rule 33 (Annual)</option>
-                  <option value="Karnataka Fire Safety Form-2 (Annual)">Karnataka Fire Safety Form-2 (Annual)</option>
+                  <option value="Haryana Fire Safety Rules (Annual)">Haryana Fire Safety Rules (Annual)</option>
                   <option value="National Building Code Part 4 (Annual)">National Building Code Part 4 (Annual)</option>
                 </select>
               </div>

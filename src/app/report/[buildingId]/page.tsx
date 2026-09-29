@@ -104,7 +104,7 @@ export default function ComplianceReportPage() {
                 {company?.name || 'Fire Safety AMC Solutions'}
               </div>
               <p className="text-xs font-semibold text-slate-600">
-                Govt. Licensed Fire Safety Agency • {company?.licenseNumber || 'MH/FIRE/LIC/2024'}
+                Govt. Licensed Fire Safety Agency • {company?.licenseNumber || 'DL/FIRE/LIC/2026'}
               </p>
               <p className="text-[11px] text-slate-500 mt-1 max-w-md">
                 {company?.address || 'Official Registered Service Station'} • Phone: {company?.phone || '+91 98000 00000'} • Email: {company?.email || 'service@fireamc.in'}
@@ -264,7 +264,7 @@ export default function ComplianceReportPage() {
           {/* Agency Signatory Block */}
           <div className="text-right space-y-1">
             <div className="h-10 flex items-center justify-end">
-              <span className="font-serif italic text-base font-bold text-slate-800">Er. Rajeshwar Patil</span>
+              <span className="font-serif italic text-base font-bold text-slate-800">Er. Rajesh Kumar Sharma</span>
             </div>
             <div className="font-bold text-xs text-slate-900">Authorized Inspecting Officer</div>
             <div className="text-[11px] text-slate-600">

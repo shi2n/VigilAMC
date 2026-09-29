@@ -310,7 +310,7 @@ export default function FeaturesPage() {
                   <span>SAMPLE DATA</span>
                 </div>
                 <p className="text-slate-600">
-                  Statutory Reference: <strong>Maharashtra Fire Act Sec 3(1) Format</strong>
+                  Statutory Reference: <strong>Delhi Fire Prevention &amp; Safety Rules / NBC 2016 Format</strong>
                 </p>
                 <p className="text-slate-600">
                   Sample Equipment Log: <strong>48 Units Inspected &amp; Pressure-Tested</strong>

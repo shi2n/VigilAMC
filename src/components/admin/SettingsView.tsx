@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Mail, RefreshCw, AlertTriangle, Sparkles, Settings as SettingsIcon, Building2 } from 'lucide-react';
+import { Mail, RefreshCw, AlertTriangle, Sparkles, Settings as SettingsIcon, Building2, FileSpreadsheet, Upload } from 'lucide-react';
 
 interface SettingsViewProps {
   subTab: 'LEADS' | 'TOOLS' | 'AGENCY';
@@ -17,6 +17,7 @@ interface SettingsViewProps {
   companyForm: any;
   setCompanyForm: any;
   handleSaveCompany: (e: React.FormEvent) => void;
+  onOpenImport?: (type?: any) => void;
 }
 
 export function SettingsView({
@@ -33,6 +34,7 @@ export function SettingsView({
   companyForm,
   setCompanyForm,
   handleSaveCompany,
+  onOpenImport,
 }: SettingsViewProps) {
   return (
     <div className="tactile-card rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl p-5 sm:p-6 space-y-6 text-slate-100">
@@ -46,7 +48,7 @@ export function SettingsView({
               icon: Mail,
               badge: enquiriesList.filter((e) => e.status === 'NEW').length || undefined,
             },
-            { id: 'TOOLS', label: 'Database Reset & Maintenance', icon: AlertTriangle },
+            { id: 'TOOLS', label: 'Data Management & Maintenance', icon: AlertTriangle },
             { id: 'AGENCY', label: 'Agency Profile & License', icon: Building2 },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -211,14 +213,81 @@ export function SettingsView({
         </div>
       )}
 
-      {/* SUB-VIEW 2: TOOLS & DATABASE WIPE */}
+      {/* SUB-VIEW 2: DATA MANAGEMENT & DATABASE WIPE */}
       {subTab === 'TOOLS' && (
         <div className="space-y-6 max-w-2xl">
           <div>
-            <h3 className="text-base font-bold text-white">Database Reset &amp; Demo Data Removal</h3>
+            <h3 className="text-base font-bold text-white">Data Management &amp; System Maintenance</h3>
             <p className="text-xs text-slate-400">
-              Safely remove demo entities, wipe sample buildings, or restore clean starter templates.
+              Bulk import legacy Excel spreadsheets, wipe demo records, or load clean starter templates.
             </p>
+          </div>
+
+          {/* Central Excel Import System */}
+          <div className="p-5 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
+                <FileSpreadsheet className="w-5 h-5 text-amber-400" />
+                <span>Import Existing Data (Excel &amp; CSV Migration)</span>
+              </div>
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30 uppercase">
+                Smart Engine
+              </span>
+            </div>
+            <p className="text-xs text-slate-300">
+              Already managing your fire safety equipment, clients, or inspection cycles in Excel? Use our multi-module import engine to bring your existing data directly into VigilAMC with automatic column matching and duplicate protection.
+            </p>
+
+            <div className="pt-2 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => onOpenImport?.('CLIENTS')}
+                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all border border-slate-700 flex items-center gap-1.5"
+              >
+                <Upload className="w-3.5 h-3.5 text-blue-400" />
+                <span>Import Clients</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onOpenImport?.('BUILDINGS')}
+                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all border border-slate-700 flex items-center gap-1.5"
+              >
+                <Upload className="w-3.5 h-3.5 text-amber-400" />
+                <span>Import Buildings</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onOpenImport?.('FIRE_ASSETS')}
+                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all border border-slate-700 flex items-center gap-1.5"
+              >
+                <Upload className="w-3.5 h-3.5 text-red-400" />
+                <span>Import Fire Assets</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onOpenImport?.('TECHNICIANS')}
+                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all border border-slate-700 flex items-center gap-1.5"
+              >
+                <Upload className="w-3.5 h-3.5 text-purple-400" />
+                <span>Import Technicians</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onOpenImport?.('INSPECTIONS')}
+                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all border border-slate-700 flex items-center gap-1.5"
+              >
+                <Upload className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Import Inspections</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onOpenImport?.('WORK_ORDERS')}
+                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all border border-slate-700 flex items-center gap-1.5"
+              >
+                <Upload className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Import Work Orders</span>
+              </button>
+            </div>
           </div>
 
           {/* Danger Zone: Wipe All Demo Data */}
@@ -247,7 +316,7 @@ export function SettingsView({
               <span>Load Clean Starter Template (No Brand Names)</span>
             </div>
             <p className="text-xs text-slate-400">
-              Seeds a clean, unbranded reference structure with generic facilities (Horizon Tech IT Tower &amp; Emerald Heights Society) to test QR code scanning, inspection logs, and Maharashtra Form-B PDF generation.
+              Seeds a clean, unbranded reference structure with generic facilities (Horizon Tech IT Tower &amp; Emerald Heights Society) to test QR code scanning, inspection logs, and Delhi NCR Statutory Form-B PDF generation.
             </p>
             <div className="pt-1">
               <button
@@ -267,7 +336,7 @@ export function SettingsView({
           <div>
             <h3 className="text-base font-bold text-white">Agency Organization Profile</h3>
             <p className="text-xs text-slate-400">
-              Official statutory credentials printed on Maharashtra Form-B certificates, inspection logs, and technician tags.
+              Official statutory credentials printed on Delhi Fire Service &amp; NBC 2016 certificates, inspection logs, and technician tags.
             </p>
           </div>
 
@@ -292,7 +361,7 @@ export function SettingsView({
                   required
                   value={companyForm.licenseNumber}
                   onChange={(e) => setCompanyForm({ ...companyForm, licenseNumber: e.target.value })}
-                  placeholder="e.g. MH/FIRE/LIC/2024/098"
+                  placeholder="e.g. DL/FIRE/LIC/2026/042"
                   className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
                 />
               </div>
@@ -328,7 +397,7 @@ export function SettingsView({
                 required
                 value={companyForm.address}
                 onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })}
-                placeholder="e.g. Plot 18, Commercial Zone, Navi Mumbai, Maharashtra - 400708"
+                placeholder="e.g. Plot 24, Okhla Industrial Area Phase III, New Delhi - 110020"
                 className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
               />
             </div>

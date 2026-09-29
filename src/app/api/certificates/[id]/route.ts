@@ -31,7 +31,7 @@ export async function GET(
       period: report.cyclePeriod,
       issueDate: report.generatedAt,
       validUntil: new Date(new Date(report.generatedAt).getTime() + 180 * 24 * 60 * 60 * 1000),
-      licensedAgencyNumber: 'MH/FIRE/LIC/2024/098',
+      licensedAgencyNumber: 'DL/FIRE/LIC/2026/042',
       signatoryName: 'National Fire Safety & AMC Services',
       overallResult: report.status,
       totalAssetsInspected: report.totalEquipment,

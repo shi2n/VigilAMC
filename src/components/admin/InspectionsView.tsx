@@ -19,9 +19,10 @@ import Link from 'next/link';
 
 interface InspectionsViewProps {
   showToast: (msg: string) => void;
+  onOpenImport?: () => void;
 }
 
-export function InspectionsView({ showToast }: InspectionsViewProps) {
+export function InspectionsView({ showToast, onOpenImport }: InspectionsViewProps) {
   const [inspections, setInspections] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PASSED' | 'FAILED' | 'SERVICE_REQUIRED'>('ALL');
@@ -101,13 +102,25 @@ export function InspectionsView({ showToast }: InspectionsViewProps) {
           </div>
         </div>
 
-        <button
-          onClick={fetchInspections}
-          className="p-2 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white transition-colors"
-          title="Refresh Inspections"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-        </button>
+        <div className="flex items-center gap-2">
+          {onOpenImport && (
+            <button
+              onClick={onOpenImport}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all"
+              title="Import Inspections from Excel (.xlsx)"
+            >
+              <span>Import Inspections</span>
+            </button>
+          )}
+
+          <button
+            onClick={fetchInspections}
+            className="p-2 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white transition-colors"
+            title="Refresh Inspections"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </div>
 
       {/* Inspections Table / List */}

@@ -40,7 +40,7 @@ export function ReportsView({ buildings = [], summary, company }: ReportsViewPro
           </div>
           <div className="text-2xl font-black text-white">{buildings.length} Facilities</div>
           <p className="text-[11px] text-slate-400">
-            Compliant half-yearly Form-B certificates under Maharashtra Fire Prevention Act.
+            Compliant half-yearly Form-B certificates under Delhi Fire Safety Rules &amp; NBC 2016.
           </p>
         </div>
 

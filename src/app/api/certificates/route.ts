@@ -32,7 +32,7 @@ export async function GET() {
       period: r.cyclePeriod,
       issueDate: r.generatedAt,
       validUntil: new Date(new Date(r.generatedAt).getTime() + 180 * 24 * 60 * 60 * 1000),
-      licensedAgencyNumber: auth.organization.licenseNumber || 'MH/FIRE/LIC/PENDING',
+      licensedAgencyNumber: auth.organization.licenseNumber || 'DL/FIRE/LIC/PENDING',
       overallResult: r.status,
       building: r.building,
     }));

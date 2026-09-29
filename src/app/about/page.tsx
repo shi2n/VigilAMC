@@ -31,7 +31,7 @@ export default function AboutUsPage() {
     {
       period: '2025',
       title: 'Field Research & Operational Prototyping',
-      desc: 'Conducted field interviews with fire safety AMC contractors in New Delhi and Maharashtra. Discovered that over 90% of missed inspection cycles and audit penalties were caused by handwritten logbooks and manual spreadsheets.',
+      desc: 'Conducted field interviews with fire safety AMC contractors across Delhi, Noida, and Gurugram (Delhi NCR). Discovered that over 90% of missed inspection cycles and audit penalties were caused by handwritten logbooks and manual spreadsheets.',
     },
     {
       period: 'Early 2026',
@@ -168,9 +168,9 @@ export default function AboutUsPage() {
               <div className="w-10 h-10 rounded-lg bg-ocean-50 text-[#0077B6] flex items-center justify-center mb-4">
                 <FileCheck2 className="w-5 h-5" />
               </div>
-              <h4 className="text-base font-bold text-slate-900">State Fire Prevention Acts &amp; Form-B</h4>
+              <h4 className="text-base font-bold text-slate-900">Delhi NCR Fire Rules &amp; Form-B</h4>
               <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                Structured under Section 3(1) of the Maharashtra Fire Prevention &amp; Life Safety Measures Act and equivalent municipal fire directorate biannual certification protocols.
+                Structured under Delhi Fire Prevention &amp; Safety Rules, NBC 2016 Part 4, and Delhi NCR municipal fire service periodic verification protocols.
               </p>
             </div>
           </div>

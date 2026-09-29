@@ -52,7 +52,7 @@ export function Navigation() {
           {/* Agency License Badge */}
           <div className="hidden lg:flex items-center gap-2 text-xs text-slate-300 bg-slate-900/90 px-3 py-1 rounded-xl border border-slate-800">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>Agency Lic: <strong className="font-mono text-amber-400 font-semibold">MH/FIRE/LIC/2022/A-412</strong></span>
+            <span>Agency Lic: <strong className="font-mono text-amber-400 font-semibold">DL/FIRE/LIC/2026/042</strong></span>
           </div>
         </div>
 

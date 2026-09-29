@@ -213,7 +213,7 @@ export default function CertificatesPage() {
                     onChange={(e) => setForm({ ...form, formType: e.target.value })}
                     className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-white"
                   >
-                    <option value="FORM_B">Form-B (Maharashtra Fire Safety Act)</option>
+                    <option value="FORM_B">Form-B (Delhi NCR &amp; NBC Periodic Audit)</option>
                     <option value="FORM_15">Form-15 (National Model Bye-Laws)</option>
                     <option value="ANNUAL_FITNESS">Annual AMC Fitness Certificate</option>
                   </select>

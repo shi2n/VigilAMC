@@ -46,6 +46,7 @@ interface AdminSidebarProps {
   userEmail?: string;
   onLogout: () => void;
   onOpenExport: () => void;
+  onOpenImport?: () => void;
   unreadLeadsCount?: number;
   techSeatUsageText?: string;
   subscription?: any;
@@ -61,6 +62,7 @@ export function AdminSidebar({
   userEmail,
   onLogout,
   onOpenExport,
+  onOpenImport,
   unreadLeadsCount = 0,
   techSeatUsageText,
   subscription,
@@ -174,6 +176,19 @@ export function AdminSidebar({
           <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
             Tools
           </div>
+
+          {onOpenImport && (
+            <button
+              onClick={() => {
+                onOpenImport();
+                onCloseMobile();
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-amber-400 hover:bg-amber-950/20 hover:text-amber-300 border border-amber-500/20 transition-all mb-1.5"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              <span>Import Existing Data</span>
+            </button>
+          )}
 
           <button
             onClick={() => {

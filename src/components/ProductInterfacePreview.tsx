@@ -409,7 +409,7 @@ export function ProductInterfacePreview() {
                 </div>
                 <div>
                   <span className="text-slate-400 block">Agency Lic. No.</span>
-                  <strong className="text-slate-800">MH/FIRE/LIC/SAMPLE</strong>
+                  <strong className="text-slate-800">DL/FIRE/LIC/SAMPLE</strong>
                 </div>
               </div>
 

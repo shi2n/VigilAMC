@@ -49,7 +49,7 @@ export const EXPORT_CONFIGS: Record<
       { id: 'name', label: 'Building / Tower Name', defaultSelected: true, getValue: (b) => b.name || '—' },
       { id: 'clientName', label: 'Client / Society', defaultSelected: true, getValue: (b) => b.client?.name || '—' },
       { id: 'address', label: 'Premises Address', defaultSelected: true, getValue: (b) => b.address || '—' },
-      { id: 'complianceCycle', label: 'Compliance Cycle', defaultSelected: true, getValue: (b) => b.complianceCycle || 'Maharashtra Form-B' },
+      { id: 'complianceCycle', label: 'Compliance Cycle', defaultSelected: true, getValue: (b) => b.complianceCycle || 'Delhi NCR Statutory Form-B' },
       { id: 'nextFilingDueDate', label: 'Next Filing Due', defaultSelected: true, getValue: (b) => b.nextFilingDueDate ? new Date(b.nextFilingDueDate).toLocaleDateString('en-IN') : '—' },
       { id: 'totalEquipments', label: 'Total Assets', defaultSelected: true, getValue: (b) => b.totalEquipments ?? b.equipments?.length ?? 0 },
       { id: 'overallStatus', label: 'Compliance Status', defaultSelected: true, getValue: (b) => b.overallStatus || 'COMPLIANT' },

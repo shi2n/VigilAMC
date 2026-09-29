@@ -115,7 +115,7 @@ export function TrustTransparencySection() {
               Statutory Fire Compliance Disclaimer:
             </strong>
             <p className="mt-0.5 text-amber-800 text-[11px]">
-              Fire safety laws, inspection intervals, mandatory testing standards, and certification formats (including Form-B under the Maharashtra Fire Prevention and Life Safety Measures Act and NBC 2016 Part 4) vary by state, municipal jurisdiction, building occupancy type, and facility scale. <strong>Requirements may vary by state, facility, and applicable regulations. Compliance information should always be reviewed with a qualified fire-compliance professional and applicable local authorities.</strong>
+              Fire safety laws, inspection intervals, mandatory testing standards, and certification formats (including Form-B periodic audit certificates under the Delhi Fire Safety Act, Haryana Fire Safety Act in Delhi NCR, and NBC 2016 Part 4) vary by municipal jurisdiction, building occupancy type, and facility scale. <strong>Requirements may vary by state, facility, and applicable regulations. Compliance information should always be reviewed with a qualified fire-compliance professional and applicable local authorities.</strong>
             </p>
           </div>
         </div>

@@ -276,10 +276,10 @@ export default function PublicVerifyPassportPage() {
             {asset.building?.company?.name || 'Vigil Fire & Safety Solutions Pvt Ltd'}
           </div>
           <div className="text-[11px] text-slate-400">
-            Agency License No: <span className="font-mono text-slate-200 font-semibold">{asset.building?.company?.licenseNumber || 'MH/FIRE/LIC/2022/A-412'}</span>
+            Agency License No: <span className="font-mono text-slate-200 font-semibold">{asset.building?.company?.licenseNumber || 'DL/FIRE/LIC/2022/A-412'}</span>
           </div>
           <div className="text-[11px] text-slate-400">
-            Chief Signatory: {asset.building?.company?.signatoryName || 'Er. Rajeshwar Patil'}
+            Chief Signatory: {asset.building?.company?.signatoryName || 'Er. Rajesh Kumar Sharma'}
           </div>
         </div>
 
@@ -305,7 +305,7 @@ export default function PublicVerifyPassportPage() {
 
       {/* Footer */}
       <footer className="mt-8 text-center text-slate-500 text-[11px] space-y-1">
-        <p>VigilAMC • Compliance Verification under IS 2190 & Maharashtra Fire Safety Act</p>
+        <p>VigilAMC • Compliance Verification under IS 2190, NBC 2016 &amp; Delhi Fire Safety Rules</p>
         <p className="text-slate-600">Digital Passport ID: {asset.qrCode}</p>
       </footer>
     </div>

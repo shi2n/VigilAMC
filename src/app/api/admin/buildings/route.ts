@@ -154,7 +154,7 @@ export async function POST(request: Request) {
         clientId: client.id,
         name: (buildingName || 'Main Tower').trim(),
         address: (address || 'Facility Address').trim(),
-        complianceCycle: complianceCycle || 'Maharashtra Form-B (Half-Yearly)',
+        complianceCycle: complianceCycle || 'Delhi NCR Statutory Form-B (Half-Yearly)',
         cycleIntervalMos: interval,
         nextFilingDueDate: nextFiling,
       },

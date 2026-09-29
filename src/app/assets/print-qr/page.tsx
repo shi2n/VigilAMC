@@ -217,7 +217,7 @@ function PrintQrContent() {
                         {company?.name || 'FIRE SAFETY AMC SERVICES'}
                       </div>
                       <div className="text-[8px] font-semibold text-slate-600">
-                        LIC: {company?.licenseNumber || 'MH/FIRE/LIC/2024'} • IS 2190
+                        LIC: {company?.licenseNumber || 'DL/FIRE/LIC/2026'} • IS 2190
                       </div>
                     </div>
                     <div className="text-right">

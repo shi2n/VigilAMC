@@ -180,10 +180,10 @@ export default function SampleReportPage() {
                 Sample Fire Safety Services Pvt. Ltd.
               </div>
               <p className="text-xs font-semibold text-slate-600 mt-0.5">
-                Licensed Fire Protection Agency &bull; Lic: MH/FIRE/LIC/SAMPLE-2026
+                Licensed Fire Protection Agency &bull; Lic: DL/FIRE/LIC/SAMPLE-2026
               </p>
               <p className="text-[11px] text-slate-500 mt-1 max-w-md">
-                102 Industrial Tech Park, Andheri East, Mumbai, Maharashtra 400069 &bull; Phone: +91 98000 00000 &bull; Email: service@samplefireamc.in
+                Plot 24, Okhla Industrial Area Phase III, New Delhi, Delhi NCR 110020 &bull; Phone: +91 98000 00000 &bull; Email: service@samplefireamc.in
               </p>
             </div>
 
@@ -216,7 +216,7 @@ export default function SampleReportPage() {
           <div>
             <span className="text-[10px] font-bold text-slate-400 uppercase block">Client / Premise:</span>
             <div className="font-bold text-sm text-slate-900">Apex Commercial Tower (Demo Building)</div>
-            <div className="text-slate-600">Plot 18, Commercial Financial District, BKC, Mumbai 400051</div>
+            <div className="text-slate-600">Plot 14, DLF Cyber City, Sector 24, Gurugram, Delhi NCR 122002</div>
             <div className="text-[11px] text-slate-500 mt-1">Occupancy: Commercial IT / Office (B+G+14 Floors)</div>
           </div>
 
@@ -326,7 +326,7 @@ export default function SampleReportPage() {
               For <strong>Sample Fire Safety Services Pvt. Ltd.</strong>
             </div>
             <div className="text-[10px] text-slate-500">
-              Licensed Agency No: MH/FIRE/LIC/SAMPLE-2026
+              Licensed Agency No: DL/FIRE/LIC/SAMPLE-2026
             </div>
           </div>
         </div>

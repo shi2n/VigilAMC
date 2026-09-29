@@ -79,10 +79,10 @@ model Organization {
 model Company {
   id             String    @id @default(cuid())
   name           String    @default("Vigil Fire & Safety Solutions")
-  licenseNumber  String    @default("MH/FIRE/LIC/2022/A-412")
+  licenseNumber  String    @default("DL/FIRE/LIC/2022/A-412")
   phone          String    @default("+91 98201 54321")
   email          String    @default("compliance@vigilfire.in")
-  address        String    @default("Plot 24, Mindspace Sector 3, Navi Mumbai, Maharashtra")
+  address        String    @default("Plot 24, Okhla Industrial Area Phase III, New Delhi, Delhi NCR")
   clients        Client[]
   createdAt      DateTime  @default(now())
 }
@@ -112,7 +112,7 @@ model Building {
   address           String
   city              String?
   state             String?
-  complianceCycle   String             @default("Maharashtra Form-B (Half-Yearly)")
+  complianceCycle   String             @default("Delhi NCR Statutory Form-B (Half-Yearly)")
   cycleIntervalMos  Int                @default(6)
   nextFilingDueDate DateTime?
   equipments        Equipment[]

@@ -18,9 +18,10 @@ import {
 
 interface WorkOrdersViewProps {
   showToast: (msg: string) => void;
+  onOpenImport?: () => void;
 }
 
-export function WorkOrdersView({ showToast }: WorkOrdersViewProps) {
+export function WorkOrdersView({ showToast, onOpenImport }: WorkOrdersViewProps) {
   const [workOrders, setWorkOrders] = useState<any[]>([]);
   const [technicians, setTechnicians] = useState<any[]>([]);
   const [buildings, setBuildings] = useState<any[]>([]);
@@ -182,6 +183,16 @@ export function WorkOrdersView({ showToast }: WorkOrdersViewProps) {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          {onOpenImport && (
+            <button
+              onClick={onOpenImport}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all"
+              title="Import Work Orders from Excel (.xlsx)"
+            >
+              <span>Import Orders</span>
+            </button>
+          )}
+
           <button
             onClick={fetchWorkOrders}
             className="p-2 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white transition-colors"

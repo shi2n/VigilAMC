@@ -261,7 +261,7 @@ export default function HowItWorksPage() {
                 <div className="mt-4 space-y-2 text-xs text-slate-600">
                   <div className="flex justify-between py-1 border-b border-slate-100">
                     <span>Statutory Reference:</span>
-                    <strong className="text-slate-900">Maharashtra Fire Act Sec 3(1)</strong>
+                    <strong className="text-slate-900">Delhi Fire Service Rules / NBC 2016</strong>
                   </div>
                   <div className="flex justify-between py-1 border-b border-slate-100">
                     <span>Equipments Compiled:</span>

@@ -16,10 +16,10 @@ async function main() {
   const company = await prisma.company.create({
     data: {
       name: 'National Fire Safety & AMC Services',
-      licenseNumber: 'MH/FIRE/LIC/2024/098',
+      licenseNumber: 'DL/FIRE/LIC/2024/098',
       phone: '+91 98200 11223',
       email: 'support@nationalfireamc.in',
-      address: 'Plot 18, Commercial Zone, Navi Mumbai, Maharashtra - 400708',
+      address: 'Plot 24, Okhla Industrial Area Phase III, New Delhi, Delhi NCR - 110020',
     },
   });
 
@@ -42,8 +42,8 @@ async function main() {
     data: {
       clientId: client1.id,
       name: 'Horizon Tech IT Tower',
-      address: 'Plot 12, IT Corridor, Navi Mumbai 400708',
-      complianceCycle: 'Maharashtra Form-B (Half-Yearly)',
+      address: 'Plot 14, DLF Cyber City, Sector 24, Gurugram, Delhi NCR 122002',
+      complianceCycle: 'Delhi NCR Statutory Form-B (Half-Yearly)',
       cycleIntervalMos: 6,
       nextFilingDueDate: addDays(24), // filing due in 24 days (Amber)
     },
@@ -107,7 +107,7 @@ async function main() {
     await prisma.serviceLog.create({
       data: {
         equipmentId: created.id,
-        technicianName: 'Santosh Shinde',
+        technicianName: 'Rajesh Kumar',
         servicedAt: eq.lastServiceDate,
         nextDueDate: eq.nextDueDate,
         actionType: 'Routine Refill & Pressure Gauge Inspection',
@@ -131,8 +131,8 @@ async function main() {
     data: {
       clientId: client2.id,
       name: 'Emerald Heights Tower A',
-      address: 'Link Road, Goregaon West, Mumbai 400104',
-      complianceCycle: 'Maharashtra Form-B (Half-Yearly)',
+      address: 'Sector 62, Electronic City, Noida, Delhi NCR 201301',
+      complianceCycle: 'Delhi NCR Statutory Form-B (Half-Yearly)',
       cycleIntervalMos: 6,
       nextFilingDueDate: addDays(90),
     },

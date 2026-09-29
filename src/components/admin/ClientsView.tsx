@@ -9,6 +9,7 @@ interface ClientsViewProps {
   onEditClient: (client: any) => void;
   onDeleteClient: (id: string, name: string) => void;
   onOpenExport: () => void;
+  onOpenImport?: () => void;
 }
 
 export function ClientsView({
@@ -17,6 +18,7 @@ export function ClientsView({
   onEditClient,
   onDeleteClient,
   onOpenExport,
+  onOpenImport,
 }: ClientsViewProps) {
   return (
     <div className="tactile-card rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl p-5 sm:p-6 space-y-6 text-slate-100">
@@ -40,6 +42,17 @@ export function ClientsView({
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
+          {onOpenImport && (
+            <button
+              onClick={onOpenImport}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold transition-all shadow-sm"
+              title="Import Clients from Excel (.xlsx)"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-amber-400" />
+              <span>Import Clients</span>
+            </button>
+          )}
+
           <button
             onClick={onOpenExport}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-all shadow-sm"

@@ -14,7 +14,8 @@ export const metadata: Metadata = {
     "Hydrant Inspection Software",
     "NBC 2016 Fire Compliance",
     "IS 2190 Maintenance",
-    "Maharashtra Fire Prevention Act",
+    "Delhi Fire Safety Act",
+    "Delhi NCR Fire Compliance",
     "VigilAMC"
   ],
   authors: [{ name: "Shaizan", url: "https://vigilamc.vercel.app" }],

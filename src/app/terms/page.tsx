@@ -75,7 +75,7 @@ export default function TermsOfServicePage() {
           <section className="space-y-3">
             <h2 className="text-lg font-bold text-slate-900">4. Regulatory Requirements &amp; Jurisdictional Variation</h2>
             <p>
-              Fire safety laws, inspection intervals, mandatory testing procedures, and certificate formats (including Form-B certificates under the Maharashtra Fire Prevention and Life Safety Measures Act and NBC 2016 Part 4) vary significantly by Indian state, municipality, and building classification. It is your sole responsibility to ensure that all workflows configured within VigilAMC satisfy the specific requirements of your jurisdiction.
+              Fire safety laws, inspection intervals, mandatory testing procedures, and certificate formats (including periodic Form-B inspection certificates under the Delhi Fire Safety Act, Haryana Fire Safety Act in Delhi NCR, and NBC 2016 Part 4) vary by jurisdiction, municipality, and building classification. It is your sole responsibility to ensure that all workflows configured within VigilAMC satisfy the specific requirements of your jurisdiction.
             </p>
           </section>
 

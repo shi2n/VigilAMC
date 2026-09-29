@@ -29,8 +29,8 @@ export default function BuildingsPage() {
   const [form, setForm] = useState({
     name: '',
     address: '',
-    city: 'Mumbai',
-    pincode: '400001',
+    city: 'New Delhi',
+    pincode: '110001',
     occupancyType: 'Commercial',
     totalFloors: 10,
     basements: 1,
@@ -38,7 +38,7 @@ export default function BuildingsPage() {
     contactPhone: '',
     contactEmail: '',
     fireNocNumber: '',
-    nocAuthority: 'Brihanmumbai Fire Brigade (MCGM)',
+    nocAuthority: 'Delhi Fire Service (DFS)',
     nocExpiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
   });
 
@@ -361,7 +361,7 @@ export default function BuildingsPage() {
                     <input
                       type="text"
                       required
-                      placeholder="e.g. NOC/MCGM/2026/042"
+                      placeholder="e.g. NOC/DFS/2026/042"
                       value={form.fireNocNumber}
                       onChange={(e) => setForm({ ...form, fireNocNumber: e.target.value })}
                       className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white"
