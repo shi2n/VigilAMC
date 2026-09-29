@@ -33,16 +33,34 @@ import {
   Search,
   Sliders,
   MapPin,
-  Mail
+  Mail,
+  Wrench,
+  Users,
+  CreditCard,
+  Zap,
+  LayoutDashboard
 } from 'lucide-react';
+import { TechnicianManagement } from '@/components/admin/TechnicianManagement';
+import { TechnicianAssignments } from '@/components/admin/TechnicianAssignments';
+import { TechnicianActivityLog } from '@/components/admin/TechnicianActivityLog';
+import { SubscriptionManager } from '@/components/admin/SubscriptionManager';
+import { SeatCounter } from '@/components/admin/SeatCounter';
+import { AdminUsersView } from '@/components/admin/AdminUsersView';
+import { WorkOrdersView } from '@/components/admin/WorkOrdersView';
+import { InspectionsView } from '@/components/admin/InspectionsView';
+import { ReportsView } from '@/components/admin/ReportsView';
 
 export default function AdminDashboardPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [expandedBuildingId, setExpandedBuildingId] = useState<string | null>(null);
 
-  // Active view: RADAR (Compliance overview) or DATA_MANAGE (Backend data management) or ENQUIRIES (Website Leads)
-  const [activeTab, setActiveTab] = useState<'RADAR' | 'DATA_MANAGE' | 'ENQUIRIES'>('RADAR');
+  // Active view: RADAR | TECHNICIANS | WORK_ORDERS | INSPECTIONS | REPORTS | DATA_MANAGE | AGENCY | ADMIN_USERS | ENQUIRIES
+  const [activeTab, setActiveTab] = useState<
+    'RADAR' | 'TECHNICIANS' | 'WORK_ORDERS' | 'INSPECTIONS' | 'REPORTS' | 'DATA_MANAGE' | 'AGENCY' | 'ADMIN_USERS' | 'ENQUIRIES'
+  >('RADAR');
+  const [techSubTab, setTechSubTab] = useState<'ROSTER' | 'ASSIGNMENTS' | 'AUDIT_LOG'>('ROSTER');
+  const [subscriptionData, setSubscriptionData] = useState<any>(null);
   const [dataSubTab, setDataSubTab] = useState<'COMPANY' | 'CLIENTS' | 'BUILDINGS' | 'EQUIPMENT' | 'RESET'>('COMPANY');
 
   // Modals
@@ -112,6 +130,18 @@ export default function AdminDashboardPage() {
   const [enquiryStatusFilter, setEnquiryStatusFilter] = useState('ALL');
   const [loadingEnquiries, setLoadingEnquiries] = useState(false);
 
+  const fetchSubscription = async () => {
+    try {
+      const res = await fetch('/api/admin/subscription');
+      const json = await res.json();
+      if (res.ok) {
+        setSubscriptionData(json);
+      }
+    } catch (e) {
+      console.error('Failed to fetch subscription:', e);
+    }
+  };
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -125,6 +155,13 @@ export default function AdminDashboardPage() {
         window.location.href = '/login?redirect=/dashboard';
         return;
       }
+
+      // If user is a TECHNICIAN, redirect to dedicated technician portal
+      if (json.profile?.role === 'TECHNICIAN') {
+        window.location.href = '/technician';
+        return;
+      }
+
       setData(json);
       if (json.company) {
         setCompanyForm({
@@ -139,6 +176,7 @@ export default function AdminDashboardPage() {
         setExpandedBuildingId(json.buildings[0].id);
       }
       fetchClients();
+      fetchSubscription();
     } catch (e) {
       console.error(e);
     } finally {
@@ -553,47 +591,6 @@ export default function AdminDashboardPage() {
 
           {/* Quick Action Navigation */}
           <div className="flex items-center gap-2.5 flex-wrap">
-            {/* View Mode Toggle Button */}
-            <div className="flex items-center p-1 bg-slate-950 rounded-xl border border-slate-800">
-              <button
-                onClick={() => setActiveTab('RADAR')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  activeTab === 'RADAR'
-                    ? 'bg-amber-500 text-slate-950 shadow-md'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Compliance Radar
-              </button>
-              <button
-                onClick={() => setActiveTab('DATA_MANAGE')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  activeTab === 'DATA_MANAGE'
-                    ? 'bg-amber-500 text-slate-950 shadow-md'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                <Database className="w-3.5 h-3.5" />
-                <span>Data Manager</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('ENQUIRIES')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  activeTab === 'ENQUIRIES'
-                    ? 'bg-amber-500 text-slate-950 shadow-md'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                <Mail className="w-3.5 h-3.5" />
-                <span>Website Leads</span>
-                {enquiriesList.filter((e) => e.status === 'NEW').length > 0 && (
-                  <span className="ml-1 px-1.5 py-0.2 rounded-full bg-red-500 text-white text-[10px] font-black">
-                    {enquiriesList.filter((e) => e.status === 'NEW').length}
-                  </span>
-                )}
-              </button>
-            </div>
-
             <Link
               href="/assets/print-qr"
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 hover:border-amber-500/40 text-xs font-bold transition-all"
@@ -620,6 +617,161 @@ export default function AdminDashboardPage() {
             </button>
           </div>
         </div>
+
+        {/* =========================================================================
+            ADMIN PANEL NAVIGATION STRUCTURE (Responsive Tabs)
+        ========================================================================= */}
+        <div className="flex items-center gap-1.5 overflow-x-auto p-1.5 bg-slate-950 rounded-2xl border border-slate-800 w-full scrollbar-thin">
+          {[
+            { id: 'RADAR', label: 'Compliance Radar', icon: ShieldCheck },
+            {
+              id: 'TECHNICIANS',
+              label: 'Technicians',
+              icon: Users,
+              badge: subscriptionData?.usage?.technicians
+                ? `${subscriptionData.usage.technicians.active}/${
+                    subscriptionData.usage.technicians.maxNumeric >= 999999
+                      ? '∞'
+                      : subscriptionData.usage.technicians.max
+                  }`
+                : undefined,
+            },
+            { id: 'WORK_ORDERS', label: 'Work Orders', icon: Wrench },
+            { id: 'INSPECTIONS', label: 'Inspections', icon: CheckCircle2 },
+            { id: 'REPORTS', label: 'Reports', icon: FileText },
+            { id: 'DATA_MANAGE', label: 'Data & Assets', icon: Database },
+            {
+              id: 'AGENCY',
+              label: 'Agency & Plan',
+              icon: CreditCard,
+              badge: subscriptionData?.plan?.name?.replace(' AMC', ''),
+              badgeColor: 'bg-amber-500/20 text-amber-300 border border-amber-500/30',
+            },
+            { id: 'ADMIN_USERS', label: 'Admin Users', icon: UserCheck },
+            {
+              id: 'ENQUIRIES',
+              label: 'Website Leads',
+              icon: Mail,
+              badge:
+                enquiriesList.filter((e) => e.status === 'NEW').length > 0
+                  ? enquiriesList.filter((e) => e.status === 'NEW').length
+                  : undefined,
+              badgeColor: 'bg-red-500 text-white',
+            },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                  isActive
+                    ? 'bg-amber-500 text-slate-950 shadow-md font-black'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-900/60'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{tab.label}</span>
+                {tab.badge && (
+                  <span
+                    className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-black ${
+                      tab.badgeColor || (isActive ? 'bg-slate-950 text-amber-300' : 'bg-slate-800 text-slate-300')
+                    }`}
+                  >
+                    {tab.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Subscription & Resource Quota Bar (Radar View) */}
+        {activeTab === 'RADAR' && subscriptionData && (
+          <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800/90 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-white">{subscriptionData.plan?.name || 'Basic AMC'}</span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
+                    {subscriptionData.subscription?.billingCycle || 'ANNUAL'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400">
+                  Seat &amp; facility limits actively enforced across your tenant.
+                </p>
+              </div>
+            </div>
+
+            {/* Quota Progress */}
+            <div className="flex items-center gap-4 flex-wrap text-xs">
+              {/* Technicians */}
+              <div className="space-y-1 min-w-[130px]">
+                <div className="flex justify-between text-[11px]">
+                  <span className="text-slate-400 font-semibold">Tech Seats:</span>
+                  <span className="text-white font-bold">
+                    {subscriptionData.usage?.technicians?.active} / {subscriptionData.usage?.technicians?.maxNumeric >= 999999 ? '∞' : subscriptionData.usage?.technicians?.max}
+                  </span>
+                </div>
+                <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${
+                      subscriptionData.usage?.technicians?.isAtLimit ? 'bg-amber-500' : 'bg-cyan-500'
+                    }`}
+                    style={{ width: `${Math.min(100, subscriptionData.usage?.technicians?.percentUsed || 0)}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Towers */}
+              <div className="space-y-1 min-w-[130px]">
+                <div className="flex justify-between text-[11px]">
+                  <span className="text-slate-400 font-semibold">Towers:</span>
+                  <span className="text-white font-bold">
+                    {subscriptionData.usage?.towers?.count} / {subscriptionData.usage?.towers?.maxNumeric >= 999999 ? '∞' : subscriptionData.usage?.towers?.max}
+                  </span>
+                </div>
+                <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${
+                      subscriptionData.usage?.towers?.isAtLimit ? 'bg-amber-500' : 'bg-emerald-500'
+                    }`}
+                    style={{ width: `${Math.min(100, subscriptionData.usage?.towers?.percentUsed || 0)}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Assets */}
+              <div className="space-y-1 min-w-[130px]">
+                <div className="flex justify-between text-[11px]">
+                  <span className="text-slate-400 font-semibold">Assets:</span>
+                  <span className="text-white font-bold">
+                    {subscriptionData.usage?.assets?.count} / {subscriptionData.usage?.assets?.maxNumeric >= 999999 ? '∞' : subscriptionData.usage?.assets?.max}
+                  </span>
+                </div>
+                <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${
+                      subscriptionData.usage?.assets?.isAtLimit ? 'bg-amber-500' : 'bg-purple-500'
+                    }`}
+                    style={{ width: `${Math.min(100, subscriptionData.usage?.assets?.percentUsed || 0)}%` }}
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={() => setActiveTab('AGENCY')}
+                className="px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold transition-colors"
+              >
+                Manage Plan →
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* 4 Status Metrics Strip (Shown on Radar View) */}
         {activeTab === 'RADAR' && (
@@ -905,6 +1057,88 @@ export default function AdminDashboardPage() {
             </div>
           )}
         </div>
+      )}
+
+      {/* =========================================================================
+          VIEW: TECHNICIAN MANAGEMENT (Roster, Seat Usage, Assignments & Audit)
+      ========================================================================= */}
+      {activeTab === 'TECHNICIANS' && (
+        <div className="space-y-6">
+          {/* Sub Navigation Bar for Technicians */}
+          <div className="tactile-card rounded-2xl bg-slate-900/90 border border-slate-800 p-4 shadow-xl flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-2 overflow-x-auto">
+              {[
+                { id: 'ROSTER', label: 'Technician Roster & Seats', icon: Users },
+                { id: 'ASSIGNMENTS', label: 'Facility Assignments', icon: Building2 },
+                { id: 'AUDIT_LOG', label: 'Compliance Audit Trail', icon: Clock },
+              ].map((sub) => {
+                const Icon = sub.icon;
+                const active = techSubTab === sub.id;
+                return (
+                  <button
+                    key={sub.id}
+                    onClick={() => setTechSubTab(sub.id as any)}
+                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                      active
+                        ? 'bg-amber-500 text-slate-950 shadow-md font-black'
+                        : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    <span>{sub.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => {
+                fetchData();
+                fetchSubscription();
+              }}
+              className="p-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800"
+              title="Refresh Technicians"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+          </div>
+
+          {techSubTab === 'ROSTER' && (
+            <TechnicianManagement
+              onNavigateToSubscription={() => setActiveTab('AGENCY')}
+              showToast={showToast}
+            />
+          )}
+
+          {techSubTab === 'ASSIGNMENTS' && (
+            <TechnicianAssignments showToast={showToast} />
+          )}
+
+          {techSubTab === 'AUDIT_LOG' && (
+            <TechnicianActivityLog />
+          )}
+        </div>
+      )}
+
+      {/* =========================================================================
+          VIEW: WORK ORDERS & DISPATCH
+      ========================================================================= */}
+      {activeTab === 'WORK_ORDERS' && (
+        <WorkOrdersView showToast={showToast} />
+      )}
+
+      {/* =========================================================================
+          VIEW: INSPECTIONS LOGS & COMPLIANCE
+      ========================================================================= */}
+      {activeTab === 'INSPECTIONS' && (
+        <InspectionsView showToast={showToast} />
+      )}
+
+      {/* =========================================================================
+          VIEW: STATUTORY REPORTS & QR LABELS
+      ========================================================================= */}
+      {activeTab === 'REPORTS' && (
+        <ReportsView buildings={buildings} summary={summary} company={company} />
       )}
 
       {/* =========================================================================
@@ -1314,6 +1548,114 @@ export default function AdminDashboardPage() {
           )}
 
         </div>
+      )}
+
+      {/* =========================================================================
+          VIEW: AGENCY & SUBSCRIPTION PLAN TIER
+      ========================================================================= */}
+      {activeTab === 'AGENCY' && (
+        <div className="space-y-8">
+          {/* Agency Profile */}
+          <div className="tactile-card rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl p-5 sm:p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <h2 className="text-base font-bold text-white flex items-center gap-2">
+                  <Building2 className="w-5 h-5 text-amber-400" />
+                  <span>Agency Organization Profile</span>
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Official statutory credentials printed on Maharashtra Form-B inspection certificates.
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveCompany} className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-300 font-bold mb-1">Company / Agency Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={companyForm.name}
+                  onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
+                  placeholder="e.g. National Fire Safety & AMC Services"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">Govt. Fire License Number *</label>
+                  <input
+                    type="text"
+                    required
+                    value={companyForm.licenseNumber}
+                    onChange={(e) => setCompanyForm({ ...companyForm, licenseNumber: e.target.value })}
+                    placeholder="e.g. MH/FIRE/LIC/2024/098"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">Emergency Dispatch Phone *</label>
+                  <input
+                    type="text"
+                    required
+                    value={companyForm.phone}
+                    onChange={(e) => setCompanyForm({ ...companyForm, phone: e.target.value })}
+                    placeholder="e.g. +91 98200 11223"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">Official Service Email *</label>
+                  <input
+                    type="email"
+                    required
+                    value={companyForm.email}
+                    onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })}
+                    placeholder="e.g. service@nationalfireamc.in"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">Registered Service Office Address</label>
+                  <input
+                    type="text"
+                    value={companyForm.address}
+                    onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })}
+                    placeholder="e.g. Unit 402, Trade Tower, Mumbai 400001"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow transition-all hover:scale-[1.01]"
+              >
+                Save Agency Profile
+              </button>
+            </form>
+          </div>
+
+          {/* Subscription Manager */}
+          <SubscriptionManager
+            showToast={showToast}
+            onPlanChanged={() => {
+              fetchSubscription();
+              fetchData();
+            }}
+          />
+        </div>
+      )}
+
+      {/* =========================================================================
+          VIEW: ADMIN USERS & RBAC PERMISSIONS
+      ========================================================================= */}
+      {activeTab === 'ADMIN_USERS' && (
+        <AdminUsersView currentUser={data?.user} company={company} />
       )}
 
       {/* =========================================================================

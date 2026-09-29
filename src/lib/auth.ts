@@ -1,6 +1,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { cookies, headers } from 'next/headers';
 import { db } from '@/lib/db';
+import { getOrCreateAgencySubscription } from '@/lib/plans';
 
 export interface AuthContext {
   user: {
@@ -9,6 +10,7 @@ export interface AuthContext {
   };
   profile: any;
   organization: any;
+  subscription: any;
 }
 
 export async function getCurrentUser(req?: Request): Promise<AuthContext | null> {
@@ -24,7 +26,7 @@ export async function getCurrentUser(req?: Request): Promise<AuthContext | null>
         const headerStore = headers();
         authHeader = headerStore.get('authorization') || headerStore.get('Authorization');
       } catch (e) {
-        // Ignored
+        // Ignored in non-server action contexts
       }
     }
 
@@ -74,47 +76,71 @@ export async function getCurrentUser(req?: Request): Promise<AuthContext | null>
       where: { id: authUser.id },
       include: {
         organization: true,
+        assignedBuildings: {
+          include: {
+            building: true,
+          },
+        },
       },
     });
 
-    // If profile doesn't exist yet, create one along with default organization
+    // If profile doesn't exist yet, check if this is a technician or agency admin
     if (!profile) {
-      const agencyName = (authUser.user_metadata?.agency_name as string) || 
-        `${authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'My'} Fire Agency`;
-      
-      const org = await (db as any).organization.create({
-        data: {
-          name: agencyName,
-          email: authUser.email || '',
-          phone: (authUser.user_metadata?.phone as string) || '',
-        },
-      });
+      const explicitRole = authUser.user_metadata?.role === 'TECHNICIAN' ? 'TECHNICIAN' : 'ORG_ADMIN';
+      const explicitOrgId = authUser.user_metadata?.organizationId;
+
+      let orgId = explicitOrgId;
+
+      if (!orgId && explicitRole === 'ORG_ADMIN') {
+        const agencyName = (authUser.user_metadata?.agency_name as string) || 
+          `${authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'My'} Fire Agency`;
+        
+        const org = await (db as any).organization.create({
+          data: {
+            name: agencyName,
+            email: authUser.email || '',
+            phone: (authUser.user_metadata?.phone as string) || '',
+          },
+        });
+        orgId = org.id;
+      }
 
       profile = await (db as any).userProfile.create({
         data: {
           id: authUser.id,
           email: authUser.email || '',
           fullName: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'User',
-          role: 'ORG_ADMIN',
-          organizationId: org.id,
+          role: explicitRole,
+          status: 'ACTIVE',
+          phone: authUser.user_metadata?.phone || '',
+          employeeId: authUser.user_metadata?.employeeId || null,
+          organizationId: orgId || null,
+          lastLoginAt: new Date(),
         },
         include: {
           organization: true,
+          assignedBuildings: {
+            include: {
+              building: true,
+            },
+          },
         },
       });
-    } else if (!profile.organizationId) {
-      const org = await (db as any).organization.create({
-        data: {
-          name: `${profile.fullName || 'My'} Fire Agency`,
-          email: profile.email || '',
-        },
-      });
+    } else {
+      // Update lastLoginAt if older than 10 minutes
+      const lastLogin = profile.lastLoginAt ? new Date(profile.lastLoginAt).getTime() : 0;
+      if (Date.now() - lastLogin > 10 * 60 * 1000) {
+        (db as any).userProfile.update({
+          where: { id: profile.id },
+          data: { lastLoginAt: new Date() },
+        }).catch((e: any) => console.error('Failed to update lastLoginAt:', e));
+      }
+    }
 
-      profile = await (db as any).userProfile.update({
-        where: { id: profile.id },
-        data: { organizationId: org.id },
-        include: { organization: true },
-      });
+    // Attach active subscription if organization exists
+    let subscription = null;
+    if (profile?.organizationId) {
+      subscription = await getOrCreateAgencySubscription(profile.organizationId);
     }
 
     return {
@@ -124,10 +150,81 @@ export async function getCurrentUser(req?: Request): Promise<AuthContext | null>
       },
       profile,
       organization: profile.organization || null,
+      subscription,
     };
   } catch (error) {
     console.error('Error getting current user:', error);
     return null;
+  }
+}
+
+/**
+ * Ensures request is made by an authenticated Agency Admin
+ */
+export async function requireAdmin(req?: Request): Promise<AuthContext> {
+  const auth = await getCurrentUser(req);
+  if (!auth || !auth.user) {
+    throw new Error('UNAUTHORIZED: Authentication required');
+  }
+
+  if (auth.profile?.status === 'INACTIVE') {
+    throw new Error('FORBIDDEN: Your account has been deactivated. Please contact your agency administrator.');
+  }
+
+  const role = auth.profile?.role;
+  if (role !== 'ORG_ADMIN' && role !== 'SUPER_ADMIN') {
+    throw new Error('FORBIDDEN: Agency Administrator privileges required');
+  }
+
+  if (!auth.organization) {
+    throw new Error('FORBIDDEN: No organization associated with this account');
+  }
+
+  return auth;
+}
+
+/**
+ * Ensures request is made by an authenticated Technician or Admin
+ */
+export async function requireAuth(req?: Request): Promise<AuthContext> {
+  const auth = await getCurrentUser(req);
+  if (!auth || !auth.user) {
+    throw new Error('UNAUTHORIZED: Authentication required');
+  }
+
+  if (auth.profile?.status === 'INACTIVE') {
+    throw new Error('FORBIDDEN: Your account has been deactivated. Please contact your agency administrator.');
+  }
+
+  return auth;
+}
+
+/**
+ * Helper to log structured audit activities for compliance and activity tracking
+ */
+export async function logAuditActivity(data: {
+  organizationId: string;
+  userId?: string | null;
+  userEmail?: string | null;
+  action: string;
+  entityType: string;
+  entityId?: string | null;
+  details?: string | null;
+}) {
+  try {
+    await (db as any).activityLog.create({
+      data: {
+        organizationId: data.organizationId,
+        userId: data.userId || null,
+        userEmail: data.userEmail || null,
+        action: data.action,
+        entityType: data.entityType,
+        entityId: data.entityId || null,
+        details: data.details || null,
+      },
+    });
+  } catch (err) {
+    console.error('Failed to log audit activity:', err);
   }
 }
 

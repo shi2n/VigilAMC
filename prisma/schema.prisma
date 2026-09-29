@@ -28,22 +28,25 @@ model Enquiry {
 }
 
 model UserProfile {
-  id             String        @id // matches Supabase auth.users id (UUID)
-  email          String        @unique
-  fullName       String?
-  role           String        @default("ORG_ADMIN") // ORG_ADMIN, TECHNICIAN, CLIENT, SUPER_ADMIN
-  phone          String?
-  employeeId     String?       @unique
-  assignedRegion String?
-  avatarUrl      String?
-  organizationId String?
-  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-  inspections    Inspection[]
-  workOrders     WorkOrder[]
-  assignedJobs   Job[]         @relation("TechnicianJobs")
-  syncQueueItems SyncQueue[]
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id                String                           @id // matches Supabase auth.users id (UUID)
+  email             String                           @unique
+  fullName          String?
+  role              String                           @default("ORG_ADMIN") // ORG_ADMIN, TECHNICIAN, CLIENT, SUPER_ADMIN
+  status            String                           @default("ACTIVE") // ACTIVE, INACTIVE
+  lastLoginAt       DateTime?
+  phone             String?
+  employeeId        String?                          @unique
+  assignedRegion    String?
+  avatarUrl         String?
+  organizationId    String?
+  organization      Organization?                    @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  inspections       Inspection[]
+  workOrders        WorkOrder[]
+  assignedJobs      Job[]                            @relation("TechnicianJobs")
+  assignedBuildings TechnicianBuildingAssignment[]
+  syncQueueItems    SyncQueue[]
+  createdAt         DateTime                         @default(now())
+  updatedAt         DateTime                         @updatedAt
 }
 
 model Organization {
@@ -57,6 +60,7 @@ model Organization {
   state          String?
   gstin          String?
   licenseNumber  String?
+  subscription   Subscription?
   users          UserProfile[]
   clients        Client[]
   buildings      Building[]
@@ -117,6 +121,7 @@ model Building {
   defects           Defect[]
   workOrders        WorkOrder[]
   reports           ComplianceReport[]
+  technicianAssignments TechnicianBuildingAssignment[]
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 }
@@ -370,4 +375,35 @@ model ActivityLog {
   entityId       String?
   details        String?
   createdAt      DateTime      @default(now())
+}
+
+model Subscription {
+  id                String       @id @default(cuid())
+  organizationId    String       @unique
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan              String       @default("BASIC") // BASIC, PRO, ENTERPRISE
+  status            String       @default("ACTIVE") // ACTIVE, TRIAL, PAST_DUE, CANCELLED, EXPIRED
+  billingCycle      String       @default("MONTHLY") // MONTHLY, ANNUAL
+  startedAt         DateTime     @default(now())
+  expiresAt         DateTime?
+  renewalDate       DateTime?
+  amount            Int          @default(3999)
+  currency          String       @default("INR")
+  customTechnicians Int?         // Override seat limit for enterprise/custom deals
+  customTowers      Int?         // Override tower limit for enterprise/custom deals
+  customAssets      Int?         // Override asset limit for enterprise/custom deals
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+}
+
+model TechnicianBuildingAssignment {
+  id           String      @id @default(cuid())
+  technicianId String
+  technician   UserProfile @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  buildingId   String
+  building     Building    @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  assignedAt   DateTime    @default(now())
+  assignedById String?
+
+  @@unique([technicianId, buildingId])
 }

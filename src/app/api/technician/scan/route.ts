@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getCurrentUser, logAuditActivity } from '@/lib/auth';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
@@ -10,8 +13,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'QR Code is required' }, { status: 400 });
     }
 
-    const equipment = await db.equipment.findUnique({
-      where: { qrCode: code.trim() },
+    const auth = await getCurrentUser(request);
+
+    const equipment = await (db as any).equipment.findUnique({
+      where: { qrCode: code.trim().toUpperCase() },
       include: {
         building: {
           include: {
@@ -27,6 +32,28 @@ export async function GET(request: Request) {
 
     if (!equipment) {
       return NextResponse.json({ error: `No equipment found with QR code "${code}"` }, { status: 404 });
+    }
+
+    // Tenant Isolation Check:
+    // If technician or admin is authenticated, ensure equipment belongs to their agency
+    if (auth?.organization && equipment.organizationId && equipment.organizationId !== auth.organization.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized: This asset belongs to another agency and cannot be accessed.' },
+        { status: 403 }
+      );
+    }
+
+    // Log asset scanned activity if user is authenticated
+    if (auth && equipment.organizationId) {
+      await logAuditActivity({
+        organizationId: equipment.organizationId,
+        userId: auth.user.id,
+        userEmail: auth.user.email,
+        action: 'ASSET_SCANNED',
+        entityType: 'Equipment',
+        entityId: equipment.id,
+        details: `Asset "${equipment.qrCode}" scanned by ${auth.profile?.fullName || auth.user.email}`,
+      });
     }
 
     // Evaluate live status
@@ -51,39 +78,50 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const auth = await getCurrentUser(request);
     const body = await request.json();
-    const { qrCode, equipmentId, intervalMonths = 12, technicianName = 'Field Technician', notes } = body;
+    const { qrCode, equipmentId, intervalMonths = 12, notes } = body;
 
     let eq = null;
     if (qrCode) {
-      eq = await db.equipment.findUnique({ where: { qrCode } });
+      eq = await (db as any).equipment.findUnique({ where: { qrCode: qrCode.trim().toUpperCase() } });
     } else if (equipmentId) {
-      eq = await db.equipment.findUnique({ where: { id: equipmentId } });
+      eq = await (db as any).equipment.findUnique({ where: { id: equipmentId } });
     }
 
     if (!eq) {
       return NextResponse.json({ error: 'Equipment not found' }, { status: 404 });
     }
 
+    // Tenant Isolation Check:
+    if (auth?.organization && eq.organizationId && eq.organizationId !== auth.organization.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized: This equipment belongs to another agency.' },
+        { status: 403 }
+      );
+    }
+
+    // Resolve technician name from authenticated profile or body fallback
+    const resolvedTechnicianName = auth?.profile?.fullName || body.technicianName || 'Field Technician';
+
     const now = new Date();
     const months = Number(intervalMonths) || 12;
-    // Calculate new due date (e.g. +12 months)
     const nextDueDate = new Date(now.getTime() + months * 30.5 * 24 * 60 * 60 * 1000);
 
     // 1. Create Service Log
-    const log = await db.serviceLog.create({
+    const log = await (db as any).serviceLog.create({
       data: {
         equipmentId: eq.id,
-        technicianName,
+        technicianName: resolvedTechnicianName,
         servicedAt: now,
         nextDueDate,
         actionType: months === 12 ? 'Annual Refill & IS 2190 Pressure Overhaul' : 'Half-Yearly Maintenance Check',
-        notes: notes || `Service verified by ${technicianName}. Next due set to ${nextDueDate.toLocaleDateString('en-IN')}`,
+        notes: notes || `Service verified by ${resolvedTechnicianName}. Next due set to ${nextDueDate.toLocaleDateString('en-IN')}`,
       },
     });
 
     // 2. Update Equipment status to COMPLIANT and set new dates
-    const updatedEquipment = await db.equipment.update({
+    const updatedEquipment = await (db as any).equipment.update({
       where: { id: eq.id },
       data: {
         lastServiceDate: now,
@@ -101,6 +139,19 @@ export async function POST(request: Request) {
         },
       },
     });
+
+    // 3. Log audit activity
+    if (eq.organizationId) {
+      await logAuditActivity({
+        organizationId: eq.organizationId,
+        userId: auth?.user?.id || undefined,
+        userEmail: auth?.user?.email || undefined,
+        action: 'INSPECTION_COMPLETED',
+        entityType: 'Equipment',
+        entityId: eq.id,
+        details: `Service logged on asset "${eq.qrCode}" by technician "${resolvedTechnicianName}" (${months} mo cycle)`,
+      });
+    }
 
     return NextResponse.json({
       success: true,

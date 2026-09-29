@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, logAuditActivity } from '@/lib/auth';
+import { checkPlanLimit } from '@/lib/plans';
 
 export const dynamic = 'force-dynamic';
 
@@ -117,6 +118,21 @@ export async function POST(request: Request) {
 
     const organizationId = auth.organization.id;
 
+    // Enforce Plan Limits for Buildings / Towers
+    const limitCheck = await checkPlanLimit(organizationId, 'towers', 1);
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: limitCheck.message,
+          code: 'PLAN_LIMIT_EXCEEDED',
+          current: limitCheck.current,
+          max: limitCheck.max,
+          planName: limitCheck.planName,
+        },
+        { status: 403 }
+      );
+    }
+
     // 1. Create client associated with user's organization
     const client = await (db as any).client.create({
       data: {
@@ -146,6 +162,16 @@ export async function POST(request: Request) {
         client: true,
         equipments: true,
       },
+    });
+
+    await logAuditActivity({
+      organizationId,
+      userId: auth.user.id,
+      userEmail: auth.user.email,
+      action: 'BUILDING_CREATED',
+      entityType: 'Building',
+      entityId: building.id,
+      details: `Created building/tower "${building.name}" for client "${client.name}"`,
     });
 
     return NextResponse.json({ success: true, building });

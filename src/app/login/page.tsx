@@ -78,8 +78,8 @@ export default function LoginPage() {
       }
 
       if (data.user) {
-        // Ensure profile exists in database
-        await fetch('/api/auth/register', {
+        // Ensure profile exists and is active in database
+        const regRes = await fetch('/api/auth/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -90,7 +90,17 @@ export default function LoginPage() {
           }),
         });
 
-        router.push('/dashboard');
+        const regData = await regRes.json();
+        if (!regRes.ok) {
+          await supabase.auth.signOut();
+          throw new Error(regData.error || 'Failed to authenticate profile.');
+        }
+
+        if (regData.profile?.role === 'TECHNICIAN') {
+          router.push('/technician');
+        } else {
+          router.push('/dashboard');
+        }
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'Invalid email or password. Please try again.');

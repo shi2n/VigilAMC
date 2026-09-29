@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, logAuditActivity } from '@/lib/auth';
+import { checkPlanLimit } from '@/lib/plans';
 
 export const dynamic = 'force-dynamic';
 
@@ -115,6 +116,21 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'QR Code identifier is required' }, { status: 400 });
       }
 
+      // Enforce Asset Limit for Single Addition
+      const limitCheck = await checkPlanLimit(auth.organization.id, 'assets', 1);
+      if (!limitCheck.allowed) {
+        return NextResponse.json(
+          {
+            error: limitCheck.message,
+            code: 'PLAN_LIMIT_EXCEEDED',
+            current: limitCheck.current,
+            max: limitCheck.max,
+            planName: limitCheck.planName,
+          },
+          { status: 403 }
+        );
+      }
+
       const existing = await (db as any).equipment.findUnique({ where: { qrCode: qrCode.trim().toUpperCase() } });
       if (existing) {
         return NextResponse.json({ error: `QR Tag '${qrCode}' already exists in database.` }, { status: 400 });
@@ -146,11 +162,37 @@ export async function POST(request: Request) {
         },
       });
 
+      await logAuditActivity({
+        organizationId: auth.organization.id,
+        userId: auth.user.id,
+        userEmail: auth.user.email,
+        action: 'ASSET_CREATED',
+        entityType: 'Equipment',
+        entityId: eq.id,
+        details: `Created fire asset "${eq.type} (${eq.capacity})" with QR "${eq.qrCode}" at "${building.name}"`,
+      });
+
       return NextResponse.json({ success: true, count: 1, equipment: eq });
     }
 
     // Bulk Equipment Creation
     const qty = Number(count) || 5;
+
+    // Enforce Asset Limit for Bulk Addition
+    const limitCheck = await checkPlanLimit(auth.organization.id, 'assets', qty);
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: limitCheck.message,
+          code: 'PLAN_LIMIT_EXCEEDED',
+          current: limitCheck.current,
+          max: limitCheck.max,
+          planName: limitCheck.planName,
+        },
+        { status: 403 }
+      );
+    }
+
     const startIdx = building.equipments.length + 1;
     const tagPrefix = (prefix || building.name.replace(/[^A-Za-z]/g, '').slice(0, 3) || 'EQP').toUpperCase();
 
@@ -192,6 +234,18 @@ export async function POST(request: Request) {
       });
 
       createdEquipments.push(eq);
+    }
+
+    if (createdEquipments.length > 0) {
+      await logAuditActivity({
+        organizationId: auth.organization.id,
+        userId: auth.user.id,
+        userEmail: auth.user.email,
+        action: 'ASSETS_BULK_CREATED',
+        entityType: 'Equipment',
+        entityId: building.id,
+        details: `Bulk created ${createdEquipments.length} fire assets (${type || 'Fire Extinguisher'}) at "${building.name}"`,
+      });
     }
 
     return NextResponse.json({

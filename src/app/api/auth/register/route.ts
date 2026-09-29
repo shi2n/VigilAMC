@@ -70,6 +70,12 @@ export async function POST(request: Request) {
     });
 
     if (profile) {
+      if (profile.status === 'INACTIVE') {
+        return NextResponse.json(
+          { error: 'Your account has been deactivated. Please contact your agency administrator.' },
+          { status: 403 }
+        );
+      }
       return NextResponse.json({ success: true, profile, organization: profile.organization });
     }
 
