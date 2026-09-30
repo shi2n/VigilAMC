@@ -191,6 +191,14 @@ export function CorporateFooter() {
                 </Link>
               </li>
               <li>
+                <Link href="/invest" className="text-slate-300 hover:text-cyan-300 transition-colors flex items-center gap-1.5 font-medium">
+                  <span>Invest in VigilAMC</span>
+                  <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    Seed
+                  </span>
+                </Link>
+              </li>
+              <li>
                 <Link href="/contact" className="text-slate-300 hover:text-cyan-300 transition-colors">
                   Contact &amp; Support
                 </Link>

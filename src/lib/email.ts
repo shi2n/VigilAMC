@@ -95,3 +95,105 @@ Source:       ${data.source || 'Website Lead Form'}
 
   return { success: true, message: 'Notification logged and queued.' };
 }
+
+export interface InvestorEmailData {
+  fullName: string;
+  email: string;
+  phone?: string | null;
+  city?: string | null;
+  country?: string | null;
+  investorType: string;
+  organization?: string | null;
+  websiteLinkedin?: string | null;
+  investmentExperience?: string | null;
+  investmentRange?: string | null;
+  investmentTimeline?: string | null;
+  interestMessage?: string | null;
+  contributionMessage?: string | null;
+  submittedAt: string | Date;
+}
+
+export async function sendInvestorNotification(data: InvestorEmailData): Promise<{ success: boolean; message?: string }> {
+  const recipient = process.env.ADMIN_NOTIFICATION_EMAIL || 'vigilamc@gmail.com';
+  const subject = `🚀 New Investor Interest: ${data.fullName} (${data.investorType})`;
+
+  const formattedDate = new Date(data.submittedAt).toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    dateStyle: 'full',
+    timeStyle: 'medium',
+  });
+
+  const emailText = `
+New Investor Expression of Interest Received
+
+----------------------------------------
+Full Name:         ${data.fullName}
+Email:             ${data.email}
+Phone:             ${data.phone || 'Not provided'}
+Location:          ${data.city || 'N/A'}, ${data.country || 'India'}
+Investor Type:     ${data.investorType}
+Organization/Firm: ${data.organization || 'Not provided'}
+Website / LinkedIn:${data.websiteLinkedin || 'Not provided'}
+Experience Level:  ${data.investmentExperience || 'Not specified'}
+Investment Range:  ${data.investmentRange || 'Not specified'}
+Timeline:          ${data.investmentTimeline || 'Not specified'}
+Interest / Thesis: ${data.interestMessage || 'N/A'}
+Value-Add:         ${data.contributionMessage || 'N/A'}
+Submitted at:      ${formattedDate}
+----------------------------------------
+`.trim();
+
+  console.log(`[INVESTOR NOTIFICATION TO: ${recipient}]`);
+  console.log(emailText);
+
+  const resendApiKey = process.env.RESEND_API_KEY;
+  if (resendApiKey) {
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${resendApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: 'VigilAMC Investor Relations <onboarding@resend.dev>',
+          to: [recipient],
+          subject: subject,
+          text: emailText,
+        }),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json();
+        console.error('[Resend Error]:', errJson);
+        return { success: false, message: 'Resend API returned error' };
+      }
+
+      console.log('[Resend Success]: Investor alert delivered to', recipient);
+      return { success: true };
+    } catch (err: any) {
+      console.error('[Email Dispatch Error]:', err.message);
+      return { success: false, message: err.message };
+    }
+  }
+
+  const webhookUrl = process.env.NOTIFICATION_WEBHOOK_URL;
+  if (webhookUrl) {
+    try {
+      await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: `*${subject}*\n\n\`\`\`\n${emailText}\n\`\`\``,
+          investor: data,
+        }),
+      });
+      console.log('[Webhook Success]: Investor notification sent to webhook');
+    } catch (e) {
+      console.error('[Webhook Error]:', e);
+    }
+  }
+
+  return { success: true, message: 'Investor notification logged.' };
+}
+

@@ -1,11 +1,12 @@
 'use client';
 
 import React from 'react';
-import { Mail, RefreshCw, AlertTriangle, Sparkles, Settings as SettingsIcon, Building2, FileSpreadsheet, Upload } from 'lucide-react';
+import { Mail, RefreshCw, AlertTriangle, Sparkles, Settings as SettingsIcon, Building2, FileSpreadsheet, Upload, TrendingUp } from 'lucide-react';
+import { InvestorLeadsView } from './InvestorLeadsView';
 
 interface SettingsViewProps {
-  subTab: 'LEADS' | 'TOOLS' | 'AGENCY';
-  setSubTab: (tab: 'LEADS' | 'TOOLS' | 'AGENCY') => void;
+  subTab: 'LEADS' | 'TOOLS' | 'AGENCY' | 'INVESTORS';
+  setSubTab: (tab: 'LEADS' | 'TOOLS' | 'AGENCY' | 'INVESTORS') => void;
   enquiriesList: any[];
   enquiryStatusFilter: string;
   setEnquiryStatusFilter: (st: string) => void;
@@ -44,9 +45,14 @@ export function SettingsView({
           {[
             {
               id: 'LEADS',
-              label: `Website Leads & Inquiries (${enquiriesList.length})`,
+              label: `Website Leads (${enquiriesList.length})`,
               icon: Mail,
               badge: enquiriesList.filter((e) => e.status === 'NEW').length || undefined,
+            },
+            {
+              id: 'INVESTORS',
+              label: 'Investor Leads',
+              icon: TrendingUp,
             },
             { id: 'TOOLS', label: 'Data Management & Maintenance', icon: AlertTriangle },
             { id: 'AGENCY', label: 'Agency Profile & License', icon: Building2 },
@@ -413,6 +419,9 @@ export function SettingsView({
           </form>
         </div>
       )}
+
+      {/* Subtab: Investor Leads */}
+      {subTab === 'INVESTORS' && <InvestorLeadsView />}
     </div>
   );
 }

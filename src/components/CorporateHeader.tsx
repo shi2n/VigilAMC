@@ -52,6 +52,7 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
     { name: 'Sample Report', href: '/sample-report' },
     { name: 'Pricing', href: '/pricing' },
     { name: 'About', href: '/about' },
+    { name: 'Invest', href: '/invest' },
     { name: 'Contact', href: '/contact' },
   ];
 

@@ -103,6 +103,17 @@ export function Navigation() {
           </Link>
 
           <Link
+            href="/invest"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              pathname === '/invest'
+                ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30 font-bold'
+                : 'text-slate-300 hover:text-amber-300 hover:bg-slate-800/60'
+            }`}
+          >
+            <span>Invest</span>
+          </Link>
+
+          <Link
             href="/dashboard"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 hover:border-amber-500/40 text-xs font-semibold transition-colors"
           >

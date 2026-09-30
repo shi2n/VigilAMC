@@ -69,7 +69,7 @@ export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<AdminNavTab>('DASHBOARD');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [techSubTab, setTechSubTab] = useState<'ROSTER' | 'ASSIGNMENTS' | 'AUDIT_LOG'>('ROSTER');
-  const [settingsSubTab, setSettingsSubTab] = useState<'LEADS' | 'TOOLS' | 'AGENCY'>('LEADS');
+  const [settingsSubTab, setSettingsSubTab] = useState<'LEADS' | 'TOOLS' | 'AGENCY' | 'INVESTORS'>('LEADS');
   const [subscriptionData, setSubscriptionData] = useState<any>(null);
 
   // Export Modal Dialog State
