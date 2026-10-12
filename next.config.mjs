@@ -5,6 +5,15 @@ const nextConfig = {
   experimental: {
     webpackBuildWorker: false,
   },
+  async redirects() {
+    return [
+      {
+        source: '/pricing',
+        destination: '/contact',
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

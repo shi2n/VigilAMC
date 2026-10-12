@@ -1,5 +1,14 @@
-import { redirect } from 'next/navigation';
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function PricingPage() {
-  redirect('/contact');
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace('/contact');
+  }, [router]);
+
+  return null;
 }
