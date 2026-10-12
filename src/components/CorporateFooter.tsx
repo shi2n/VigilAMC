@@ -181,11 +181,6 @@ export function CorporateFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/pricing" className="text-slate-300 hover:text-cyan-300 transition-colors">
-                  Pricing &amp; Pilot
-                </Link>
-              </li>
-              <li>
                 <Link href="/about" className="text-slate-300 hover:text-cyan-300 transition-colors">
                   About &amp; Mission
                 </Link>

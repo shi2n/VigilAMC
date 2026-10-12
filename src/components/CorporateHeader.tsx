@@ -50,7 +50,6 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
     { name: 'How It Works', href: '/how-it-works' },
     { name: 'Features', href: '/features' },
     { name: 'Sample Report', href: '/sample-report' },
-    { name: 'Pricing', href: '/pricing' },
     { name: 'About', href: '/about' },
     { name: 'Invest', href: '/invest' },
     { name: 'Contact', href: '/contact' },
