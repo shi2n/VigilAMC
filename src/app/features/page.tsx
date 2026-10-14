@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import {
-  QrCode,
   FileCheck2,
   BellRing,
   Smartphone,
@@ -33,9 +32,9 @@ export default function FeaturesPage() {
 
   const comparisonData = [
     {
-      feature: 'Asset Physical QR Tagging & Calibration History',
+      feature: 'GPS-Verified Inspections: Details, Floor Notes & Photo Proof',
       vigil: true,
-      vigilStatus: 'LIVE',
+      vigilStatus: 'BETA',
       excel: false,
       legacy: 'Partial',
     },
@@ -178,7 +177,7 @@ export default function FeaturesPage() {
                 <div className="space-y-2 text-xs font-semibold text-slate-700">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Centralized equipment registry with serialized QR identities</span>
+                    <span>Centralized equipment registry with floor notes and GPS verification</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -215,19 +214,19 @@ export default function FeaturesPage() {
                   For On-Site Field Technicians
                 </span>
                 <h3 className="text-2xl font-bold text-[#023E8A]">
-                  Zero Paper Clipboards, Fast Offline Mobile Checklists
+                  Zero Paper Clipboards, Simple Mobile Inspection Forms
                 </h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  No more messy paper log sheets or trying to read faded inspection cards. Technicians scan asset QR codes on their phone, follow standardized safety checks, photograph damaged parts, and finish audits smoothly.
+                  No more messy paper log sheets or trying to read faded inspection cards. Technicians record asset details, floor and location notes, GPS position, and condition photos directly in a simple mobile form.
                 </p>
                 <div className="space-y-2 text-xs font-semibold text-slate-700">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Works offline in subterranean pump rooms and basements</span>
+                    <span>Works offline in subterranean pump rooms and basements (in beta)</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Quick camera QR scanner with instant equipment identification</span>
+                    <span>Simple mobile form with photo capture and GPS verification (in beta)</span>
                   </div>
                 </div>
               </div>
@@ -310,7 +309,7 @@ export default function FeaturesPage() {
                   <span>SAMPLE DATA</span>
                 </div>
                 <p className="text-slate-600">
-                  Statutory Reference: <strong>Delhi Fire Prevention &amp; Safety Rules / NBC 2016 Format</strong>
+                  Statutory Reference: <strong>NBC 2016 Part 4 &amp; Applicable State Fire Rules (Form-B Style)</strong>
                 </p>
                 <p className="text-slate-600">
                   Sample Equipment Log: <strong>48 Units Inspected &amp; Pressure-Tested</strong>
@@ -343,13 +342,13 @@ export default function FeaturesPage() {
             <div className="corp-card p-6 bg-white border border-slate-200">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-10 h-10 rounded-lg bg-ocean-50 text-[#0077B6] flex items-center justify-center">
-                  <QrCode className="w-5 h-5" />
+                  <MapPin className="w-5 h-5" />
                 </div>
-                <StatusBadge status="LIVE" />
+                <StatusBadge status="BETA" />
               </div>
-              <h4 className="text-base font-bold text-slate-900">QR Asset Identity Hub</h4>
+              <h4 className="text-base font-bold text-slate-900">GPS &amp; Location Asset Hub</h4>
               <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                Unique serial number, manufacturing year, capacity, agent type, floor plan coordinate, and service history for every piece of equipment.
+                Unique serial number, manufacturing year, capacity, agent type, floor and room notes, and GPS coordinates for every piece of equipment.
               </p>
             </div>
 
@@ -375,7 +374,7 @@ export default function FeaturesPage() {
               </div>
               <h4 className="text-base font-bold text-slate-900">Offline Field Inspection App</h4>
               <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                Mobile scanning and checklist logging that functions without network coverage in basement pump rooms. Auto-syncs when online.
+                Mobile checklist and photo logging that functions without network coverage in basement pump rooms. Auto-syncs when online.
               </p>
             </div>
 
@@ -478,16 +477,16 @@ export default function FeaturesPage() {
       {/* CTA Section */}
       <section className="py-16 px-4 bg-[#023E8A] text-white text-center">
         <div className="max-w-3xl mx-auto space-y-4">
-          <h2 className="text-3xl font-extrabold">Ready to Join the Free Pilot Program?</h2>
+          <h2 className="text-3xl font-extrabold">Ready to Join the Free Testing Program?</h2>
           <p className="text-cyan-100 text-sm max-w-xl mx-auto leading-relaxed">
-            Test QR tagging, mobile checklists, and Form-B report generation on up to 3 of your facilities with direct founder onboarding.
+            VigilAMC is in its testing phase and is free for every agency that joins. Test asset registration, GPS-verified mobile forms, and Form-B generation with direct founder onboarding.
           </p>
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/#pilot-section"
               className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#0077B6] hover:bg-white hover:text-[#023E8A] font-bold text-sm rounded-xl transition-all shadow-lg"
             >
-              <span>Apply for Free Pilot</span>
+              <span>Join the free testing</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link

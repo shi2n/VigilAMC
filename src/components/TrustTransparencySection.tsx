@@ -7,8 +7,8 @@ import { StatusBadge } from './StatusBadge';
 export function TrustTransparencySection() {
   const whatWeDo = [
     'Organize equipment inventories, floor locations, and service histories in one central digital registry.',
-    'Assign unique, serialized QR codes to fire extinguishers, hydrants, alarm panels, and hose reels.',
-    'Provide an offline-ready mobile web scanner for field technicians to record inspections with timestamp verification.',
+    'Record asset details (type, capacity, serial number), floor and location notes, GPS position, and photos for every asset.',
+    'Provide a simple mobile form for field technicians to record inspections with timestamp, GPS, and photo verification (pilot testing).',
     'Track service cycles, refilling deadlines, and hydrostatic pressure testing schedules with automated alerts.',
     'Structure recorded field observations into client-facing Form-B inspection schedules and compliance summaries.',
     'Store photographic defect proof and maintenance notes for transparent client communication.',
@@ -115,7 +115,7 @@ export function TrustTransparencySection() {
               Statutory Fire Compliance Disclaimer:
             </strong>
             <p className="mt-0.5 text-amber-800 text-[11px]">
-              Fire safety laws, inspection intervals, mandatory testing standards, and certification formats (including Form-B periodic audit certificates under the Delhi Fire Safety Act, Haryana Fire Safety Act in Delhi NCR, and NBC 2016 Part 4) vary by municipal jurisdiction, building occupancy type, and facility scale. <strong>Requirements may vary by state, facility, and applicable regulations. Compliance information should always be reviewed with a qualified fire-compliance professional and applicable local authorities.</strong>
+              Fire safety laws, inspection intervals, mandatory testing standards and certification formats vary by state, municipal jurisdiction, building occupancy type and facility scale. Requirements may vary by state, facility and applicable regulations. Compliance information should always be reviewed with a qualified fire-compliance professional and the applicable local authorities.
             </p>
           </div>
         </div>

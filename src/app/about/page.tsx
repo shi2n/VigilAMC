@@ -31,17 +31,17 @@ export default function AboutUsPage() {
     {
       period: '2025',
       title: 'Field Research & Operational Prototyping',
-      desc: 'Conducted field interviews with fire safety AMC contractors across Delhi, Noida, and Gurugram (Delhi NCR). Discovered that over 90% of missed inspection cycles and audit penalties were caused by handwritten logbooks and manual spreadsheets.',
+      desc: 'Conducted field interviews with fire safety AMC contractors and facility managers. Discovered that over 90% of missed inspection cycles and audit penalties were caused by handwritten logbooks and manual spreadsheets.',
     },
     {
       period: 'Early 2026',
       title: 'Core Architecture & Form-B Engine',
-      desc: 'Engineered the unified asset registry with serialized QR code identification, offline-capable mobile inspection checklist, and statutory Form-B PDF generation engine compliant with NBC 2016 Part 4 and IS 2190.',
+      desc: 'Engineered the unified asset registry with equipment details and floor notes, mobile inspection form with GPS verification and photo proof (in beta), and statutory Form-B PDF generation engine compliant with NBC 2016 Part 4 and IS 2190.',
     },
     {
       period: 'Current (2026)',
-      title: 'Free Pilot Program & Contractor Onboarding',
-      desc: 'Actively onboarding select commercial and industrial fire protection agencies into our hands-on pilot cohort. Calibrating real field workflows directly with service managers and technicians.',
+      title: 'Free Testing Phase & Agency Onboarding',
+      desc: 'Actively onboarding commercial and industrial fire protection agencies into our free testing program. Calibrating real field workflows directly with service managers and technicians.',
     },
     {
       period: 'Roadmap',
@@ -87,7 +87,7 @@ export default function AboutUsPage() {
                 In hundreds of high-rise commercial complexes, industrial plants, and hospitals, fire safety equipment is tracked on faded paper tags, clipboards, or scattered Excel spreadsheets. When an extinguisher loses pressure behind a stairwell or a hydrostatic pressure test deadline quietly expires, nobody notices until a municipal Fire Officer conducts a surprise inspection.
               </p>
               <p>
-                The facility fails the audit, faces penalty notices, and the AMC contractor takes the blame. I built VigilAMC to put an end to this breakdown — replacing paper chaos with serialized QR tagging, mobile field checklists, and instant Form-B certification.
+                The facility fails the audit, faces penalty notices, and the AMC contractor takes the blame. I built VigilAMC to put an end to this breakdown — replacing paper chaos with GPS-verified inspections, photo proof, floor location notes, and instant Form-B certification.
               </p>
             </div>
 
@@ -168,9 +168,9 @@ export default function AboutUsPage() {
               <div className="w-10 h-10 rounded-lg bg-ocean-50 text-[#0077B6] flex items-center justify-center mb-4">
                 <FileCheck2 className="w-5 h-5" />
               </div>
-              <h4 className="text-base font-bold text-slate-900">Delhi NCR Fire Rules &amp; Form-B</h4>
+              <h4 className="text-base font-bold text-slate-900">State Fire Rules &amp; Form-B</h4>
               <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                Structured under Delhi Fire Prevention &amp; Safety Rules, NBC 2016 Part 4, and Delhi NCR municipal fire service periodic verification protocols.
+                Structured around NBC 2016 Part 4 and applicable State Fire Safety Rules, formatted for licensed contractor review and client submission.
               </p>
             </div>
           </div>
@@ -228,16 +228,16 @@ export default function AboutUsPage() {
       {/* Bottom CTA */}
       <section className="py-20 px-4 bg-[#023E8A] text-white text-center">
         <div className="max-w-3xl mx-auto space-y-4">
-          <h2 className="text-3xl font-extrabold">Ready to Join the VigilAMC Pilot?</h2>
+          <h2 className="text-3xl font-extrabold">Ready to Join the VigilAMC Testing Program?</h2>
           <p className="text-cyan-100 text-sm max-w-xl mx-auto leading-relaxed">
-            We are actively collaborating with fire safety agencies across India. Join our free pilot to test QR tagging and automated Form-B reports in your facilities.
+            VigilAMC is in its testing phase and is free for every agency that joins. Test asset registration, GPS-verified inspections, and automated Form-B reports in your facilities.
           </p>
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/#pilot-section"
               className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#0077B6] hover:bg-white hover:text-[#023E8A] font-bold text-sm rounded-xl transition-all shadow-lg"
             >
-              <span>Apply for the Free Pilot</span>
+              <span>Join the free testing</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link

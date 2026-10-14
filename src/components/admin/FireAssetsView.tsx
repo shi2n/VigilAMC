@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Layers, Search, Edit, Trash2, Scan, FileSpreadsheet } from 'lucide-react';
+import { Layers, Search, Edit, Trash2, MapPin, FileSpreadsheet } from 'lucide-react';
 
 interface FireAssetsViewProps {
   equipmentsList: any[];
@@ -30,22 +30,22 @@ export function FireAssetsView({
   onOpenImport,
 }: FireAssetsViewProps) {
   return (
-    <div className="tactile-card rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl p-5 sm:p-6 space-y-6 text-slate-100">
+    <div className="rounded-2xl bg-white border border-[#DCE7F2] shadow-sm p-5 sm:p-6 space-y-6 text-slate-800 dark:bg-slate-900/90 dark:border-slate-800 dark:shadow-xl dark:text-slate-100">
       {/* Header & Filters */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#DCE7F2] pb-4 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+            <div className="w-8 h-8 rounded-lg bg-[#EAF6FF] border border-[#007DB8]/30 flex items-center justify-center text-[#007DB8] dark:bg-purple-500/10 dark:border-purple-500/30 dark:text-purple-400">
               <Layers className="w-4 h-4" />
             </div>
-            <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
-              Fire Asset Inventory &amp; QR Tag Registry
+            <h2 className="text-base sm:text-lg font-bold text-[#023E8A] dark:text-white tracking-tight">
+              Fire Asset Inventory &amp; Schedule
             </h2>
-            <span className="px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 text-xs font-semibold">
+            <span className="px-2.5 py-0.5 rounded-full bg-[#EAF6FF] text-[#007DB8] border border-[#007DB8]/30 text-xs font-semibold dark:bg-slate-800 dark:text-slate-300">
               {equipmentsList.length} Units
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Search, filter, and audit individual fire extinguishers, hydrants, hose reels, and alarm panels.
           </p>
         </div>
@@ -55,7 +55,7 @@ export function FireAssetsView({
           <select
             value={equipFilterBuilding}
             onChange={(e) => setEquipFilterBuilding(e.target.value)}
-            className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+            className="bg-white border border-[#DCE7F2] rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-[#007DB8] shadow-sm dark:bg-slate-950 dark:border-slate-700 dark:text-white"
           >
             <option value="ALL">All Buildings</option>
             {buildings.map((b: any) => (
@@ -70,10 +70,10 @@ export function FireAssetsView({
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search QR or location..."
+              placeholder="Search Asset ID or location..."
               value={equipSearch}
               onChange={(e) => setEquipSearch(e.target.value)}
-              className="bg-slate-950 border border-slate-700 rounded-xl pl-8 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+              className="bg-white border border-[#DCE7F2] rounded-xl pl-8 pr-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#007DB8] shadow-sm dark:bg-slate-950 dark:border-slate-700 dark:text-white dark:placeholder-slate-500"
             />
           </div>
 
@@ -81,20 +81,20 @@ export function FireAssetsView({
           {onOpenImport && (
             <button
               onClick={onOpenImport}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold transition-all shadow-sm"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#EAF6FF] hover:bg-[#D5EEFF] text-[#007DB8] border border-[#007DB8]/30 text-xs font-bold transition-all shadow-sm dark:bg-amber-500/10 dark:hover:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/30"
               title="Import Fire Assets from Excel (.xlsx)"
             >
-              <FileSpreadsheet className="w-4 h-4 text-amber-400" />
+              <FileSpreadsheet className="w-4 h-4" />
               <span>Import Assets</span>
             </button>
           )}
 
           <button
             onClick={onOpenExport}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100/80 text-emerald-700 border border-emerald-300 text-xs font-bold transition-all shadow-sm dark:bg-emerald-600/20 dark:hover:bg-emerald-600/30 dark:text-emerald-300 dark:border-emerald-500/30"
             title="Export Assets to Excel (.xlsx)"
           >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+            <FileSpreadsheet className="w-4 h-4" />
             <span>Export Excel</span>
           </button>
         </div>
@@ -102,19 +102,19 @@ export function FireAssetsView({
 
       {/* Equipment Table */}
       {equipmentsList.length === 0 ? (
-        <div className="py-16 text-center text-slate-400 space-y-3">
-          <Layers className="w-12 h-12 text-slate-600 mx-auto" />
-          <h3 className="text-sm font-bold text-white">No equipment assets found</h3>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto">
-            Try adjusting your search query or filter, or navigate to Buildings to add assets with QR codes.
+        <div className="py-16 text-center text-slate-500 dark:text-slate-400 space-y-3">
+          <Layers className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white">No equipment assets found</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+            Try adjusting your search query or filter, or navigate to Buildings to add assets to your schedule.
           </p>
         </div>
       ) : (
-        <div className="bg-slate-950/80 rounded-xl border border-slate-800 overflow-x-auto shadow">
+        <div className="bg-white rounded-xl border border-[#DCE7F2] overflow-x-auto shadow-sm dark:bg-slate-950/80 dark:border-slate-800">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-900/90 text-slate-400 uppercase text-[10px] font-bold tracking-wider border-b border-slate-800">
+            <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider border-b border-[#DCE7F2] dark:bg-slate-900/90 dark:text-slate-400 dark:border-slate-800">
               <tr>
-                <th className="py-3 px-4">QR Code Tag</th>
+                <th className="py-3 px-4">Asset ID / Serial</th>
                 <th className="py-3 px-4">Building</th>
                 <th className="py-3 px-4">Type &amp; Capacity</th>
                 <th className="py-3 px-4">Location</th>
@@ -123,23 +123,23 @@ export function FireAssetsView({
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
               {equipmentsList.map((eq) => (
-                <tr key={eq.id} className="hover:bg-slate-850/40 transition-colors">
+                <tr key={eq.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-850/40 transition-colors">
                   <td className="py-3 px-4 font-mono font-bold">
                     <Link
                       href={`/scan/${eq.qrCode}`}
-                      className="text-amber-400 hover:underline bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20"
+                      className="text-[#007DB8] hover:underline bg-[#EAF6FF] px-2 py-0.5 rounded border border-[#007DB8]/30 dark:text-amber-400 dark:bg-amber-500/10 dark:border-amber-500/20"
                     >
                       {eq.qrCode}
                     </Link>
                   </td>
-                  <td className="py-3 px-4 font-medium text-slate-300">{eq.building?.name || '—'}</td>
-                  <td className="py-3 px-4 text-white font-semibold">
+                  <td className="py-3 px-4 font-medium text-slate-600 dark:text-slate-300">{eq.building?.name || '—'}</td>
+                  <td className="py-3 px-4 text-slate-900 font-semibold dark:text-white">
                     {eq.capacity} ({eq.type})
                   </td>
-                  <td className="py-3 px-4 text-slate-400">{eq.location}</td>
-                  <td className="py-3 px-4 font-semibold text-slate-200">
+                  <td className="py-3 px-4 text-slate-500 dark:text-slate-400">{eq.location}</td>
+                  <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">
                     {new Date(eq.nextDueDate).toLocaleDateString('en-IN', {
                       day: 'numeric',
                       month: 'short',
@@ -150,10 +150,10 @@ export function FireAssetsView({
                     <span
                       className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                         eq.liveStatus === 'COMPLIANT'
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30'
                           : eq.liveStatus === 'DUE_SOON'
-                          ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                          : 'bg-red-500/10 text-red-400 border border-red-500/30'
+                          ? 'bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30'
+                          : 'bg-rose-100 text-rose-800 border border-rose-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/30'
                       }`}
                     >
                       {eq.liveStatus}
@@ -162,22 +162,22 @@ export function FireAssetsView({
                   <td className="py-3 px-4 text-right space-x-2 whitespace-nowrap">
                     <Link
                       href={`/scan/${eq.qrCode}`}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black shadow transition-all"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#007DB8] hover:bg-[#073F8F] text-white text-xs font-bold shadow transition-all"
                       title="Service / Log Inspection"
                     >
-                      <Scan className="w-3 h-3 stroke-[2.5]" />
+                      <MapPin className="w-3 h-3 stroke-[2.5]" />
                       <span>Service</span>
                     </Link>
                     <button
                       onClick={() => onEditEquipment(eq)}
-                      className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 dark:hover:text-white"
                       title="Edit Equipment Details"
                     >
                       <Edit className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => onDeleteEquipment(eq.id, eq.qrCode)}
-                      className="p-1.5 rounded-lg bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-500/30 transition-colors"
+                      className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors dark:bg-red-950/40 dark:hover:bg-red-900/60 dark:text-red-400 dark:border-red-500/30"
                       title="Delete Equipment"
                     >
                       <Trash2 className="w-3.5 h-3.5" />

@@ -326,7 +326,7 @@ export default function BuildingDetailPage() {
                           href={`/scan?code=${asset.qrCode}`}
                           className="px-2.5 py-1 rounded bg-red-600 hover:bg-red-500 text-white font-semibold text-[11px] shadow-sm transition-colors inline-flex items-center gap-1"
                         >
-                          <Scan className="w-3 h-3" />
+                          <MapPin className="w-3 h-3" />
                           <span>Audit</span>
                         </Link>
                         <Link

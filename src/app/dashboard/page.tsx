@@ -40,7 +40,9 @@ import {
   Zap,
   LayoutDashboard,
   Menu,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { AdminSidebar, AdminNavTab } from '@/components/admin/AdminSidebar';
 import { DashboardOverview } from '@/components/admin/DashboardOverview';
@@ -64,6 +66,31 @@ export default function AdminDashboardPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [expandedBuildingId, setExpandedBuildingId] = useState<string | null>(null);
+
+  // Theme Mode: Light theme by default, persistent in localStorage
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  useEffect(() => {
+    const saved = localStorage.getItem('vigil_dashboard_theme') as 'light' | 'dark' | null;
+    const initialTheme = saved || 'light';
+    setTheme(initialTheme);
+    if (initialTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(nextTheme);
+    localStorage.setItem('vigil_dashboard_theme', nextTheme);
+    if (nextTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
 
   // Authenticated Admin OS Navigation Tab
   const [activeTab, setActiveTab] = useState<AdminNavTab>('DASHBOARD');
@@ -659,16 +686,19 @@ export default function AdminDashboardPage() {
 
   if (loading || !data) {
     return (
-      <div className="flex-1 p-8 flex items-center justify-center min-h-[60vh] bg-[#080d1a]">
-        <div className="flex flex-col items-center gap-3 text-slate-400">
-          <RefreshCw className="w-8 h-8 animate-spin text-amber-500" />
-          <p className="text-sm font-semibold tracking-wide text-slate-300">Loading building compliance matrix...</p>
+      <div className="flex-1 p-8 flex items-center justify-center min-h-screen bg-[#F8FAFC] dark:bg-[#080d1a]">
+        <div className="flex flex-col items-center gap-3 text-slate-500 dark:text-slate-400">
+          <RefreshCw className="w-8 h-8 animate-spin text-[#007DB8] dark:text-amber-500" />
+          <p className="text-sm font-semibold tracking-wide text-slate-700 dark:text-slate-300">Loading building compliance matrix...</p>
         </div>
       </div>
     );
   }
 
   const { summary, buildings, company } = data;
+  const userFirstName = data?.profile?.fullName?.trim() ? data.profile.fullName.split(' ')[0] : (data?.user?.email ? data.user.email.split('@')[0] : 'Admin');
+  const agencyName = company?.name || 'VigilAMC Operating System';
+  const licenseNo = company?.licenseNumber || 'DL/FIRE/LIC/2026';
 
   const exportDataMap: Record<string, any[]> = {
     CLIENTS: clientsList,
@@ -680,12 +710,12 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#080d1a] flex flex-col lg:flex-row text-slate-100 selection:bg-amber-500 selection:text-slate-950">
+    <div className={`min-h-screen ${theme === 'dark' ? 'dark' : ''} bg-[#F8FAFC] flex flex-col lg:flex-row text-slate-900 dark:bg-[#080d1a] dark:text-slate-100 selection:bg-[#EAF6FF] selection:text-[#073F8F] dark:selection:bg-amber-500 dark:selection:text-slate-950`}>
       
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 border-2 border-amber-500 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
-          <CheckCircle2 className="w-5 h-5 text-amber-400" />
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 border-2 border-[#007DB8] text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <CheckCircle2 className="w-5 h-5 text-emerald-400" />
           <span className="text-xs font-bold">{toastMessage}</span>
         </div>
       )}
@@ -704,17 +734,20 @@ export default function AdminDashboardPage() {
         isMobileOpen={mobileSidebarOpen}
         onCloseMobile={() => setMobileSidebarOpen(false)}
         onLogout={handleLogout}
+        company={company}
+        userEmail={data?.user?.email}
+        userProfile={data?.profile}
       />
 
       {/* Main Content Area */}
       <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-6 overflow-y-auto">
         
         {/* Top Header Bar */}
-        <div className="tactile-card rounded-2xl bg-slate-900/90 border border-slate-800 p-4 sm:p-5 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="rounded-2xl bg-white border border-[#DCE7F2] p-4 sm:p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-900/90 dark:border-slate-800 dark:shadow-2xl">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 hover:text-white"
+              className="lg:hidden p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 hover:text-slate-900 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-300 dark:hover:text-white"
               aria-label="Open navigation menu"
             >
               <Menu className="w-5 h-5" />
@@ -722,63 +755,73 @@ export default function AdminDashboardPage() {
 
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-slate-400">Admin OS</span>
-                <span className="text-slate-600">/</span>
-                <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">
+                <span className="text-xs font-semibold text-[#007DB8] dark:text-slate-400">Admin OS</span>
+                <span className="text-slate-400 dark:text-slate-600">/</span>
+                <h1 className="text-lg sm:text-xl font-black text-[#073F8F] dark:text-white tracking-tight">
                   {activeTab === 'DASHBOARD' && 'Executive Overview'}
                   {activeTab === 'AGENCY' && 'Agency Profile & Subscription'}
                   {activeTab === 'ADMIN_USERS' && 'Admin Users & Roles'}
                   {activeTab === 'TECHNICIANS' && 'Technician Workforce'}
                   {activeTab === 'CLIENTS' && 'Client Societies & Accounts'}
                   {activeTab === 'BUILDINGS' && 'Buildings & Towers'}
-                  {activeTab === 'FIRE_ASSETS' && 'Fire Assets & QR Tags'}
+                  {activeTab === 'FIRE_ASSETS' && 'Fire Assets & Inventory'}
                   {activeTab === 'INSPECTIONS' && 'Inspection Logs & Compliance'}
                   {activeTab === 'WORK_ORDERS' && 'Work Orders & Dispatch'}
                   {activeTab === 'REPORTS' && 'Statutory Reports & Form-B'}
                   {activeTab === 'SETTINGS' && 'System Settings & Inquiries'}
                 </h1>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
-                {company?.name || 'VigilAMC Operating System'} • License:{' '}
-                <strong className="text-slate-300 font-semibold">{company?.licenseNumber || 'DL/FIRE/LIC/2026'}</strong>
+              <p className="text-xs text-[#475569] dark:text-slate-400 mt-0.5">
+                Welcome back, <strong className="text-slate-800 dark:text-slate-200 font-semibold">{userFirstName}</strong>! • Managing compliance for <strong className="text-slate-800 dark:text-slate-200 font-semibold">{agencyName}</strong> • License:{' '}
+                <strong className="text-slate-800 dark:text-slate-300 font-semibold">{licenseNo}</strong>
               </p>
             </div>
           </div>
 
-          {/* Quick Actions */}
+          {/* Quick Actions & Theme Switcher */}
           <div className="flex items-center gap-2.5 flex-wrap self-end md:self-auto">
+            {/* Theme Toggle (Light / Dark Mode) */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-amber-400 dark:border-slate-700 transition-all shadow-sm"
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              aria-label="Toggle Theme"
+            >
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4 text-slate-700" />}
+            </button>
+
             <button
               onClick={() => handleOpenImport('FIRE_ASSETS')}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all shadow-sm"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#EAF6FF] hover:bg-[#d0ebff] text-[#073F8F] border border-[#007DB8]/30 text-xs font-bold transition-all shadow-sm dark:bg-amber-500/10 dark:hover:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40"
               title="Import Existing Data from Excel (.xlsx)"
             >
-              <FileSpreadsheet className="w-4 h-4 text-amber-400" />
+              <FileSpreadsheet className="w-4 h-4 text-[#007DB8] dark:text-amber-400" />
               <span>Import Excel</span>
             </button>
 
             <button
               onClick={() => handleOpenExport()}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition-all shadow-sm"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-sm dark:bg-emerald-600/20 dark:hover:bg-emerald-600/30 dark:text-emerald-300 dark:border-emerald-500/40"
               title="Export Current View Data to Excel (.xlsx)"
             >
-              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+              <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>Export Excel</span>
             </button>
 
             <Link
               href="/assets/print-qr"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-200 border border-slate-800 hover:border-amber-500/40 text-xs font-bold transition-all"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-[#DCE7F2] text-xs font-bold transition-all shadow-sm dark:bg-slate-950 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-800 hover:border-[#007DB8]/40"
             >
-              <Printer className="w-4 h-4 text-amber-400" />
+              <Printer className="w-4 h-4 text-[#007DB8] dark:text-amber-400" />
               <span className="hidden sm:inline">Print QR Labels</span>
             </Link>
 
             <button
               onClick={handleLogout}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-800/50 text-xs font-bold transition-all"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold transition-all shadow-sm dark:bg-red-950/40 dark:hover:bg-red-900/60 dark:text-red-300 dark:border-red-800/50"
               title="Sign Out of Admin OS"
             >
-              <LogOut className="w-4 h-4 text-red-400" />
+              <LogOut className="w-4 h-4 text-red-600 dark:text-red-400" />
               <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
@@ -803,84 +846,84 @@ export default function AdminDashboardPage() {
         ========================================================================= */}
         {activeTab === 'AGENCY' && (
           <div className="space-y-8">
-            <div className="tactile-card rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl p-5 sm:p-6 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="rounded-2xl bg-white border border-[#DCE7F2] shadow-sm p-5 sm:p-6 space-y-4 dark:bg-slate-900/90 dark:border-slate-800 dark:shadow-2xl">
+              <div className="flex items-center justify-between border-b border-[#DCE7F2] pb-3 dark:border-slate-800">
                 <div>
-                  <h2 className="text-base font-bold text-white flex items-center gap-2">
-                    <Building2 className="w-5 h-5 text-amber-400" />
+                  <h2 className="text-base font-bold text-[#073F8F] flex items-center gap-2 dark:text-white">
+                    <Building2 className="w-5 h-5 text-[#007DB8] dark:text-amber-400" />
                     <span>Agency Organization Profile</span>
                   </h2>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-[#475569] mt-0.5 dark:text-slate-400">
                     Official statutory credentials printed on Delhi Fire Service &amp; NBC inspection certificates.
                   </p>
                 </div>
               </div>
 
-              <form onSubmit={handleSaveCompany} className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-4 text-xs">
+              <form onSubmit={handleSaveCompany} className="p-5 rounded-2xl bg-[#F8FAFC] border border-[#DCE7F2] space-y-4 text-xs dark:bg-slate-950/80 dark:border-slate-800">
                 <div>
-                  <label className="block text-slate-300 font-bold mb-1">Company / Agency Name *</label>
+                  <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Company / Agency Name *</label>
                   <input
                     type="text"
                     required
                     value={companyForm.name}
                     onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
                     placeholder="e.g. National Fire Safety & AMC Services"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
+                    className="w-full bg-white border border-[#DCE7F2] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#007DB8] font-medium shadow-sm dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-300 font-bold mb-1">Govt. Fire License Number *</label>
+                    <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Govt. Fire License Number *</label>
                     <input
                       type="text"
                       required
                       value={companyForm.licenseNumber}
                       onChange={(e) => setCompanyForm({ ...companyForm, licenseNumber: e.target.value })}
                       placeholder="e.g. DL/FIRE/LIC/2026/042"
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
+                      className="w-full bg-white border border-[#DCE7F2] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#007DB8] font-medium shadow-sm dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-300 font-bold mb-1">Emergency Dispatch Phone *</label>
+                    <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Emergency Dispatch Phone *</label>
                     <input
                       type="text"
                       required
                       value={companyForm.phone}
                       onChange={(e) => setCompanyForm({ ...companyForm, phone: e.target.value })}
                       placeholder="e.g. +91 98200 11223"
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
+                      className="w-full bg-white border border-[#DCE7F2] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#007DB8] font-medium shadow-sm dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-300 font-bold mb-1">Official Service Email *</label>
+                    <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Official Service Email *</label>
                     <input
                       type="email"
                       required
                       value={companyForm.email}
                       onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })}
                       placeholder="e.g. service@nationalfireamc.in"
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
+                      className="w-full bg-white border border-[#DCE7F2] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#007DB8] font-medium shadow-sm dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-300 font-bold mb-1">Registered Service Office Address</label>
+                    <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Registered Service Office Address</label>
                     <input
                       type="text"
                       value={companyForm.address}
                       onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })}
                       placeholder="e.g. Plot 24, Okhla Industrial Area Phase III, New Delhi 110020"
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
+                      className="w-full bg-white border border-[#DCE7F2] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#007DB8] font-medium shadow-sm dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
                     />
                   </div>
                 </div>
 
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow transition-all hover:scale-[1.01]"
+                  className="px-5 py-2.5 rounded-xl bg-[#007DB8] hover:bg-[#073F8F] text-white font-bold text-xs shadow transition-all hover:scale-[1.01] dark:bg-amber-500 dark:hover:bg-amber-400 dark:text-slate-950 dark:font-black"
                 >
                   Save Agency Profile
                 </button>
@@ -909,7 +952,7 @@ export default function AdminDashboardPage() {
         ========================================================================= */}
         {activeTab === 'TECHNICIANS' && (
           <div className="space-y-6">
-            <div className="tactile-card rounded-2xl bg-slate-900/90 border border-slate-800 p-4 shadow-xl flex items-center justify-between flex-wrap gap-3">
+            <div className="rounded-2xl bg-white border border-[#DCE7F2] p-4 shadow-sm flex items-center justify-between flex-wrap gap-3 dark:bg-slate-900/90 dark:border-slate-800 dark:shadow-xl">
               <div className="flex items-center gap-2 overflow-x-auto">
                 {[
                   { id: 'ROSTER', label: 'Technician Roster & Seats', icon: Users },
@@ -924,11 +967,11 @@ export default function AdminDashboardPage() {
                       onClick={() => setTechSubTab(sub.id as any)}
                       className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                         active
-                          ? 'bg-amber-500 text-slate-950 shadow-md font-black'
-                          : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                          ? 'bg-[#EAF6FF] text-[#073F8F] border border-[#007DB8]/30 font-bold shadow-sm dark:bg-amber-500 dark:text-slate-950 dark:font-black'
+                          : 'bg-slate-50 text-slate-600 hover:text-slate-900 border border-[#DCE7F2] dark:bg-slate-950 dark:text-slate-400 dark:hover:text-white dark:border-slate-800'
                       }`}
                     >
-                      <Icon className="w-3.5 h-3.5" />
+                      <Icon className="w-3.5 h-3.5 text-[#007DB8] dark:text-inherit" />
                       <span>{sub.label}</span>
                     </button>
                   );
@@ -938,10 +981,10 @@ export default function AdminDashboardPage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleOpenExport('TECHNICIANS')}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-all shadow-sm"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-sm dark:bg-emerald-600/20 dark:hover:bg-emerald-600/30 dark:text-emerald-300 dark:border-emerald-500/30"
                   title="Export Technicians to Excel (.xlsx)"
                 >
-                  <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <span>Export Excel</span>
                 </button>
 
@@ -950,7 +993,7 @@ export default function AdminDashboardPage() {
                     fetchData();
                     fetchSubscription();
                   }}
-                  className="p-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800"
+                  className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-[#DCE7F2] dark:bg-slate-950 dark:hover:bg-slate-800 dark:text-slate-400 dark:hover:text-white dark:border-slate-800"
                   title="Refresh Technicians"
                 >
                   <RefreshCw className="w-4 h-4" />
@@ -1035,10 +1078,10 @@ export default function AdminDashboardPage() {
             <div className="flex justify-end">
               <button
                 onClick={() => handleOpenExport('INSPECTIONS')}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-all shadow-sm"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-sm dark:bg-emerald-600/20 dark:hover:bg-emerald-600/30 dark:text-emerald-300 dark:border-emerald-500/30"
                 title="Export Inspections to Excel (.xlsx)"
               >
-                <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span>Export Excel</span>
               </button>
             </div>
@@ -1057,10 +1100,10 @@ export default function AdminDashboardPage() {
             <div className="flex justify-end">
               <button
                 onClick={() => handleOpenExport('WORK_ORDERS')}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-all shadow-sm"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-sm dark:bg-emerald-600/20 dark:hover:bg-emerald-600/30 dark:text-emerald-300 dark:border-emerald-500/30"
                 title="Export Work Orders to Excel (.xlsx)"
               >
-                <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span>Export Excel</span>
               </button>
             </div>
@@ -1079,10 +1122,10 @@ export default function AdminDashboardPage() {
             <div className="flex justify-end">
               <button
                 onClick={() => handleOpenExport('REPORTS')}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-all shadow-sm"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-sm dark:bg-emerald-600/20 dark:hover:bg-emerald-600/30 dark:text-emerald-300 dark:border-emerald-500/30"
                 title="Export Report Data to Excel (.xlsx)"
               >
-                <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span>Export Excel</span>
               </button>
             </div>
@@ -1136,91 +1179,91 @@ export default function AdminDashboardPage() {
           MODAL 1: ADD CLIENT & BUILDING
       ========================================================================= */}
       {addBuildingModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0d1424] rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-700/80 tactile-card max-h-[90vh] overflow-y-auto text-white">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-[#DCE7F2] max-h-[90vh] overflow-y-auto text-slate-900 dark:bg-[#0d1424] dark:border-slate-700/80 dark:text-white">
             
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="flex items-center justify-between border-b border-[#DCE7F2] pb-3 dark:border-slate-800">
               <div className="flex items-center gap-2.5">
-                <Building2 className="w-5 h-5 text-amber-400" />
-                <h3 className="font-bold text-white text-base">Register Client &amp; Building</h3>
+                <Building2 className="w-5 h-5 text-[#007DB8] dark:text-amber-400" />
+                <h3 className="font-bold text-[#073F8F] text-base dark:text-white">Register Client &amp; Building</h3>
               </div>
               <button
                 onClick={() => setAddBuildingModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 dark:hover:text-white dark:hover:bg-slate-800"
               >
                 ✕
               </button>
             </div>
 
             <form onSubmit={handleCreateBuilding} className="space-y-4 text-xs">
-              <div className="p-3.5 bg-slate-950/80 rounded-xl space-y-2.5 border border-slate-800">
-                <h4 className="font-bold text-amber-400 uppercase text-[10px] tracking-wider">Client &amp; Society Details</h4>
+              <div className="p-3.5 bg-[#F8FAFC] rounded-xl space-y-2.5 border border-[#DCE7F2] dark:bg-slate-950/80 dark:border-slate-800">
+                <h4 className="font-bold text-[#007DB8] uppercase text-[10px] tracking-wider dark:text-amber-400">Client &amp; Society Details</h4>
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Client / Society Name *</label>
+                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Client / Society Name *</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. Horizon Co-op Housing Society"
                     value={buildingForm.clientName}
                     onChange={(e) => setBuildingForm({ ...buildingForm, clientName: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none"
+                    className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:placeholder-slate-500 dark:focus:border-amber-500"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">Contact Person</label>
+                    <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Contact Person</label>
                     <input
                       type="text"
                       placeholder="Secretary / Facility Manager"
                       value={buildingForm.contactPerson}
                       onChange={(e) => setBuildingForm({ ...buildingForm, contactPerson: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none"
+                      className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:placeholder-slate-500 dark:focus:border-amber-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">Phone Number *</label>
+                    <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Phone Number *</label>
                     <input
                       type="text"
                       required
                       placeholder="+91 98XXX XXXXX"
                       value={buildingForm.phone}
                       onChange={(e) => setBuildingForm({ ...buildingForm, phone: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none"
+                      className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:placeholder-slate-500 dark:focus:border-amber-500"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="p-3.5 bg-slate-950/80 rounded-xl space-y-2.5 border border-slate-800">
-                <h4 className="font-bold text-amber-400 uppercase text-[10px] tracking-wider">Building &amp; Compliance Cycle</h4>
+              <div className="p-3.5 bg-[#F8FAFC] rounded-xl space-y-2.5 border border-[#DCE7F2] dark:bg-slate-950/80 dark:border-slate-800">
+                <h4 className="font-bold text-[#007DB8] uppercase text-[10px] tracking-wider dark:text-amber-400">Building &amp; Compliance Cycle</h4>
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Building / Tower Name *</label>
+                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Building / Tower Name *</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. Horizon Heights Tower C"
                     value={buildingForm.buildingName}
                     onChange={(e) => setBuildingForm({ ...buildingForm, buildingName: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none"
+                    className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:placeholder-slate-500 dark:focus:border-amber-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Premises Address *</label>
+                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Premises Address *</label>
                   <input
                     type="text"
                     required
                     placeholder="Street, Area, City, Pin Code"
                     value={buildingForm.address}
                     onChange={(e) => setBuildingForm({ ...buildingForm, address: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none"
+                    className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:placeholder-slate-500 dark:focus:border-amber-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Statutory Compliance Cycle</label>
+                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Statutory Compliance Cycle</label>
                   <select
                     value={buildingForm.complianceCycle}
                     onChange={(e) => setBuildingForm({ ...buildingForm, complianceCycle: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-amber-500 focus:outline-none"
+                    className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
                   >
                     <option value="Delhi NCR Statutory Form-B (Half-Yearly)">Delhi NCR Statutory Form-B (DFS / NBC 2016)</option>
                     <option value="Delhi Fire NOC Rule 33 (Annual)">Delhi Fire NOC Rule 33 (Annual)</option>
@@ -1234,13 +1277,13 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setAddBuildingModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white"
+                  className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black shadow-md hover:scale-[1.02]"
+                  className="px-5 py-2.5 rounded-xl bg-[#007DB8] hover:bg-[#073F8F] text-white font-bold shadow-md hover:scale-[1.02] transition-all dark:bg-gradient-to-r dark:from-amber-500 dark:to-orange-500 dark:text-slate-950 dark:font-black"
                 >
                   Create Building
                 </button>
@@ -1254,17 +1297,17 @@ export default function AdminDashboardPage() {
           MODAL 2: BULK ADD EQUIPMENT
       ========================================================================= */}
       {bulkAddModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0d1424] rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-700/80 tactile-card max-h-[90vh] overflow-y-auto text-white">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-[#DCE7F2] max-h-[90vh] overflow-y-auto text-slate-900 dark:bg-[#0d1424] dark:border-slate-700/80 dark:text-white">
             
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="flex items-center justify-between border-b border-[#DCE7F2] pb-3 dark:border-slate-800">
               <div>
-                <h3 className="font-bold text-white text-base">Bulk Add Equipment</h3>
-                <p className="text-xs text-amber-400 font-semibold mt-0.5">{bulkAddModalOpen.name}</p>
+                <h3 className="font-bold text-[#073F8F] text-base dark:text-white">Bulk Add Equipment</h3>
+                <p className="text-xs text-[#007DB8] font-semibold mt-0.5 dark:text-amber-400">{bulkAddModalOpen.name}</p>
               </div>
               <button
                 onClick={() => setBulkAddModalOpen(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 dark:hover:text-white dark:hover:bg-slate-800"
               >
                 ✕
               </button>
@@ -1273,11 +1316,11 @@ export default function AdminDashboardPage() {
             <form onSubmit={handleBulkAddEquipment} className="space-y-4 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Equipment Type</label>
+                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Equipment Type</label>
                   <select
                     value={equipmentForm.type}
                     onChange={(e) => setEquipmentForm({ ...equipmentForm, type: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-amber-500 focus:outline-none"
+                    className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
                   >
                     <option value="Fire Extinguisher">Fire Extinguisher</option>
                     <option value="Hydrant Valve">Hydrant Valve</option>
@@ -1288,58 +1331,58 @@ export default function AdminDashboardPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Capacity / Specification</label>
+                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Capacity / Specification</label>
                   <input
                     type="text"
                     value={equipmentForm.capacity}
                     onChange={(e) => setEquipmentForm({ ...equipmentForm, capacity: e.target.value })}
                     placeholder="e.g. ABC Dry Powder 6kg"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none"
+                    className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:placeholder-slate-500 dark:focus:border-amber-500"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">QR Code Prefix</label>
+                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">QR Code Prefix</label>
                   <input
                     type="text"
                     value={equipmentForm.prefix}
                     onChange={(e) => setEquipmentForm({ ...equipmentForm, prefix: e.target.value.toUpperCase() })}
                     placeholder="e.g. EXT or TWR"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white font-mono uppercase focus:border-amber-500 focus:outline-none"
+                    className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 font-mono uppercase focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Quantity to Auto-Generate</label>
+                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Quantity to Auto-Generate</label>
                   <input
                     type="number"
                     min="1"
                     max="50"
                     value={equipmentForm.count}
                     onChange={(e) => setEquipmentForm({ ...equipmentForm, count: Number(e.target.value) })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-amber-500 focus:outline-none"
+                    className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Location Pattern</label>
+                <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Location Pattern</label>
                 <input
                   type="text"
                   value={equipmentForm.locationBase}
                   onChange={(e) => setEquipmentForm({ ...equipmentForm, locationBase: e.target.value })}
                   placeholder="e.g. Floor Landing Lift Lobby"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none"
+                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:placeholder-slate-500 dark:focus:border-amber-500"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Refill / Service Interval</label>
+                <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Refill / Service Interval</label>
                 <select
                   value={equipmentForm.serviceIntervalMonths}
                   onChange={(e) => setEquipmentForm({ ...equipmentForm, serviceIntervalMonths: Number(e.target.value) })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-amber-500 focus:outline-none"
+                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
                 >
                   <option value={12}>12 Months (Annual Extinguisher Refill - IS 2190)</option>
                   <option value={6}>6 Months (Half-Yearly Hydrant &amp; Pump Check)</option>
@@ -1351,13 +1394,13 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setBulkAddModalOpen(null)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white"
+                  className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black shadow-md hover:scale-[1.02]"
+                  className="px-5 py-2.5 rounded-xl bg-[#007DB8] hover:bg-[#073F8F] text-white font-bold shadow-md hover:scale-[1.02] transition-all dark:bg-gradient-to-r dark:from-amber-500 dark:to-orange-500 dark:text-slate-950 dark:font-black"
                 >
                   Generate {equipmentForm.count} QR Tags
                 </button>
@@ -1371,35 +1414,35 @@ export default function AdminDashboardPage() {
           MODAL 3: SINGLE ADD EQUIPMENT
       ========================================================================= */}
       {singleAddEquipModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0d1424] rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-700/80 tactile-card text-white">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#DCE7F2] text-slate-900 dark:bg-[#0d1424] dark:border-slate-700/80 dark:text-white">
+            <div className="flex items-center justify-between border-b border-[#DCE7F2] pb-3 dark:border-slate-800">
               <div>
-                <h3 className="font-bold text-white text-base">Add Single Equipment Tag</h3>
-                <p className="text-xs text-amber-400 font-semibold mt-0.5">{singleAddEquipModalOpen.name}</p>
+                <h3 className="font-bold text-[#073F8F] text-base dark:text-white">Add Single Equipment Tag</h3>
+                <p className="text-xs text-[#007DB8] font-semibold mt-0.5 dark:text-amber-400">{singleAddEquipModalOpen.name}</p>
               </div>
-              <button onClick={() => setSingleAddEquipModalOpen(null)} className="text-slate-400 hover:text-white">✕</button>
+              <button onClick={() => setSingleAddEquipModalOpen(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">✕</button>
             </div>
 
             <form onSubmit={handleSingleAddEquipment} className="space-y-4 text-xs">
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Custom QR Code ID *</label>
+                <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Custom QR Code ID *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. HTP-EXT-05"
                   value={singleEquipForm.qrCode}
                   onChange={(e) => setSingleEquipForm({ ...singleEquipForm, qrCode: e.target.value.toUpperCase() })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white font-mono uppercase focus:border-amber-500"
+                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 font-mono uppercase focus:border-[#007DB8] dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Equipment Type</label>
+                <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Equipment Type</label>
                 <select
                   value={singleEquipForm.type}
                   onChange={(e) => setSingleEquipForm({ ...singleEquipForm, type: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-amber-500"
+                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 focus:border-[#007DB8] dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
                 >
                   <option value="Fire Extinguisher">Fire Extinguisher</option>
                   <option value="Hydrant Valve">Hydrant Valve</option>
@@ -1410,25 +1453,25 @@ export default function AdminDashboardPage() {
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Capacity / Specification</label>
+                <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Capacity / Specification</label>
                 <input
                   type="text"
                   required
                   value={singleEquipForm.capacity}
                   onChange={(e) => setSingleEquipForm({ ...singleEquipForm, capacity: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-amber-500"
+                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 focus:border-[#007DB8] dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Specific Location in Building *</label>
+                <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Specific Location in Building *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Basement 1 - Electric Meter Room"
                   value={singleEquipForm.location}
                   onChange={(e) => setSingleEquipForm({ ...singleEquipForm, location: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-amber-500"
+                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 focus:border-[#007DB8] dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
                 />
               </div>
 
@@ -1436,13 +1479,13 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setSingleAddEquipModalOpen(null)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white"
+                  className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black shadow-md"
+                  className="px-5 py-2.5 rounded-xl bg-[#007DB8] hover:bg-[#073F8F] text-white font-bold shadow-md dark:bg-gradient-to-r dark:from-amber-500 dark:to-orange-500 dark:text-slate-950 dark:font-black"
                 >
                   Add Equipment
                 </button>
@@ -1456,50 +1499,50 @@ export default function AdminDashboardPage() {
           MODAL 4: EDIT CLIENT
       ========================================================================= */}
       {editClientModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0d1424] rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-700 text-white text-xs">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="font-bold text-white text-base">Edit Client</h3>
-              <button onClick={() => setEditClientModal(null)} className="text-slate-400 hover:text-white">✕</button>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#DCE7F2] text-slate-900 text-xs dark:bg-[#0d1424] dark:border-slate-700 dark:text-white">
+            <div className="flex items-center justify-between border-b border-[#DCE7F2] pb-3 dark:border-slate-800">
+              <h3 className="font-bold text-[#073F8F] text-base dark:text-white">Edit Client</h3>
+              <button onClick={() => setEditClientModal(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">✕</button>
             </div>
 
             <form onSubmit={handleUpdateClient} className="space-y-3">
               <div>
-                <label className="block text-slate-300 font-bold mb-1">Client Name *</label>
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Client Name *</label>
                 <input
                   type="text"
                   required
                   value={editClientModal.name}
                   onChange={(e) => setEditClientModal({ ...editClientModal, name: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
+                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
                 />
               </div>
               <div>
-                <label className="block text-slate-300 font-bold mb-1">Contact Person</label>
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Contact Person</label>
                 <input
                   type="text"
                   value={editClientModal.contactPerson}
                   onChange={(e) => setEditClientModal({ ...editClientModal, contactPerson: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
+                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
                 />
               </div>
               <div>
-                <label className="block text-slate-300 font-bold mb-1">Phone Number *</label>
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Phone Number *</label>
                 <input
                   type="text"
                   required
                   value={editClientModal.phone}
                   onChange={(e) => setEditClientModal({ ...editClientModal, phone: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
+                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
                 />
               </div>
               <div>
-                <label className="block text-slate-300 font-bold mb-1">Email Address</label>
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Email Address</label>
                 <input
                   type="email"
                   value={editClientModal.email || ''}
                   onChange={(e) => setEditClientModal({ ...editClientModal, email: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
+                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
                 />
               </div>
 
@@ -1507,13 +1550,13 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setEditClientModal(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300"
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-amber-500 text-slate-950 font-black"
+                  className="px-5 py-2 rounded-xl bg-[#007DB8] hover:bg-[#073F8F] text-white font-bold dark:bg-amber-500 dark:text-slate-950 dark:font-black"
                 >
                   Save Changes
                 </button>
@@ -1527,40 +1570,40 @@ export default function AdminDashboardPage() {
           MODAL 5: EDIT BUILDING
       ========================================================================= */}
       {editBuildingModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0d1424] rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-700 text-white text-xs">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="font-bold text-white text-base">Edit Building</h3>
-              <button onClick={() => setEditBuildingModal(null)} className="text-slate-400 hover:text-white">✕</button>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#DCE7F2] text-slate-900 text-xs dark:bg-[#0d1424] dark:border-slate-700 dark:text-white">
+            <div className="flex items-center justify-between border-b border-[#DCE7F2] pb-3 dark:border-slate-800">
+              <h3 className="font-bold text-[#073F8F] text-base dark:text-white">Edit Building</h3>
+              <button onClick={() => setEditBuildingModal(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">✕</button>
             </div>
 
             <form onSubmit={handleUpdateBuilding} className="space-y-3">
               <div>
-                <label className="block text-slate-300 font-bold mb-1">Building Name *</label>
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Building Name *</label>
                 <input
                   type="text"
                   required
                   value={editBuildingModal.name}
                   onChange={(e) => setEditBuildingModal({ ...editBuildingModal, name: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
+                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
                 />
               </div>
               <div>
-                <label className="block text-slate-300 font-bold mb-1">Premises Address *</label>
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Premises Address *</label>
                 <input
                   type="text"
                   required
                   value={editBuildingModal.address}
                   onChange={(e) => setEditBuildingModal({ ...editBuildingModal, address: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
+                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
                 />
               </div>
               <div>
-                <label className="block text-slate-300 font-bold mb-1">Compliance Cycle</label>
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Compliance Cycle</label>
                 <select
                   value={editBuildingModal.complianceCycle}
                   onChange={(e) => setEditBuildingModal({ ...editBuildingModal, complianceCycle: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
+                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
                 >
                   <option value="Delhi NCR Statutory Form-B (Half-Yearly)">Delhi NCR Statutory Form-B (Half-Yearly)</option>
                   <option value="Delhi Fire NOC Rule 33 (Annual)">Delhi Fire NOC Rule 33 (Annual)</option>
@@ -1573,13 +1616,13 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setEditBuildingModal(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300"
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-amber-500 text-slate-950 font-black"
+                  className="px-5 py-2 rounded-xl bg-[#007DB8] hover:bg-[#073F8F] text-white font-bold dark:bg-amber-500 dark:text-slate-950 dark:font-black"
                 >
                   Save Building
                 </button>
@@ -1593,51 +1636,51 @@ export default function AdminDashboardPage() {
           MODAL 6: EDIT EQUIPMENT
       ========================================================================= */}
       {editEquipmentModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0d1424] rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-700 text-white text-xs">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="font-bold text-white text-base">Edit Equipment Asset</h3>
-              <button onClick={() => setEditEquipmentModal(null)} className="text-slate-400 hover:text-white">✕</button>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#DCE7F2] text-slate-900 text-xs dark:bg-[#0d1424] dark:border-slate-700 dark:text-white">
+            <div className="flex items-center justify-between border-b border-[#DCE7F2] pb-3 dark:border-slate-800">
+              <h3 className="font-bold text-[#073F8F] text-base dark:text-white">Edit Equipment Asset</h3>
+              <button onClick={() => setEditEquipmentModal(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">✕</button>
             </div>
 
             <form onSubmit={handleUpdateEquipment} className="space-y-3">
               <div>
-                <label className="block text-slate-300 font-bold mb-1">QR Code Tag *</label>
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">QR Code Tag *</label>
                 <input
                   type="text"
                   required
                   value={editEquipmentModal.qrCode}
                   onChange={(e) => setEditEquipmentModal({ ...editEquipmentModal, qrCode: e.target.value.toUpperCase() })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white font-mono uppercase"
+                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 font-mono uppercase dark:bg-slate-900 dark:border-slate-700 dark:text-white"
                 />
               </div>
               <div>
-                <label className="block text-slate-300 font-bold mb-1">Capacity / Specification *</label>
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Capacity / Specification *</label>
                 <input
                   type="text"
                   required
                   value={editEquipmentModal.capacity}
                   onChange={(e) => setEditEquipmentModal({ ...editEquipmentModal, capacity: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
+                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
                 />
               </div>
               <div>
-                <label className="block text-slate-300 font-bold mb-1">Location Details *</label>
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Location Details *</label>
                 <input
                   type="text"
                   required
                   value={editEquipmentModal.location}
                   onChange={(e) => setEditEquipmentModal({ ...editEquipmentModal, location: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
+                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
                 />
               </div>
               <div>
-                <label className="block text-slate-300 font-bold mb-1">Refill / Service Interval (Months)</label>
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Refill / Service Interval (Months)</label>
                 <input
                   type="number"
                   value={editEquipmentModal.serviceIntervalMonths}
                   onChange={(e) => setEditEquipmentModal({ ...editEquipmentModal, serviceIntervalMonths: Number(e.target.value) })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
+                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
                 />
               </div>
 
@@ -1645,13 +1688,13 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setEditEquipmentModal(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300"
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-amber-500 text-slate-950 font-black"
+                  className="px-5 py-2 rounded-xl bg-[#007DB8] hover:bg-[#073F8F] text-white font-bold dark:bg-amber-500 dark:text-slate-950 dark:font-black"
                 >
                   Save Equipment
                 </button>

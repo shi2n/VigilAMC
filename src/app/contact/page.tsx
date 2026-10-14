@@ -257,26 +257,26 @@ export default function ContactPage() {
               </div>
             </div>
 
-            {/* Quick Pilot Promise */}
+            {/* Quick Testing Promise */}
             <div className="p-6 rounded-2xl bg-gradient-to-br from-[#023E8A] to-[#0077B6] text-white space-y-3 shadow-lg">
               <span className="text-xs font-bold text-cyan-200 uppercase tracking-wider">
-                The VigilAMC 14-Day Pilot Promise
+                Free Testing Program
               </span>
               <h4 className="text-lg font-bold text-white">
-                Test VigilAMC in One Building With Zero Obligation
+                Free for Every Agency During Testing
               </h4>
               <ul className="space-y-1.5 text-xs text-cyan-100">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-cyan-300 shrink-0" />
-                  50 free pre-printed metallic QR tags mailed to your office
+                  Full access to equipment registration and location notes
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-cyan-300 shrink-0" />
-                  Full access to the offline technician mobile app
+                  Simple mobile inspection form with GPS and photo capture (in beta)
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-cyan-300 shrink-0" />
-                  Instant Form-B sample generation for your building
+                  Instant Form-B standardized PDF generation for your facilities
                 </li>
               </ul>
             </div>
@@ -301,7 +301,7 @@ export default function ContactPage() {
                   <div className="p-4 bg-ocean-50 rounded-xl border border-ocean-200 text-xs text-[#023E8A] max-w-md mx-auto text-left">
                     <p className="font-bold">Next Steps:</p>
                     <p className="text-slate-600 mt-1">
-                      Our product & compliance team will connect with you to demonstrate asset QR tagging, offline mobile auditing, and legal Form-B PDF generation tailored to <strong>{formData.company}</strong>.
+                      Our product & compliance team will connect with you to demonstrate asset registration, GPS-verified mobile inspections, and Form-B PDF generation tailored to <strong>{formData.company}</strong>.
                     </p>
                   </div>
                   <div className="pt-4">

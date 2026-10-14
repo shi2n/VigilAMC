@@ -4,18 +4,20 @@ import { SiteLayout } from "@/components/SiteLayout";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://vigilamc.vercel.app"),
-  title: "VigilAMC — Never Miss a Compliance Deadline Again | Fire Safety AMC Software",
-  description: "VigilAMC helps fire protection agencies track annual maintenance contracts, log inspections with QR codes, and generate client-ready Form-B reports in minutes.",
+  title: "VigilAMC — Never Miss a Compliance Deadline Again | Fire Safety AMC Software India",
+  description: "Serving fire safety AMC teams and fire protection agencies across India. Track annual maintenance contracts, log GPS-verified inspections with location details and photos, and generate client-ready Form-B reports in minutes.",
   keywords: [
+    "Fire Safety AMC Software India",
+    "Fire NOC Compliance India",
+    "Fire Safety Compliance Software",
     "Fire Safety AMC Software",
     "Fire Protection Maintenance",
     "Form-B Certification",
-    "Extinguisher QR Tracking",
+    "GPS Fire Inspection Tracking",
+    "Extinguisher Inspection Tracking",
     "Hydrant Inspection Software",
     "NBC 2016 Fire Compliance",
     "IS 2190 Maintenance",
-    "Delhi Fire Safety Act",
-    "Delhi NCR Fire Compliance",
     "VigilAMC"
   ],
   authors: [{ name: "Shaizan", url: "https://vigilamc.vercel.app" }],
@@ -25,8 +27,8 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "VigilAMC — Never Miss a Compliance Deadline Again",
-    description: "VigilAMC helps fire protection agencies track annual maintenance contracts, log inspections with QR codes, and generate client-ready Form-B reports in minutes.",
+    title: "VigilAMC — Never Miss a Compliance Deadline Again | Pan-India Fire Safety AMC Software",
+    description: "Serving fire safety AMC teams and fire protection agencies across India. Track annual maintenance contracts, log GPS-verified inspections with location details and photos, and generate client-ready Form-B reports in minutes.",
     url: "https://vigilamc.vercel.app",
     siteName: "VigilAMC",
     images: [
@@ -42,8 +44,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "VigilAMC — Never Miss a Compliance Deadline Again",
-    description: "VigilAMC helps fire protection agencies track annual maintenance contracts, log inspections with QR codes, and generate client-ready Form-B reports in minutes.",
+    title: "VigilAMC — Never Miss a Compliance Deadline Again | Pan-India Fire Safety AMC Software",
+    description: "Serving fire safety AMC teams and fire protection agencies across India. Track annual maintenance contracts, log GPS-verified inspections with location details and photos, and generate client-ready Form-B reports in minutes.",
     creator: "@vigilamc",
     images: ["/brag.jpg"],
   },

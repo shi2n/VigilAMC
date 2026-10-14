@@ -28,10 +28,10 @@ export const PLAN_CONFIGS: Record<string, PlanConfig> = {
       'Up to 3 Active Technician Accounts',
       'Up to 3 Buildings / Towers',
       'Up to 300 Fire Assets (Extinguishers, Hydrants)',
-      'Technician Mobile Scanner with Offline Support',
+      'Simple Mobile Form for Technicians (BETA)',
       'Statutory Form-B PDF Generation Engine',
       'Automated Email Expiry Notifications',
-      'Weatherproof QR Tag Generator',
+      'Equipment Schedule with Locations and Photos',
       'Bulk Excel Inventory Importer'
     ]
   },

@@ -46,7 +46,9 @@ export async function POST(request: Request) {
     const name = (body.name || body.fullName || '').trim();
     const phone = (body.phone || '').trim();
     const company = (body.company || '').trim();
+    const state = (body.state || '').trim();
     const city = (body.city || '').trim();
+    const locationString = [city, state].filter(Boolean).join(', ');
     const type = (body.type || 'DEMO').trim(); // DEMO, CONTACT, QUICK_INQUIRY, NEWSLETTER
     const facilityType = (body.facilityType || '').trim();
     const assetCount = (body.assetCount || body.buildingsCount || '').trim();
@@ -57,6 +59,7 @@ export async function POST(request: Request) {
     const trackingMethod = (body.trackingMethod || '').trim();
     const message = [
       rawMessage,
+      state ? `State/UT: ${state}` : null,
       technicianCount ? `Technicians: ${technicianCount}` : null,
       trackingMethod ? `Current tracking method: ${trackingMethod}` : null,
     ].filter(Boolean).join(' | ');
@@ -70,7 +73,7 @@ export async function POST(request: Request) {
         email,
         phone,
         company,
-        city,
+        city: locationString || city,
         facilityType,
         assetCount,
         preferredDate,
@@ -84,7 +87,7 @@ export async function POST(request: Request) {
     // Send email notification to admin (vigilamc@gmail.com)
     sendInquiryNotification({
       name,
-      company,
+      company: company ? (locationString ? `${company} (${locationString})` : company) : locationString,
       phone,
       email,
       requirement: facilityType ? `${facilityType} (${assetCount || 'Standard'})` : assetCount,

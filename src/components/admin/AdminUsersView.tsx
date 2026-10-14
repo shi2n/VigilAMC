@@ -28,11 +28,11 @@ export function AdminUsersView({ currentUser, company }: AdminUsersViewProps) {
     { module: 'Reset Technician Passwords', admin: true, tech: false },
     { module: 'Create & Manage Clients', admin: true, tech: false },
     { module: 'Create & Manage Buildings / Towers', admin: true, tech: false },
-    { module: 'Add & Batch Generate Fire Assets & QRs', admin: true, tech: false },
+    { module: 'Add & Batch Generate Fire Assets & Schedules', admin: true, tech: false },
     { module: 'Assign Technicians to Facilities', admin: true, tech: false },
     { module: 'Assign & Dispatch Work Orders', admin: true, tech: false },
     { module: 'Audit Log & Activity Inspection', admin: true, tech: false },
-    { module: 'Access Technician Mobile Scanner', admin: true, tech: true },
+    { module: 'Access Technician Mobile Form', admin: true, tech: true },
     { module: 'Perform Field Safety Inspections', admin: true, tech: true },
     { module: 'Update Equipment Service Status & Dates', admin: true, tech: true },
     { module: 'Upload Field Photos & Inspection Notes', admin: true, tech: true },
@@ -43,13 +43,13 @@ export function AdminUsersView({ currentUser, company }: AdminUsersViewProps) {
   return (
     <div className="space-y-6">
       {/* Tab Switcher */}
-      <div className="flex border-b border-slate-800 gap-2">
+      <div className="flex border-b border-[#DCE7F2] dark:border-slate-800 gap-2">
         <button
           onClick={() => setActiveTab('USERS')}
           className={`pb-3 px-3 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-1.5 ${
             activeTab === 'USERS'
-              ? 'border-amber-500 text-amber-400'
-              : 'border-transparent text-slate-400 hover:text-white'
+              ? 'border-[#007DB8] text-[#007DB8] dark:border-amber-500 dark:text-amber-400'
+              : 'border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
           }`}
         >
           <ShieldCheck className="w-4 h-4" />
@@ -60,8 +60,8 @@ export function AdminUsersView({ currentUser, company }: AdminUsersViewProps) {
           onClick={() => setActiveTab('PERMISSIONS')}
           className={`pb-3 px-3 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-1.5 ${
             activeTab === 'PERMISSIONS'
-              ? 'border-amber-500 text-amber-400'
-              : 'border-transparent text-slate-400 hover:text-white'
+              ? 'border-[#007DB8] text-[#007DB8] dark:border-amber-500 dark:text-amber-400'
+              : 'border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
           }`}
         >
           <Lock className="w-4 h-4" />
@@ -70,45 +70,45 @@ export function AdminUsersView({ currentUser, company }: AdminUsersViewProps) {
       </div>
 
       {activeTab === 'USERS' && (
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
-          <div className="p-5 border-b border-slate-800 bg-slate-950/70 flex items-center justify-between">
+        <div className="bg-white border border-[#DCE7F2] rounded-2xl overflow-hidden shadow-sm dark:bg-slate-900/80 dark:border-slate-800 dark:shadow-xl">
+          <div className="p-5 border-b border-[#DCE7F2] bg-slate-50/80 flex items-center justify-between dark:border-slate-800 dark:bg-slate-950/70">
             <div>
-              <h3 className="text-base font-bold text-white">Agency Administrators</h3>
-              <p className="text-xs text-slate-400">
+              <h3 className="text-base font-bold text-[#023E8A] dark:text-white">Agency Administrators</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Accounts with administrative oversight, billing control, and technician seat management.
               </p>
             </div>
-            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">
+            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-[#EAF6FF] text-[#007DB8] border border-[#007DB8]/30 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30">
               Agency Master Account
             </span>
           </div>
 
           <div className="p-6 space-y-4">
-            <div className="flex items-center justify-between p-4 rounded-xl bg-slate-950 border border-slate-800">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-[#DCE7F2] dark:bg-slate-950 dark:border-slate-800">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-slate-950 flex items-center justify-center font-black shadow-md">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#007DB8] to-[#073F8F] text-white flex items-center justify-center font-black shadow-md dark:from-amber-500 dark:to-orange-600 dark:text-slate-950">
                   <ShieldCheck className="w-5 h-5 stroke-[2.5]" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-white text-sm">
+                    <span className="font-bold text-slate-900 dark:text-white text-sm">
                       {currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'Agency Admin'}
                     </span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-500 text-slate-950">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-[#007DB8] text-white dark:bg-amber-500 dark:text-slate-950">
                       PRIMARY ADMIN
                     </span>
                   </div>
-                  <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-2">
-                    <Mail className="w-3.5 h-3.5 text-slate-500" />
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-2">
+                    <Mail className="w-3.5 h-3.5 text-slate-400" />
                     <span>{currentUser?.email || 'admin@agency.com'}</span>
                     <span>•</span>
-                    <Building2 className="w-3.5 h-3.5 text-slate-500" />
+                    <Building2 className="w-3.5 h-3.5 text-slate-400" />
                     <span>{company?.name || 'Vigil Fire Solutions'}</span>
                   </div>
                 </div>
               </div>
 
-              <span className="text-xs text-emerald-400 font-bold bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20">
+              <span className="text-xs text-emerald-700 font-bold bg-emerald-100 px-3 py-1 rounded-lg border border-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
                 ACTIVE &bull; VERIFIED
               </span>
             </div>
@@ -117,10 +117,10 @@ export function AdminUsersView({ currentUser, company }: AdminUsersViewProps) {
       )}
 
       {activeTab === 'PERMISSIONS' && (
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
-          <div className="p-5 border-b border-slate-800 bg-slate-950/70">
-            <h3 className="text-base font-bold text-white">Role-Based Access Control Matrix</h3>
-            <p className="text-xs text-slate-400 mt-0.5">
+        <div className="bg-white border border-[#DCE7F2] rounded-2xl overflow-hidden shadow-sm dark:bg-slate-900/80 dark:border-slate-800 dark:shadow-xl">
+          <div className="p-5 border-b border-[#DCE7F2] bg-slate-50/80 dark:border-slate-800 dark:bg-slate-950/70">
+            <h3 className="text-base font-bold text-[#023E8A] dark:text-white">Role-Based Access Control Matrix</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Strict multi-tenant security architecture separating administrative operations from field execution.
             </p>
           </div>
@@ -128,28 +128,28 @@ export function AdminUsersView({ currentUser, company }: AdminUsersViewProps) {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-slate-800 bg-slate-950/80 text-slate-400 uppercase text-[10px] font-bold">
+                <tr className="border-b border-[#DCE7F2] bg-slate-50 text-slate-500 uppercase text-[10px] font-bold dark:border-slate-800 dark:bg-slate-950/80 dark:text-slate-400">
                   <th className="py-3 px-5">Capability / Function</th>
                   <th className="py-3 px-5 text-center w-36">Agency Admin</th>
                   <th className="py-3 px-5 text-center w-36">Field Technician</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 text-slate-300">
+              <tbody className="divide-y divide-slate-100 text-slate-700 dark:divide-slate-800/60 dark:text-slate-300">
                 {permissionsMatrix.map((item, i) => (
-                  <tr key={i} className="hover:bg-slate-800/30 transition-colors">
+                  <tr key={i} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors">
                     <td className="py-3 px-5 font-medium">{item.module}</td>
                     <td className="py-3 px-5 text-center">
-                      <div className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                      <div className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-emerald-100 text-emerald-700 border border-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30">
                         <Check className="w-3.5 h-3.5 stroke-[2.5]" />
                       </div>
                     </td>
                     <td className="py-3 px-5 text-center">
                       {item.tech ? (
-                        <div className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                        <div className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-emerald-100 text-emerald-700 border border-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30">
                           <Check className="w-3.5 h-3.5 stroke-[2.5]" />
                         </div>
                       ) : (
-                        <div className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-slate-800 text-slate-500 border border-slate-700">
+                        <div className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-slate-100 text-slate-400 border border-slate-200 dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700">
                           <X className="w-3.5 h-3.5" />
                         </div>
                       )}

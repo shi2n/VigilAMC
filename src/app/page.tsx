@@ -5,7 +5,8 @@ import Link from 'next/link';
 import {
   ShieldCheck,
   ShieldAlert,
-  QrCode,
+  MapPin,
+  Camera,
   FileCheck2,
   BellRing,
   Building2,
@@ -78,11 +79,11 @@ export default function HomePage() {
     },
     {
       src: 'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?auto=format&fit=crop&w=1200&q=80',
-      title: 'Weatherproof Metal QR Tagging in Action',
-      category: 'Field Equipment Tagging [Sample]',
+      title: 'GPS & Photo-Verified Inspection in Action',
+      category: 'Field Inspection Scenario [Sample]',
       building: 'Industrial Logistics Warehouse (Representative)',
-      auditDate: 'Field Tagging Standards',
-      description: 'Anodized aluminum QR label installed on CO2 cylinder. Resistant to UV exposure, dust, and washdowns.',
+      auditDate: 'Field Inspection Standards',
+      description: 'Technician records asset details, floor and location notes, GPS position, and condition photo on site.',
     },
     {
       src: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80',
@@ -112,7 +113,7 @@ export default function HomePage() {
     },
     {
       q: 'Can technicians inspect assets offline in basements with poor mobile reception?',
-      a: 'Yes. Our technician mobile field interface stores inspection checklists and QR data locally in the browser. When technicians work in underground pump rooms or shielded riser shafts, checks are recorded with local timestamps and synchronize automatically when network connectivity is restored.',
+      a: 'Yes. Our technician mobile field interface stores inspection checklists and photo logs locally in the browser (currently in beta). When technicians work in underground pump rooms or shielded riser shafts, checks and floor location notes are recorded with local timestamps and synchronize automatically when network connectivity is restored.',
     },
     {
       q: 'Does VigilAMC replace a licensed fire safety contractor or certify buildings directly?',
@@ -123,8 +124,8 @@ export default function HomePage() {
       a: 'Already managing your assets in Excel? Import your existing data into VigilAMC in minutes. Upload your .xlsx or .csv files, review smart column mapping (Clients → Buildings → Assets), inspect validation warnings, and batch import your complete equipment inventory without manual data re-entry.',
     },
     {
-      q: 'What is included in the Free Pilot program?',
-      a: 'The Free Pilot gives your agency full access to the QR asset registry, technician mobile checklist, and Form-B PDF generation engine for up to 3 pilot facilities. You also get a dedicated 1-on-1 onboarding session with our founder to calibrate your workflows.',
+      q: 'What is included during the free testing phase?',
+      a: 'VigilAMC is in its testing phase and is free for every agency that joins. Your agency gets full access to the asset registry, simple mobile form for technicians, GPS and photo verification, and Form-B PDF generation engine. You also get a dedicated 1-on-1 onboarding session with our founder to calibrate your workflows.',
     },
     {
       q: 'What happens when a critical defect is spotted during an inspection?',
@@ -151,7 +152,7 @@ export default function HomePage() {
             <span className="flex h-2 w-2 rounded-full bg-[#0077B6] animate-pulse" />
             <span className="font-medium text-slate-700">Fire Protection Operations &amp; Maintenance Software</span>
             <span className="text-slate-300">|</span>
-            <span className="text-[#0077B6] font-bold">Delhi NCR • Delhi • Noida • Gurugram</span>
+            <span className="text-[#0077B6] font-bold">Serving fire safety AMC teams across India</span>
           </div>
 
           {/* Primary Main Headline */}
@@ -161,7 +162,7 @@ export default function HomePage() {
 
           {/* Required Supporting Copy */}
           <p className="mt-6 text-base sm:text-lg lg:text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed font-normal text-pretty">
-            VigilAMC helps fire protection agencies track annual maintenance contracts, log inspections with QR codes, and generate client-ready Form-B reports in minutes.
+            VigilAMC helps fire protection agencies track annual maintenance contracts, log GPS-verified inspections with location details and photos, and generate client-ready Form-B reports in minutes.
           </p>
 
           {/* Primary CTAs */}
@@ -179,7 +180,7 @@ export default function HomePage() {
               className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-white hover:bg-slate-50 text-[#023E8A] font-bold text-sm sm:text-base border border-slate-300 hover:border-[#0077B6] shadow-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
             >
               <ShieldCheck className="w-4 h-4 text-[#0077B6]" />
-              <span>Join the Free Pilot</span>
+              <span>Join the free testing</span>
             </a>
 
             <a
@@ -196,13 +197,13 @@ export default function HomePage() {
             <div className="p-5 rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200 shadow-sm hover:shadow-md transition-all">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Field Audits</span>
-                <StatusBadge status="LIVE" />
+                <StatusBadge status="BETA" />
               </div>
               <h3 className="font-display text-base font-bold text-[#023E8A]">
-                QR-Verified Inspections
+                GPS-Verified Inspections
               </h3>
               <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                Scan on-site tags to verify equipment presence, pressure, and physical condition.
+                Details, floor and location notes, GPS position, and photo proof for every asset.
               </p>
             </div>
 
@@ -257,7 +258,7 @@ export default function HomePage() {
                   </span>
                 </div>
                 <div className="hidden sm:flex items-center gap-3 text-[11px] text-cyan-100/80">
-                  <span className="px-2 py-0.5 rounded bg-ocean-800/80 text-cyan-200 border border-ocean-600/50">Mobile QR Scanning</span>
+                  <span className="px-2 py-0.5 rounded bg-ocean-800/80 text-cyan-200 border border-ocean-600/50">Mobile Asset Form &amp; Photos</span>
                   <span className="text-slate-500">&bull;</span>
                   <span className="px-2 py-0.5 rounded bg-ocean-800/80 text-cyan-200 border border-ocean-600/50">Form-B PDF Generation</span>
                 </div>
@@ -326,7 +327,7 @@ export default function HomePage() {
                       <StatusBadge status="LIVE" />
                     </div>
                     <p className="text-sm text-slate-600 mt-1 leading-relaxed">
-                      Structured under Delhi Fire Service Rules, NBC 2016 Part 4 &amp; applicable NCR bylaws, formatted for licensed contractor sign-off.
+                      Structured around NBC 2016 Part 4 and applicable state fire rules, formatted for licensed contractor sign-off.
                     </p>
                   </div>
                 </div>
@@ -354,17 +355,17 @@ export default function HomePage() {
               <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm hover:border-[#0077B6]/40 transition-colors">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 border border-purple-100">
-                    <QrCode className="w-6 h-6" />
+                    <MapPin className="w-6 h-6" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="text-base font-bold text-slate-900">
-                        QR-Accessible Digital Audit Trail
+                        Equipment Schedule with Locations &amp; Photos
                       </h3>
-                      <StatusBadge status="LIVE" />
+                      <StatusBadge status="BETA" />
                     </div>
                     <p className="text-sm text-slate-600 mt-1 leading-relaxed">
-                      Every certificate includes a verification QR code allowing auditors or building committees to check inspection dates and technician sign-offs.
+                      Every certificate includes a verified equipment schedule with floor and location notes, GPS coordinates, and photos documenting every inspected asset.
                     </p>
                   </div>
                 </div>
@@ -418,7 +419,7 @@ export default function HomePage() {
                     </div>
                     <div className="flex justify-between text-slate-200">
                       <span>Representative City:</span>
-                      <strong className="text-white">Cyber City, Gurugram, Delhi NCR</strong>
+                      <strong className="text-white">Sample City, India</strong>
                     </div>
                     <div className="flex justify-between text-slate-200">
                       <span>Equipments Documented:</span>
@@ -431,7 +432,7 @@ export default function HomePage() {
                   </div>
 
                   <p className="text-xs text-cyan-100/90 leading-relaxed italic">
-                    &ldquo;Review the complete layout, equipment schedule, inspector declaration, and verification QR code of our standardized report.&rdquo;
+                    &ldquo;Review the complete layout, equipment schedule with locations and photos, inspector declaration, and defect summary of our standardized report.&rdquo;
                   </p>
                 </div>
 
@@ -480,19 +481,19 @@ export default function HomePage() {
               <div>
                 <div className="flex items-center justify-between mb-6">
                   <div className="w-12 h-12 rounded-xl bg-ocean-50 text-[#0077B6] flex items-center justify-center border border-ocean-100 shadow-xs">
-                    <QrCode className="w-6 h-6 stroke-[2.2]" />
+                    <MapPin className="w-6 h-6 stroke-[2.2]" />
                   </div>
-                  <StatusBadge status="LIVE" />
+                  <StatusBadge status="BETA" />
                 </div>
                 <h3 className="font-display text-xl font-bold text-[#023E8A] tracking-tight">
-                  Asset QR Registry &amp; Tagging
+                  GPS-Verified Inspections
                 </h3>
                 <p className="mt-3 text-sm text-slate-600 leading-relaxed">
-                  Register extinguishers, landing valves, hose reels, and alarm panels. Assign unique serialized QR labels to identify each asset instantly on site.
+                  Record asset details (type, capacity, serial number), floor and location notes, GPS position, and a photo for every extinguisher, hydrant, hose reel, and panel.
                 </p>
               </div>
               <div className="mt-8 pt-4 border-t border-slate-100 flex items-center text-xs font-bold text-[#0077B6]">
-                <span>Full Asset Lifecycle Tracking</span>
+                <span>Details, Location &amp; Photo Proof</span>
               </div>
             </div>
 
@@ -739,7 +740,7 @@ export default function HomePage() {
               Designed for Real-World Field Conditions
             </h2>
             <p className="mt-3 text-base text-slate-600 leading-relaxed">
-              Explore how QR tagging, physical gauge verifications, and digital compliance logging apply to diverse facility types.
+              Explore how asset details, floor and location notes, GPS position, and photo verification apply to diverse facility types.
             </p>
           </div>
 
@@ -783,7 +784,7 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* Verified Standards & Testimonials Placeholder Info Cards */}
+          {/* Verified Standards & Evidence Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="corp-card p-6 bg-slate-50 border border-slate-200 shadow-sm">
               <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 mb-3">
@@ -791,7 +792,7 @@ export default function HomePage() {
                 Statutory Framework
               </div>
               <p className="text-sm text-slate-700 leading-relaxed">
-                VigilAMC aligns its equipment schedules with the <strong>Delhi Fire Prevention and Fire Safety Act &amp; NCR Rules</strong>, <strong>NBC 2016 Part 4</strong>, and <strong>IS 2190</strong> maintenance protocols.
+                VigilAMC aligns its equipment schedules with <strong>NBC 2016 Part 4</strong>, <strong>IS 2190</strong> maintenance protocols, and applicable state and local fire safety rules.
               </p>
               <div className="mt-6 pt-4 border-t border-slate-200 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-[#0077B6] text-white flex items-center justify-center font-bold text-xs">
@@ -810,35 +811,35 @@ export default function HomePage() {
                 Field Traceability
               </div>
               <p className="text-sm text-slate-700 leading-relaxed">
-                Every field technician log includes QR verification timestamps, optional device coordinates, and photographic records for transparent defect communication.
+                Every field technician log includes GPS position, floor and location notes, and inspection timestamps for tamper-evident service records.
               </p>
               <div className="mt-6 pt-4 border-t border-slate-200 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-[#023E8A] text-white flex items-center justify-center font-bold text-xs">
-                  QR
+                  GPS
                 </div>
                 <div>
                   <h5 className="text-xs font-bold text-slate-900">Digital Verification</h5>
-                  <p className="text-[11px] text-slate-500">Physical Tagging &amp; Time Log</p>
+                  <p className="text-[11px] text-slate-500">Location Notes &amp; Time Log</p>
                 </div>
               </div>
             </div>
 
-            {/* Testimonials Placeholder */}
-            <div className="corp-card p-6 bg-amber-50/50 border border-amber-200 shadow-sm">
-              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 mb-3">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
-                Pilot Feedback Program
+            {/* Visual Evidence Card */}
+            <div className="corp-card p-6 bg-slate-50 border border-slate-200 shadow-sm">
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold bg-cyan-100 text-cyan-800 mb-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-600"></span>
+                Photo &amp; Defect Proof
               </div>
-              <p className="text-sm text-slate-700 leading-relaxed italic">
-                [ADD VERIFIED CUSTOMER TESTIMONIAL] &bull; Customer case studies and testimonials from active pilot agencies are currently being documented and will be published with client authorization.
+              <p className="text-sm text-slate-700 leading-relaxed">
+                Photographic evidence attached to every inspection and flagged defect gives building managers clear visual proof of equipment conditions and repairs needed.
               </p>
-              <div className="mt-6 pt-4 border-t border-amber-200 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold text-xs">
-                  PILOT
+              <div className="mt-6 pt-4 border-t border-slate-200 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#0077B6] text-white flex items-center justify-center font-bold text-xs">
+                  IMG
                 </div>
                 <div>
-                  <h5 className="text-xs font-bold text-slate-900">Partner Feedback</h5>
-                  <p className="text-[11px] text-slate-500">Documentation In Progress</p>
+                  <h5 className="text-xs font-bold text-slate-900">Photo Proof</h5>
+                  <p className="text-[11px] text-slate-500">Visual Defect Documentation</p>
                 </div>
               </div>
             </div>
@@ -919,20 +920,20 @@ export default function HomePage() {
       </section>
 
       {/* =========================================================================
-          SECTION 11: JOIN THE FREE PILOT (8-FIELD APPLICATION FORM)
+          SECTION 11: JOIN THE FREE TESTING (8-FIELD APPLICATION FORM)
           ========================================================================= */}
       <section id="pilot-section" className="py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[#023E8A] via-[#022A5E] to-[#011F48] text-white relative overflow-hidden border-t border-navy-700/60 scroll-mt-16">
         <div className="max-w-4xl mx-auto relative z-10">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-navy-800/80 text-cyan-200 text-xs font-bold border border-cyan-400/20 shadow-sm mb-4">
               <Sparkles className="w-3.5 h-3.5 text-cyan-300" />
-              <span>Pilot Cohort &bull; Free Access</span>
+              <span>Testing Phase &bull; Free Access</span>
             </div>
             <h2 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
-              Join the Free Pilot Program
+              Join the Free Testing Program
             </h2>
             <p className="text-sm sm:text-base text-cyan-100 mt-3 leading-relaxed">
-              We are onboarding selected fire protection agencies into our hands-on pilot. Test QR tagging and Form-B generation across up to 3 of your facilities with direct founder onboarding.
+              VigilAMC is in its testing phase and is free for every agency that joins. Test asset registration, GPS and photo-verified inspections, and Form-B generation with direct founder onboarding.
             </p>
           </div>
 

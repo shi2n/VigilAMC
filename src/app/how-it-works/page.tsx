@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import {
-  QrCode,
   Calendar,
   Smartphone,
   ShieldCheck,
@@ -42,7 +41,7 @@ export default function HowItWorksPage() {
             How VigilAMC Works in the Field
           </h1>
           <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto text-pretty">
-            From sticking physical serialized QR codes on equipment to generating statutory Form-B PDF certificates — here is how fire protection AMC workflows operate step by step.
+            From registering assets with floor locations to recording GPS and photo-verified inspections and generating Form-B certificates — here is how fire protection AMC workflows operate step by step.
           </p>
         </div>
       </section>
@@ -69,14 +68,14 @@ export default function HowItWorksPage() {
                       <p className="font-bold text-[#023E8A]">Tower B — Floor 04</p>
                       <p className="text-slate-500">6kg ABC Powder #EXT-401 to #EXT-408</p>
                     </div>
-                    <span className="text-emerald-600 font-bold">✓ Tag Assigned</span>
+                    <span className="text-emerald-600 font-bold">✓ Registered</span>
                   </div>
                   <div className="p-3 bg-white rounded-lg border border-slate-200 flex justify-between items-center shadow-xs">
                     <div>
                       <p className="font-bold text-[#023E8A]">Basement 2 Pump Room</p>
                       <p className="text-slate-500">Wet Riser Landing Valves &amp; Jockey Pump</p>
                     </div>
-                    <span className="text-emerald-600 font-bold">✓ QR Assigned</span>
+                    <span className="text-emerald-600 font-bold">✓ Registered</span>
                   </div>
                 </div>
               </div>
@@ -84,16 +83,16 @@ export default function HowItWorksPage() {
 
             <div className="lg:col-span-7 order-1 lg:order-2 space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ocean-50 text-[#0077B6] text-xs font-extrabold border border-ocean-200">
-                Phase 01 &bull; Asset Setup &amp; Tagging
+                Phase 01 &bull; Register Assets
               </div>
               <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-[#023E8A] tracking-tight">
-                Spreadsheet Import &amp; Rapid QR Tagging
+                Register Equipment &amp; Location Details
               </h2>
               <p className="text-sm sm:text-base text-slate-600 leading-relaxed text-pretty">
                 Import existing facility equipment spreadsheets using structured CSV/Excel templates. Organize assets by building, wing, floor, and equipment classification.
               </p>
               <p className="text-sm text-slate-600 leading-relaxed text-pretty">
-                Pair each fire extinguisher, landing valve, hose reel, or alarm panel with a durable serialized QR code sticker. On-site technicians scan the tag with their smartphone camera to bind location and specifications in seconds.
+                For each extinguisher, hydrant, hose reel, and panel, record equipment details: asset type, capacity, serial number, and exact floor and location notes for complete traceability.
               </p>
               <div className="grid grid-cols-2 gap-4 pt-2 text-xs font-medium text-slate-700">
                 <div className="flex items-center gap-2">
@@ -102,7 +101,7 @@ export default function HowItWorksPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Serialized alphanumeric QR identifiers</span>
+                  <span>Asset type, capacity, and serial numbers</span>
                 </div>
               </div>
             </div>
@@ -186,16 +185,17 @@ export default function HowItWorksPage() {
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                   <div className="flex items-center gap-2">
                     <Smartphone className="w-4 h-4 text-[#48CAE4]" />
-                    <span className="text-xs font-bold text-slate-200">Mobile Checklist [Sample View]</span>
+                    <span className="text-xs font-bold text-slate-200">Mobile Inspection Form [Sample View]</span>
                   </div>
                   <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-mono">
-                    OFFLINE CACHE
+                    OFFLINE READY (BETA)
                   </span>
                 </div>
                 <div className="mt-4 space-y-3 text-xs">
                   <div className="p-3 rounded-lg bg-slate-800/80 border border-slate-700">
-                    <p className="text-slate-400">Scanned QR Code</p>
+                    <p className="text-slate-400">Inspected Asset Record</p>
                     <p className="font-mono text-cyan-300 font-bold mt-0.5">VIGIL-EXT-2041 [Extinguisher #14]</p>
+                    <p className="text-[11px] text-slate-300 mt-1">Floor 4 North Wing &bull; GPS: 28.4595° N, 77.0266° E</p>
                   </div>
                   <div className="space-y-1.5">
                     <div className="flex justify-between items-center p-2 rounded bg-slate-800">
@@ -203,8 +203,8 @@ export default function HowItWorksPage() {
                       <span className="text-emerald-400 font-bold">✓ PASS</span>
                     </div>
                     <div className="flex justify-between items-center p-2 rounded bg-slate-800">
-                      <span>Safety Pin &amp; Seal Intact</span>
-                      <span className="text-emerald-400 font-bold">✓ PASS</span>
+                      <span>Condition Photo Attached</span>
+                      <span className="text-emerald-400 font-bold">✓ CAPTURED</span>
                     </div>
                     <div className="flex justify-between items-center p-2 rounded bg-slate-800">
                       <span>Inspection Timestamp</span>
@@ -217,16 +217,16 @@ export default function HowItWorksPage() {
 
             <div className="lg:col-span-7 order-1 lg:order-2 space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ocean-50 text-[#0077B6] text-xs font-extrabold border border-ocean-200">
-                Phase 03 &bull; Field Execution
+                Phase 03 &bull; Record on Site
               </div>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-[#023E8A] tracking-tight">
-                Mobile Field Checklist with Timestamped Verification
+                GPS-Verified Inspections &amp; Photo Proof
               </h2>
               <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
-                Technicians scan each equipment QR code with their mobile device. The inspection checklist matches the specific asset class — checking pressure gauges, nozzles, hoses, and physical mounting brackets.
+                Technicians use a simple mobile form to record each equipment check: asset details (type, capacity, serial number), floor and location notes, GPS position, a photo, and the date and time.
               </p>
               <p className="text-sm text-slate-600 leading-relaxed">
-                Checklists operate offline in basement pump rooms and shielded shafts. Inspection logs record timestamps and optional device coordinates to establish verifiable proof of physical inspection.
+                Because indoor GPS signals can vary inside buildings, technicians record specific floor and room location notes alongside GPS position. Forms operate with local offline caching for shielded pump rooms and basements (in beta).
               </p>
             </div>
           </div>
@@ -261,7 +261,7 @@ export default function HowItWorksPage() {
                 <div className="mt-4 space-y-2 text-xs text-slate-600">
                   <div className="flex justify-between py-1 border-b border-slate-100">
                     <span>Statutory Reference:</span>
-                    <strong className="text-slate-900">Delhi Fire Service Rules / NBC 2016</strong>
+                    <strong className="text-slate-900">NBC 2016 Part 4 &amp; Applicable State Rules</strong>
                   </div>
                   <div className="flex justify-between py-1 border-b border-slate-100">
                     <span>Equipments Compiled:</span>
@@ -506,14 +506,14 @@ export default function HowItWorksPage() {
             Ready to Put Your Operations on Autopilot?
           </h2>
           <p className="text-slate-600 text-sm leading-relaxed">
-            Join the free pilot cohort to test QR tagging and automated Form-B generation with your team.
+            VigilAMC is in its testing phase and is free for every agency that joins. Test asset registration, GPS-verified inspections, and Form-B generation with your team.
           </p>
           <div className="pt-4 flex flex-col sm:flex-row justify-center gap-4">
             <Link
               href="/#pilot-section"
               className="px-8 py-3.5 bg-[#0077B6] hover:bg-[#023E8A] text-white font-bold text-sm rounded-xl shadow-lg transition-colors"
             >
-              Apply for Free Pilot
+              Join the free testing
             </Link>
             <Link
               href="/sample-report"

@@ -60,11 +60,11 @@ export default function CustomersPage() {
     },
     {
       src: 'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?auto=format&fit=crop&w=1200&q=80',
-      title: 'Weatherproof Metallic QR Tagging',
-      category: 'Hardware Benchmark [Sample]',
+      title: 'GPS & Location-Verified Asset Records',
+      category: 'Inspection Benchmark [Sample]',
       building: 'Industrial Hardware Specification',
-      auditDate: 'Hardware Specification',
-      description: 'Anodized aluminum and durable vinyl QR labels installed on cylinders. Resistant to UV exposure, dust, and industrial washdowns.',
+      auditDate: 'Inspection Benchmark',
+      description: 'Asset details, floor and location notes, GPS position, and condition photos recorded on site for every unit.',
     },
     {
       src: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80',
@@ -87,10 +87,10 @@ export default function CustomersPage() {
       type: 'Contractor Operations Scenario',
       portfolio: 'Multi-Facility Commercial Deployment',
       challenge: 'Agencies relying on handwritten paper checklists face lost records, disputed billing, and frantic manual Form-B report assembly before audit deadlines.',
-      solution: 'VigilAMC equips field teams with serialized QR asset tags, mobile inspection checklists, and automated Form-B PDF generation.',
+      solution: 'VigilAMC equips field teams with GPS-verified inspections, photo proof, floor location notes, and automated Form-B PDF generation.',
       results: [
         'Centralized digital asset inventory replacing fragmented spreadsheets',
-        'Direct Form-B report compilation from timestamped field checks',
+        'Direct Form-B report compilation from timestamped, GPS-verified field checks',
         'Automated 60-day, 30-day, and 7-day renewal notifications',
         'Structured equipment schedules aligned with IS 2190 guidelines',
       ],
@@ -100,10 +100,10 @@ export default function CustomersPage() {
       type: 'Campus Facility Operations Scenario',
       portfolio: 'High-Density Life Safety Environment',
       challenge: 'Healthcare and industrial sites require meticulous maintenance documentation, but basement pump rooms and shielded shafts lack cell reception.',
-      solution: 'VigilAMC offline-capable mobile checklist allows technicians to record gauge levels, valve states, and photos locally with automatic cloud synchronization.',
+      solution: 'VigilAMC offline-capable mobile checklist allows technicians to record gauge levels, valve states, floor notes, and photos locally with automatic cloud synchronization.',
       results: [
-        'Uninterrupted offline logging in underground basements and pump rooms',
-        'Verifiable physical inspection proof with tamper-resistant QR codes',
+        'Uninterrupted offline logging in underground basements and pump rooms (in beta)',
+        'Verifiable physical inspection proof with GPS coordinates, floor notes, and photos',
         'Centralized operations dashboard with instant PDF export capabilities',
       ],
     },
@@ -138,8 +138,8 @@ export default function CustomersPage() {
             <p className="text-xs text-slate-500 font-semibold mt-1">BIS Maintenance Protocols</p>
           </div>
           <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
-            <div className="text-2xl sm:text-3xl font-black text-emerald-600">Digital QR</div>
-            <p className="text-xs text-slate-500 font-semibold mt-1">Timestamped Physical Tagging</p>
+            <div className="text-2xl sm:text-3xl font-black text-emerald-600">Digital Records</div>
+            <p className="text-xs text-slate-500 font-semibold mt-1">GPS &amp; Photo Verification</p>
           </div>
           <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
             <div className="text-2xl sm:text-3xl font-black text-[#023E8A]">Form-B Ready</div>
@@ -266,7 +266,7 @@ export default function CustomersPage() {
             </div>
           ))}
 
-          {/* Testimonial Placeholder Card */}
+          {/* Pilot Feedback Card */}
           <div className="p-8 rounded-2xl bg-amber-50/60 border border-amber-200 text-slate-800">
             <div className="flex items-center gap-2 mb-3">
               <span className="px-2.5 py-1 rounded-full bg-amber-200 text-amber-900 text-xs font-bold">
@@ -278,7 +278,7 @@ export default function CustomersPage() {
               Verified Customer Testimonials &bull; Coming Soon
             </h3>
             <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed italic">
-              [ADD VERIFIED CUSTOMER TESTIMONIAL] &bull; We are currently conducting pilot programs with licensed fire protection agencies. Formal case studies, contractor quotes, and facility reference letters will be published with explicit partner consent as pilot cohorts conclude.
+              We are currently conducting testing programs with licensed fire protection agencies. Formal case studies, contractor quotes, and facility reference letters will be published with explicit partner consent as testing cohorts conclude.
             </p>
           </div>
         </div>
@@ -297,14 +297,14 @@ export default function CustomersPage() {
         <div className="max-w-3xl mx-auto space-y-4">
           <h2 className="text-3xl font-extrabold">Ready to Modernize Your Fire AMC Operations?</h2>
           <p className="text-cyan-100 text-sm max-w-xl mx-auto leading-relaxed">
-            Join the free pilot cohort to test QR tagging, mobile checklists, and Form-B generation across up to 3 facilities.
+            Free for every agency during testing. Test asset registration, GPS-verified mobile forms, and Form-B generation with your team.
           </p>
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/#pilot-section"
               className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#0077B6] hover:bg-white hover:text-[#023E8A] font-bold text-sm rounded-xl transition-all shadow-lg"
             >
-              <span>Apply for Free Pilot</span>
+              <span>Join the free testing</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link

@@ -13,7 +13,8 @@ import {
   AlertCircle,
   Building2,
   Sparkles,
-  QrCode
+  Camera,
+  MapPin
 } from 'lucide-react';
 import { StatusBadge } from '@/components/StatusBadge';
 
@@ -31,7 +32,7 @@ export default function SampleReportPage() {
   const sampleEquipments = [
     {
       id: 'eq-1',
-      qrCode: 'VIGIL-SMP-0101',
+      assetTag: 'VIGIL-SMP-0101',
       type: 'ABC Dry Powder',
       capacity: '6 KG',
       location: 'Ground Floor Main Reception Lobby',
@@ -43,7 +44,7 @@ export default function SampleReportPage() {
     },
     {
       id: 'eq-2',
-      qrCode: 'VIGIL-SMP-0102',
+      assetTag: 'VIGIL-SMP-0102',
       type: 'Carbon Dioxide (CO2)',
       capacity: '4.5 KG',
       location: 'Ground Floor Server & UPS Room',
@@ -55,7 +56,7 @@ export default function SampleReportPage() {
     },
     {
       id: 'eq-3',
-      qrCode: 'VIGIL-SMP-0103',
+      assetTag: 'VIGIL-SMP-0103',
       type: 'Single Landing Valve Hydrant',
       capacity: '63mm Gunmetal',
       location: '1st Floor North Staircase Riser',
@@ -67,7 +68,7 @@ export default function SampleReportPage() {
     },
     {
       id: 'eq-4',
-      qrCode: 'VIGIL-SMP-0104',
+      assetTag: 'VIGIL-SMP-0104',
       type: 'First-Aid Hose Reel Drum',
       capacity: '30m x 20mm Rubber Hose',
       location: '1st Floor Lift Corridor',
@@ -79,7 +80,7 @@ export default function SampleReportPage() {
     },
     {
       id: 'eq-5',
-      qrCode: 'VIGIL-SMP-0105',
+      assetTag: 'VIGIL-SMP-0105',
       type: 'ABC Dry Powder',
       capacity: '6 KG',
       location: '2nd Floor Open Office Workstations',
@@ -91,7 +92,7 @@ export default function SampleReportPage() {
     },
     {
       id: 'eq-6',
-      qrCode: 'VIGIL-SMP-0106',
+      assetTag: 'VIGIL-SMP-0106',
       type: 'Water Mist / Clean Agent',
       capacity: '9 Litre',
       location: '2nd Floor Executive Boardroom',
@@ -103,7 +104,7 @@ export default function SampleReportPage() {
     },
     {
       id: 'eq-7',
-      qrCode: 'VIGIL-SMP-0107',
+      assetTag: 'VIGIL-SMP-0107',
       type: 'Addressable Fire Alarm Panel',
       capacity: '4 Loop / 508 Points',
       location: 'Building Security Operations Control Desk',
@@ -115,7 +116,7 @@ export default function SampleReportPage() {
     },
     {
       id: 'eq-8',
-      qrCode: 'VIGIL-SMP-0108',
+      assetTag: 'VIGIL-SMP-0108',
       type: 'Main Fire Pump & Jockey Pump',
       capacity: '2280 LPM @ 7.0 Bar',
       location: 'Basement Sub-level 2 Main Pump House',
@@ -183,7 +184,7 @@ export default function SampleReportPage() {
                 Licensed Fire Protection Agency &bull; Lic: DL/FIRE/LIC/SAMPLE-2026
               </p>
               <p className="text-[11px] text-slate-500 mt-1 max-w-md">
-                Plot 24, Okhla Industrial Area Phase III, New Delhi, Delhi NCR 110020 &bull; Phone: +91 98000 00000 &bull; Email: service@samplefireamc.in
+                Plot 24, Okhla Industrial Area Phase III, New Delhi 110020, India &bull; Phone: +91 98000 00000 &bull; Email: service@samplefireamc.in
               </p>
             </div>
 
@@ -216,7 +217,7 @@ export default function SampleReportPage() {
           <div>
             <span className="text-[10px] font-bold text-slate-400 uppercase block">Client / Premise:</span>
             <div className="font-bold text-sm text-slate-900">Apex Commercial Tower (Demo Building)</div>
-            <div className="text-slate-600">Plot 14, DLF Cyber City, Sector 24, Gurugram, Delhi NCR 122002</div>
+            <div className="text-slate-600">Plot 14, Commercial Tech Park, Sector 24, Sample City, India 110001</div>
             <div className="text-[11px] text-slate-500 mt-1">Occupancy: Commercial IT / Office (B+G+14 Floors)</div>
           </div>
 
@@ -266,7 +267,7 @@ export default function SampleReportPage() {
               <thead className="bg-slate-100 text-slate-700 uppercase text-[10px] font-bold border-b border-slate-300">
                 <tr>
                   <th className="py-2.5 px-3 border-r border-slate-300">S.No</th>
-                  <th className="py-2.5 px-3 border-r border-slate-300">QR Tag ID</th>
+                  <th className="py-2.5 px-3 border-r border-slate-300">Asset ID / Serial</th>
                   <th className="py-2.5 px-3 border-r border-slate-300">Equipment Type</th>
                   <th className="py-2.5 px-3 border-r border-slate-300">Premise Location</th>
                   <th className="py-2.5 px-3 border-r border-slate-300">Last Service</th>
@@ -279,7 +280,7 @@ export default function SampleReportPage() {
                   <tr key={eq.id} className="hover:bg-slate-50">
                     <td className="py-2.5 px-3 text-slate-500 border-r border-slate-200">{index + 1}</td>
                     <td className="py-2.5 px-3 font-mono font-bold text-slate-900 border-r border-slate-200">
-                      {eq.qrCode}
+                      {eq.assetTag}
                     </td>
                     <td className="py-2.5 px-3 font-semibold text-slate-800 border-r border-slate-200">
                       <div>{eq.type} ({eq.capacity})</div>
@@ -308,10 +309,10 @@ export default function SampleReportPage() {
         <div className="pt-6 border-t border-slate-300 flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 text-left">
             <div className="w-14 h-14 bg-white border border-slate-300 rounded-lg flex items-center justify-center p-1 text-slate-800 shrink-0">
-              <QrCode className="w-10 h-10 text-[#023E8A]" />
+              <FileCheck2 className="w-10 h-10 text-[#023E8A]" />
             </div>
             <div className="text-[10px] text-slate-500 space-y-0.5">
-              <span className="font-bold text-slate-800 uppercase block">Digital Verification Passport</span>
+              <span className="font-bold text-slate-800 uppercase block">Equipment Schedule with Locations &amp; Photos</span>
               <p>Sample report generated using VigilAMC compliance platform.</p>
               <p className="font-mono font-semibold text-slate-600">ID: FORM-B/2026/SMP-402</p>
             </div>
@@ -341,3 +342,4 @@ export default function SampleReportPage() {
     </div>
   );
 }
+

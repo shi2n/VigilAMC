@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 import {
   ShieldCheck,
   Building2,
-  Scan,
   Printer,
   Home,
   LogIn
@@ -80,26 +79,6 @@ export function Navigation() {
           >
             <Building2 className="w-3.5 h-3.5" />
             <span>Dashboard</span>
-          </Link>
-
-          <Link
-            href="/scan"
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-orange-500 text-slate-950 font-black text-xs shadow-md shadow-amber-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-          >
-            <Scan className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span>Technician Scan</span>
-          </Link>
-
-          <Link
-            href="/assets/print-qr"
-            className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-              pathname.startsWith('/assets/print-qr')
-                ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30 font-bold'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <Printer className="w-3.5 h-3.5" />
-            <span>QR Labels</span>
           </Link>
 
           <Link

@@ -8,8 +8,23 @@ const nextConfig = {
   async redirects() {
     return [
       {
-        source: '/pricing',
-        destination: '/contact',
+        source: '/technician',
+        destination: '/',
+        permanent: false,
+      },
+      {
+        source: '/scan',
+        destination: '/',
+        permanent: false,
+      },
+      {
+        source: '/scan/:path*',
+        destination: '/',
+        permanent: false,
+      },
+      {
+        source: '/assets/print-qr',
+        destination: '/assets',
         permanent: false,
       },
     ];

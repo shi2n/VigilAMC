@@ -198,7 +198,7 @@ export default function LoginPage() {
             <img
               src="/logo.jpg"
               alt="VigilAMC"
-              className="h-16 w-auto object-contain mx-auto mix-blend-multiply"
+              className="h-16 w-auto object-contain mx-auto rounded-2xl shadow-sm"
             />
           </Link>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">

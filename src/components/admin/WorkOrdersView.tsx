@@ -133,24 +133,26 @@ export function WorkOrdersView({ showToast, onOpenImport }: WorkOrdersViewProps)
   return (
     <div className="space-y-6">
       {/* Top Filter & Action Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
-        <div className="flex items-center gap-2.5 flex-1">
-          <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#DCE7F2] shadow-sm dark:bg-slate-900/60 dark:border-slate-800">
+        <div className="flex items-center gap-2.5 flex-1 flex-wrap">
+          <div className="relative flex-1 min-w-[220px] max-w-sm">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search work orders..."
-              className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              className="w-full pl-9 pr-3 py-2 bg-white border border-[#DCE7F2] rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#007DB8] shadow-sm dark:bg-slate-950 dark:border-slate-800 dark:text-white dark:placeholder-slate-500"
             />
           </div>
 
-          <div className="flex items-center gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs">
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs dark:bg-slate-950 dark:border-slate-800">
             <button
               onClick={() => setStatusFilter('ALL')}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                statusFilter === 'ALL' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'
+                statusFilter === 'ALL'
+                  ? 'bg-[#007DB8] text-white shadow-sm dark:bg-amber-500 dark:text-slate-950'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
               All ({workOrders.length})
@@ -158,7 +160,9 @@ export function WorkOrdersView({ showToast, onOpenImport }: WorkOrdersViewProps)
             <button
               onClick={() => setStatusFilter('OPEN')}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                statusFilter === 'OPEN' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'
+                statusFilter === 'OPEN'
+                  ? 'bg-amber-500 text-white shadow-sm dark:bg-amber-500 dark:text-slate-950'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
               Open ({workOrders.filter((w) => w.status === 'OPEN').length})
@@ -166,7 +170,9 @@ export function WorkOrdersView({ showToast, onOpenImport }: WorkOrdersViewProps)
             <button
               onClick={() => setStatusFilter('IN_PROGRESS')}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                statusFilter === 'IN_PROGRESS' ? 'bg-cyan-500 text-slate-950' : 'text-slate-400 hover:text-white'
+                statusFilter === 'IN_PROGRESS'
+                  ? 'bg-sky-600 text-white shadow-sm dark:bg-cyan-500 dark:text-slate-950'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
               In Progress ({workOrders.filter((w) => w.status === 'IN_PROGRESS').length})
@@ -174,7 +180,9 @@ export function WorkOrdersView({ showToast, onOpenImport }: WorkOrdersViewProps)
             <button
               onClick={() => setStatusFilter('COMPLETED')}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                statusFilter === 'COMPLETED' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'
+                statusFilter === 'COMPLETED'
+                  ? 'bg-emerald-600 text-white shadow-sm dark:bg-emerald-500 dark:text-slate-950'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
               Completed ({workOrders.filter((w) => w.status === 'COMPLETED').length})
@@ -186,7 +194,7 @@ export function WorkOrdersView({ showToast, onOpenImport }: WorkOrdersViewProps)
           {onOpenImport && (
             <button
               onClick={onOpenImport}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[#007DB8] bg-[#EAF6FF] hover:bg-[#D5EEFF] border border-[#007DB8]/30 transition-all dark:text-amber-300 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 dark:border-amber-500/30"
               title="Import Work Orders from Excel (.xlsx)"
             >
               <span>Import Orders</span>
@@ -195,15 +203,15 @@ export function WorkOrdersView({ showToast, onOpenImport }: WorkOrdersViewProps)
 
           <button
             onClick={fetchWorkOrders}
-            className="p-2 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white transition-colors"
+            className="p-2 rounded-xl bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors dark:bg-slate-950 dark:border-slate-800 dark:hover:border-slate-700 dark:text-slate-400 dark:hover:text-white"
             title="Refresh Orders"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#007DB8]' : ''}`} />
           </button>
 
           <button
             onClick={() => setCreateModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 shadow-md transition-all active:scale-[0.98]"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#007DB8] to-[#073F8F] hover:from-[#006494] hover:to-[#011F48] shadow-md transition-all active:scale-[0.98]"
           >
             <Plus className="w-4 h-4" />
             <span>Create Work Order</span>
@@ -212,57 +220,57 @@ export function WorkOrdersView({ showToast, onOpenImport }: WorkOrdersViewProps)
       </div>
 
       {/* Orders List */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+      <div className="bg-white border border-[#DCE7F2] rounded-2xl overflow-hidden shadow-sm dark:bg-slate-900/80 dark:border-slate-800 dark:shadow-xl">
         {loading && workOrders.length === 0 ? (
-          <div className="p-12 text-center text-slate-400 space-y-3">
-            <RefreshCw className="w-8 h-8 animate-spin text-amber-500 mx-auto" />
+          <div className="p-12 text-center text-slate-500 space-y-3 dark:text-slate-400">
+            <RefreshCw className="w-8 h-8 animate-spin text-[#007DB8] mx-auto" />
             <p className="text-sm font-semibold">Loading work orders...</p>
           </div>
         ) : filteredOrders.length === 0 ? (
           <div className="p-12 text-center space-y-3">
-            <Wrench className="w-10 h-10 text-slate-600 mx-auto" />
-            <h3 className="text-base font-bold text-white">No Work Orders</h3>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+            <Wrench className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto" />
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">No Work Orders</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
               {search || statusFilter !== 'ALL'
                 ? 'No work orders match your search filters.'
                 : 'Dispatch defect repairs and maintenance tasks to your active technicians.'}
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-800/60">
+          <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
             {filteredOrders.map((wo) => (
-              <div key={wo.id} className="p-4 sm:p-5 hover:bg-slate-800/30 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div key={wo.id} className="p-4 sm:p-5 hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1.5 flex-1">
                   <div className="flex items-center gap-2.5">
                     <span
                       className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
                         wo.priority === 'URGENT'
-                          ? 'bg-red-500/20 text-red-400 border border-red-500/40'
+                          ? 'bg-rose-100 text-rose-800 border border-rose-200 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/40'
                           : wo.priority === 'HIGH'
-                          ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
-                          : 'bg-slate-800 text-slate-300'
+                          ? 'bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/40'
+                          : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
                       }`}
                     >
                       {wo.priority}
                     </span>
-                    <h4 className="text-sm font-bold text-white">{wo.title}</h4>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">{wo.title}</h4>
                   </div>
-                  <p className="text-xs text-slate-400 leading-relaxed">{wo.description}</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{wo.description}</p>
                   <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 pt-1">
-                    <span className="flex items-center gap-1 text-slate-400">
-                      <Building2 className="w-3.5 h-3.5 text-slate-500" />
+                    <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
+                      <Building2 className="w-3.5 h-3.5 text-slate-400" />
                       {wo.building?.name || 'Facility'}
                     </span>
                     <span>&bull;</span>
-                    <span className="flex items-center gap-1 text-slate-400">
-                      <User className="w-3.5 h-3.5 text-cyan-400" />
-                      Assigned: <strong className="text-slate-200">{wo.assignedTo?.fullName || 'Unassigned'}</strong>
+                    <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
+                      <User className="w-3.5 h-3.5 text-[#007DB8]" />
+                      Assigned: <strong className="text-slate-800 dark:text-slate-200 font-semibold">{wo.assignedTo?.fullName || 'Unassigned'}</strong>
                     </span>
                     {wo.dueDate && (
                       <>
                         <span>&bull;</span>
-                        <span className="flex items-center gap-1 text-slate-400">
-                          <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                        <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
+                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
                           Due: {new Date(wo.dueDate).toLocaleDateString('en-IN')}
                         </span>
                       </>
@@ -274,7 +282,7 @@ export function WorkOrdersView({ showToast, onOpenImport }: WorkOrdersViewProps)
                   <select
                     value={wo.status}
                     onChange={(e) => handleUpdateStatus(wo.id, e.target.value)}
-                    className="px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs font-bold text-slate-300 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="px-2.5 py-1.5 rounded-lg bg-white border border-[#DCE7F2] text-xs font-bold text-slate-700 shadow-sm focus:outline-none focus:border-[#007DB8] dark:bg-slate-950 dark:border-slate-800 dark:text-slate-300"
                   >
                     <option value="OPEN">OPEN</option>
                     <option value="IN_PROGRESS">IN_PROGRESS</option>
@@ -290,50 +298,50 @@ export function WorkOrdersView({ showToast, onOpenImport }: WorkOrdersViewProps)
 
       {/* Create Work Order Modal */}
       {createModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-[#DCE7F2] rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 dark:bg-slate-900 dark:border-slate-800">
+            <div className="flex items-center justify-between pb-3 border-b border-[#DCE7F2] dark:border-slate-800">
               <div className="flex items-center gap-2">
-                <Wrench className="w-5 h-5 text-amber-400" />
-                <h3 className="text-base font-bold text-white">Create Work Order</h3>
+                <Wrench className="w-5 h-5 text-[#007DB8] dark:text-amber-400" />
+                <h3 className="text-base font-bold text-[#023E8A] dark:text-white">Create Work Order</h3>
               </div>
-              <button onClick={() => setCreateModalOpen(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setCreateModalOpen(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleCreateWorkOrder} className="space-y-3.5 text-xs">
               <div className="space-y-1">
-                <label className="text-slate-300 font-bold">Title *</label>
+                <label className="text-slate-700 dark:text-slate-300 font-bold">Title *</label>
                 <input
                   type="text"
                   required
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   placeholder="e.g. Hydro-test pressure check on 3rd floor riser"
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  className="w-full px-3 py-2 rounded-xl bg-white border border-[#DCE7F2] text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#007DB8] shadow-sm dark:bg-slate-950 dark:border-slate-800 dark:text-white dark:placeholder-slate-600"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-slate-300 font-bold">Description / Work Scope</label>
+                <label className="text-slate-700 dark:text-slate-300 font-bold">Description / Work Scope</label>
                 <textarea
                   rows={2}
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   placeholder="Details of defects, corrective maintenance required..."
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  className="w-full px-3 py-2 rounded-xl bg-white border border-[#DCE7F2] text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#007DB8] shadow-sm dark:bg-slate-950 dark:border-slate-800 dark:text-white dark:placeholder-slate-600"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-slate-300 font-bold">Target Facility *</label>
+                  <label className="text-slate-700 dark:text-slate-300 font-bold">Target Facility *</label>
                   <select
                     required
                     value={form.buildingId}
                     onChange={(e) => setForm({ ...form, buildingId: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DCE7F2] text-slate-900 focus:outline-none focus:border-[#007DB8] shadow-sm dark:bg-slate-950 dark:border-slate-800 dark:text-white"
                   >
                     <option value="">Select Facility...</option>
                     {buildings.map((b) => (
@@ -345,11 +353,11 @@ export function WorkOrdersView({ showToast, onOpenImport }: WorkOrdersViewProps)
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-slate-300 font-bold">Assign Technician</label>
+                  <label className="text-slate-700 dark:text-slate-300 font-bold">Assign Technician</label>
                   <select
                     value={form.assignedToId}
                     onChange={(e) => setForm({ ...form, assignedToId: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DCE7F2] text-slate-900 focus:outline-none focus:border-[#007DB8] shadow-sm dark:bg-slate-950 dark:border-slate-800 dark:text-white"
                   >
                     <option value="">Unassigned</option>
                     {technicians.map((t) => (
@@ -363,11 +371,11 @@ export function WorkOrdersView({ showToast, onOpenImport }: WorkOrdersViewProps)
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-slate-300 font-bold">Priority</label>
+                  <label className="text-slate-700 dark:text-slate-300 font-bold">Priority</label>
                   <select
                     value={form.priority}
                     onChange={(e) => setForm({ ...form, priority: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DCE7F2] text-slate-900 focus:outline-none focus:border-[#007DB8] shadow-sm dark:bg-slate-950 dark:border-slate-800 dark:text-white"
                   >
                     <option value="LOW">LOW</option>
                     <option value="MEDIUM">MEDIUM</option>
@@ -377,28 +385,28 @@ export function WorkOrdersView({ showToast, onOpenImport }: WorkOrdersViewProps)
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-slate-300 font-bold">Due Date</label>
+                  <label className="text-slate-700 dark:text-slate-300 font-bold">Due Date</label>
                   <input
                     type="date"
                     value={form.dueDate}
                     onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DCE7F2] text-slate-900 focus:outline-none focus:border-[#007DB8] shadow-sm dark:bg-slate-950 dark:border-slate-800 dark:text-white"
                   />
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-slate-800 flex justify-end gap-2">
+              <div className="pt-3 border-t border-[#DCE7F2] dark:border-slate-800 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setCreateModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white font-bold"
+                  className="px-4 py-2 rounded-xl text-slate-600 hover:text-slate-900 font-bold dark:text-slate-400 dark:hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2 rounded-xl font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 disabled:opacity-50"
+                  className="px-5 py-2 rounded-xl font-bold bg-gradient-to-r from-[#007DB8] to-[#073F8F] hover:from-[#006494] hover:to-[#011F48] text-white disabled:opacity-50 shadow-md"
                 >
                   {submitting ? 'Creating...' : 'Create & Assign'}
                 </button>

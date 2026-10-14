@@ -307,26 +307,26 @@ export function TechnicianManagement({
       />
 
       {/* 2. Action & Filter Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
-        <div className="flex items-center gap-2.5 flex-1">
-          <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#DCE7F2] shadow-sm dark:bg-slate-900/60 dark:border-slate-800">
+        <div className="flex items-center gap-2.5 flex-1 flex-wrap">
+          <div className="relative flex-1 min-w-[220px] max-w-sm">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by name, email, phone, ID..."
-              className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              className="w-full pl-9 pr-3 py-2 bg-white border border-[#DCE7F2] rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#007DB8] shadow-sm dark:bg-slate-950 dark:border-slate-800 dark:text-white dark:placeholder-slate-500"
             />
           </div>
 
-          <div className="flex items-center gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs">
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs dark:bg-slate-950 dark:border-slate-800">
             <button
               onClick={() => setStatusFilter('ALL')}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
                 statusFilter === 'ALL'
-                  ? 'bg-amber-500 text-slate-950'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-[#007DB8] text-white shadow-sm dark:bg-amber-500 dark:text-slate-950'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
               All ({technicians.length})
@@ -335,8 +335,8 @@ export function TechnicianManagement({
               onClick={() => setStatusFilter('ACTIVE')}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
                 statusFilter === 'ACTIVE'
-                  ? 'bg-emerald-500 text-slate-950'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-emerald-600 text-white shadow-sm dark:bg-emerald-500 dark:text-slate-950'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
               Active ({technicians.filter((t) => t.status === 'ACTIVE').length})
@@ -345,8 +345,8 @@ export function TechnicianManagement({
               onClick={() => setStatusFilter('INACTIVE')}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
                 statusFilter === 'INACTIVE'
-                  ? 'bg-slate-700 text-white'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-slate-700 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
               Inactive ({technicians.filter((t) => t.status === 'INACTIVE').length})
@@ -358,7 +358,7 @@ export function TechnicianManagement({
           {onOpenImport && (
             <button
               onClick={onOpenImport}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[#007DB8] bg-[#EAF6FF] hover:bg-[#D5EEFF] border border-[#007DB8]/30 transition-all dark:text-amber-300 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 dark:border-amber-500/30"
               title="Import Technicians from Excel (.xlsx)"
             >
               <span>Import Technicians</span>
@@ -367,10 +367,10 @@ export function TechnicianManagement({
 
           <button
             onClick={fetchTechnicians}
-            className="p-2 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white transition-colors"
+            className="p-2 rounded-xl bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors dark:bg-slate-950 dark:border-slate-800 dark:hover:border-slate-700 dark:text-slate-400 dark:hover:text-white"
             title="Refresh List"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#007DB8]' : ''}`} />
           </button>
 
           <button
@@ -378,7 +378,7 @@ export function TechnicianManagement({
               setFormError(null);
               setAddModalOpen(true);
             }}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 shadow-md transition-all active:scale-[0.98]"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#007DB8] to-[#073F8F] hover:from-[#006494] hover:to-[#011F48] shadow-md transition-all active:scale-[0.98]"
           >
             <Plus className="w-4 h-4" />
             <span>Add Technician</span>
@@ -387,20 +387,20 @@ export function TechnicianManagement({
       </div>
 
       {/* 3. Technicians Table */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+      <div className="bg-white border border-[#DCE7F2] rounded-2xl overflow-hidden shadow-sm dark:bg-slate-900/80 dark:border-slate-800 dark:shadow-xl">
         {loading && technicians.length === 0 ? (
-          <div className="p-12 text-center text-slate-400 space-y-3">
-            <RefreshCw className="w-8 h-8 animate-spin text-amber-500 mx-auto" />
+          <div className="p-12 text-center text-slate-500 space-y-3 dark:text-slate-400">
+            <RefreshCw className="w-8 h-8 animate-spin text-[#007DB8] mx-auto" />
             <p className="text-sm font-semibold">Loading technician records...</p>
           </div>
         ) : filteredTechnicians.length === 0 ? (
           <div className="p-12 text-center space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-slate-800 text-slate-500 flex items-center justify-center mx-auto">
+            <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto dark:bg-slate-800 dark:text-slate-500">
               <Users className="w-6 h-6" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-base font-bold text-white">No Technicians Found</h3>
-              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">No Technicians Found</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
                 {search || statusFilter !== 'ALL'
                   ? 'No technicians match your search filters.'
                   : 'Create your first field technician account to assign inspections, work orders, and facilities.'}
@@ -409,7 +409,7 @@ export function TechnicianManagement({
             {!search && statusFilter === 'ALL' && (
               <button
                 onClick={() => setAddModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#007DB8] to-[#073F8F] hover:from-[#006494] hover:to-[#011F48] transition-all shadow-md"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Your First Technician</span>
@@ -420,7 +420,7 @@ export function TechnicianManagement({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-slate-800 bg-slate-950/70 text-slate-400 uppercase tracking-wider text-[10px] font-bold">
+                <tr className="border-b border-[#DCE7F2] bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] font-bold dark:border-slate-800 dark:bg-slate-950/70 dark:text-slate-400">
                   <th className="py-3.5 px-4">Technician</th>
                   <th className="py-3.5 px-4">Contact</th>
                   <th className="py-3.5 px-4">Status</th>
@@ -430,17 +430,17 @@ export function TechnicianManagement({
                   <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 text-slate-300">
+              <tbody className="divide-y divide-slate-100 text-slate-700 dark:divide-slate-800/60 dark:text-slate-300">
                 {filteredTechnicians.map((tech) => (
-                  <tr key={tech.id} className="hover:bg-slate-800/40 transition-colors group">
+                  <tr key={tech.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors group">
                     {/* Name & ID */}
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#0077B6]/30 to-[#023E8A]/40 text-cyan-300 border border-cyan-500/20 flex items-center justify-center font-bold text-xs shrink-0">
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#007DB8]/20 to-[#023E8A]/30 text-[#007DB8] border border-[#007DB8]/30 flex items-center justify-center font-bold text-xs shrink-0 dark:from-[#0077B6]/30 dark:to-[#023E8A]/40 dark:text-cyan-300 dark:border-cyan-500/20">
                           {tech.fullName.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <div className="font-bold text-white group-hover:text-amber-400 transition-colors">
+                          <div className="font-bold text-slate-900 group-hover:text-[#007DB8] transition-colors dark:text-white dark:group-hover:text-amber-400">
                             {tech.fullName}
                           </div>
                           <div className="text-[11px] text-slate-500">
@@ -453,7 +453,7 @@ export function TechnicianManagement({
                     {/* Contact */}
                     <td className="py-3.5 px-4">
                       <div className="space-y-0.5">
-                        <div className="text-slate-300 font-medium">{tech.email}</div>
+                        <div className="text-slate-700 dark:text-slate-300 font-medium">{tech.email}</div>
                         <div className="text-[11px] text-slate-500">{tech.phone}</div>
                       </div>
                     </td>
@@ -461,13 +461,13 @@ export function TechnicianManagement({
                     {/* Status */}
                     <td className="py-3.5 px-4">
                       {tech.status === 'ACTIVE' ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-bold uppercase tracking-wider dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                           Active
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700 text-[10px] font-bold uppercase tracking-wider">
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-bold uppercase tracking-wider dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                           Inactive
                         </span>
                       )}
@@ -480,34 +480,34 @@ export function TechnicianManagement({
                           {tech.assignedBuildings.slice(0, 2).map((b: any) => (
                             <span
                               key={b.id}
-                              className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 text-[10px] font-medium truncate max-w-[120px]"
+                              className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10px] font-medium truncate max-w-[120px] dark:bg-slate-800 dark:text-slate-300"
                               title={b.name}
                             >
                               {b.name}
                             </span>
                           ))}
                           {tech.assignedBuildings.length > 2 && (
-                            <span className="px-1.5 py-0.5 rounded-md bg-slate-800 text-cyan-400 text-[10px] font-bold">
+                            <span className="px-1.5 py-0.5 rounded-md bg-[#EAF6FF] text-[#007DB8] text-[10px] font-bold dark:bg-slate-800 dark:text-cyan-400">
                               +{tech.assignedBuildings.length - 2} more
                             </span>
                           )}
                         </div>
                       ) : (
-                        <span className="text-[11px] text-slate-500 italic">All Agency Sites</span>
+                        <span className="text-[11px] text-slate-400 italic">All Agency Sites</span>
                       )}
                     </td>
 
                     {/* Completed Jobs */}
-                    <td className="py-3.5 px-4 font-bold text-slate-200 tabular-nums">
+                    <td className="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-200 tabular-nums">
                       {tech.completedJobs}
                     </td>
 
                     {/* Last Login */}
-                    <td className="py-3.5 px-4 text-slate-400 text-[11px]">
+                    <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 text-[11px]">
                       {tech.lastLoginAt ? (
                         <span>{new Date(tech.lastLoginAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                       ) : (
-                        <span className="text-slate-600">Never</span>
+                        <span className="text-slate-400">Never</span>
                       )}
                     </td>
 
@@ -517,7 +517,7 @@ export function TechnicianManagement({
                         <button
                           onClick={() => handleOpenDetails(tech)}
                           title="View Profile & Activity"
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 dark:hover:text-white"
                         >
                           <Eye className="w-3.5 h-3.5" />
                         </button>
@@ -525,7 +525,7 @@ export function TechnicianManagement({
                         <button
                           onClick={() => openEditModal(tech)}
                           title="Edit Details / Assign Buildings"
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 dark:hover:text-white"
                         >
                           <Edit className="w-3.5 h-3.5" />
                         </button>
@@ -537,7 +537,7 @@ export function TechnicianManagement({
                             setResetError(null);
                           }}
                           title="Reset Password"
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 transition-colors"
+                          className="p-1.5 rounded-lg bg-[#EAF6FF] hover:bg-[#D5EEFF] text-[#007DB8] transition-colors dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-amber-400 dark:hover:text-amber-300"
                         >
                           <KeyRound className="w-3.5 h-3.5" />
                         </button>
@@ -547,8 +547,8 @@ export function TechnicianManagement({
                           title={tech.status === 'ACTIVE' ? 'Deactivate Technician' : 'Activate Technician'}
                           className={`p-1.5 rounded-lg transition-colors ${
                             tech.status === 'ACTIVE'
-                              ? 'bg-amber-950/40 hover:bg-amber-900/60 text-amber-400'
-                              : 'bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-400'
+                              ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 dark:text-amber-400'
+                              : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:text-emerald-400'
                           }`}
                         >
                           {tech.status === 'ACTIVE' ? <UserX className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
@@ -557,7 +557,7 @@ export function TechnicianManagement({
                         <button
                           onClick={() => setDeleteConfirmTech(tech)}
                           title="Remove Account"
-                          className="p-1.5 rounded-lg bg-red-950/40 hover:bg-red-900/60 text-red-400 hover:text-red-300 transition-colors"
+                          className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors dark:bg-red-950/40 dark:hover:bg-red-900/60 dark:text-red-400"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

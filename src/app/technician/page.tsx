@@ -4,7 +4,8 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  Scan,
+  MapPin,
+  Camera,
   Building2,
   CheckCircle2,
   AlertTriangle,
@@ -18,7 +19,6 @@ import {
   Search,
   Check,
   Phone,
-  MapPin,
   Calendar,
   Layers,
   Wrench,
@@ -165,7 +165,7 @@ export default function TechnicianPortalPage() {
 
       {/* Main Body */}
       <main className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 space-y-6">
-        {/* Welcome Banner & Quick Scan */}
+        {/* Welcome Banner & Quick Action */}
         <div className="bg-gradient-to-br from-[#0077B6] to-[#023E8A] rounded-2xl p-5 sm:p-6 text-white shadow-lg relative overflow-hidden">
           <div className="relative z-10 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -177,7 +177,7 @@ export default function TechnicianPortalPage() {
                   Welcome back, {profile?.fullName?.split(' ')[0] || 'Technician'}
                 </h1>
                 <p className="text-xs sm:text-sm text-cyan-100 mt-0.5">
-                  Scan equipment QR stickers to record maintenance checks, upload evidence, or update service status.
+                  Record maintenance checks with asset details, floor & location notes, GPS position, and photo evidence.
                 </p>
               </div>
 
@@ -185,12 +185,12 @@ export default function TechnicianPortalPage() {
                 href="/scan"
                 className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-white text-[#023E8A] font-bold text-sm shadow-md hover:bg-slate-100 transition-all active:scale-[0.98] shrink-0"
               >
-                <Scan className="w-4 h-4 text-[#0077B6]" />
-                <span>Launch QR Scanner</span>
+                <MapPin className="w-4 h-4 text-[#0077B6]" />
+                <span>New Inspection Record</span>
               </Link>
             </div>
 
-            {/* Quick QR code entry */}
+            {/* Quick Asset Search */}
             <form onSubmit={handleQuickScan} className="pt-2 flex gap-2">
               <div className="relative flex-1">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -198,7 +198,7 @@ export default function TechnicianPortalPage() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Enter QR Code tag (e.g. EXT-01, HYD-04)..."
+                  placeholder="Enter Asset ID / Serial (e.g. EXT-01, HYD-04)..."
                   className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-cyan-100/60 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-cyan-300 backdrop-blur-sm"
                 />
               </div>
@@ -412,8 +412,8 @@ export default function TechnicianPortalPage() {
                           href={`/scan/${wo.equipment.qrCode}`}
                           className="px-3.5 py-1.5 rounded-lg bg-[#0077B6] hover:bg-[#023E8A] text-white text-xs font-bold flex items-center gap-1.5"
                         >
-                          <Scan className="w-3.5 h-3.5" />
-                          <span>Scan & Service</span>
+                          <MapPin className="w-3.5 h-3.5" />
+                          <span>Record Service</span>
                         </Link>
                       ) : (
                         <span className="px-2.5 py-1 rounded text-xs font-semibold bg-slate-100 text-slate-600">
@@ -464,7 +464,7 @@ export default function TechnicianPortalPage() {
                 <CheckCircle2 className="w-10 h-10 text-slate-300 mx-auto" />
                 <h3 className="text-base font-bold text-slate-800">No Services Logged Yet</h3>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                  When you scan assets and record service actions, your completed verification entries will appear here for audit reference.
+                  When you record asset service actions with GPS position and photo evidence, your completed verification entries will appear here for audit reference.
                 </p>
               </div>
             ) : (

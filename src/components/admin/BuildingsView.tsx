@@ -8,7 +8,7 @@ import {
   ChevronDown,
   ChevronRight,
   FileText,
-  Scan,
+  MapPin,
   Edit,
   Trash2,
   FileSpreadsheet,
@@ -49,63 +49,73 @@ export function BuildingsView({
   onOpenImport,
 }: BuildingsViewProps) {
   return (
-    <div className="space-y-6 text-slate-100">
+    <div className="space-y-6">
       {/* 4 Status Metrics Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-        <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+        <div className="p-4 rounded-2xl bg-white border border-[#DCE7F2] shadow-sm space-y-1 dark:bg-slate-900/80 dark:border-slate-800">
+          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
             Total Buildings
           </span>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-black text-white">{summary.totalBuildings}</span>
-            <span className="text-xs text-slate-400 font-medium">({summary.totalEquipments} assets)</span>
+            <span className="text-2xl sm:text-3xl font-black text-[#023E8A] dark:text-white">
+              {summary.totalBuildings}
+            </span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              ({summary.totalEquipments} assets)
+            </span>
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/30 space-y-1">
-          <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 shadow-sm space-y-1 dark:bg-emerald-950/20 dark:border-emerald-500/30">
+          <span className="text-[11px] font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             All Current
           </span>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-black text-emerald-400">{summary.compliantBuildings}</span>
-            <span className="text-xs text-emerald-300/80 font-medium">100% Compliant</span>
+            <span className="text-2xl sm:text-3xl font-black text-emerald-900 dark:text-emerald-400">
+              {summary.compliantBuildings}
+            </span>
+            <span className="text-xs text-emerald-700/80 dark:text-emerald-300/80 font-medium">100% Compliant</span>
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-amber-950/20 border border-amber-500/30 space-y-1">
-          <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+        <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 shadow-sm space-y-1 dark:bg-amber-950/20 dark:border-amber-500/30">
+          <span className="text-[11px] font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-amber-500"></span>
             Due Soon (&lt;30d)
           </span>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-black text-amber-400">{summary.dueSoonBuildings}</span>
-            <span className="text-xs text-amber-300/80 font-medium">Action Pending</span>
+            <span className="text-2xl sm:text-3xl font-black text-amber-900 dark:text-amber-400">
+              {summary.dueSoonBuildings}
+            </span>
+            <span className="text-xs text-amber-700/80 dark:text-amber-300/80 font-medium">Action Pending</span>
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-red-950/20 border border-red-500/30 space-y-1">
-          <span className="text-[11px] font-bold text-red-400 uppercase tracking-wider flex items-center gap-1.5">
+        <div className="p-4 rounded-2xl bg-rose-50/70 border border-rose-200 shadow-sm space-y-1 dark:bg-red-950/20 dark:border-red-500/30">
+          <span className="text-[11px] font-bold text-rose-800 dark:text-red-400 uppercase tracking-wider flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
             Overdue
           </span>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-black text-red-400">{summary.overdueBuildings}</span>
-            <span className="text-xs text-red-300/80 font-medium">Non-Compliant</span>
+            <span className="text-2xl sm:text-3xl font-black text-rose-900 dark:text-red-400">
+              {summary.overdueBuildings}
+            </span>
+            <span className="text-xs text-rose-700/80 dark:text-red-300/80 font-medium">Non-Compliant</span>
           </div>
         </div>
       </div>
 
       {/* Buildings List Card */}
-      <div className="tactile-card rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl overflow-hidden">
+      <div className="rounded-2xl bg-white border border-[#DCE7F2] shadow-sm overflow-hidden dark:bg-slate-900/90 dark:border-slate-800 dark:shadow-xl">
         {/* List Header */}
-        <div className="p-4 sm:p-5 border-b border-slate-800 bg-slate-950/80 flex items-center justify-between flex-wrap gap-3">
+        <div className="p-4 sm:p-5 border-b border-[#DCE7F2] bg-slate-50/80 flex items-center justify-between flex-wrap gap-3 dark:border-slate-800 dark:bg-slate-950/80">
           <div className="flex items-center gap-2.5">
-            <Building2 className="w-5 h-5 text-amber-400" />
-            <h2 className="text-sm sm:text-base font-bold text-white tracking-tight">
+            <Building2 className="w-5 h-5 text-[#007DB8] dark:text-amber-400" />
+            <h2 className="text-sm sm:text-base font-bold text-[#023E8A] dark:text-white tracking-tight">
               Managed Buildings &amp; Societies
             </h2>
-            <span className="px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 text-xs font-semibold">
+            <span className="px-2.5 py-0.5 rounded-full bg-[#EAF6FF] text-[#007DB8] border border-[#007DB8]/30 text-xs font-semibold dark:bg-slate-800 dark:text-slate-300">
               {buildings.length} Registered
             </span>
           </div>
@@ -114,28 +124,28 @@ export function BuildingsView({
             {onOpenImport && (
               <button
                 onClick={onOpenImport}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold transition-all shadow-sm"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#EAF6FF] hover:bg-[#D5EEFF] text-[#007DB8] border border-[#007DB8]/30 text-xs font-bold transition-all shadow-sm dark:bg-amber-500/10 dark:hover:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/30"
                 title="Import Buildings from Excel (.xlsx)"
               >
-                <FileSpreadsheet className="w-4 h-4 text-amber-400" />
+                <FileSpreadsheet className="w-4 h-4" />
                 <span>Import Buildings</span>
               </button>
             )}
 
             <button
               onClick={onOpenExport}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-all shadow-sm"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100/80 text-emerald-700 border border-emerald-300 text-xs font-bold transition-all shadow-sm dark:bg-emerald-600/20 dark:hover:bg-emerald-600/30 dark:text-emerald-300 dark:border-emerald-500/30"
               title="Export Buildings to Excel (.xlsx)"
             >
-              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+              <FileSpreadsheet className="w-4 h-4" />
               <span>Export Excel</span>
             </button>
 
             <button
               onClick={onAddBuilding}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black shadow hover:scale-[1.02] active:scale-[0.98] transition-all"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#007DB8] to-[#073F8F] hover:from-[#006494] hover:to-[#011F48] text-white text-xs font-bold shadow-md hover:shadow-lg transition-all"
             >
-              <Plus className="w-4 h-4 stroke-[3]" />
+              <Plus className="w-4 h-4 stroke-[2.5]" />
               <span>Add Client &amp; Building</span>
             </button>
           </div>
@@ -143,49 +153,55 @@ export function BuildingsView({
 
         {/* Building List Rows */}
         {buildings.length === 0 ? (
-          <div className="p-12 text-center text-slate-400 space-y-3">
-            <Building2 className="w-12 h-12 text-slate-600 mx-auto" />
-            <p className="text-sm font-bold text-white">No buildings registered yet</p>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+          <div className="p-12 text-center text-slate-500 dark:text-slate-400 space-y-3">
+            <Building2 className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto" />
+            <p className="text-sm font-bold text-slate-900 dark:text-white">No buildings registered yet</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
               Add your first building society to start tracking asset lifecycles and Form-B filings.
             </p>
             <button
               onClick={onAddBuilding}
-              className="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs"
+              className="px-4 py-2 rounded-xl bg-[#007DB8] hover:bg-[#073F8F] text-white font-bold text-xs shadow"
             >
               + Register First Building
             </button>
           </div>
         ) : (
-          <div className="divide-y divide-slate-800/60">
+          <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
             {buildings.map((b: any) => {
               const isExpanded = expandedBuildingId === b.id;
 
               return (
-                <div key={b.id} className="transition-colors hover:bg-slate-850/40">
+                <div key={b.id} className="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-850/40">
                   {/* Building Header Row */}
                   <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-start gap-3">
                       <button
                         onClick={() => setExpandedBuildingId(isExpanded ? null : b.id)}
-                        className="p-1 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-white mt-0.5 transition-colors shrink-0"
+                        className="p-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 mt-0.5 transition-colors shrink-0 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-400 dark:hover:text-white"
                         aria-label="Toggle building equipment"
                       >
-                        {isExpanded ? <ChevronDown className="w-5 h-5 text-amber-400" /> : <ChevronRight className="w-5 h-5" />}
+                        {isExpanded ? (
+                          <ChevronDown className="w-5 h-5 text-[#007DB8] dark:text-amber-400" />
+                        ) : (
+                          <ChevronRight className="w-5 h-5" />
+                        )}
                       </button>
 
                       <div className="space-y-1">
                         <div className="flex items-center gap-2.5 flex-wrap">
-                          <span className="text-base font-bold text-white tracking-tight">{b.name}</span>
+                          <span className="text-base font-bold text-slate-900 dark:text-white tracking-tight">
+                            {b.name}
+                          </span>
 
                           {/* Status Badge */}
                           <span
                             className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
                               b.overallStatus === 'COMPLIANT'
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30'
                                 : b.overallStatus === 'DUE_SOON'
-                                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                                : 'bg-red-500/10 text-red-400 border border-red-500/30'
+                                ? 'bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30'
+                                : 'bg-rose-100 text-rose-800 border border-rose-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/30'
                             }`}
                           >
                             {b.overallStatus === 'COMPLIANT'
@@ -196,18 +212,28 @@ export function BuildingsView({
                           </span>
                         </div>
 
-                        <p className="text-xs text-slate-400">
-                          Client: <strong className="text-slate-200 font-semibold">{b.client?.name || 'Standard Account'}</strong> • {b.address}
+                        <p className="text-xs text-slate-600 dark:text-slate-400">
+                          Client:{' '}
+                          <strong className="text-slate-900 dark:text-slate-200 font-semibold">
+                            {b.client?.name || 'Standard Account'}
+                          </strong>{' '}
+                          • {b.address}
                         </p>
 
-                        <div className="flex items-center gap-3 text-xs text-slate-400 pt-0.5">
-                          <span className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 font-mono text-[11px] text-slate-300">
+                        <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 pt-0.5">
+                          <span className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 font-mono text-[11px] text-slate-700 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-300">
                             {b.complianceCycle}
                           </span>
                           <span>•</span>
                           <span>
                             Filing Due:{' '}
-                            <strong className={b.filingDaysRemaining <= 30 ? 'text-amber-400 font-bold' : 'text-slate-200'}>
+                            <strong
+                              className={
+                                b.filingDaysRemaining <= 30
+                                  ? 'text-amber-600 dark:text-amber-400 font-bold'
+                                  : 'text-slate-800 dark:text-slate-200'
+                              }
+                            >
                               {new Date(b.nextFilingDueDate).toLocaleDateString('en-IN', {
                                 day: 'numeric',
                                 month: 'short',
@@ -222,30 +248,30 @@ export function BuildingsView({
 
                     {/* Actions & Equipment Breakdown Pill */}
                     <div className="flex items-center gap-2 self-end md:self-auto flex-wrap">
-                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-medium">
-                        <span className="text-white font-bold">{b.totalEquipments} Units:</span>
-                        <span className="text-emerald-400 font-semibold">{b.compliantCount} Fit</span>
-                        {b.dueCount > 0 && <span className="text-amber-400 font-semibold">• {b.dueCount} Due</span>}
-                        {b.overdueCount > 0 && <span className="text-red-400 font-bold">• {b.overdueCount} Overdue</span>}
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-medium dark:bg-slate-950 dark:border-slate-800">
+                        <span className="text-slate-900 dark:text-white font-bold">{b.totalEquipments} Units:</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{b.compliantCount} Fit</span>
+                        {b.dueCount > 0 && <span className="text-amber-600 dark:text-amber-400 font-semibold">• {b.dueCount} Due</span>}
+                        {b.overdueCount > 0 && <span className="text-rose-600 dark:text-red-400 font-bold">• {b.overdueCount} Overdue</span>}
                       </div>
 
                       <button
                         onClick={() => onBulkAdd(b)}
-                        className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 hover:border-amber-500/40 text-xs font-bold transition-all"
+                        className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 hover:border-[#007DB8]/30 text-xs font-bold transition-all shadow-sm dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-800"
                       >
                         + Bulk Add
                       </button>
 
                       <button
                         onClick={() => onSingleAdd(b)}
-                        className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 hover:border-amber-500/40 text-xs font-bold transition-all"
+                        className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 hover:border-[#007DB8]/30 text-xs font-bold transition-all shadow-sm dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-800"
                       >
-                        + Single Tag
+                        + Single Item
                       </button>
 
                       <Link
                         href={`/report/${b.id}`}
-                        className="flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/30 text-xs font-bold transition-all hover:scale-[1.02]"
+                        className="flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-[#EAF6FF] hover:bg-[#D5EEFF] text-[#007DB8] border border-[#007DB8]/30 text-xs font-bold transition-all hover:scale-[1.02] shadow-sm dark:bg-amber-500/15 dark:hover:bg-amber-500/25 dark:text-amber-400 dark:border-amber-500/30"
                       >
                         <FileText className="w-3.5 h-3.5" />
                         <span>Form-B</span>
@@ -253,7 +279,7 @@ export function BuildingsView({
 
                       <button
                         onClick={() => onEditBuilding(b)}
-                        className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 dark:hover:text-white"
                         title="Edit Building Details"
                       >
                         <Edit className="w-3.5 h-3.5" />
@@ -261,7 +287,7 @@ export function BuildingsView({
 
                       <button
                         onClick={() => onDeleteBuilding(b.id, b.name)}
-                        className="p-1.5 rounded-lg bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-500/30 transition-colors"
+                        className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors dark:bg-red-950/40 dark:hover:bg-red-900/60 dark:text-red-400 dark:border-red-500/30"
                         title="Delete Building"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -271,30 +297,30 @@ export function BuildingsView({
 
                   {/* Expanded Equipment Breakdown Table */}
                   {isExpanded && (
-                    <div className="bg-slate-950/90 border-t border-slate-800 p-4 sm:p-6 space-y-4">
+                    <div className="bg-slate-50/70 border-t border-[#DCE7F2] p-4 sm:p-6 space-y-4 dark:bg-slate-950/90 dark:border-slate-800">
                       <div className="flex items-center justify-between">
-                        <h3 className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-2">
-                          <Layers className="w-4 h-4" />
+                        <h3 className="text-xs font-black uppercase tracking-wider text-[#023E8A] dark:text-amber-400 flex items-center gap-2">
+                          <Layers className="w-4 h-4 text-[#007DB8]" />
                           <span>Equipment Registry ({b.equipments?.length || 0} Assets)</span>
                         </h3>
                       </div>
 
                       {!b.equipments || b.equipments.length === 0 ? (
-                        <div className="p-8 text-center text-slate-400 bg-slate-900/60 rounded-xl border border-slate-800 space-y-2">
+                        <div className="p-8 text-center text-slate-500 bg-white rounded-xl border border-[#DCE7F2] space-y-2 dark:bg-slate-900/60 dark:border-slate-800 dark:text-slate-400">
                           <p>No equipment registered for this building yet.</p>
                           <button
                             onClick={() => onBulkAdd(b)}
-                            className="px-3.5 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold text-xs"
+                            className="px-3.5 py-1.5 rounded-lg bg-[#007DB8] hover:bg-[#073F8F] text-white font-bold text-xs shadow"
                           >
-                            + Bulk Generate QR Tags
+                            + Equipment Schedule
                           </button>
                         </div>
                       ) : (
-                        <div className="bg-slate-900/80 rounded-xl border border-slate-800 overflow-x-auto shadow-md">
+                        <div className="bg-white rounded-xl border border-[#DCE7F2] overflow-x-auto shadow-sm dark:bg-slate-900/80 dark:border-slate-800">
                           <table className="w-full text-left text-xs">
-                            <thead className="bg-slate-950/90 text-slate-400 uppercase text-[10px] font-bold tracking-wider border-b border-slate-800">
+                            <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider border-b border-[#DCE7F2] dark:bg-slate-950/90 dark:text-slate-400 dark:border-slate-800">
                               <tr>
-                                <th className="py-3 px-4">QR Tag</th>
+                                <th className="py-3 px-4">Asset ID / Serial</th>
                                 <th className="py-3 px-4">Type &amp; Spec</th>
                                 <th className="py-3 px-4">Location</th>
                                 <th className="py-3 px-4">Last Service</th>
@@ -303,7 +329,7 @@ export function BuildingsView({
                                 <th className="py-3 px-4 text-right">Action</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-800/60">
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                               {b.equipments.map((eq: any) => {
                                 const diffDays = Math.ceil(
                                   (new Date(eq.nextDueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
@@ -311,27 +337,27 @@ export function BuildingsView({
                                 const status = diffDays < 0 ? 'OVERDUE' : diffDays <= 30 ? 'DUE_SOON' : 'COMPLIANT';
 
                                 return (
-                                  <tr key={eq.id} className="hover:bg-slate-850/50 transition-colors">
+                                  <tr key={eq.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-850/50 transition-colors">
                                     <td className="py-3 px-4 font-mono font-bold">
                                       <Link
                                         href={`/scan/${eq.qrCode}`}
-                                        className="text-amber-400 hover:underline bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20"
+                                        className="text-[#007DB8] hover:underline bg-[#EAF6FF] px-2 py-0.5 rounded border border-[#007DB8]/30 dark:text-amber-400 dark:bg-amber-500/10 dark:border-amber-500/20"
                                       >
                                         {eq.qrCode}
                                       </Link>
                                     </td>
-                                    <td className="py-3 px-4 font-semibold text-white">
+                                    <td className="py-3 px-4 font-semibold text-slate-900 dark:text-white">
                                       {eq.capacity} ({eq.type})
                                     </td>
-                                    <td className="py-3 px-4 text-slate-300">{eq.location}</td>
-                                    <td className="py-3 px-4 text-slate-400">
+                                    <td className="py-3 px-4 text-slate-600 dark:text-slate-300">{eq.location}</td>
+                                    <td className="py-3 px-4 text-slate-500 dark:text-slate-400">
                                       {new Date(eq.lastServiceDate).toLocaleDateString('en-IN', {
                                         day: 'numeric',
                                         month: 'short',
                                         year: 'numeric',
                                       })}
                                     </td>
-                                    <td className="py-3 px-4 font-semibold text-slate-200">
+                                    <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">
                                       {new Date(eq.nextDueDate).toLocaleDateString('en-IN', {
                                         day: 'numeric',
                                         month: 'short',
@@ -340,10 +366,10 @@ export function BuildingsView({
                                       <span
                                         className={`block text-[10px] font-normal ${
                                           diffDays < 0
-                                            ? 'text-red-400 font-bold'
+                                            ? 'text-rose-600 dark:text-red-400 font-bold'
                                             : diffDays <= 30
-                                            ? 'text-amber-400 font-bold'
-                                            : 'text-slate-400'
+                                            ? 'text-amber-600 dark:text-amber-400 font-bold'
+                                            : 'text-slate-500 dark:text-slate-400'
                                         }`}
                                       >
                                         {diffDays < 0
@@ -357,10 +383,10 @@ export function BuildingsView({
                                       <span
                                         className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                                           status === 'COMPLIANT'
-                                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30'
                                             : status === 'DUE_SOON'
-                                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                                            : 'bg-red-500/10 text-red-400 border border-red-500/30'
+                                            ? 'bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30'
+                                            : 'bg-rose-100 text-rose-800 border border-rose-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/30'
                                         }`}
                                       >
                                         {status === 'COMPLIANT' ? 'Current' : status === 'DUE_SOON' ? 'Due Soon' : 'Overdue'}
@@ -369,9 +395,9 @@ export function BuildingsView({
                                     <td className="py-3 px-4 text-right">
                                       <Link
                                         href={`/scan/${eq.qrCode}`}
-                                        className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black shadow transition-all hover:scale-105"
+                                        className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-[#007DB8] hover:bg-[#073F8F] text-white text-xs font-bold shadow transition-all hover:scale-105"
                                       >
-                                        <Scan className="w-3 h-3 stroke-[2.5]" />
+                                        <MapPin className="w-3 h-3 stroke-[2.5]" />
                                         <span>Service</span>
                                       </Link>
                                     </td>

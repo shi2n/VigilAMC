@@ -202,7 +202,7 @@ export default function ComplianceReportPage() {
               <thead className="bg-slate-100 text-slate-700 uppercase text-[10px] font-bold border-b border-slate-300">
                 <tr>
                   <th className="py-2 px-3 border-r border-slate-300">S.No</th>
-                  <th className="py-2 px-3 border-r border-slate-300">QR Tag ID</th>
+                  <th className="py-2 px-3 border-r border-slate-300">Asset ID / Serial</th>
                   <th className="py-2 px-3 border-r border-slate-300">Type & Capacity</th>
                   <th className="py-2 px-3 border-r border-slate-300">Location in Premise</th>
                   <th className="py-2 px-3 border-r border-slate-300">Last Serviced</th>
@@ -251,12 +251,12 @@ export default function ComplianceReportPage() {
 
         {/* Signoff & Municipal Authenticator */}
         <div className="pt-6 border-t border-slate-300 flex flex-col sm:flex-row items-center justify-between gap-6">
-          {/* Municipal Authenticator QR */}
+          {/* Municipal Authenticator */}
           <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
-            {qrDataUrl && <img src={qrDataUrl} alt="Report QR" className="w-16 h-16 object-contain" />}
+            {qrDataUrl && <img src={qrDataUrl} alt="Report Verification" className="w-16 h-16 object-contain" />}
             <div className="text-[10px] text-slate-500 space-y-0.5">
-              <span className="font-bold text-slate-800 uppercase block">Digital Audit Passport</span>
-              <p>Scan with any camera to verify live compliance on VigilAMC records.</p>
+              <span className="font-bold text-slate-800 uppercase block">Equipment Schedule with Locations &amp; Photos</span>
+              <p>Verified service records on VigilAMC compliance platform.</p>
               <p className="font-mono font-semibold text-slate-600">{report.reportNumber}</p>
             </div>
           </div>

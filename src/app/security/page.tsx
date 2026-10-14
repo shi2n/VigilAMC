@@ -33,7 +33,7 @@ export default function SecurityPage() {
       title: 'Role-Based Access Control (RBAC)',
       status: 'LIVE' as const,
       description:
-        'Granular permissions divide users into defined tiers: Organization Admins (full management), Field Technicians (restricted to scanning and logging checklist results), and Clients (read-only certificate and asset viewing).',
+        'Granular permissions divide users into defined tiers: Organization Admins (full management), Field Technicians (restricted to recording asset details, floor notes, GPS position, and photos), and Clients (read-only certificate and asset viewing).',
     },
     {
       icon: Server,
@@ -131,9 +131,6 @@ export default function SecurityPage() {
           <h3 className="font-bold text-slate-900 text-sm">Security Inquiries &amp; Vulnerability Reporting</h3>
           <p className="text-slate-600 leading-relaxed">
             If you have technical questions regarding data handling or wish to report a security inquiry, please contact our engineering team directly at <a href="mailto:vigilamc@gmail.com" className="text-[#0077B6] font-bold underline">vigilamc@gmail.com</a>. We acknowledge and address inquiries promptly.
-          </p>
-          <p className="text-[11px] text-slate-400">
-            [ADD SECURITY DETAILS AFTER VERIFICATION &bull; SOC-2 / ISO Certification Details Pending Stage-Gate Review]
           </p>
         </div>
       </div>

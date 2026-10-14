@@ -6,7 +6,7 @@ import {
   Flame,
   Search,
   Filter,
-  Scan,
+  MapPin,
   Printer,
   ShieldAlert,
   ArrowRight,
@@ -76,8 +76,8 @@ export default function AssetsPage() {
             href="/scan"
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold text-sm shadow-md transition-colors"
           >
-            <Scan className="w-4 h-4" />
-            <span>Scan Extinguisher</span>
+            <MapPin className="w-4 h-4" />
+            <span>Inspect Extinguisher</span>
           </Link>
           <Link
             href="/assets/print-qr"
@@ -128,7 +128,7 @@ export default function AssetsPage() {
           <div className="p-12 text-center text-slate-400">
             <Flame className="w-12 h-12 text-slate-600 mx-auto mb-3" />
             <h3 className="text-base font-semibold text-white">No extinguishers match criteria</h3>
-            <p className="text-xs text-slate-500 mt-1">Clear your filter or scan a new extinguisher.</p>
+            <p className="text-xs text-slate-500 mt-1">Clear your filter or inspect a new extinguisher.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -207,7 +207,7 @@ export default function AssetsPage() {
                             href={`/scan?code=${asset.qrCode}`}
                             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-500 text-white font-semibold text-[11px] shadow-sm transition-colors"
                           >
-                            <Scan className="w-3 h-3" />
+                            <MapPin className="w-3 h-3" />
                             <span>Audit / Refill</span>
                           </Link>
                           <Link

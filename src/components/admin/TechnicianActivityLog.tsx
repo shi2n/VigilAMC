@@ -8,7 +8,6 @@ import {
   Users,
   ShieldCheck,
   Building2,
-  Scan,
   CheckCircle2,
   AlertTriangle,
   KeyRound,
@@ -59,30 +58,22 @@ export function TechnicianActivityLog() {
   const getActionBadge = (action: string) => {
     if (action.includes('INSPECTION') || action.includes('SERVICE')) {
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-bold dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30">
           <CheckCircle2 className="w-3 h-3" />
-          {action}
-        </span>
-      );
-    }
-    if (action.includes('SCAN')) {
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 text-[10px] font-bold">
-          <Scan className="w-3 h-3" />
           {action}
         </span>
       );
     }
     if (action.includes('PASSWORD') || action.includes('AUTH') || action.includes('LOGIN')) {
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[10px] font-bold">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-200 text-[10px] font-bold dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30">
           <KeyRound className="w-3 h-3" />
           {action}
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700 text-[10px] font-bold">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#EAF6FF] text-[#007DB8] border border-[#007DB8]/30 text-[10px] font-bold dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
         <Clock className="w-3 h-3" />
         {action}
       </span>
@@ -92,23 +83,23 @@ export function TechnicianActivityLog() {
   return (
     <div className="space-y-6">
       {/* Filter header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
-        <div className="flex items-center gap-3 flex-1">
-          <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#DCE7F2] shadow-sm dark:bg-slate-900/60 dark:border-slate-800">
+        <div className="flex items-center gap-3 flex-1 flex-wrap">
+          <div className="relative flex-1 min-w-[220px] max-w-sm">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search audit trail by keyword, asset, or technician..."
-              className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              className="w-full pl-9 pr-3 py-2 bg-white border border-[#DCE7F2] rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#007DB8] shadow-sm dark:bg-slate-950 dark:border-slate-800 dark:text-white dark:placeholder-slate-500"
             />
           </div>
 
           <select
             value={selectedTech}
             onChange={(e) => setSelectedTech(e.target.value)}
-            className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none focus:ring-1 focus:ring-amber-500"
+            className="px-3 py-2 bg-white border border-[#DCE7F2] rounded-xl text-xs text-slate-800 focus:outline-none focus:border-[#007DB8] shadow-sm dark:bg-slate-950 dark:border-slate-800 dark:text-slate-300"
           >
             <option value="ALL">All Technicians ({technicians.length})</option>
             {technicians.map((t) => (
@@ -121,19 +112,19 @@ export function TechnicianActivityLog() {
 
         <button
           onClick={fetchActivities}
-          className="p-2 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white transition-colors self-end sm:self-auto"
+          className="p-2 rounded-xl bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors self-end sm:self-auto dark:bg-slate-950 dark:border-slate-800 dark:hover:border-slate-700 dark:text-slate-400 dark:hover:text-white"
           title="Refresh Log"
         >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#007DB8]' : ''}`} />
         </button>
       </div>
 
       {/* Activity Timeline List */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
-        <div className="p-4 border-b border-slate-800 bg-slate-950/70 flex items-center justify-between">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-amber-400" />
-            <span>Field Activity & Compliance Audit Feed</span>
+      <div className="bg-white border border-[#DCE7F2] rounded-2xl overflow-hidden shadow-sm dark:bg-slate-900/80 dark:border-slate-800 dark:shadow-xl">
+        <div className="p-4 border-b border-[#DCE7F2] bg-slate-50/80 flex items-center justify-between dark:border-slate-800 dark:bg-slate-950/70">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-[#007DB8] dark:text-amber-400" />
+            <span>Field Activity &amp; Compliance Audit Feed</span>
           </h3>
           <span className="text-[11px] text-slate-500">
             {filteredActivities.length} event{filteredActivities.length === 1 ? '' : 's'} recorded
@@ -141,35 +132,35 @@ export function TechnicianActivityLog() {
         </div>
 
         {loading && activities.length === 0 ? (
-          <div className="p-12 text-center text-slate-400 space-y-3">
-            <RefreshCw className="w-8 h-8 animate-spin text-amber-500 mx-auto" />
+          <div className="p-12 text-center text-slate-500 space-y-3 dark:text-slate-400">
+            <RefreshCw className="w-8 h-8 animate-spin text-[#007DB8] mx-auto" />
             <p className="text-sm font-semibold">Loading activity logs...</p>
           </div>
         ) : filteredActivities.length === 0 ? (
           <div className="p-12 text-center space-y-2">
-            <Clock className="w-8 h-8 text-slate-600 mx-auto" />
-            <p className="text-sm font-bold text-slate-300">No activity events recorded yet.</p>
+            <Clock className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto" />
+            <p className="text-sm font-bold text-slate-900 dark:text-slate-300">No activity events recorded yet.</p>
             <p className="text-xs text-slate-500">
-              When technicians scan equipment, log inspections, or complete work orders, audit records will stream here.
+              When technicians record inspections or complete work orders, audit records will stream here.
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-800/60">
+          <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
             {filteredActivities.map((act) => (
-              <div key={act.id} className="p-4 sm:p-5 hover:bg-slate-800/30 transition-colors space-y-2">
+              <div key={act.id} className="p-4 sm:p-5 hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors space-y-2">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                   <div className="flex items-center gap-2.5">
                     {getActionBadge(act.action)}
-                    <span className="text-xs font-bold text-white">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white">
                       {act.technician?.name || act.userEmail || 'System Agent'}
                     </span>
                     {act.entityType && (
-                      <span className="text-[10px] text-slate-500 font-mono">[{act.entityType}]</span>
+                      <span className="text-[10px] text-slate-400 font-mono">[{act.entityType}]</span>
                     )}
                   </div>
 
-                  <span className="text-[11px] text-slate-400 tabular-nums flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-slate-500" />
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-slate-400" />
                     {new Date(act.createdAt).toLocaleString('en-IN', {
                       month: 'short',
                       day: 'numeric',
@@ -181,7 +172,7 @@ export function TechnicianActivityLog() {
                   </span>
                 </div>
 
-                <p className="text-xs text-slate-300 pl-1 leading-relaxed">
+                <p className="text-xs text-slate-600 dark:text-slate-300 pl-1 leading-relaxed">
                   {act.details || 'Event logged successfully.'}
                 </p>
               </div>
