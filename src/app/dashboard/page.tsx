@@ -40,13 +40,18 @@ import {
   Zap,
   LayoutDashboard,
   Menu,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Sun,
+  Moon,
+  MessageSquare
 } from 'lucide-react';
 import { AdminSidebar, AdminNavTab } from '@/components/admin/AdminSidebar';
 import { DashboardOverview } from '@/components/admin/DashboardOverview';
 import { ExportModal } from '@/components/admin/ExportModal';
 import { ImportModal } from '@/components/admin/ImportModal';
+import { FeedbackModal } from '@/components/admin/FeedbackModal';
 import { ImportType } from '@/lib/excelImport';
+import { INDIAN_STATES_AND_UTS, REPORTING_CYCLES } from '@/lib/constants/india';
 import { TechnicianManagement } from '@/components/admin/TechnicianManagement';
 import { TechnicianAssignments } from '@/components/admin/TechnicianAssignments';
 import { TechnicianActivityLog } from '@/components/admin/TechnicianActivityLog';
@@ -65,8 +70,37 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [expandedBuildingId, setExpandedBuildingId] = useState<string | null>(null);
 
-  // Authenticated Admin OS Navigation Tab
-  const [activeTab, setActiveTab] = useState<AdminNavTab>('DASHBOARD');
+  // Theme Mode: Light theme by default, persistent in localStorage
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  useEffect(() => {
+    const saved = localStorage.getItem('vigil_dashboard_theme') as 'light' | 'dark' | null;
+    const initialTheme = saved || 'light';
+    setTheme(initialTheme);
+    if (initialTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(nextTheme);
+    localStorage.setItem('vigil_dashboard_theme', nextTheme);
+    if (nextTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
+
+  // Authenticated Admin Navigation Tab (6 Core Groups)
+  const [activeTab, setActiveTab] = useState<AdminNavTab>('OVERVIEW');
+  const [clientsSitesSubTab, setClientsSitesSubTab] = useState<'BUILDINGS' | 'CLIENTS'>('BUILDINGS');
+  const [inspectionsWorkSubTab, setInspectionsWorkSubTab] = useState<'INSPECTIONS' | 'REPAIRS'>('INSPECTIONS');
+  const [sitesSubTab, setSitesSubTab] = useState<'EQUIPMENT' | 'BUILDINGS' | 'CLIENTS'>('BUILDINGS');
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [techSubTab, setTechSubTab] = useState<'ROSTER' | 'ASSIGNMENTS' | 'AUDIT_LOG'>('ROSTER');
   const [settingsSubTab, setSettingsSubTab] = useState<'LEADS' | 'TOOLS' | 'AGENCY' | 'INVESTORS'>('LEADS');
@@ -127,8 +161,11 @@ export default function AdminDashboardPage() {
     email: '',
     buildingName: '',
     address: '',
-    complianceCycle: 'Delhi NCR Statutory Form-B (Half-Yearly)',
-    cycleIntervalMos: 6,
+    state: 'Delhi',
+    reportingCycle: 'Quarterly',
+    complianceRuleName: '',
+    complianceCycle: 'Quarterly',
+    cycleIntervalMos: 3,
   });
 
   // Bulk add equipment form state
@@ -321,13 +358,16 @@ export default function AdminDashboardPage() {
       setExportConfigKey(key);
     } else {
       const tabMap: Record<string, string> = {
-        CLIENTS: 'CLIENTS',
-        BUILDINGS: 'BUILDINGS',
-        FIRE_ASSETS: 'FIRE_ASSETS',
-        TECHNICIANS: 'TECHNICIANS',
+        OVERVIEW: 'FIRE_ASSETS',
+        HOME: 'FIRE_ASSETS',
+        CLIENTS_SITES: clientsSitesSubTab === 'BUILDINGS' ? 'BUILDINGS' : 'CLIENTS',
+        SITES: 'BUILDINGS',
+        FIRE_EQUIPMENT: 'FIRE_ASSETS',
+        INSPECTIONS_WORK: inspectionsWorkSubTab === 'INSPECTIONS' ? 'INSPECTIONS' : 'WORK_ORDERS',
         INSPECTIONS: 'INSPECTIONS',
-        WORK_ORDERS: 'WORK_ORDERS',
+        REPAIRS: 'WORK_ORDERS',
         REPORTS: 'FIRE_ASSETS',
+        SETTINGS: 'CLIENTS',
       };
       setExportConfigKey(tabMap[activeTab] || 'FIRE_ASSETS');
     }
@@ -367,20 +407,20 @@ export default function AdminDashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'CLIENTS') {
+    if (activeTab === 'OVERVIEW' || activeTab === 'HOME') {
+      fetchKpis();
+    } else if (activeTab === 'CLIENTS_SITES' || activeTab === 'SITES') {
       fetchClients();
-    } else if (activeTab === 'FIRE_ASSETS') {
+    } else if (activeTab === 'FIRE_EQUIPMENT') {
       fetchEquipments();
+    } else if (activeTab === 'INSPECTIONS_WORK' || activeTab === 'INSPECTIONS' || activeTab === 'REPAIRS') {
+      fetchInspections();
+      fetchWorkOrders();
+    } else if (activeTab === 'REPORTS') {
+      fetchData();
     } else if (activeTab === 'SETTINGS') {
       fetchEnquiries();
-    } else if (activeTab === 'DASHBOARD') {
-      fetchKpis();
-    } else if (activeTab === 'TECHNICIANS') {
       fetchTechnicians();
-    } else if (activeTab === 'WORK_ORDERS') {
-      fetchWorkOrders();
-    } else if (activeTab === 'INSPECTIONS') {
-      fetchInspections();
     }
   }, [activeTab, equipFilterBuilding, equipSearch, enquiryStatusFilter]);
 
@@ -425,8 +465,11 @@ export default function AdminDashboardPage() {
           email: '',
           buildingName: '',
           address: '',
-          complianceCycle: 'Delhi NCR Statutory Form-B (Half-Yearly)',
-          cycleIntervalMos: 6,
+          state: 'Delhi',
+          reportingCycle: 'Quarterly',
+          complianceRuleName: '',
+          complianceCycle: 'Quarterly',
+          cycleIntervalMos: 3,
         });
         fetchData();
       }
@@ -451,7 +494,7 @@ export default function AdminDashboardPage() {
       const resData = await res.json();
       if (resData.success) {
         setBulkAddModalOpen(null);
-        showToast(`Generated ${resData.count} equipment QR units for ${bulkAddModalOpen.name}`);
+        showToast(`Added ${resData.count} fire equipment items for ${bulkAddModalOpen.name}`);
         fetchData();
         fetchEquipments();
       }
@@ -611,13 +654,17 @@ export default function AdminDashboardPage() {
 
   // Data Manage: Wipe All Demo Data
   const handleWipeAllDemo = async () => {
-    if (!confirm('CAUTION: This will delete ALL clients, buildings, and equipment from the database so you can start with a 100% clean slate. Continue?')) return;
+    const confirmation = prompt('DANGER: This will permanently delete all demo companies, clients, buildings, and equipment. Type DELETE to confirm:');
+    if (confirmation !== 'DELETE') {
+      alert('Wipe cancelled. Confirmation word did not match "DELETE".');
+      return;
+    }
     try {
       setLoading(true);
       const res = await fetch('/api/admin/data-manage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'WIPE_ALL_DEMO' }),
+        body: JSON.stringify({ action: 'WIPE_ALL_DEMO', confirmation: 'DELETE' }),
       });
       const json = await res.json();
       if (json.success) {
@@ -625,6 +672,8 @@ export default function AdminDashboardPage() {
         fetchData();
         fetchClients();
         fetchEquipments();
+      } else {
+        alert(json.error || 'Failed to wipe data');
       }
     } catch (e) {
       console.error(e);
@@ -659,16 +708,19 @@ export default function AdminDashboardPage() {
 
   if (loading || !data) {
     return (
-      <div className="flex-1 p-8 flex items-center justify-center min-h-[60vh] bg-[#080d1a]">
-        <div className="flex flex-col items-center gap-3 text-slate-400">
-          <RefreshCw className="w-8 h-8 animate-spin text-amber-500" />
-          <p className="text-sm font-semibold tracking-wide text-slate-300">Loading building compliance matrix...</p>
+      <div className="flex-1 p-8 flex items-center justify-center min-h-screen bg-[#F8FAFC] dark:bg-[#080d1a]">
+        <div className="flex flex-col items-center gap-3 text-slate-500 dark:text-slate-400">
+          <RefreshCw className="w-8 h-8 animate-spin text-[#007DB8] dark:text-amber-500" />
+          <p className="text-sm font-semibold tracking-wide text-slate-700 dark:text-slate-300">Loading building compliance matrix...</p>
         </div>
       </div>
     );
   }
 
   const { summary, buildings, company } = data;
+  const userFirstName = data?.profile?.fullName?.trim() ? data.profile.fullName.split(' ')[0] : (data?.user?.email ? data.user.email.split('@')[0] : 'Admin');
+  const agencyName = company?.name || 'VigilAMC Operating System';
+  const licenseNo = company?.licenseNumber || 'DL/FIRE/LIC/2026';
 
   const exportDataMap: Record<string, any[]> = {
     CLIENTS: clientsList,
@@ -680,41 +732,45 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#080d1a] flex flex-col lg:flex-row text-slate-100 selection:bg-amber-500 selection:text-slate-950">
+    <div className={`min-h-screen ${theme === 'dark' ? 'dark' : ''} bg-[#F8FAFC] flex flex-col lg:flex-row text-slate-900 dark:bg-[#080d1a] dark:text-slate-100 selection:bg-[#EAF6FF] selection:text-[#073F8F] dark:selection:bg-amber-500 dark:selection:text-slate-950`}>
       
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 border-2 border-amber-500 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
-          <CheckCircle2 className="w-5 h-5 text-amber-400" />
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 border-2 border-[#007DB8] text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <CheckCircle2 className="w-5 h-5 text-emerald-400" />
           <span className="text-xs font-bold">{toastMessage}</span>
         </div>
       )}
 
-      {/* Admin OS Sidebar */}
+      {/* Sidebar */}
       <AdminSidebar
         activeTab={activeTab}
         onSelectTab={(tab) => {
           setActiveTab(tab);
           setMobileSidebarOpen(false);
         }}
-        onOpenExport={() => handleOpenExport()}
-        onOpenImport={() => handleOpenImport()}
-        unreadLeadsCount={enquiriesList.filter((e) => e.status === 'NEW').length}
-        subscription={subscriptionData}
         isMobileOpen={mobileSidebarOpen}
         onCloseMobile={() => setMobileSidebarOpen(false)}
+        company={company}
+        userEmail={data?.user?.email}
+        userProfile={data?.profile}
+        isPlatformOwner={data?.isPlatformOwner}
         onLogout={handleLogout}
+        openRepairsCount={kpis.openWorkOrders}
+        unreadLeadsCount={enquiriesList.filter((e) => e.status === 'NEW').length}
+        isDarkMode={theme === 'dark'}
+        onToggleDarkMode={toggleTheme}
       />
 
       {/* Main Content Area */}
       <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-6 overflow-y-auto">
         
         {/* Top Header Bar */}
-        <div className="tactile-card rounded-2xl bg-slate-900/90 border border-slate-800 p-4 sm:p-5 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="rounded-2xl bg-white border border-[#E2E8F0] p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-[#111827] dark:border-[#293548]">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 hover:text-white"
+              className="lg:hidden p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 hover:text-slate-900 dark:bg-[#172033] dark:border-[#293548] dark:text-slate-300 dark:hover:text-white"
               aria-label="Open navigation menu"
             >
               <Menu className="w-5 h-5" />
@@ -722,367 +778,294 @@ export default function AdminDashboardPage() {
 
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-slate-400">Admin OS</span>
-                <span className="text-slate-600">/</span>
-                <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">
-                  {activeTab === 'DASHBOARD' && 'Executive Overview'}
-                  {activeTab === 'AGENCY' && 'Agency Profile & Subscription'}
-                  {activeTab === 'ADMIN_USERS' && 'Admin Users & Roles'}
-                  {activeTab === 'TECHNICIANS' && 'Technician Workforce'}
-                  {activeTab === 'CLIENTS' && 'Client Societies & Accounts'}
-                  {activeTab === 'BUILDINGS' && 'Buildings & Towers'}
-                  {activeTab === 'FIRE_ASSETS' && 'Fire Assets & QR Tags'}
-                  {activeTab === 'INSPECTIONS' && 'Inspection Logs & Compliance'}
-                  {activeTab === 'WORK_ORDERS' && 'Work Orders & Dispatch'}
-                  {activeTab === 'REPORTS' && 'Statutory Reports & Form-B'}
-                  {activeTab === 'SETTINGS' && 'System Settings & Inquiries'}
+                <span className="text-xs font-semibold text-[#2563EB] dark:text-[#60A5FA]">VigilAMC</span>
+                <span className="text-slate-400 dark:text-slate-600">/</span>
+                <h1 className="text-lg sm:text-xl font-black text-[#0F172A] dark:text-white tracking-tight">
+                  {(activeTab === 'OVERVIEW' || activeTab === 'HOME') && 'Overview'}
+                  {(activeTab === 'CLIENTS_SITES' || activeTab === 'SITES') && 'Clients & Sites'}
+                  {activeTab === 'FIRE_EQUIPMENT' && 'Fire Equipment'}
+                  {(activeTab === 'INSPECTIONS_WORK' || activeTab === 'INSPECTIONS' || activeTab === 'REPAIRS') && 'Inspections & Work'}
+                  {activeTab === 'REPORTS' && 'Compliance Reports'}
+                  {activeTab === 'SETTINGS' && 'Agency Settings'}
                 </h1>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
-                {company?.name || 'VigilAMC Operating System'} • License:{' '}
-                <strong className="text-slate-300 font-semibold">{company?.licenseNumber || 'DL/FIRE/LIC/2026'}</strong>
+              <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-0.5">
+                Managing operations for <strong className="text-slate-800 dark:text-slate-200 font-semibold">{agencyName}</strong>
+                {licenseNo && <> &bull; License: <strong className="text-slate-800 dark:text-slate-300 font-semibold">{licenseNo}</strong></>}
               </p>
             </div>
           </div>
 
-          {/* Quick Actions */}
+          {/* Quick Actions, Theme Switcher & Feedback */}
           <div className="flex items-center gap-2.5 flex-wrap self-end md:self-auto">
             <button
-              onClick={() => handleOpenImport('FIRE_ASSETS')}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all shadow-sm"
-              title="Import Existing Data from Excel (.xlsx)"
+              onClick={() => setFeedbackModalOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#EFF6FF] hover:bg-blue-100 text-[#2563EB] border border-[#2563EB]/20 text-xs font-bold transition-all shadow-xs dark:bg-blue-500/10 dark:hover:bg-blue-500/20 dark:text-[#60A5FA] dark:border-blue-500/30"
+              title="Give product feedback"
             >
-              <FileSpreadsheet className="w-4 h-4 text-amber-400" />
-              <span>Import Excel</span>
+              <MessageSquare className="w-4 h-4 text-[#2563EB] dark:text-[#60A5FA]" />
+              <span>Give Feedback</span>
             </button>
 
+            {/* Theme Toggle (Light / Dark Mode) */}
             <button
-              onClick={() => handleOpenExport()}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition-all shadow-sm"
-              title="Export Current View Data to Excel (.xlsx)"
+              onClick={toggleTheme}
+              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 dark:bg-[#172033] dark:hover:bg-slate-700 dark:text-slate-200 dark:border-[#293548] transition-all shadow-xs"
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              aria-label="Toggle Theme"
             >
-              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-              <span>Export Excel</span>
+              {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
             </button>
-
-            <Link
-              href="/assets/print-qr"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-200 border border-slate-800 hover:border-amber-500/40 text-xs font-bold transition-all"
-            >
-              <Printer className="w-4 h-4 text-amber-400" />
-              <span className="hidden sm:inline">Print QR Labels</span>
-            </Link>
 
             <button
               onClick={handleLogout}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-800/50 text-xs font-bold transition-all"
-              title="Sign Out of Admin OS"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition-all shadow-xs dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:text-rose-300 dark:border-rose-800/50"
+              title="Sign Out"
             >
-              <LogOut className="w-4 h-4 text-red-400" />
+              <LogOut className="w-4 h-4 text-rose-600 dark:text-rose-400" />
               <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
         </div>
 
         {/* =========================================================================
-            VIEW: DASHBOARD (EXECUTIVE OVERVIEW WITH 8 REAL DB KPIS)
+            GROUP 1: OVERVIEW SCREEN
         ========================================================================= */}
-        {activeTab === 'DASHBOARD' && (
+        {(activeTab === 'OVERVIEW' || activeTab === 'HOME') && (
           <DashboardOverview
-            kpis={kpis}
-            subscription={subscriptionData}
+            kpis={{
+              overdueCount: summary?.overdueEquipments || summary?.overdueBuildings || 0,
+              dueSoonCount: summary?.dueSoonEquipments || summary?.dueSoonBuildings || 0,
+              openRepairsCount: kpis.openWorkOrders,
+              inspectionsThisWeek: kpis.dueInspections,
+              totalEquipments: summary?.totalEquipments || kpis.totalEquipments,
+              totalBuildings: summary?.totalBuildings || kpis.totalBuildings,
+              activeTechnicians: kpis.activeTechnicians,
+            }}
+            company={company}
             buildings={buildings}
-            onNavigate={(tab) => setActiveTab(tab)}
-            onOpenExport={() => handleOpenExport('FIRE_ASSETS')}
+            onNavigateTab={(tab: any) => {
+              if (tab === 'OVERVIEW' || tab === 'HOME') setActiveTab('OVERVIEW');
+              else if (tab === 'CLIENTS_SITES' || tab === 'SITES') setActiveTab('CLIENTS_SITES');
+              else if (tab === 'FIRE_EQUIPMENT') setActiveTab('FIRE_EQUIPMENT');
+              else if (tab === 'INSPECTIONS_WORK' || tab === 'INSPECTIONS') {
+                setActiveTab('INSPECTIONS_WORK');
+                setInspectionsWorkSubTab('INSPECTIONS');
+              } else if (tab === 'REPAIRS') {
+                setActiveTab('INSPECTIONS_WORK');
+                setInspectionsWorkSubTab('REPAIRS');
+              } else if (tab === 'REPORTS') setActiveTab('REPORTS');
+              else if (tab === 'SETTINGS') setActiveTab('SETTINGS');
+            }}
+            onAddEquipment={() => {
+              if (buildings.length > 0) {
+                setSingleAddEquipModalOpen(buildings[0]);
+              } else {
+                setAddBuildingModalOpen(true);
+              }
+            }}
+            onCreateRepairJob={() => {
+              setActiveTab('INSPECTIONS_WORK');
+              setInspectionsWorkSubTab('REPAIRS');
+            }}
+            onOpenFeedback={() => setFeedbackModalOpen(true)}
             onOpenImport={() => handleOpenImport('FIRE_ASSETS')}
           />
         )}
 
         {/* =========================================================================
-            VIEW: AGENCY & SUBSCRIPTION PLAN TIER
+            GROUP 2: CLIENTS & SITES
         ========================================================================= */}
-        {activeTab === 'AGENCY' && (
-          <div className="space-y-8">
-            <div className="tactile-card rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl p-5 sm:p-6 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div>
-                  <h2 className="text-base font-bold text-white flex items-center gap-2">
-                    <Building2 className="w-5 h-5 text-amber-400" />
-                    <span>Agency Organization Profile</span>
-                  </h2>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Official statutory credentials printed on Delhi Fire Service &amp; NBC inspection certificates.
-                  </p>
-                </div>
-              </div>
-
-              <form onSubmit={handleSaveCompany} className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-4 text-xs">
-                <div>
-                  <label className="block text-slate-300 font-bold mb-1">Company / Agency Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={companyForm.name}
-                    onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
-                    placeholder="e.g. National Fire Safety & AMC Services"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-300 font-bold mb-1">Govt. Fire License Number *</label>
-                    <input
-                      type="text"
-                      required
-                      value={companyForm.licenseNumber}
-                      onChange={(e) => setCompanyForm({ ...companyForm, licenseNumber: e.target.value })}
-                      placeholder="e.g. DL/FIRE/LIC/2026/042"
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-300 font-bold mb-1">Emergency Dispatch Phone *</label>
-                    <input
-                      type="text"
-                      required
-                      value={companyForm.phone}
-                      onChange={(e) => setCompanyForm({ ...companyForm, phone: e.target.value })}
-                      placeholder="e.g. +91 98200 11223"
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-300 font-bold mb-1">Official Service Email *</label>
-                    <input
-                      type="email"
-                      required
-                      value={companyForm.email}
-                      onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })}
-                      placeholder="e.g. service@nationalfireamc.in"
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-300 font-bold mb-1">Registered Service Office Address</label>
-                    <input
-                      type="text"
-                      value={companyForm.address}
-                      onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })}
-                      placeholder="e.g. Plot 24, Okhla Industrial Area Phase III, New Delhi 110020"
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow transition-all hover:scale-[1.01]"
-                >
-                  Save Agency Profile
-                </button>
-              </form>
-            </div>
-
-            <SubscriptionManager
-              showToast={showToast}
-              onPlanChanged={() => {
-                fetchSubscription();
-                fetchData();
-              }}
-            />
-          </div>
-        )}
-
-        {/* =========================================================================
-            VIEW: ADMIN USERS & RBAC PERMISSIONS
-        ========================================================================= */}
-        {activeTab === 'ADMIN_USERS' && (
-          <AdminUsersView currentUser={data?.user} company={company} />
-        )}
-
-        {/* =========================================================================
-            VIEW: TECHNICIAN MANAGEMENT (ROSTER, SEATS, ASSIGNMENTS, AUDIT)
-        ========================================================================= */}
-        {activeTab === 'TECHNICIANS' && (
+        {(activeTab === 'CLIENTS_SITES' || activeTab === 'SITES') && (
           <div className="space-y-6">
-            <div className="tactile-card rounded-2xl bg-slate-900/90 border border-slate-800 p-4 shadow-xl flex items-center justify-between flex-wrap gap-3">
-              <div className="flex items-center gap-2 overflow-x-auto">
-                {[
-                  { id: 'ROSTER', label: 'Technician Roster & Seats', icon: Users },
-                  { id: 'ASSIGNMENTS', label: 'Facility Assignments', icon: Building2 },
-                  { id: 'AUDIT_LOG', label: 'Compliance Audit Trail', icon: Clock },
-                ].map((sub) => {
-                  const Icon = sub.icon;
-                  const active = techSubTab === sub.id;
-                  return (
-                    <button
-                      key={sub.id}
-                      onClick={() => setTechSubTab(sub.id as any)}
-                      className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                        active
-                          ? 'bg-amber-500 text-slate-950 shadow-md font-black'
-                          : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
-                      }`}
-                    >
-                      <Icon className="w-3.5 h-3.5" />
-                      <span>{sub.label}</span>
-                    </button>
-                  );
-                })}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-xs dark:bg-[#111827] dark:border-[#293548]">
+              <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs dark:bg-[#0B1220] dark:border-[#293548]">
+                <button
+                  onClick={() => setClientsSitesSubTab('BUILDINGS')}
+                  className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                    clientsSitesSubTab === 'BUILDINGS'
+                      ? 'bg-[#2563EB] text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  }`}
+                >
+                  Buildings &amp; Towers ({buildings.length})
+                </button>
+                <button
+                  onClick={() => setClientsSitesSubTab('CLIENTS')}
+                  className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                    clientsSitesSubTab === 'CLIENTS'
+                      ? 'bg-[#2563EB] text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  }`}
+                >
+                  Client Societies ({clientsList.length})
+                </button>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <button
-                  onClick={() => handleOpenExport('TECHNICIANS')}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-all shadow-sm"
-                  title="Export Technicians to Excel (.xlsx)"
+                  onClick={() => handleOpenImport(clientsSitesSubTab === 'BUILDINGS' ? 'BUILDINGS' : 'CLIENTS')}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#EFF6FF] hover:bg-blue-100 text-[#2563EB] border border-[#2563EB]/20 text-xs font-bold transition-all shadow-xs dark:bg-blue-500/10 dark:hover:bg-blue-500/20 dark:text-[#60A5FA] dark:border-blue-500/30"
+                  title="Import from Excel (.xlsx)"
                 >
-                  <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                  <FileSpreadsheet className="w-4 h-4" />
+                  <span>Import Excel</span>
+                </button>
+
+                <button
+                  onClick={() => handleOpenExport(clientsSitesSubTab === 'BUILDINGS' ? 'BUILDINGS' : 'CLIENTS')}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-xs dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:text-emerald-300 dark:border-emerald-800"
+                  title="Export to Excel (.xlsx)"
+                >
+                  <FileSpreadsheet className="w-4 h-4" />
                   <span>Export Excel</span>
                 </button>
 
                 <button
-                  onClick={() => {
-                    fetchData();
-                    fetchSubscription();
-                  }}
-                  className="p-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800"
-                  title="Refresh Technicians"
+                  onClick={() => setAddBuildingModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold shadow-xs transition-all"
                 >
-                  <RefreshCw className="w-4 h-4" />
+                  <Plus className="w-4 h-4" />
+                  <span>{clientsSitesSubTab === 'BUILDINGS' ? 'Add Building' : 'Add Client'}</span>
                 </button>
               </div>
             </div>
 
-            {techSubTab === 'ROSTER' && (
-              <TechnicianManagement
-                onNavigateToSubscription={() => setActiveTab('AGENCY')}
-                showToast={showToast}
-                onOpenImport={() => handleOpenImport('TECHNICIANS')}
+            {clientsSitesSubTab === 'BUILDINGS' ? (
+              <BuildingsView
+                buildings={buildings}
+                summary={summary}
+                expandedBuildingId={expandedBuildingId}
+                setExpandedBuildingId={setExpandedBuildingId}
+                onAddBuilding={() => setAddBuildingModalOpen(true)}
+                onEditBuilding={(b) => setEditBuildingModal(b)}
+                onDeleteBuilding={handleDeleteBuilding}
+                onBulkAdd={(b) => setBulkAddModalOpen(b)}
+                onSingleAdd={(b) => setSingleAddEquipModalOpen(b)}
+                onOpenExport={() => handleOpenExport('BUILDINGS')}
+                onOpenImport={() => handleOpenImport('BUILDINGS')}
+              />
+            ) : (
+              <ClientsView
+                clientsList={clientsList}
+                onAddClient={() => setAddBuildingModalOpen(true)}
+                onEditClient={(c) => setEditClientModal(c)}
+                onDeleteClient={handleDeleteClient}
+                onOpenExport={() => handleOpenExport('CLIENTS')}
+                onOpenImport={() => handleOpenImport('CLIENTS')}
               />
             )}
-
-            {techSubTab === 'ASSIGNMENTS' && (
-              <TechnicianAssignments showToast={showToast} />
-            )}
-
-            {techSubTab === 'AUDIT_LOG' && (
-              <TechnicianActivityLog />
-            )}
           </div>
         )}
 
         {/* =========================================================================
-            VIEW: CLIENT SOCIETIES & ACCOUNTS
+            GROUP 3: FIRE EQUIPMENT
         ========================================================================= */}
-        {activeTab === 'CLIENTS' && (
-          <ClientsView
-            clientsList={clientsList}
-            onAddClient={() => setAddBuildingModalOpen(true)}
-            onEditClient={(c) => setEditClientModal(c)}
-            onDeleteClient={handleDeleteClient}
-            onOpenExport={() => handleOpenExport('CLIENTS')}
-            onOpenImport={() => handleOpenImport('CLIENTS')}
-          />
-        )}
-
-        {/* =========================================================================
-            VIEW: BUILDINGS & TOWERS
-        ========================================================================= */}
-        {activeTab === 'BUILDINGS' && (
-          <BuildingsView
-            buildings={buildings}
-            summary={summary}
-            expandedBuildingId={expandedBuildingId}
-            setExpandedBuildingId={setExpandedBuildingId}
-            onAddBuilding={() => setAddBuildingModalOpen(true)}
-            onEditBuilding={(b) => setEditBuildingModal(b)}
-            onDeleteBuilding={handleDeleteBuilding}
-            onBulkAdd={(b) => setBulkAddModalOpen(b)}
-            onSingleAdd={(b) => setSingleAddEquipModalOpen(b)}
-            onOpenExport={() => handleOpenExport('BUILDINGS')}
-            onOpenImport={() => handleOpenImport('BUILDINGS')}
-          />
-        )}
-
-        {/* =========================================================================
-            VIEW: FIRE ASSETS & QR INVENTORY
-        ========================================================================= */}
-        {activeTab === 'FIRE_ASSETS' && (
-          <FireAssetsView
-            equipmentsList={equipmentsList}
-            buildings={buildings}
-            equipFilterBuilding={equipFilterBuilding}
-            setEquipFilterBuilding={setEquipFilterBuilding}
-            equipSearch={equipSearch}
-            setEquipSearch={setEquipSearch}
-            onEditEquipment={(eq) => setEditEquipmentModal(eq)}
-            onDeleteEquipment={handleDeleteEquipment}
-            onOpenExport={() => handleOpenExport('FIRE_ASSETS')}
-            onOpenImport={() => handleOpenImport('FIRE_ASSETS')}
-          />
-        )}
-
-        {/* =========================================================================
-            VIEW: INSPECTION LOGS & COMPLIANCE
-        ========================================================================= */}
-        {activeTab === 'INSPECTIONS' && (
-          <div className="space-y-4">
-            <div className="flex justify-end">
+        {activeTab === 'FIRE_EQUIPMENT' && (
+          <div className="space-y-6">
+            <div className="flex justify-end gap-2">
               <button
-                onClick={() => handleOpenExport('INSPECTIONS')}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-all shadow-sm"
-                title="Export Inspections to Excel (.xlsx)"
+                onClick={() => {
+                  if (buildings.length > 0) setSingleAddEquipModalOpen(buildings[0]);
+                  else setAddBuildingModalOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold shadow-xs transition-all"
               >
-                <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-                <span>Export Excel</span>
+                <Plus className="w-4 h-4" />
+                <span>Add Fire Equipment</span>
               </button>
             </div>
-            <InspectionsView
-              showToast={showToast}
-              onOpenImport={() => handleOpenImport('INSPECTIONS')}
+            <FireAssetsView
+              equipmentsList={equipmentsList}
+              buildings={buildings}
+              equipFilterBuilding={equipFilterBuilding}
+              setEquipFilterBuilding={setEquipFilterBuilding}
+              equipSearch={equipSearch}
+              setEquipSearch={setEquipSearch}
+              onEditEquipment={(eq) => setEditEquipmentModal(eq)}
+              onDeleteEquipment={handleDeleteEquipment}
+              onOpenExport={() => handleOpenExport('FIRE_ASSETS')}
+              onOpenImport={() => handleOpenImport('FIRE_ASSETS')}
             />
           </div>
         )}
 
         {/* =========================================================================
-            VIEW: WORK ORDERS & DISPATCH
+            GROUP 4: INSPECTIONS & WORK
         ========================================================================= */}
-        {activeTab === 'WORK_ORDERS' && (
-          <div className="space-y-4">
-            <div className="flex justify-end">
-              <button
-                onClick={() => handleOpenExport('WORK_ORDERS')}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-all shadow-sm"
-                title="Export Work Orders to Excel (.xlsx)"
-              >
-                <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-                <span>Export Excel</span>
-              </button>
+        {(activeTab === 'INSPECTIONS_WORK' || activeTab === 'INSPECTIONS' || activeTab === 'REPAIRS') && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-xs dark:bg-[#111827] dark:border-[#293548]">
+              <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs dark:bg-[#0B1220] dark:border-[#293548]">
+                <button
+                  onClick={() => setInspectionsWorkSubTab('INSPECTIONS')}
+                  className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                    inspectionsWorkSubTab === 'INSPECTIONS'
+                      ? 'bg-[#2563EB] text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  }`}
+                >
+                  Field Inspections ({inspectionsList.length})
+                </button>
+                <button
+                  onClick={() => setInspectionsWorkSubTab('REPAIRS')}
+                  className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
+                    inspectionsWorkSubTab === 'REPAIRS'
+                      ? 'bg-[#2563EB] text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  }`}
+                >
+                  <span>Repairs &amp; Work Orders</span>
+                  {kpis.openWorkOrders > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-rose-500 text-white font-bold">
+                      {kpis.openWorkOrders}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() =>
+                    handleOpenExport(
+                      inspectionsWorkSubTab === 'INSPECTIONS' ? 'INSPECTIONS' : 'WORK_ORDERS'
+                    )
+                  }
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-xs dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:text-emerald-300 dark:border-emerald-800"
+                  title="Export to Excel (.xlsx)"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span>Export Excel</span>
+                </button>
+              </div>
             </div>
-            <WorkOrdersView
-              showToast={showToast}
-              onOpenImport={() => handleOpenImport('WORK_ORDERS')}
-            />
+
+            {inspectionsWorkSubTab === 'INSPECTIONS' ? (
+              <InspectionsView
+                showToast={showToast}
+                onOpenImport={() => handleOpenImport('INSPECTIONS')}
+              />
+            ) : (
+              <WorkOrdersView
+                showToast={showToast}
+                onOpenImport={() => handleOpenImport('WORK_ORDERS')}
+              />
+            )}
           </div>
         )}
 
         {/* =========================================================================
-            VIEW: STATUTORY REPORTS & FORM-B
+            GROUP 5: COMPLIANCE REPORTS
         ========================================================================= */}
         {activeTab === 'REPORTS' && (
           <div className="space-y-4">
             <div className="flex justify-end">
               <button
                 onClick={() => handleOpenExport('REPORTS')}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-all shadow-sm"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-xs dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:text-emerald-300 dark:border-emerald-800"
                 title="Export Report Data to Excel (.xlsx)"
               >
-                <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span>Export Excel</span>
               </button>
             </div>
@@ -1091,12 +1074,19 @@ export default function AdminDashboardPage() {
         )}
 
         {/* =========================================================================
-            VIEW: SETTINGS (LEADS, TOOLS & AGENCY PROFILE)
+            GROUP 6: SETTINGS
         ========================================================================= */}
         {activeTab === 'SETTINGS' && (
           <SettingsView
-            subTab={settingsSubTab}
-            setSubTab={setSettingsSubTab}
+            companyForm={companyForm}
+            setCompanyForm={setCompanyForm}
+            handleSaveCompany={handleSaveCompany}
+            isPlatformOwner={data?.isPlatformOwner}
+            currentUser={data?.user}
+            company={company}
+            showToast={showToast}
+            onOpenImport={(type) => handleOpenImport(type || 'CLIENTS')}
+            onOpenExport={(type) => handleOpenExport(type || 'CLIENTS')}
             enquiriesList={enquiriesList}
             enquiryStatusFilter={enquiryStatusFilter}
             setEnquiryStatusFilter={setEnquiryStatusFilter}
@@ -1105,10 +1095,6 @@ export default function AdminDashboardPage() {
             onUpdateEnquiryStatus={handleUpdateEnquiryStatus}
             onWipeAllDemo={handleWipeAllDemo}
             onSeedCleanData={handleSeedCleanData}
-            companyForm={companyForm}
-            setCompanyForm={setCompanyForm}
-            handleSaveCompany={handleSaveCompany}
-            onOpenImport={(type) => handleOpenImport(type || 'CLIENTS')}
           />
         )}
 
@@ -1136,97 +1122,125 @@ export default function AdminDashboardPage() {
           MODAL 1: ADD CLIENT & BUILDING
       ========================================================================= */}
       {addBuildingModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0d1424] rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-700/80 tactile-card max-h-[90vh] overflow-y-auto text-white">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-[#E2E8F0] max-h-[90vh] overflow-y-auto text-slate-900 dark:bg-[#172033] dark:border-[#293548] dark:text-white">
             
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3 dark:border-[#293548]">
               <div className="flex items-center gap-2.5">
-                <Building2 className="w-5 h-5 text-amber-400" />
-                <h3 className="font-bold text-white text-base">Register Client &amp; Building</h3>
+                <Building2 className="w-5 h-5 text-[#2563EB] dark:text-[#60A5FA]" />
+                <h3 className="font-bold text-[#0F172A] text-base dark:text-white">Register Client &amp; Building</h3>
               </div>
               <button
                 onClick={() => setAddBuildingModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 dark:hover:text-white dark:hover:bg-slate-800"
               >
                 ✕
               </button>
             </div>
 
             <form onSubmit={handleCreateBuilding} className="space-y-4 text-xs">
-              <div className="p-3.5 bg-slate-950/80 rounded-xl space-y-2.5 border border-slate-800">
-                <h4 className="font-bold text-amber-400 uppercase text-[10px] tracking-wider">Client &amp; Society Details</h4>
+              <div className="p-3.5 bg-[#F8FAFC] rounded-xl space-y-2.5 border border-[#E2E8F0] dark:bg-[#0B1220] dark:border-[#293548]">
+                <h4 className="font-bold text-[#2563EB] uppercase text-[10px] tracking-wider dark:text-[#60A5FA]">Client &amp; Society Details</h4>
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Client / Society Name *</label>
+                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Client / Society Name *</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. Horizon Co-op Housing Society"
                     value={buildingForm.clientName}
                     onChange={(e) => setBuildingForm({ ...buildingForm, clientName: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none"
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:placeholder-slate-500 dark:focus:border-[#60A5FA]"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">Contact Person</label>
+                    <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Contact Person</label>
                     <input
                       type="text"
                       placeholder="Secretary / Facility Manager"
                       value={buildingForm.contactPerson}
                       onChange={(e) => setBuildingForm({ ...buildingForm, contactPerson: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none"
+                      className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:placeholder-slate-500 dark:focus:border-[#60A5FA]"
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">Phone Number *</label>
+                    <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Phone Number *</label>
                     <input
                       type="text"
                       required
                       placeholder="+91 98XXX XXXXX"
                       value={buildingForm.phone}
                       onChange={(e) => setBuildingForm({ ...buildingForm, phone: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none"
+                      className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:placeholder-slate-500 dark:focus:border-[#60A5FA]"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="p-3.5 bg-slate-950/80 rounded-xl space-y-2.5 border border-slate-800">
-                <h4 className="font-bold text-amber-400 uppercase text-[10px] tracking-wider">Building &amp; Compliance Cycle</h4>
+              <div className="p-3.5 bg-[#F8FAFC] rounded-xl space-y-2.5 border border-[#E2E8F0] dark:bg-[#0B1220] dark:border-[#293548]">
+                <h4 className="font-bold text-[#2563EB] uppercase text-[10px] tracking-wider dark:text-[#60A5FA]">Building &amp; Compliance Cycle</h4>
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Building / Tower Name *</label>
+                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Building / Tower Name *</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. Horizon Heights Tower C"
                     value={buildingForm.buildingName}
                     onChange={(e) => setBuildingForm({ ...buildingForm, buildingName: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none"
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:placeholder-slate-500 dark:focus:border-[#60A5FA]"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Premises Address *</label>
+                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Premises Address *</label>
                   <input
                     type="text"
                     required
                     placeholder="Street, Area, City, Pin Code"
                     value={buildingForm.address}
                     onChange={(e) => setBuildingForm({ ...buildingForm, address: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none"
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:placeholder-slate-500 dark:focus:border-[#60A5FA]"
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">State / Union Territory *</label>
+                    <select
+                      value={buildingForm.state}
+                      onChange={(e) => setBuildingForm({ ...buildingForm, state: e.target.value })}
+                      className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
+                    >
+                      {INDIAN_STATES_AND_UTS.map((st) => (
+                        <option key={st} value={st}>{st}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Reporting Cycle *</label>
+                    <select
+                      value={buildingForm.reportingCycle}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const mos = val === 'Monthly' ? 1 : val === 'Quarterly' ? 3 : val === 'Half-Yearly' ? 6 : 12;
+                        setBuildingForm({ ...buildingForm, reportingCycle: val, complianceCycle: val, cycleIntervalMos: mos });
+                      }}
+                      className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
+                    >
+                      {REPORTING_CYCLES.map((rc) => (
+                        <option key={rc.value} value={rc.value}>{rc.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Statutory Compliance Cycle</label>
-                  <select
-                    value={buildingForm.complianceCycle}
-                    onChange={(e) => setBuildingForm({ ...buildingForm, complianceCycle: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-amber-500 focus:outline-none"
-                  >
-                    <option value="Delhi NCR Statutory Form-B (Half-Yearly)">Delhi NCR Statutory Form-B (DFS / NBC 2016)</option>
-                    <option value="Delhi Fire NOC Rule 33 (Annual)">Delhi Fire NOC Rule 33 (Annual)</option>
-                    <option value="Haryana Fire Safety Rules (Annual)">Haryana Fire Safety Rules (Annual)</option>
-                    <option value="National Building Code Part 4 (Annual)">National Building Code Part 4 (Annual)</option>
-                  </select>
+                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Local Fire Rule / Format (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Rule 33, Form-B, NBC 2016, or state mandate"
+                    value={buildingForm.complianceRuleName}
+                    onChange={(e) => setBuildingForm({ ...buildingForm, complianceRuleName: e.target.value })}
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:placeholder-slate-500 dark:focus:border-[#60A5FA]"
+                  />
                 </div>
               </div>
 
@@ -1234,13 +1248,13 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setAddBuildingModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white"
+                  className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-[#111827] dark:text-slate-300 dark:hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black shadow-md hover:scale-[1.02]"
+                  className="px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold shadow-xs transition-all"
                 >
                   Create Building
                 </button>
@@ -1254,17 +1268,17 @@ export default function AdminDashboardPage() {
           MODAL 2: BULK ADD EQUIPMENT
       ========================================================================= */}
       {bulkAddModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0d1424] rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-700/80 tactile-card max-h-[90vh] overflow-y-auto text-white">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-[#E2E8F0] max-h-[90vh] overflow-y-auto text-slate-900 dark:bg-[#172033] dark:border-[#293548] dark:text-white">
             
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3 dark:border-[#293548]">
               <div>
-                <h3 className="font-bold text-white text-base">Bulk Add Equipment</h3>
-                <p className="text-xs text-amber-400 font-semibold mt-0.5">{bulkAddModalOpen.name}</p>
+                <h3 className="font-bold text-[#0F172A] text-base dark:text-white">Bulk Add Equipment</h3>
+                <p className="text-xs text-[#2563EB] font-semibold mt-0.5 dark:text-[#60A5FA]">{bulkAddModalOpen.name}</p>
               </div>
               <button
                 onClick={() => setBulkAddModalOpen(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 dark:hover:text-white dark:hover:bg-slate-800"
               >
                 ✕
               </button>
@@ -1273,11 +1287,11 @@ export default function AdminDashboardPage() {
             <form onSubmit={handleBulkAddEquipment} className="space-y-4 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Equipment Type</label>
+                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Equipment Type</label>
                   <select
                     value={equipmentForm.type}
                     onChange={(e) => setEquipmentForm({ ...equipmentForm, type: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-amber-500 focus:outline-none"
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
                   >
                     <option value="Fire Extinguisher">Fire Extinguisher</option>
                     <option value="Hydrant Valve">Hydrant Valve</option>
@@ -1288,58 +1302,58 @@ export default function AdminDashboardPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Capacity / Specification</label>
+                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Capacity / Specification</label>
                   <input
                     type="text"
                     value={equipmentForm.capacity}
                     onChange={(e) => setEquipmentForm({ ...equipmentForm, capacity: e.target.value })}
                     placeholder="e.g. ABC Dry Powder 6kg"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none"
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:placeholder-slate-500 dark:focus:border-[#60A5FA]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">QR Code Prefix</label>
+                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Asset ID / Tag Prefix</label>
                   <input
                     type="text"
                     value={equipmentForm.prefix}
                     onChange={(e) => setEquipmentForm({ ...equipmentForm, prefix: e.target.value.toUpperCase() })}
                     placeholder="e.g. EXT or TWR"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white font-mono uppercase focus:border-amber-500 focus:outline-none"
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 font-mono uppercase focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Quantity to Auto-Generate</label>
+                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Quantity to Auto-Generate</label>
                   <input
                     type="number"
                     min="1"
                     max="50"
                     value={equipmentForm.count}
                     onChange={(e) => setEquipmentForm({ ...equipmentForm, count: Number(e.target.value) })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-amber-500 focus:outline-none"
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Location Pattern</label>
+                <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Location Pattern</label>
                 <input
                   type="text"
                   value={equipmentForm.locationBase}
                   onChange={(e) => setEquipmentForm({ ...equipmentForm, locationBase: e.target.value })}
                   placeholder="e.g. Floor Landing Lift Lobby"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:placeholder-slate-500 dark:focus:border-[#60A5FA]"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Refill / Service Interval</label>
+                <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Refill / Service Interval</label>
                 <select
                   value={equipmentForm.serviceIntervalMonths}
                   onChange={(e) => setEquipmentForm({ ...equipmentForm, serviceIntervalMonths: Number(e.target.value) })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-amber-500 focus:outline-none"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
                 >
                   <option value={12}>12 Months (Annual Extinguisher Refill - IS 2190)</option>
                   <option value={6}>6 Months (Half-Yearly Hydrant &amp; Pump Check)</option>
@@ -1351,15 +1365,15 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setBulkAddModalOpen(null)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white"
+                  className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-[#111827] dark:text-slate-300 dark:hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black shadow-md hover:scale-[1.02]"
+                  className="px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold shadow-xs transition-all"
                 >
-                  Generate {equipmentForm.count} QR Tags
+                  Create {equipmentForm.count} Equipment Records
                 </button>
               </div>
             </form>
@@ -1371,35 +1385,35 @@ export default function AdminDashboardPage() {
           MODAL 3: SINGLE ADD EQUIPMENT
       ========================================================================= */}
       {singleAddEquipModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0d1424] rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-700/80 tactile-card text-white">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#E2E8F0] text-slate-900 dark:bg-[#172033] dark:border-[#293548] dark:text-white">
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3 dark:border-[#293548]">
               <div>
-                <h3 className="font-bold text-white text-base">Add Single Equipment Tag</h3>
-                <p className="text-xs text-amber-400 font-semibold mt-0.5">{singleAddEquipModalOpen.name}</p>
+                <h3 className="font-bold text-[#0F172A] text-base dark:text-white">Add Single Fire Equipment</h3>
+                <p className="text-xs text-[#2563EB] font-semibold mt-0.5 dark:text-[#60A5FA]">{singleAddEquipModalOpen.name}</p>
               </div>
-              <button onClick={() => setSingleAddEquipModalOpen(null)} className="text-slate-400 hover:text-white">✕</button>
+              <button onClick={() => setSingleAddEquipModalOpen(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">✕</button>
             </div>
 
             <form onSubmit={handleSingleAddEquipment} className="space-y-4 text-xs">
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Custom QR Code ID *</label>
+                <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Asset ID / Serial Number *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. HTP-EXT-05"
                   value={singleEquipForm.qrCode}
                   onChange={(e) => setSingleEquipForm({ ...singleEquipForm, qrCode: e.target.value.toUpperCase() })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white font-mono uppercase focus:border-amber-500"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 font-mono uppercase focus:border-[#2563EB] dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Equipment Type</label>
+                <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Equipment Type</label>
                 <select
                   value={singleEquipForm.type}
                   onChange={(e) => setSingleEquipForm({ ...singleEquipForm, type: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-amber-500"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
                 >
                   <option value="Fire Extinguisher">Fire Extinguisher</option>
                   <option value="Hydrant Valve">Hydrant Valve</option>
@@ -1410,25 +1424,25 @@ export default function AdminDashboardPage() {
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Capacity / Specification</label>
+                <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Capacity / Specification</label>
                 <input
                   type="text"
                   required
                   value={singleEquipForm.capacity}
                   onChange={(e) => setSingleEquipForm({ ...singleEquipForm, capacity: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-amber-500"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Specific Location in Building *</label>
+                <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Specific Location in Building *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Basement 1 - Electric Meter Room"
                   value={singleEquipForm.location}
                   onChange={(e) => setSingleEquipForm({ ...singleEquipForm, location: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-amber-500"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
                 />
               </div>
 
@@ -1436,13 +1450,13 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setSingleAddEquipModalOpen(null)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white"
+                  className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-[#111827] dark:text-slate-300 dark:hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black shadow-md"
+                  className="px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold shadow-xs transition-all"
                 >
                   Add Equipment
                 </button>
@@ -1456,50 +1470,50 @@ export default function AdminDashboardPage() {
           MODAL 4: EDIT CLIENT
       ========================================================================= */}
       {editClientModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0d1424] rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-700 text-white text-xs">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="font-bold text-white text-base">Edit Client</h3>
-              <button onClick={() => setEditClientModal(null)} className="text-slate-400 hover:text-white">✕</button>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#E2E8F0] text-slate-900 text-xs dark:bg-[#172033] dark:border-[#293548] dark:text-white">
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3 dark:border-[#293548]">
+              <h3 className="font-bold text-[#0F172A] text-base dark:text-white">Edit Client</h3>
+              <button onClick={() => setEditClientModal(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">✕</button>
             </div>
 
             <form onSubmit={handleUpdateClient} className="space-y-3">
               <div>
-                <label className="block text-slate-300 font-bold mb-1">Client Name *</label>
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Client Name *</label>
                 <input
                   type="text"
                   required
                   value={editClientModal.name}
                   onChange={(e) => setEditClientModal({ ...editClientModal, name: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
                 />
               </div>
               <div>
-                <label className="block text-slate-300 font-bold mb-1">Contact Person</label>
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Contact Person</label>
                 <input
                   type="text"
                   value={editClientModal.contactPerson}
                   onChange={(e) => setEditClientModal({ ...editClientModal, contactPerson: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
                 />
               </div>
               <div>
-                <label className="block text-slate-300 font-bold mb-1">Phone Number *</label>
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Phone Number *</label>
                 <input
                   type="text"
                   required
                   value={editClientModal.phone}
                   onChange={(e) => setEditClientModal({ ...editClientModal, phone: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
                 />
               </div>
               <div>
-                <label className="block text-slate-300 font-bold mb-1">Email Address</label>
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Email Address</label>
                 <input
                   type="email"
                   value={editClientModal.email || ''}
                   onChange={(e) => setEditClientModal({ ...editClientModal, email: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
                 />
               </div>
 
@@ -1507,13 +1521,13 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setEditClientModal(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300"
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-[#111827] dark:text-slate-300"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-amber-500 text-slate-950 font-black"
+                  className="px-5 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold shadow-xs transition-all"
                 >
                   Save Changes
                 </button>
@@ -1527,59 +1541,83 @@ export default function AdminDashboardPage() {
           MODAL 5: EDIT BUILDING
       ========================================================================= */}
       {editBuildingModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0d1424] rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-700 text-white text-xs">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="font-bold text-white text-base">Edit Building</h3>
-              <button onClick={() => setEditBuildingModal(null)} className="text-slate-400 hover:text-white">✕</button>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#E2E8F0] text-slate-900 text-xs dark:bg-[#172033] dark:border-[#293548] dark:text-white">
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3 dark:border-[#293548]">
+              <h3 className="font-bold text-[#0F172A] text-base dark:text-white">Edit Building</h3>
+              <button onClick={() => setEditBuildingModal(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">✕</button>
             </div>
 
             <form onSubmit={handleUpdateBuilding} className="space-y-3">
               <div>
-                <label className="block text-slate-300 font-bold mb-1">Building Name *</label>
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Building Name *</label>
                 <input
                   type="text"
                   required
                   value={editBuildingModal.name}
                   onChange={(e) => setEditBuildingModal({ ...editBuildingModal, name: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
                 />
               </div>
               <div>
-                <label className="block text-slate-300 font-bold mb-1">Premises Address *</label>
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Premises Address *</label>
                 <input
                   type="text"
                   required
                   value={editBuildingModal.address}
                   onChange={(e) => setEditBuildingModal({ ...editBuildingModal, address: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
                 />
               </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">State / UT</label>
+                  <select
+                    value={editBuildingModal.state || 'Delhi'}
+                    onChange={(e) => setEditBuildingModal({ ...editBuildingModal, state: e.target.value })}
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                  >
+                    {INDIAN_STATES_AND_UTS.map((st) => (
+                      <option key={st} value={st}>{st}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Reporting Cycle</label>
+                  <select
+                    value={editBuildingModal.reportingCycle || 'Quarterly'}
+                    onChange={(e) => setEditBuildingModal({ ...editBuildingModal, reportingCycle: e.target.value, complianceCycle: e.target.value })}
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                  >
+                    {REPORTING_CYCLES.map((rc) => (
+                      <option key={rc.value} value={rc.value}>{rc.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               <div>
-                <label className="block text-slate-300 font-bold mb-1">Compliance Cycle</label>
-                <select
-                  value={editBuildingModal.complianceCycle}
-                  onChange={(e) => setEditBuildingModal({ ...editBuildingModal, complianceCycle: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
-                >
-                  <option value="Delhi NCR Statutory Form-B (Half-Yearly)">Delhi NCR Statutory Form-B (Half-Yearly)</option>
-                  <option value="Delhi Fire NOC Rule 33 (Annual)">Delhi Fire NOC Rule 33 (Annual)</option>
-                  <option value="Haryana Fire Safety Rules (Annual)">Haryana Fire Safety Rules (Annual)</option>
-                  <option value="National Building Code Part 4 (Annual)">National Building Code Part 4 (Annual)</option>
-                </select>
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Local Fire Rule / Format (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Rule 33, Form-B, NBC 2016"
+                  value={editBuildingModal.complianceRuleName || ''}
+                  onChange={(e) => setEditBuildingModal({ ...editBuildingModal, complianceRuleName: e.target.value })}
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                />
               </div>
 
               <div className="pt-2 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setEditBuildingModal(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300"
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-[#111827] dark:text-slate-300"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-amber-500 text-slate-950 font-black"
+                  className="px-5 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold shadow-xs transition-all"
                 >
                   Save Building
                 </button>
@@ -1593,51 +1631,51 @@ export default function AdminDashboardPage() {
           MODAL 6: EDIT EQUIPMENT
       ========================================================================= */}
       {editEquipmentModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0d1424] rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-700 text-white text-xs">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="font-bold text-white text-base">Edit Equipment Asset</h3>
-              <button onClick={() => setEditEquipmentModal(null)} className="text-slate-400 hover:text-white">✕</button>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#E2E8F0] text-slate-900 text-xs dark:bg-[#172033] dark:border-[#293548] dark:text-white">
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3 dark:border-[#293548]">
+              <h3 className="font-bold text-[#0F172A] text-base dark:text-white">Edit Equipment Asset</h3>
+              <button onClick={() => setEditEquipmentModal(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">✕</button>
             </div>
 
             <form onSubmit={handleUpdateEquipment} className="space-y-3">
               <div>
-                <label className="block text-slate-300 font-bold mb-1">QR Code Tag *</label>
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Asset ID / Serial Number *</label>
                 <input
                   type="text"
                   required
                   value={editEquipmentModal.qrCode}
                   onChange={(e) => setEditEquipmentModal({ ...editEquipmentModal, qrCode: e.target.value.toUpperCase() })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white font-mono uppercase"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 font-mono uppercase dark:bg-[#111827] dark:border-[#293548] dark:text-white"
                 />
               </div>
               <div>
-                <label className="block text-slate-300 font-bold mb-1">Capacity / Specification *</label>
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Capacity / Specification *</label>
                 <input
                   type="text"
                   required
                   value={editEquipmentModal.capacity}
                   onChange={(e) => setEditEquipmentModal({ ...editEquipmentModal, capacity: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
                 />
               </div>
               <div>
-                <label className="block text-slate-300 font-bold mb-1">Location Details *</label>
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Location Details *</label>
                 <input
                   type="text"
                   required
                   value={editEquipmentModal.location}
                   onChange={(e) => setEditEquipmentModal({ ...editEquipmentModal, location: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
                 />
               </div>
               <div>
-                <label className="block text-slate-300 font-bold mb-1">Refill / Service Interval (Months)</label>
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Refill / Service Interval (Months)</label>
                 <input
                   type="number"
                   value={editEquipmentModal.serviceIntervalMonths}
                   onChange={(e) => setEditEquipmentModal({ ...editEquipmentModal, serviceIntervalMonths: Number(e.target.value) })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
                 />
               </div>
 
@@ -1645,13 +1683,13 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setEditEquipmentModal(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300"
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-[#111827] dark:text-slate-300"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-amber-500 text-slate-950 font-black"
+                  className="px-5 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold shadow-xs transition-all"
                 >
                   Save Equipment
                 </button>
@@ -1659,6 +1697,17 @@ export default function AdminDashboardPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* =========================================================================
+          MODAL 7: FEEDBACK
+      ========================================================================= */}
+      {feedbackModalOpen && (
+        <FeedbackModal
+          isOpen={feedbackModalOpen}
+          onClose={() => setFeedbackModalOpen(false)}
+          userEmail={data?.user?.email}
+        />
       )}
 
       </main>

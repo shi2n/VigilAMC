@@ -23,7 +23,7 @@ export function SiteLayout({ children }: SiteLayoutProps) {
 
   if (isAuthApp) {
     return (
-      <div className="min-h-screen bg-[#080d1a] text-slate-100 font-sans selection:bg-[#0077B6] selection:text-white">
+      <div className="min-h-screen font-sans selection:bg-[#0077B6] selection:text-white">
         {children}
       </div>
     );

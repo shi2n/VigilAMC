@@ -4,37 +4,30 @@ import React from 'react';
 import {
   LayoutDashboard,
   Building2,
-  Users,
-  ShieldCheck,
-  UserCheck,
-  Flame,
   CheckCircle2,
-  Wrench,
   FileText,
   Settings,
-  Mail,
   LogOut,
-  Sparkles,
-  CreditCard,
-  FileSpreadsheet,
-  Printer,
-  ChevronRight,
-  X
+  Moon,
+  Sun,
+  X,
+  Flame,
+  ChevronDown,
 } from 'lucide-react';
 import Link from 'next/link';
 
 export type AdminNavTab =
-  | 'DASHBOARD'
-  | 'AGENCY'
-  | 'ADMIN_USERS'
-  | 'TECHNICIANS'
-  | 'CLIENTS'
-  | 'BUILDINGS'
-  | 'FIRE_ASSETS'
-  | 'INSPECTIONS'
-  | 'WORK_ORDERS'
+  | 'OVERVIEW'
+  | 'CLIENTS_SITES'
+  | 'FIRE_EQUIPMENT'
+  | 'INSPECTIONS_WORK'
   | 'REPORTS'
-  | 'SETTINGS';
+  | 'SETTINGS'
+  // Backward compatibility aliases
+  | 'HOME'
+  | 'SITES'
+  | 'INSPECTIONS'
+  | 'REPAIRS';
 
 interface AdminSidebarProps {
   activeTab: AdminNavTab;
@@ -44,12 +37,13 @@ interface AdminSidebarProps {
   onCloseMobile: () => void;
   company?: any;
   userEmail?: string;
+  userProfile?: any;
+  isPlatformOwner?: boolean;
   onLogout: () => void;
-  onOpenExport: () => void;
-  onOpenImport?: () => void;
+  openRepairsCount?: number;
   unreadLeadsCount?: number;
-  techSeatUsageText?: string;
-  subscription?: any;
+  isDarkMode?: boolean;
+  onToggleDarkMode?: () => void;
 }
 
 export function AdminSidebar({
@@ -60,14 +54,26 @@ export function AdminSidebar({
   onCloseMobile,
   company,
   userEmail,
+  userProfile,
+  isPlatformOwner = false,
   onLogout,
-  onOpenExport,
-  onOpenImport,
+  openRepairsCount = 0,
   unreadLeadsCount = 0,
-  techSeatUsageText,
-  subscription,
+  isDarkMode = false,
+  onToggleDarkMode,
 }: AdminSidebarProps) {
   const isMobile = isMobileOpen ?? isOpenMobile ?? false;
+
+  // Normalize legacy tab names
+  const normalizedActiveTab: AdminNavTab =
+    activeTab === 'HOME'
+      ? 'OVERVIEW'
+      : activeTab === 'SITES'
+      ? 'CLIENTS_SITES'
+      : activeTab === 'INSPECTIONS' || activeTab === 'REPAIRS'
+      ? 'INSPECTIONS_WORK'
+      : activeTab;
+
   const navItems: {
     id: AdminNavTab;
     label: string;
@@ -75,70 +81,84 @@ export function AdminSidebar({
     badge?: string | number;
     badgeColor?: string;
   }[] = [
-    { id: 'DASHBOARD', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'AGENCY', label: 'Agency & Plan', icon: Building2 },
-    { id: 'ADMIN_USERS', label: 'Admin Users', icon: UserCheck },
+    { id: 'OVERVIEW', label: 'Overview', icon: LayoutDashboard },
+    { id: 'CLIENTS_SITES', label: 'Clients & Sites', icon: Building2 },
+    { id: 'FIRE_EQUIPMENT', label: 'Fire Equipment', icon: Flame },
     {
-      id: 'TECHNICIANS',
-      label: 'Technician Users',
-      icon: Users,
-      badge: techSeatUsageText,
+      id: 'INSPECTIONS_WORK',
+      label: 'Inspections & Work',
+      icon: CheckCircle2,
+      badge: openRepairsCount > 0 ? openRepairsCount : undefined,
+      badgeColor: 'bg-rose-500 text-white',
     },
-    { id: 'CLIENTS', label: 'Clients & Societies', icon: ShieldCheck },
-    { id: 'BUILDINGS', label: 'Buildings / Towers', icon: Building2 },
-    { id: 'FIRE_ASSETS', label: 'Fire Assets & QRs', icon: Flame },
-    { id: 'INSPECTIONS', label: 'Inspections', icon: CheckCircle2 },
-    { id: 'WORK_ORDERS', label: 'Work Orders', icon: Wrench },
-    { id: 'REPORTS', label: 'Reports & Form-B', icon: FileText },
+    { id: 'REPORTS', label: 'Reports', icon: FileText },
     {
       id: 'SETTINGS',
-      label: 'Settings & Leads',
+      label: 'Settings',
       icon: Settings,
-      badge: unreadLeadsCount > 0 ? unreadLeadsCount : undefined,
-      badgeColor: 'bg-red-500 text-white',
+      badge: isPlatformOwner && unreadLeadsCount > 0 ? unreadLeadsCount : undefined,
+      badgeColor: 'bg-blue-600 text-white',
     },
   ];
 
+  // User display metadata
+  const displayName = userProfile?.fullName?.trim() || userEmail?.split('@')[0] || 'Agency Admin';
+  const roleName = isPlatformOwner ? 'Platform Owner' : userProfile?.role === 'SUPER_ADMIN' ? 'Owner' : 'Agency Admin';
+  const userInitials =
+    displayName
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((n: string) => n[0].toUpperCase())
+      .join('') || 'A';
+
   const sidebarContent = (
-    <div className="flex flex-col h-full bg-[#0a101f] border-r border-slate-800 text-slate-300 w-64 select-none">
-      
+    <div className="flex flex-col h-full bg-white dark:bg-[#111827] border-r border-[#E2E8F0] dark:border-[#293548] text-slate-700 dark:text-[#94A3B8] w-64 select-none shadow-xs transition-colors duration-200">
       {/* Brand Header */}
-      <div className="p-5 border-b border-slate-800 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-slate-950 font-black shadow-md">
-            <ShieldCheck className="w-5 h-5 text-slate-950 stroke-[2.5]" />
+      <div className="p-4 sm:p-5 border-b border-[#E2E8F0] dark:border-[#293548] flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-3 group shrink-0 min-w-0">
+          <div className="bg-white p-1 rounded-xl border border-slate-200 shadow-xs transition-transform duration-200 group-hover:scale-105 shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.jpg"
+              alt="VigilAMC Logo"
+              className="h-8 w-auto object-contain rounded-md"
+              onError={(e) => {
+                // If logo.jpg is not found, fallback silently
+                (e.target as HTMLElement).style.display = 'none';
+              }}
+            />
           </div>
-          <div>
-            <div className="text-sm font-black text-white tracking-tight flex items-center gap-1.5">
-              <span>VigilAMC</span>
-              <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400 text-[9px] font-extrabold border border-amber-500/30">
-                OS
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="font-extrabold text-base tracking-tight text-[#1D4ED8] dark:text-[#F8FAFC]">
+                Vigil<span className="text-[#2563EB]">AMC</span>
+              </span>
+              <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800">
+                Testing
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 truncate max-w-[130px]">
-              {company?.name || 'Fire AMC Admin'}
+            <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] truncate max-w-[130px]">
+              {company?.name || 'Fire AMC Agency'}
             </p>
           </div>
-        </div>
+        </Link>
 
         {/* Close button on mobile */}
         <button
           onClick={onCloseMobile}
-          className="lg:hidden p-1.5 rounded-lg bg-slate-900 text-slate-400 hover:text-white"
+          className="lg:hidden p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-[#172033] dark:text-[#94A3B8] dark:hover:text-white"
+          aria-label="Close navigation"
         >
           <X className="w-5 h-5" />
         </button>
       </div>
 
-      {/* Navigation List */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-thin">
-        <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-          Management
-        </div>
-
+      {/* Navigation List (6 Items Only) */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-1.5 scrollbar-thin">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = activeTab === item.id;
+          const isActive = normalizedActiveTab === item.id;
 
           return (
             <button
@@ -147,21 +167,25 @@ export function AdminSidebar({
                 onSelectTab(item.id);
                 onCloseMobile();
               }}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all ${
                 isActive
-                  ? 'bg-amber-500 text-slate-950 shadow-md font-black'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-900/80'
+                  ? 'bg-[#EFF6FF] text-[#2563EB] font-bold shadow-xs dark:bg-[#172033] dark:text-[#60A5FA] border border-[#BFDBFE] dark:border-[#2563EB]/40'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-medium dark:text-[#94A3B8] dark:hover:text-[#F8FAFC] dark:hover:bg-[#172033]'
               }`}
             >
-              <div className="flex items-center gap-2.5">
-                <Icon className={`w-4 h-4 ${isActive ? 'text-slate-950' : 'text-slate-400'}`} />
-                <span>{item.label}</span>
+              <div className="flex items-center gap-2.5 truncate">
+                <Icon
+                  className={`w-4 h-4 shrink-0 ${
+                    isActive ? 'text-[#2563EB] dark:text-[#60A5FA]' : 'text-slate-400 dark:text-slate-500'
+                  }`}
+                />
+                <span className="truncate">{item.label}</span>
               </div>
 
               {item.badge && (
                 <span
-                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-extrabold ${
-                    item.badgeColor || (isActive ? 'bg-slate-950 text-amber-300' : 'bg-slate-800 text-slate-300')
+                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-extrabold shrink-0 ${
+                    item.badgeColor || 'bg-blue-100 text-[#2563EB]'
                   }`}
                 >
                   {item.badge}
@@ -170,71 +194,55 @@ export function AdminSidebar({
             </button>
           );
         })}
-
-        {/* Utility Shortcuts */}
-        <div className="pt-3">
-          <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-            Tools
-          </div>
-
-          {onOpenImport && (
-            <button
-              onClick={() => {
-                onOpenImport();
-                onCloseMobile();
-              }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-amber-400 hover:bg-amber-950/20 hover:text-amber-300 border border-amber-500/20 transition-all mb-1.5"
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              <span>Import Existing Data</span>
-            </button>
-          )}
-
-          <button
-            onClick={() => {
-              onOpenExport();
-              onCloseMobile();
-            }}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-emerald-400 hover:bg-emerald-950/20 hover:text-emerald-300 border border-emerald-500/20 transition-all mb-1"
-          >
-            <FileSpreadsheet className="w-4 h-4" />
-            <span>Export to Excel</span>
-          </button>
-
-          <Link
-            href="/assets/print-qr"
-            onClick={onCloseMobile}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-900 transition-all"
-          >
-            <Printer className="w-4 h-4 text-amber-400" />
-            <span>Print QR Labels</span>
-          </Link>
-        </div>
       </div>
 
       {/* Admin User Profile & Sign Out Footer */}
-      <div className="p-3.5 border-t border-slate-800/80 bg-slate-950/60">
-        <div className="flex items-center justify-between gap-2">
-          <div className="min-w-0">
-            <div className="text-xs font-bold text-white truncate">
-              {userEmail?.split('@')[0] || 'Agency Admin'}
+      <div className="p-3.5 border-t border-[#E2E8F0] dark:border-[#293548] bg-slate-50/70 dark:bg-[#0B1220]/70 space-y-2">
+        <div className="flex items-center justify-between gap-2 min-w-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+              {userInitials}
             </div>
-            <div className="text-[10px] text-amber-400 font-semibold truncate flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-              <span>Primary Admin</span>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-slate-900 dark:text-[#F8FAFC] truncate">
+                {displayName}
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-[#94A3B8] truncate">
+                {roleName}
+              </div>
             </div>
           </div>
 
-          <button
-            onClick={onLogout}
-            className="p-2 rounded-lg bg-red-950/30 hover:bg-red-900/50 text-red-300 border border-red-800/40 transition-colors"
-            title="Sign Out of Admin OS"
-          >
-            <LogOut className="w-4 h-4 text-red-400" />
-          </button>
-        </div>
-      </div>
+          <div className="flex items-center gap-1 shrink-0">
+            {onToggleDarkMode && (
+              <button
+                onClick={onToggleDarkMode}
+                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-[#94A3B8] dark:hover:text-[#F8FAFC] hover:bg-slate-200 dark:hover:bg-[#172033] transition-colors"
+                title={isDarkMode ? 'Switch to light theme' : 'Switch to dark theme'}
+                aria-label="Toggle theme"
+              >
+                {isDarkMode ? <Sun className="w-4 h-4 text-blue-400" /> : <Moon className="w-4 h-4" />}
+              </button>
+            )}
 
+            <button
+              onClick={onLogout}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+              title="Sign out of agency dashboard"
+              aria-label="Sign out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Agency License Badge in Profile Footer */}
+        {company?.licenseNumber && (
+          <div className="text-[10px] font-mono text-slate-400 dark:text-slate-500 truncate pt-1 border-t border-slate-200/60 dark:border-[#293548]/60">
+            Lic: {company.licenseNumber}
+          </div>
+        )}
+      </div>
     </div>
   );
 
@@ -248,7 +256,7 @@ export function AdminSidebar({
       {/* Mobile Drawer (Slide-in) */}
       {isMobile && (
         <div className="fixed inset-0 z-50 lg:hidden flex">
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={onCloseMobile} />
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onCloseMobile} />
           <div className="relative z-10 h-full animate-in slide-in-from-left duration-200">
             {sidebarContent}
           </div>

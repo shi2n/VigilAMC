@@ -71,7 +71,7 @@ export default function PublicVerifyPassportPage() {
           <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto" />
           <h2 className="text-lg font-bold">Equipment Record Not Found</h2>
           <p className="text-xs text-slate-400">
-            No active compliance record found for QR Code: <span className="font-mono text-red-400 font-bold">{qrCode}</span>
+            No active compliance record found for Asset ID: <span className="font-mono text-red-400 font-bold">{qrCode}</span>
           </p>
           <Link
             href="/"
@@ -198,7 +198,7 @@ export default function PublicVerifyPassportPage() {
           <div className="pt-2 text-xs space-y-1.5">
             <div className="text-slate-400 font-semibold text-[11px]">Suitable for Fire Classes:</div>
             <div className="flex flex-wrap gap-1.5">
-              {eqInfo.suitableFor.map((cls, idx) => (
+              {eqInfo.suitableFor.map((cls: string, idx: number) => (
                 <span
                   key={idx}
                   className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 text-[10px] font-medium border border-slate-700"
@@ -305,7 +305,7 @@ export default function PublicVerifyPassportPage() {
 
       {/* Footer */}
       <footer className="mt-8 text-center text-slate-500 text-[11px] space-y-1">
-        <p>VigilAMC • Compliance Verification under IS 2190, NBC 2016 &amp; Delhi Fire Safety Rules</p>
+        <p>VigilAMC • Compliance Verification under IS 2190, NBC 2016 &amp; Applicable State Fire Rules</p>
         <p className="text-slate-600">Digital Passport ID: {asset.qrCode}</p>
       </footer>
     </div>

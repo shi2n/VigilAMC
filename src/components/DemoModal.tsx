@@ -239,7 +239,7 @@ export function DemoModal({ isOpen, onClose }: DemoModalProps) {
                   What you will see in this 15-minute session:
                 </p>
                 <ul className="list-disc pl-5 space-y-0.5 text-slate-600">
-                  <li>Instant QR code scanning &amp; digital asset tagging</li>
+                  <li>GPS-verified inspections: details, location notes, and photo capture</li>
                   <li>Form-B 1-click generation with fire authority compliance stamps</li>
                   <li>WhatsApp automated renewal alerts for clients &amp; technicians</li>
                 </ul>

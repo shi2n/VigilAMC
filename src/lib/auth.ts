@@ -158,6 +158,25 @@ export async function getCurrentUser(req?: Request): Promise<AuthContext | null>
   }
 }
 
+export function isPlatformOwner(auth: AuthContext | null): boolean {
+  if (!auth || !auth.user) return false;
+  const email = (auth.user.email || '').toLowerCase().trim();
+  const ownerEmail = (process.env.ADMIN_NOTIFICATION_EMAIL || 'vigilamc@gmail.com').toLowerCase().trim();
+  const role = (auth.profile?.role || '').toUpperCase();
+  return role === 'SUPER_ADMIN' || role === 'PLATFORM_OWNER' || email === ownerEmail || email === 'vigilamc@gmail.com';
+}
+
+export async function requirePlatformOwner(req?: Request): Promise<AuthContext> {
+  const auth = await getCurrentUser(req);
+  if (!auth || !auth.user) {
+    throw new Error('UNAUTHORIZED: Authentication required');
+  }
+  if (!isPlatformOwner(auth)) {
+    throw new Error('FORBIDDEN: Platform Owner privileges required');
+  }
+  return auth;
+}
+
 /**
  * Ensures request is made by an authenticated Agency Admin
  */
@@ -172,7 +191,7 @@ export async function requireAdmin(req?: Request): Promise<AuthContext> {
   }
 
   const role = auth.profile?.role;
-  if (role !== 'ORG_ADMIN' && role !== 'SUPER_ADMIN') {
+  if (role !== 'ORG_ADMIN' && role !== 'SUPER_ADMIN' && role !== 'PLATFORM_OWNER') {
     throw new Error('FORBIDDEN: Agency Administrator privileges required');
   }
 

@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { requireAdmin } from '@/lib/auth';
+import { requirePlatformOwner } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
-    // Ensure caller is an authenticated Administrator
-    await requireAdmin(request);
+    // Ensure caller is the Platform Owner (founder)
+    await requirePlatformOwner(request);
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');

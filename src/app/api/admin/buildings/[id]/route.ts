@@ -46,13 +46,14 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const auth = await getCurrentUser();
+    const { requireAdmin } = await import('@/lib/auth');
+    const auth = await requireAdmin(request);
     if (!auth || !auth.organization) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
-    const { name, address, complianceCycle, cycleIntervalMos, nextFilingDueDate, clientId } = body;
+    const { name, address, state, reportingCycle, complianceRuleName, complianceCycle, cycleIntervalMos, nextFilingDueDate, clientId } = body;
 
     const existing = await (db as any).building.findFirst({
       where: {
@@ -65,13 +66,25 @@ export async function PUT(
       return NextResponse.json({ error: 'Building not found or access denied' }, { status: 404 });
     }
 
+    const intervalMap: Record<string, number> = {
+      Monthly: 1,
+      Quarterly: 3,
+      'Half-Yearly': 6,
+      Yearly: 12,
+    };
+    const repCycle = reportingCycle !== undefined ? reportingCycle : existing.reportingCycle;
+    const computedInterval = cycleIntervalMos !== undefined ? Number(cycleIntervalMos) : (repCycle ? intervalMap[repCycle] : existing.cycleIntervalMos);
+
     const updated = await (db as any).building.update({
       where: { id: params.id },
       data: {
         name: name !== undefined ? name.trim() : existing.name,
         address: address !== undefined ? address.trim() : existing.address,
-        complianceCycle: complianceCycle !== undefined ? complianceCycle : existing.complianceCycle,
-        cycleIntervalMos: cycleIntervalMos !== undefined ? Number(cycleIntervalMos) : existing.cycleIntervalMos,
+        state: state !== undefined ? (state ? state.trim() : null) : existing.state,
+        reportingCycle: repCycle,
+        complianceRuleName: complianceRuleName !== undefined ? (complianceRuleName ? complianceRuleName.trim() : null) : existing.complianceRuleName,
+        complianceCycle: complianceCycle !== undefined ? complianceCycle : (repCycle || existing.complianceCycle),
+        cycleIntervalMos: computedInterval || 6,
         nextFilingDueDate: nextFilingDueDate ? new Date(nextFilingDueDate) : existing.nextFilingDueDate,
         clientId: clientId !== undefined ? clientId : existing.clientId,
       },
@@ -81,7 +94,8 @@ export async function PUT(
     return NextResponse.json({ success: true, building: updated });
   } catch (error: any) {
     console.error('Error updating building:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const status = error.message?.startsWith('FORBIDDEN') ? 403 : error.message?.startsWith('UNAUTHORIZED') ? 401 : 500;
+    return NextResponse.json({ error: error.message }, { status });
   }
 }
 
@@ -90,7 +104,8 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const auth = await getCurrentUser();
+    const { requireAdmin } = await import('@/lib/auth');
+    const auth = await requireAdmin(request);
     if (!auth || !auth.organization) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -111,6 +126,7 @@ export async function DELETE(
     return NextResponse.json({ success: true, message: 'Building and associated equipment deleted' });
   } catch (error: any) {
     console.error('Error deleting building:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const status = error.message?.startsWith('FORBIDDEN') ? 403 : error.message?.startsWith('UNAUTHORIZED') ? 401 : 500;
+    return NextResponse.json({ error: error.message }, { status });
   }
 }

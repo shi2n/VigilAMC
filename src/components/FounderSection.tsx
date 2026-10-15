@@ -46,15 +46,15 @@ export function FounderSection() {
             </p>
 
             <p>
-              <strong>We built VigilAMC to solve this specific problem.</strong> By pairing physical equipment with durable QR codes, field technicians can log verified inspection checks on mobile phones even when working in shielded basement pump rooms with zero network. Service managers gain a live radar of due dates, and clients receive clean, transparent compliance reports.
+              <strong>We built VigilAMC to solve this specific problem.</strong> By recording asset details, floor and location notes, GPS position, and photo proof on site, field technicians can log verified inspection checks on mobile phones even when working in shielded basement pump rooms. Service managers gain a live radar of due dates, and clients receive clean, transparent compliance reports.
             </p>
 
             <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <a
-                href="#pilot-form"
+                href="#pilot-section"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0077B6] hover:bg-[#023E8A] text-white text-xs font-bold shadow-md transition-all active:scale-[0.98]"
               >
-                <span>Join the Free Pilot</span>
+                <span>Join the free testing</span>
                 <ArrowRight className="w-4 h-4" />
               </a>
 
@@ -79,10 +79,6 @@ export function FounderSection() {
               </div>
 
               {/* Clean Video Placeholder Box */}
-              {/* TO REPLACE WITH REAL FOUNDER VIDEO:
-                  Replace this inner div with your YouTube/Vimeo embed or an HTML5 <video> tag:
-                  <video src="/founder-story.mp4" poster="/founder-poster.jpg" controls className="w-full rounded-xl" />
-              */}
               <div className="relative aspect-video w-full rounded-xl bg-gradient-to-br from-slate-900 via-navy-900 to-slate-950 flex flex-col items-center justify-center p-6 text-center text-white border border-slate-800 shadow-inner group">
                 <div className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-cyan-300 mb-3 group-hover:scale-105 group-hover:bg-[#0077B6] group-hover:text-white transition-all shadow-md">
                   <Play className="w-6 h-6 ml-0.5 fill-current" />
@@ -91,9 +87,6 @@ export function FounderSection() {
                   Founder Story &mdash; Coming Soon
                 </h4>
                 <p className="text-xs text-slate-400 mt-1 max-w-xs leading-relaxed">
-                  [ADD REAL FOUNDER VIDEO]
-                </p>
-                <p className="text-[10px] text-cyan-200/70 mt-2">
                   A personal walkthrough on building VigilAMC for Indian fire safety teams
                 </p>
               </div>

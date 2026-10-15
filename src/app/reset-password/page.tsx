@@ -199,7 +199,7 @@ function ResetPasswordContent() {
             <img
               src="/logo.jpg"
               alt="VigilAMC"
-              className="h-16 w-auto object-contain mx-auto mix-blend-multiply"
+              className="h-16 w-auto object-contain mx-auto rounded-2xl shadow-sm"
             />
           </Link>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-ocean-50 text-[#0077B6] text-xs font-bold border border-ocean-200">

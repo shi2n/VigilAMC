@@ -3,11 +3,9 @@
 import React, { useState } from 'react';
 import {
   PlusCircle,
-  QrCode,
-  Smartphone,
-  Wrench,
+  MapPin,
   Camera,
-  Database,
+  AlertTriangle,
   FileCheck2,
   CheckCircle2,
   ArrowRight,
@@ -21,80 +19,47 @@ export function ProductWorkflowSection() {
   const steps = [
     {
       step: 1,
-      title: 'Add Fire-Safety Asset',
-      shortTitle: '1. Add Asset',
+      title: 'Register Assets',
+      shortTitle: '1. Register Assets',
       category: 'Inventory Setup',
       icon: PlusCircle,
       description:
-        'Register extinguishers, hydrants, hose reels, and alarm panels. Log equipment capacity, manufacturer, install dates, floor locations, and statutory test intervals.',
-      previewText: 'ASSET REGISTRY: 6kg ABC Dry Powder &bull; Floor 4 North Wing &bull; Next Refill: Nov 2027',
+        'Register extinguishers, hydrants, hose reels, and alarm panels. Log equipment details (type, capacity, serial number), manufacturer, installation dates, and statutory test intervals.',
+      previewText: 'ASSET REGISTRY: 6kg ABC Dry Powder • Floor 4 North Wing • Serial: VIGIL-DP-4019',
       status: 'LIVE' as const,
     },
     {
       step: 2,
-      title: 'Assign QR Code',
-      shortTitle: '2. Assign QR',
-      category: 'Field Identity',
-      icon: QrCode,
+      title: 'Record on Site (Details, GPS Location, Photo)',
+      shortTitle: '2. Record on Site',
+      category: 'Field Inspection',
+      icon: MapPin,
       description:
-        'Attach a durable, weatherproof QR tag to each physical asset. The platform links the unique tag ID directly to the equipment database record.',
-      previewText: 'TAG ID: VIGIL-MH-4019 &bull; Serialized &bull; Weatherproof Anodized Aluminum',
-      status: 'LIVE' as const,
+        'Technicians record asset details, floor and location notes, GPS position, a photo, and the inspection date and time using a simple mobile form.',
+      previewText: 'INSPECTION: GPS (28.4595° N, 77.0266° E) • Floor 2 Electrical Room • Photo & Time Captured',
+      status: 'BETA' as const,
     },
     {
       step: 3,
-      title: 'Technician Scans QR',
-      shortTitle: '3. Scan QR',
-      category: 'Field Audit',
-      icon: Smartphone,
+      title: 'Flag Defects with Photo Proof',
+      shortTitle: '3. Flag Defects',
+      category: 'Defect Remediation',
+      icon: Camera,
       description:
-        'Technicians scan the QR code using any smartphone browser. The mobile app functions 100% offline in shielded basements and underground pump houses.',
-      previewText: 'SCANNER: Camera Viewfinder Active &bull; Offline Mode Engaged &bull; Zero Delay',
+        'Flag depressurized cylinders, missing safety seals, damaged hoses, or leaking valves immediately with attached photographic evidence.',
+      previewText: 'DEFECT LOG: Low Pressure (8.2 Bar) • Photographic Proof Attached • Remediation Ticket Created',
       status: 'LIVE' as const,
     },
     {
       step: 4,
-      title: 'Perform Service',
-      shortTitle: '4. Service Checks',
-      category: 'Maintenance Routine',
-      icon: Wrench,
-      description:
-        'Follow structured checklists: pressure gauge in green zone, safety pin & tamper seal intact, nozzle clear, hose uncracked, cylinder weight verified.',
-      previewText: 'CHECKLIST: Pressure Gauge (14.5 Bar) &bull; Seal (Intact) &bull; Nozzle (Clean)',
-      status: 'LIVE' as const,
-    },
-    {
-      step: 5,
-      title: 'Upload Service Evidence',
-      shortTitle: '5. Upload Evidence',
-      category: 'Proof of Service',
-      icon: Camera,
-      description:
-        'Snap a timestamped photo of the inspected equipment and gauge reading. Capture immediate photographic evidence for any flagged defects.',
-      previewText: 'EVIDENCE: Gauge Photo Attached &bull; Timestamped &bull; Geo-tagged (Lat/Lon)',
-      status: 'LIVE' as const,
-    },
-    {
-      step: 6,
-      title: 'Update Service Record',
-      shortTitle: '6. Sync Record',
-      category: 'Audit Trail',
-      icon: Database,
-      description:
-        'Inspection records sync automatically to the central cloud database as soon as the technician re-enters network coverage. Maintenance history updates instantly.',
-      previewText: 'DATABASE: Record Synced &bull; Next Due Date Calculated &bull; Defect Logged',
-      status: 'LIVE' as const,
-    },
-    {
-      step: 7,
-      title: 'Generate Client Compliance Report',
-      shortTitle: '7. Generate Report',
-      category: 'Client Deliverable',
+      title: 'Generate the Form-B Report',
+      shortTitle: '4. Generate Form-B',
+      category: 'Statutory Deliverable',
       icon: FileCheck2,
       description:
-        'Compile all verified equipment logs into a client-ready Biannual Form-B compliance report with a single click, ready for licensed engineer review and signing.',
-      previewText: 'DELIVERABLE: Model Form-B PDF &bull; 100% Verified Asset Schedule &bull; Client Portal Ready',
-      status: 'BETA' as const,
+        'Compile all verified equipment logs, locations, and photos into a standardized Biannual Form-B compliance certificate ready for licensed contractor sign-off.',
+      previewText: 'DELIVERABLE: Standardized Form-B PDF • Equipment Schedule with Locations & Photos',
+      status: 'LIVE' as const,
     },
   ];
 
@@ -106,13 +71,13 @@ export function ProductWorkflowSection() {
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-ocean-50 text-[#0077B6] text-xs font-bold border border-ocean-200 mb-3">
             <span>End-to-End Operational Lifecycle</span>
-            <StatusBadge status="LIVE" size="xs" />
+            <StatusBadge status="BETA" size="xs" />
           </div>
           <h2 className="text-3xl sm:text-4xl font-black text-[#023E8A] tracking-tight">
             How VigilAMC Works in Practice
           </h2>
           <p className="mt-3 text-base text-slate-600 leading-relaxed">
-            From physical equipment tagging to client-facing compliance reports — step by step through real-world workflows.
+            From asset registration and GPS-verified inspections to standardized Form-B compliance reports.
           </p>
         </div>
 
@@ -146,7 +111,7 @@ export function ProductWorkflowSection() {
           <div className="lg:col-span-7 space-y-4">
             <div className="flex items-center gap-2">
               <span className="text-xs uppercase font-extrabold text-[#0077B6] tracking-wider">
-                Step 0{current.step} of 07 &bull; {current.category}
+                Step 0{current.step} of 04 &bull; {current.category}
               </span>
               <StatusBadge status={current.status} size="xs" />
             </div>
@@ -168,10 +133,10 @@ export function ProductWorkflowSection() {
 
             <div className="flex items-center gap-3 pt-2">
               <button
-                onClick={() => setActiveStep((prev) => (prev === 7 ? 1 : prev + 1))}
+                onClick={() => setActiveStep((prev) => (prev === 4 ? 1 : prev + 1))}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0077B6] hover:bg-[#023E8A] text-white text-xs font-bold transition-all shadow-sm active:scale-[0.98]"
               >
-                <span>{activeStep === 7 ? 'Start Over (Step 1)' : 'Next Step'}</span>
+                <span>{activeStep === 4 ? 'Start Over (Step 1)' : 'Next Step'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
               <span className="text-xs text-slate-400">
@@ -188,7 +153,7 @@ export function ProductWorkflowSection() {
                   <current.icon className="w-4 h-4 text-cyan-400" />
                   Workflow Execution Node
                 </span>
-                <span className="text-[10px] text-slate-400">Step {current.step}/7</span>
+                <span className="text-[10px] text-slate-400">Step {current.step}/4</span>
               </div>
 
               <div className="py-6 flex flex-col items-center justify-center text-center space-y-3">

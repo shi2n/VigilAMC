@@ -46,7 +46,9 @@ export async function POST(request: Request) {
     const name = (body.name || body.fullName || '').trim();
     const phone = (body.phone || '').trim();
     const company = (body.company || '').trim();
+    const state = (body.state || '').trim();
     const city = (body.city || '').trim();
+    const locationString = [city, state].filter(Boolean).join(', ');
     const type = (body.type || 'DEMO').trim(); // DEMO, CONTACT, QUICK_INQUIRY, NEWSLETTER
     const facilityType = (body.facilityType || '').trim();
     const assetCount = (body.assetCount || body.buildingsCount || '').trim();
@@ -57,6 +59,7 @@ export async function POST(request: Request) {
     const trackingMethod = (body.trackingMethod || '').trim();
     const message = [
       rawMessage,
+      state ? `State/UT: ${state}` : null,
       technicianCount ? `Technicians: ${technicianCount}` : null,
       trackingMethod ? `Current tracking method: ${trackingMethod}` : null,
     ].filter(Boolean).join(' | ');
@@ -70,7 +73,7 @@ export async function POST(request: Request) {
         email,
         phone,
         company,
-        city,
+        city: locationString || city,
         facilityType,
         assetCount,
         preferredDate,
@@ -84,7 +87,7 @@ export async function POST(request: Request) {
     // Send email notification to admin (vigilamc@gmail.com)
     sendInquiryNotification({
       name,
-      company,
+      company: company ? (locationString ? `${company} (${locationString})` : company) : locationString,
       phone,
       email,
       requirement: facilityType ? `${facilityType} (${assetCount || 'Standard'})` : assetCount,
@@ -112,6 +115,9 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
+    const { requirePlatformOwner } = await import('@/lib/auth');
+    await requirePlatformOwner(request);
+
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
     const type = searchParams.get('type');
@@ -129,12 +135,16 @@ export async function GET(request: Request) {
     return NextResponse.json({ enquiries });
   } catch (error: any) {
     console.error('Error fetching enquiries:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const status = error.message?.startsWith('UNAUTHORIZED') ? 401 : error.message?.startsWith('FORBIDDEN') ? 403 : 500;
+    return NextResponse.json({ error: error.message }, { status });
   }
 }
 
 export async function PATCH(request: Request) {
   try {
+    const { requirePlatformOwner } = await import('@/lib/auth');
+    await requirePlatformOwner(request);
+
     const body = await request.json();
     const { id, status } = body;
 
@@ -150,6 +160,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ success: true, enquiry: updated });
   } catch (error: any) {
     console.error('Error updating enquiry status:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const status = error.message?.startsWith('UNAUTHORIZED') ? 401 : error.message?.startsWith('FORBIDDEN') ? 403 : 500;
+    return NextResponse.json({ error: error.message }, { status });
   }
 }

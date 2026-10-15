@@ -170,7 +170,7 @@ export default function CertificateDetailPage() {
         {/* Legal Declaration */}
         <div className="py-5 border-b border-slate-200 text-xs text-slate-800 leading-relaxed space-y-3 text-justify">
           <p>
-            Certified that we have carried out the bi-annual / periodic inspection and maintenance of the fire prevention and life safety measures installed in the aforesaid building / premises as required under the Delhi Fire Prevention and Fire Safety Act, 2007, Haryana Fire Safety Rules, and NBC 2016 Part 4.
+            Certified that we have carried out the bi-annual / periodic inspection and maintenance of the fire prevention and life safety measures installed in the aforesaid building / premises as required under applicable State Fire Safety Rules and NBC 2016 Part 4.
           </p>
           <p>
             We further certify that the fire fighting installations, including stored pressure ABC dry powder extinguishers, CO2 gas cylinders, mechanical foam equipment, landing hydrants, and life safety gear, have been thoroughly inspected, hydrostatically pressure-tested per <strong>Indian Standard IS 2190 / IS 15683</strong>, and are in <strong>good repair and efficient working condition</strong>.
@@ -192,7 +192,7 @@ export default function CertificateDetailPage() {
             <table className="w-full text-left text-[11px] border border-slate-300">
               <thead className="bg-slate-100 text-slate-700 font-bold uppercase text-[9px] border-b border-slate-300">
                 <tr>
-                  <th className="py-1.5 px-2 border-r border-slate-300">Asset Tag</th>
+                  <th className="py-1.5 px-2 border-r border-slate-300">Asset ID / Serial</th>
                   <th className="py-1.5 px-2 border-r border-slate-300">Location Spot</th>
                   <th className="py-1.5 px-2 border-r border-slate-300">Type & Capacity</th>
                   <th className="py-1.5 px-2 border-r border-slate-300">Standard</th>
@@ -231,16 +231,16 @@ export default function CertificateDetailPage() {
           )}
         </div>
 
-        {/* Signature & Municipal Verification QR Block */}
+        {/* Signature & Verification Stamp Block */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-6">
-          {/* Municipal QR Authenticator */}
+          {/* Municipal Authenticator */}
           <div className="flex items-center gap-3 p-2.5 rounded-xl border border-slate-300 bg-slate-50">
             {qrDataUrl && (
-              <img src={qrDataUrl} alt="Verification QR" className="w-20 h-20 object-contain" />
+              <img src={qrDataUrl} alt="Verification Stamp" className="w-20 h-20 object-contain" />
             )}
             <div className="text-[10px] text-slate-600 space-y-0.5">
-              <div className="font-bold text-slate-900 uppercase">Municipal Verification Stamp</div>
-              <div>Scan with QR reader to verify authenticity on VigilAMC compliance server.</div>
+              <div className="font-bold text-slate-900 uppercase">Verification Stamp</div>
+              <div>Verified equipment schedule and inspection record on VigilAMC compliance server.</div>
               <div className="font-mono text-[9px] text-slate-500">Stamp ID: {cert.id}</div>
             </div>
           </div>

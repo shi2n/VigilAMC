@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import {
   LayoutDashboard,
-  QrCode,
   Smartphone,
   AlertTriangle,
   FileCheck2,
@@ -20,15 +19,15 @@ import {
 } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 
-type PreviewTab = 'dashboard' | 'assets' | 'scanner' | 'defects' | 'report';
+type PreviewTab = 'dashboard' | 'assets' | 'mobileForm' | 'defects' | 'report';
 
 export function ProductInterfacePreview() {
   const [activeTab, setActiveTab] = useState<PreviewTab>('dashboard');
 
   const tabs = [
     { id: 'dashboard' as const, label: 'Operations Dashboard', icon: LayoutDashboard, status: 'LIVE' as const },
-    { id: 'assets' as const, label: 'Asset Inventory', icon: QrCode, status: 'LIVE' as const },
-    { id: 'scanner' as const, label: 'Technician QR Scanner', icon: Smartphone, status: 'LIVE' as const },
+    { id: 'assets' as const, label: 'Asset Inventory', icon: MapPin, status: 'LIVE' as const },
+    { id: 'mobileForm' as const, label: 'Mobile Technician Form', icon: Smartphone, status: 'BETA' as const },
     { id: 'defects' as const, label: 'Defect Tracking', icon: AlertTriangle, status: 'LIVE' as const },
     { id: 'report' as const, label: 'Compliance Report', icon: FileCheck2, status: 'BETA' as const },
   ];
@@ -170,7 +169,7 @@ export function ProductInterfacePreview() {
                 <input
                   type="text"
                   readOnly
-                  value="Filter by QR, Building, or Category..."
+                  value="Filter by Asset ID, Building, or Category..."
                   className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-400 text-xs"
                 />
               </div>
@@ -183,7 +182,7 @@ export function ProductInterfacePreview() {
               <table className="w-full text-left">
                 <thead className="bg-slate-100 text-slate-600 font-bold uppercase text-[10px] border-b border-slate-200">
                   <tr>
-                    <th className="py-2 px-3">QR Tag</th>
+                    <th className="py-2 px-3">Asset ID / Serial</th>
                     <th className="py-2 px-3">Equipment</th>
                     <th className="py-2 px-3">Location</th>
                     <th className="py-2 px-3">Refill Due</th>
@@ -234,36 +233,40 @@ export function ProductInterfacePreview() {
           </div>
         )}
 
-        {/* TAB 3: TECHNICIAN QR SCANNER */}
-        {activeTab === 'scanner' && (
+        {/* TAB 3: MOBILE TECHNICIAN FORM */}
+        {activeTab === 'mobileForm' && (
           <div className="space-y-4 animate-in fade-in duration-200">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200">
               <div>
-                <h4 className="font-bold text-sm text-[#023E8A]">Technician Mobile Field Scanner</h4>
-                <p className="text-[11px] text-slate-500">Works 100% offline in underground basements and pump rooms</p>
+                <h4 className="font-bold text-sm text-[#023E8A]">Simple Mobile Form for Technicians</h4>
+                <p className="text-[11px] text-slate-500">Record asset details, floor and location notes, GPS position, and photo proof</p>
               </div>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-200 text-slate-700">
-                [SAMPLE WORKFLOW]
+                [SAMPLE WORKFLOW &bull; BETA]
               </span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-              {/* Phone Viewfinder Mockup */}
+              {/* Phone Inspection Record Mockup */}
               <div className="max-w-xs mx-auto w-full p-4 rounded-2xl bg-slate-900 text-white shadow-lg space-y-3">
                 <div className="flex items-center justify-between text-[11px] text-slate-400">
-                  <span>VigilAMC Tech Scanner</span>
-                  <span className="text-emerald-400 font-bold">OFFLINE READY</span>
+                  <span>VigilAMC Tech Form</span>
+                  <span className="text-emerald-400 font-bold">OFFLINE READY (BETA)</span>
                 </div>
 
-                <div className="relative aspect-square w-full rounded-xl bg-slate-800 flex items-center justify-center border-2 border-dashed border-cyan-400/80 p-4">
-                  <div className="text-center space-y-2">
-                    <QrCode className="w-16 h-16 text-cyan-300 mx-auto" />
-                    <p className="text-[11px] text-cyan-100 font-mono">TAG SCANNED: VIGIL-SMP-0101</p>
+                <div className="relative aspect-square w-full rounded-xl bg-slate-800 flex flex-col items-center justify-center border-2 border-dashed border-cyan-400/80 p-4 text-center">
+                  <Camera className="w-12 h-12 text-cyan-300 mx-auto mb-2" />
+                  <p className="text-xs text-white font-bold">Asset Photo Attached</p>
+                  <p className="text-[10px] text-cyan-200 font-mono mt-1">ID: VIGIL-SMP-0101 &bull; ABC 6kg</p>
+                  <p className="text-[10px] text-slate-300 mt-1">Floor 4 North Wing &bull; Lobby</p>
+                </div>
+
+                <div className="text-center text-[11px] text-slate-400 space-y-0.5">
+                  <div className="flex items-center justify-center gap-1 text-cyan-300">
+                    <MapPin className="w-3.5 h-3.5" />
+                    <span>GPS: 28.4595° N, 77.0266° E</span>
                   </div>
-                </div>
-
-                <div className="text-center text-[11px] text-slate-400">
-                  GPS Verified &bull; Lat 19.0760, Lon 72.8777
+                  <p className="text-[10px] text-slate-400">Captured: 12 Oct 2026, 14:32 IST</p>
                 </div>
               </div>
 

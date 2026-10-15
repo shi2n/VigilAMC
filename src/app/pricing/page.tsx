@@ -12,7 +12,6 @@ import {
   Sparkles,
   Sliders,
   IndianRupee,
-  QrCode,
   FileCheck2,
   Building2,
   Clock,
@@ -34,7 +33,7 @@ export default function PricingPage() {
     { name: 'Fire Assets Included', starter: 'Up to 300 Assets', pro: 'Up to 1,800 Assets', ent: 'High Volume Fleet' },
     { name: 'Facilities / Sites Supported', starter: 'Up to 3 Sites', pro: 'Up to 15 Sites', ent: 'Enterprise Custom' },
     { name: 'Technician Mobile App (Offline Mode)', starter: true, starterBadge: 'BETA', pro: true, proBadge: 'BETA', ent: true, entBadge: 'BETA' },
-    { name: 'Weatherproof Serialized QR Labels', starter: 'Included in Pilot', pro: 'Included in Pilot', ent: 'Custom Branded' },
+    { name: 'Asset Details, Floor Notes and Photo Proof', starter: true, starterBadge: 'BETA', pro: true, proBadge: 'BETA', ent: true, entBadge: 'BETA' },
     { name: 'Statutory Form-B PDF Generation', starter: true, starterBadge: 'LIVE', pro: true, proBadge: 'LIVE', ent: true, entBadge: 'LIVE' },
     { name: 'Automated Renewal Alerts (Email)', starter: true, pro: true, ent: true },
     { name: 'SMS & WhatsApp Renewal Alerts', starter: false, pro: true, ent: true },
@@ -49,24 +48,24 @@ export default function PricingPage() {
 
   const pricingFaqs = [
     {
-      q: 'What is included in the Free Pilot program?',
-      a: 'The Free Pilot gives your agency full access to the QR asset registry, technician mobile checklist, and Form-B PDF generation engine for up to 3 facilities. You also get a dedicated 1-on-1 onboarding session with our founder to calibrate your workflows.',
+      q: 'What is included in the free testing program?',
+      a: 'Free for every agency during testing. Your agency gets full access to the asset registry, the simple mobile form for technicians (recording details, floor notes, GPS position, and photos), and Form-B PDF generation. You also get direct onboarding support from our founder.',
     },
     {
       q: 'What counts as an "Asset" in the pricing tiers?',
-      a: 'An asset is any individual piece of life-safety equipment tracked with a unique QR code. This includes portable fire extinguishers (ABC, CO2, Foam, Clean Agent), wet riser landing valves, first-aid hose reels, fire alarm control panels (FACP), and main sprinkler jockey pumps.',
+      a: 'An asset is any individual piece of life-safety equipment registered with its type, capacity, serial number, and floor notes. This includes portable fire extinguishers (ABC, CO2, Foam, Clean Agent), wet riser landing valves, first-aid hose reels, fire alarm control panels (FACP), and main sprinkler jockey pumps.',
     },
     {
-      q: 'Are physical QR stickers included with subscriptions?',
-      a: 'Yes. During your pilot, we provide guidance on printing standard weatherproof QR labels or provide a starter kit of pre-printed, serialized QR stickers suitable for field application.',
+      q: 'How are inspections recorded on site?',
+      a: 'Technicians use a simple mobile form to record asset details, floor and location notes, GPS position, a photo proof, and the inspection timestamp. These records serve as field proof and automatically feed the Form-B compliance report.',
     },
     {
       q: 'Can I add or remove facilities mid-cycle?',
       a: 'Yes. When you take on new client maintenance contracts or conclude an existing facility term, you can adjust your tier and asset allocation accordingly.',
     },
     {
-      q: 'Does VigilAMC charge a setup fee?',
-      a: 'No. There are no setup fees for our standard tiers or the Free Pilot. We assist you in importing your existing Excel equipment inventory so your team can test the platform without friction.',
+      q: 'Does VigilAMC charge any fees during testing?',
+      a: 'No. VigilAMC is completely free for every agency during testing. There are no setup fees or hidden charges, and we assist you in importing your existing equipment inventory from Excel.',
     },
   ];
 
@@ -132,12 +131,12 @@ export default function PricingPage() {
 
               <div className="mt-6 flex items-baseline gap-1">
                 <span className="font-display text-4xl font-black text-[#023E8A] tabular-nums tracking-tight">
-                  ₹{billingCycle === 'annual' ? '3,999' : '4,999'}
+                  G�{billingCycle === 'annual' ? '3,999' : '4,999'}
                 </span>
                 <span className="text-xs text-slate-500 font-medium">/ month</span>
               </div>
               <p className="text-[11px] text-slate-400 mt-1">
-                {billingCycle === 'annual' ? 'Billed annually (₹47,988/yr) • Save 20%' : 'Billed month-to-month'}
+                {billingCycle === 'annual' ? 'Billed annually (G�47,988/yr) G�� Save 20%' : 'Billed month-to-month'}
               </p>
 
               <div className="mt-8 space-y-3 text-xs text-slate-700">
@@ -150,7 +149,7 @@ export default function PricingPage() {
                 </div>
                 <div className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>Technician Mobile Scanner (Offline Ready)</span>
+                  <span>Simple Mobile Form for Technicians (BETA)</span>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
@@ -172,7 +171,7 @@ export default function PricingPage() {
                 href="/#pilot-section"
                 className="w-full py-3 px-4 rounded-xl text-xs font-bold text-[#0077B6] bg-ocean-50 hover:bg-ocean-100 text-center block transition-all border border-ocean-200 active:scale-[0.98]"
               >
-                Apply for Free Pilot
+                Join the free testing
               </Link>
             </div>
           </div>
@@ -196,12 +195,12 @@ export default function PricingPage() {
 
               <div className="mt-6 flex items-baseline gap-1">
                 <span className="font-display text-4xl font-black text-[#023E8A] tabular-nums tracking-tight">
-                  ₹{billingCycle === 'annual' ? '6,399' : '7,999'}
+                  G�{billingCycle === 'annual' ? '6,399' : '7,999'}
                 </span>
                 <span className="text-xs text-slate-500 font-medium">/ month</span>
               </div>
               <p className="text-[11px] text-slate-400 mt-1">
-                {billingCycle === 'annual' ? 'Billed annually (₹76,788/yr) • Save 20%' : 'Billed month-to-month'}
+                {billingCycle === 'annual' ? 'Billed annually (G�76,788/yr) G�� Save 20%' : 'Billed month-to-month'}
               </p>
 
               <div className="mt-8 space-y-3 text-xs text-slate-700">
@@ -236,7 +235,7 @@ export default function PricingPage() {
                 href="/#pilot-section"
                 className="w-full py-3.5 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#0077B6] to-[#023E8A] hover:from-[#006494] hover:to-[#011F48] text-center block transition-all shadow-md hover:shadow-lg active:scale-[0.98]"
               >
-                Apply for Free Pilot
+                Join the free testing
               </Link>
             </div>
           </div>
@@ -259,7 +258,7 @@ export default function PricingPage() {
                 <span className="text-xs text-slate-500 font-medium">tailored to fleet size</span>
               </div>
               <p className="text-[11px] text-slate-400 mt-1">
-                {billingCycle === 'annual' ? 'Volume licensing discount • Annual agreements' : 'Flexible monthly fleet rollout'}
+                {billingCycle === 'annual' ? 'Volume licensing discount G�� Annual agreements' : 'Flexible monthly fleet rollout'}
               </p>
 
               <div className="mt-8 space-y-3 text-xs text-slate-700">
@@ -343,7 +342,7 @@ export default function PricingPage() {
                 <p className="text-xs text-slate-600">Estimated Monthly Investment</p>
                 <div className="flex items-baseline gap-1 mt-0.5">
                   <span className="text-3xl font-black text-[#023E8A]">
-                    ₹{estimatedCost.toLocaleString('en-IN')}
+                    G�{estimatedCost.toLocaleString('en-IN')}
                   </span>
                   <span className="text-xs text-slate-500 font-medium">/ month</span>
                 </div>
@@ -356,7 +355,7 @@ export default function PricingPage() {
                 href="/#pilot-section"
                 className="px-6 py-2.5 bg-[#0077B6] hover:bg-[#023E8A] text-white text-xs font-bold rounded-xl shadow transition-colors whitespace-nowrap"
               >
-                Apply for Pilot Cohort
+                Join the free testing
               </Link>
             </div>
           </div>
@@ -451,7 +450,7 @@ export default function PricingPage() {
               Frequently Asked Pricing Questions
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-2">
-              Common questions on pilot participation, hardware tags, and subscription tiers.
+              Common questions on free testing participation, on-site recording, and plans.
             </p>
           </div>
 

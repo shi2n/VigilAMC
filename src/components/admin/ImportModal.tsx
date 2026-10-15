@@ -334,22 +334,22 @@ export function ImportModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="relative w-full max-w-4xl bg-white border border-[#DCE7F2] rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-slate-800 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950/70 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#DCE7F2] bg-[#F8FAFC] shrink-0 dark:border-slate-800 dark:bg-slate-950/70">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-slate-950 font-black shadow-md shadow-amber-500/20">
-              <FileSpreadsheet className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl bg-[#EAF6FF] border border-[#007DB8]/30 flex items-center justify-center text-[#073F8F] font-bold shadow-sm dark:bg-gradient-to-br dark:from-amber-500 dark:to-orange-600 dark:text-slate-950">
+              <FileSpreadsheet className="w-5 h-5 text-[#007DB8] dark:text-inherit" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-bold text-[#073F8F] dark:text-white flex items-center gap-2">
                 <span>Excel Data Import Engine</span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 uppercase">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#EAF6FF] text-[#073F8F] border border-[#007DB8]/30 uppercase dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/30">
                   Production Mode
                 </span>
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#475569] dark:text-slate-400">
                 Bulk ingest existing client records, building assets, and field inspections with duplicate protection.
               </p>
             </div>
@@ -360,8 +360,8 @@ export function ImportModal({
               onClick={() => setActiveTab(activeTab === 'WIZARD' ? 'HISTORY' : 'WIZARD')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === 'HISTORY'
-                  ? 'bg-amber-500 text-slate-950 shadow-sm'
-                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                  ? 'bg-[#073F8F] text-white shadow-sm dark:bg-amber-500 dark:text-slate-950'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300'
               }`}
             >
               <History className="w-3.5 h-3.5" />
@@ -370,7 +370,7 @@ export function ImportModal({
 
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
+              className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-400 dark:hover:text-white"
             >
               <X className="w-4 h-4" />
             </button>
@@ -529,13 +529,13 @@ export function ImportModal({
                       {
                         type: 'BUILDINGS' as ImportType,
                         title: 'Buildings & Towers',
-                        desc: 'Premises addresses, tower names, and Delhi NCR statutory compliance cycles.',
+                        desc: 'Premises addresses, tower names, state, and reporting compliance cycles.',
                         icon: Building2,
                         color: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
                       },
                       {
                         type: 'FIRE_ASSETS' as ImportType,
-                        title: 'Fire Equipment & QR Tags',
+                        title: 'Fire Equipment Inventory',
                         desc: 'Extinguishers, hydrants, hose reels, panel tags, and inspection due dates.',
                         icon: Flame,
                         color: 'text-red-400 bg-red-500/10 border-red-500/20',

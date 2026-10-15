@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getCurrentUser, logAuditActivity } from '@/lib/auth';
+import { getCurrentUser, logAuditActivity, isPlatformOwner } from '@/lib/auth';
 import { checkPlanLimit } from '@/lib/plans';
 
 export const dynamic = 'force-dynamic';
@@ -31,36 +31,61 @@ export async function GET(request: Request) {
       include: {
         client: true,
         equipments: {
+          include: {
+            inspections: {
+              orderBy: { date: 'desc' },
+              take: 1,
+              select: {
+                id: true,
+                date: true,
+                latitude: true,
+                longitude: true,
+                photos: true,
+                isImported: true,
+              },
+            },
+          },
           orderBy: { location: 'asc' },
         },
       },
       orderBy: { createdAt: 'desc' },
     });
 
+    const { evaluateEquipmentStatus } = await import('@/lib/compliance');
     const now = new Date();
 
     // Compute building-level compliance status from real assets
     const evaluatedBuildings = buildings.map((b: any) => {
-      let compliantCount = 0;
+      let verifiedCount = 0;
+      let notInspectedCount = 0;
       let dueCount = 0;
       let overdueCount = 0;
 
-      b.equipments.forEach((eq: any) => {
-        const diffDays = Math.ceil((new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        if (diffDays < 0) {
-          overdueCount++;
-        } else if (diffDays <= 30) {
-          dueCount++;
-        } else {
-          compliantCount++;
-        }
+      const enrichedEquipments = b.equipments.map((eq: any) => {
+        const evalResult = evaluateEquipmentStatus(eq, now);
+        if (evalResult.status === 'OVERDUE') overdueCount++;
+        else if (evalResult.status === 'DUE_SOON') dueCount++;
+        else if (evalResult.status === 'VERIFIED') verifiedCount++;
+        else notInspectedCount++;
+
+        return {
+          ...eq,
+          complianceStatus: evalResult.status,
+          statusLabel: evalResult.label,
+          lastVerifiedDate: evalResult.lastVerifiedDate,
+          hasGPS: evalResult.hasGPS,
+          hasPhoto: evalResult.hasPhoto,
+          isImported: evalResult.isImported,
+        };
       });
 
-      let overallStatus: 'COMPLIANT' | 'DUE_SOON' | 'OVERDUE' = 'COMPLIANT';
+      let overallStatus: 'VERIFIED' | 'DUE_SOON' | 'OVERDUE' | 'NOT_INSPECTED' = 'NOT_INSPECTED';
       if (overdueCount > 0) {
         overallStatus = 'OVERDUE';
       } else if (dueCount > 0) {
         overallStatus = 'DUE_SOON';
+      } else if (verifiedCount > 0 && verifiedCount === b.equipments.length) {
+        overallStatus = 'VERIFIED';
       }
 
       const filingDaysRemaining = b.nextFilingDueDate
@@ -71,25 +96,37 @@ export async function GET(request: Request) {
         id: b.id,
         name: b.name,
         address: b.address,
+        state: b.state,
+        reportingCycle: b.reportingCycle || b.complianceCycle || 'Half-Yearly',
+        complianceRuleName: b.complianceRuleName,
         complianceCycle: b.complianceCycle,
         nextFilingDueDate: b.nextFilingDueDate,
         filingDaysRemaining,
         client: b.client,
         totalEquipments: b.equipments.length,
-        compliantCount,
+        verifiedCount,
+        notInspectedCount,
         dueCount,
         overdueCount,
         overallStatus,
-        equipments: b.equipments,
+        equipments: enrichedEquipments,
       };
     });
 
+    const totalEquipments = evaluatedBuildings.reduce((sum: number, b: any) => sum + b.totalEquipments, 0);
+    const verifiedEquipments = evaluatedBuildings.reduce((sum: number, b: any) => sum + b.verifiedCount, 0);
+
     const summary = {
       totalBuildings: evaluatedBuildings.length,
-      compliantBuildings: evaluatedBuildings.filter((b: any) => b.overallStatus === 'COMPLIANT').length,
+      verifiedBuildings: evaluatedBuildings.filter((b: any) => b.overallStatus === 'VERIFIED').length,
       dueSoonBuildings: evaluatedBuildings.filter((b: any) => b.overallStatus === 'DUE_SOON').length,
       overdueBuildings: evaluatedBuildings.filter((b: any) => b.overallStatus === 'OVERDUE').length,
-      totalEquipments: evaluatedBuildings.reduce((sum: number, b: any) => sum + b.totalEquipments, 0),
+      notInspectedBuildings: evaluatedBuildings.filter((b: any) => b.overallStatus === 'NOT_INSPECTED').length,
+      totalEquipments,
+      verifiedEquipments,
+      overdueEquipments: evaluatedBuildings.reduce((sum: number, b: any) => sum + b.overdueCount, 0),
+      dueSoonEquipments: evaluatedBuildings.reduce((sum: number, b: any) => sum + b.dueCount, 0),
+      notInspectedEquipments: evaluatedBuildings.reduce((sum: number, b: any) => sum + b.notInspectedCount, 0),
     };
 
     return NextResponse.json({
@@ -97,6 +134,7 @@ export async function GET(request: Request) {
       user: auth.user,
       profile: auth.profile,
       company: organization,
+      isPlatformOwner: isPlatformOwner(auth),
       summary,
       buildings: evaluatedBuildings,
     });
@@ -114,7 +152,19 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { clientName, contactPerson, phone, email, buildingName, address, complianceCycle, cycleIntervalMos } = body;
+    const {
+      clientName,
+      contactPerson,
+      phone,
+      email,
+      buildingName,
+      address,
+      state,
+      reportingCycle,
+      complianceRuleName,
+      complianceCycle,
+      cycleIntervalMos
+    } = body;
 
     const organizationId = auth.organization.id;
 
@@ -144,7 +194,14 @@ export async function POST(request: Request) {
       },
     });
 
-    const interval = Number(cycleIntervalMos) || 6;
+    const repCycle = reportingCycle || 'Half-Yearly';
+    const intervalMap: Record<string, number> = {
+      Monthly: 1,
+      Quarterly: 3,
+      'Half-Yearly': 6,
+      Yearly: 12,
+    };
+    const interval = Number(cycleIntervalMos) || intervalMap[repCycle] || 6;
     const nextFiling = new Date(Date.now() + interval * 30 * 24 * 60 * 60 * 1000);
 
     // 2. Create Building associated with user's organization
@@ -154,7 +211,10 @@ export async function POST(request: Request) {
         clientId: client.id,
         name: (buildingName || 'Main Tower').trim(),
         address: (address || 'Facility Address').trim(),
-        complianceCycle: complianceCycle || 'Delhi NCR Statutory Form-B (Half-Yearly)',
+        state: state?.trim() || null,
+        reportingCycle: repCycle,
+        complianceRuleName: complianceRuleName?.trim() || null,
+        complianceCycle: complianceCycle || repCycle,
         cycleIntervalMos: interval,
         nextFilingDueDate: nextFiling,
       },

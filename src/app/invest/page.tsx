@@ -17,7 +17,6 @@ import {
   FileCheck2,
   Award,
   Sparkles,
-  QrCode,
   Building2,
   Briefcase,
   ChevronRight,
@@ -32,7 +31,7 @@ import { InvestorForm } from '@/components/InvestorForm';
 export const metadata: Metadata = {
   title: 'Invest in VigilAMC | SaaS for AMC & Recurring Service Operations',
   description:
-    'VigilAMC is building the modern operating system for Annual Maintenance Contracts (AMC), service workflows, QR-verified audits, and compliance management.',
+    'VigilAMC is building the modern operating system for Annual Maintenance Contracts (AMC), service workflows, GPS-verified inspections, photo proof, and compliance management.',
   keywords: [
     'Invest in VigilAMC',
     'B2B SaaS India',
@@ -45,7 +44,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Invest in VigilAMC — Modern B2B SaaS for AMC Management',
     description:
-      'Digitizing India’s multi-billion rupee AMC & recurring service industry with verified QR tracking, automated renewal schedules, and client compliance.',
+      'Digitizing India’s multi-billion rupee AMC & recurring service industry with GPS-verified inspections, photo proof, automated renewal schedules, and client compliance.',
     url: 'https://vigilamc.vercel.app/invest',
     images: [
       {
@@ -122,8 +121,8 @@ export default function InvestPage() {
             </div>
             <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-md">
               <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Geography</span>
-              <p className="text-sm font-extrabold text-white mt-1">Delhi NCR (Delhi • Noida • Gurugram)</p>
-              <p className="text-[11px] text-cyan-300 mt-0.5">Expanding across Indian metros</p>
+              <p className="text-sm font-extrabold text-white mt-1">Pan-India Coverage</p>
+              <p className="text-[11px] text-cyan-300 mt-0.5">Serving agencies across all Indian states</p>
             </div>
             <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-md">
               <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Product Status</span>
@@ -192,7 +191,7 @@ export default function InvestPage() {
               Scalable Platform
             </h3>
             <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Engineered with multi-tenant agency isolation, QR-verified equipment logs, offline-first technician check-ins, automated deadline triggers, and one-click statutory Form-B PDF generation.
+              Engineered with multi-tenant agency isolation, GPS-verified inspections, photo proof, offline-first technician forms, automated deadline triggers, and one-click statutory Form-B PDF generation.
             </p>
           </div>
 
@@ -205,7 +204,7 @@ export default function InvestPage() {
               Built for the Indian Market
             </h3>
             <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Tailored specifically to Indian regulatory workflows (NBC 2016, State Fire Acts, Delhi Fire Safety Rules) where compliance enforcement is accelerating and manual record-keeping is increasingly penalized.
+              Tailored specifically to Indian regulatory workflows (NBC 2016 Part 4, IS 2190, and applicable State Fire Safety Rules) where compliance enforcement is accelerating and manual record-keeping is increasingly penalized.
             </p>
           </div>
 
@@ -358,7 +357,7 @@ export default function InvestPage() {
             One Platform. Complete AMC Workflow.
           </h2>
           <p className="mt-3 text-sm sm:text-base text-slate-400 leading-relaxed">
-            From client onboarding and asset tagging to field verification and automated statutory filings — every stage is linked.
+            From client onboarding and asset registration to field verification and automated statutory filings — every stage is linked.
           </p>
         </div>
 
@@ -399,8 +398,8 @@ export default function InvestPage() {
               <div className="w-10 h-10 rounded-xl bg-[#0077B6]/20 text-cyan-300 border border-[#0077B6]/40 flex items-center justify-center mx-auto mb-3 font-mono font-bold text-sm">
                 04
               </div>
-              <h4 className="font-bold text-xs sm:text-sm text-white">Technician App</h4>
-              <p className="text-[11px] text-slate-400 mt-1">QR scan &amp; offline mobile audit</p>
+              <h4 className="font-bold text-xs sm:text-sm text-white">Technician Form</h4>
+              <p className="text-[11px] text-slate-400 mt-1">GPS, location &amp; photo capture</p>
             </div>
 
             {/* Step 5 */}
@@ -417,7 +416,7 @@ export default function InvestPage() {
               <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center justify-center mx-auto mb-3 font-mono font-bold text-sm">
                 06
               </div>
-              <h4 className="font-bold text-xs sm:text-sm text-white">Renewal &amp; NOC</h4>
+              <h4 className="font-bold text-xs sm:text-sm text-white">Renewal &amp; Filing</h4>
               <p className="text-[11px] text-slate-400 mt-1">Auto-renewals &amp; Form-B PDF</p>
             </div>
           </div>
@@ -547,11 +546,11 @@ export default function InvestPage() {
             </div>
 
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              &quot;Having interacted closely with fire safety contractors, licensed agency operators, and building facility managers across Delhi NCR, one thing became crystal clear: life safety hardware is rigorously audited by state authorities, but the actual day-to-day inspection workflows run entirely on guesswork, brittle Excel sheets, and unverified paper logbooks.&quot;
+              &quot;Having interacted closely with fire safety contractors, licensed agency operators, and building facility managers across India, one thing became crystal clear: life safety hardware is rigorously audited by state authorities, but the actual day-to-day inspection workflows run entirely on guesswork, brittle Excel sheets, and unverified paper logbooks.&quot;
             </p>
 
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              &quot;We created VigilAMC to bring operational integrity to every asset. Durable QR codes on the physical equipment, offline-capable checklists on technician phones, and automated Form-B compliance documentation for building clients. We are committed to building a lasting, high-impact enterprise SaaS from India for the world.&quot;
+              &quot;We created VigilAMC to bring operational integrity to every asset. GPS-verified inspections, condition photos and floor notes on technician phones, and automated Form-B compliance documentation for building clients. We are committed to building a lasting, high-impact enterprise SaaS from India for the world.&quot;
             </p>
 
             <div className="pt-2 flex flex-wrap items-center gap-4">
@@ -591,14 +590,14 @@ export default function InvestPage() {
                   VigilAMC Grounding
                 </span>
                 <span className="text-[10px] uppercase font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                  Delhi NCR Active
+                  Pan-India Active
                 </span>
               </div>
 
               <div className="space-y-3 text-xs text-slate-300">
                 <div className="flex items-start gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                  <span>Focused initial rollouts in Delhi, Noida, and Gurugram facilities</span>
+                  <span>Serving licensed fire protection agencies and contractors across India</span>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
@@ -606,11 +605,11 @@ export default function InvestPage() {
                 </div>
                 <div className="flex items-start gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                  <span>Full support for Delhi Fire Service Form-B statutory filing</span>
+                  <span>Form-B style statutory certificates (formats vary by state)</span>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                  <span>Live client portal, technician mobile PWA, and QR generator</span>
+                  <span>GPS verification, technician mobile form, and standardized Form-B generation</span>
                 </div>
               </div>
 

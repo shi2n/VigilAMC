@@ -46,6 +46,18 @@ export async function GET(request: Request) {
         building: {
           select: { id: true, name: true, client: { select: { name: true } } },
         },
+        inspections: {
+          orderBy: { date: 'desc' },
+          take: 1,
+          select: {
+            id: true,
+            date: true,
+            latitude: true,
+            longitude: true,
+            photos: true,
+            isImported: true,
+          },
+        },
         serviceLogs: {
           orderBy: { servicedAt: 'desc' },
           take: 3,
@@ -54,14 +66,20 @@ export async function GET(request: Request) {
       orderBy: { nextDueDate: 'asc' },
     });
 
+    const { evaluateEquipmentStatus } = await import('@/lib/compliance');
     const now = new Date();
     const evaluated = equipments.map((eq: any) => {
-      const diffDays = Math.ceil((new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      const liveStatus = diffDays < 0 ? 'OVERDUE' : diffDays <= 30 ? 'DUE_SOON' : 'COMPLIANT';
+      const evalResult = evaluateEquipmentStatus(eq, now);
       return {
         ...eq,
-        diffDays,
-        liveStatus,
+        diffDays: evalResult.diffDays,
+        liveStatus: evalResult.status,
+        complianceStatus: evalResult.status,
+        statusLabel: evalResult.label,
+        lastVerifiedDate: evalResult.lastVerifiedDate,
+        hasGPS: evalResult.hasGPS,
+        hasPhoto: evalResult.hasPhoto,
+        isImported: evalResult.isImported,
       };
     });
 
@@ -113,7 +131,7 @@ export async function POST(request: Request) {
     // Single Equipment Creation
     if (isSingle) {
       if (!qrCode) {
-        return NextResponse.json({ error: 'QR Code identifier is required' }, { status: 400 });
+        return NextResponse.json({ error: 'Asset ID is required' }, { status: 400 });
       }
 
       // Enforce Asset Limit for Single Addition
@@ -133,7 +151,7 @@ export async function POST(request: Request) {
 
       const existing = await (db as any).equipment.findUnique({ where: { qrCode: qrCode.trim().toUpperCase() } });
       if (existing) {
-        return NextResponse.json({ error: `QR Tag '${qrCode}' already exists in database.` }, { status: 400 });
+        return NextResponse.json({ error: `Asset ID '${qrCode}' already exists in database.` }, { status: 400 });
       }
 
       const eq = await (db as any).equipment.create({
@@ -157,7 +175,7 @@ export async function POST(request: Request) {
           technicianName: auth.profile?.fullName || 'Agency Admin',
           servicedAt: now,
           nextDueDate: nextDue,
-          actionType: 'Equipment Commissioning & Tagging',
+          actionType: 'Equipment Commissioning & Registration',
           notes: 'Asset registered in database.',
         },
       });
@@ -169,7 +187,7 @@ export async function POST(request: Request) {
         action: 'ASSET_CREATED',
         entityType: 'Equipment',
         entityId: eq.id,
-        details: `Created fire asset "${eq.type} (${eq.capacity})" with QR "${eq.qrCode}" at "${building.name}"`,
+        details: `Created fire asset "${eq.type} (${eq.capacity})" with Asset ID "${eq.qrCode}" at "${building.name}"`,
       });
 
       return NextResponse.json({ success: true, count: 1, equipment: eq });
@@ -228,8 +246,8 @@ export async function POST(request: Request) {
           technicianName: auth.profile?.fullName || 'Agency Admin Bulk Import',
           servicedAt: now,
           nextDueDate: nextDue,
-          actionType: 'Initial Commissioning & Tagging',
-          notes: 'Unit registered with auto-generated QR code.',
+          actionType: 'Initial Commissioning & Registration',
+          notes: 'Unit registered with auto-generated Asset ID.',
         },
       });
 

@@ -4,9 +4,10 @@ import { getCurrentUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const auth = await getCurrentUser();
+    const { requirePlatformOwner } = await import('@/lib/auth');
+    const auth = await requirePlatformOwner(request);
     if (!auth || !auth.organization) {
       return NextResponse.json({
         company: null,
@@ -41,17 +42,22 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const auth = await getCurrentUser();
+    const { requirePlatformOwner } = await import('@/lib/auth');
+    const auth = await requirePlatformOwner(request);
     if (!auth || !auth.organization) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
-    const { action } = body;
+    const { action, confirmation } = body;
     const organizationId = auth.organization.id;
 
     // Reset current user's organization data only
     if (action === 'WIPE_ALL_DEMO') {
+      if (confirmation !== 'DELETE') {
+        return NextResponse.json({ error: 'Confirmation requires typing DELETE' }, { status: 400 });
+      }
+
       await (db as any).inspection.deleteMany({ where: { organizationId } });
       await (db as any).defect.deleteMany({ where: { organizationId } });
       await (db as any).workOrder.deleteMany({ where: { organizationId } });

@@ -8,6 +8,8 @@ export function FreePilotForm() {
   const [formData, setFormData] = useState({
     name: '',
     company: '',
+    state: '',
+    city: '',
     phone: '',
     email: '',
     technicianCount: '1-5',
@@ -25,6 +27,8 @@ export function FreePilotForm() {
     const errs: Record<string, string> = {};
     if (!formData.name.trim()) errs.name = 'Contact name is required';
     if (!formData.company.trim()) errs.company = 'Company / Agency name is required';
+    if (!formData.state.trim()) errs.state = 'Please select your State / UT';
+    if (!formData.city.trim()) errs.city = 'City name is required';
     if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       errs.email = 'Valid work email is required';
     }
@@ -54,6 +58,8 @@ export function FreePilotForm() {
           type: 'PILOT',
           name: formData.name,
           company: formData.company,
+          state: formData.state,
+          city: formData.city,
           phone: formData.phone,
           email: formData.email,
           technicianCount: formData.technicianCount,
@@ -83,15 +89,15 @@ export function FreePilotForm() {
       <div className="bg-gradient-to-r from-[#023E8A] to-[#0077B6] p-6 sm:p-8 text-white">
         <div className="flex items-center justify-between gap-3 mb-2">
           <span className="text-xs uppercase font-extrabold tracking-widest text-cyan-200">
-            Early Adopter Program
+            Testing Phase
           </span>
           <StatusBadge status="BETA" />
         </div>
         <h3 className="text-2xl font-black text-white">
-          Join the Free Pilot
+          Join the Free Testing
         </h3>
         <p className="text-sm text-cyan-100 mt-2 leading-relaxed">
-          We&apos;re onboarding selected fire-safety AMC and service teams to test VigilAMC with real workflows and feedback.
+          VigilAMC is in its testing phase and is free for every agency that joins. Test asset registration, GPS and photo-verified inspections, and Form-B generation with real workflows.
         </p>
       </div>
 
@@ -102,17 +108,17 @@ export function FreePilotForm() {
               <CheckCircle2 className="w-8 h-8" />
             </div>
             <h4 className="text-xl font-black text-[#023E8A]">
-              Pilot Application Received!
+              Testing Application Received!
             </h4>
             <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
-              Thank you, <strong>{formData.name}</strong> from <strong>{formData.company}</strong>. Our team will review your fleet profile and contact you within 1 business day to set up your pilot workspace.
+              Thank you, <strong>{formData.name}</strong> from <strong>{formData.company}</strong>. Our team will review your fleet profile and contact you within 1 business day to set up your testing workspace.
             </p>
             <div className="p-4 bg-ocean-50 rounded-xl border border-ocean-200 text-xs text-[#023E8A] max-w-md mx-auto text-left space-y-1">
               <p className="font-bold">What happens next:</p>
               <ul className="list-disc pl-4 space-y-0.5 text-slate-600 text-[11px]">
                 <li>We schedule a 15-minute onboarding walkthrough.</li>
                 <li>We help import a sample building equipment roster.</li>
-                <li>Your field technicians test the offline QR scanner.</li>
+                <li>Your field technicians test the simple mobile form on site.</li>
               </ul>
             </div>
             <div className="pt-2">
@@ -123,6 +129,8 @@ export function FreePilotForm() {
                   setFormData({
                     name: '',
                     company: '',
+                    state: '',
+                    city: '',
                     phone: '',
                     email: '',
                     technicianCount: '1-5',
@@ -178,6 +186,79 @@ export function FreePilotForm() {
                   />
                 </div>
                 {errors.company && <p className="text-[11px] text-red-600 mt-1">{errors.company}</p>}
+              </div>
+            </div>
+
+            {/* State and City Fields (Pan-India) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  State / UT *
+                </label>
+                <select
+                  required
+                  value={formData.state}
+                  onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                  className={`w-full px-3 py-2 text-xs rounded-lg border ${
+                    errors.state ? 'border-red-500 bg-red-50/40' : 'border-slate-300'
+                  } focus:outline-none focus:ring-2 focus:ring-[#0077B6] bg-white text-slate-900`}
+                >
+                  <option value="">Select State / Union Territory</option>
+                  <option value="Andhra Pradesh">Andhra Pradesh</option>
+                  <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                  <option value="Assam">Assam</option>
+                  <option value="Bihar">Bihar</option>
+                  <option value="Chhattisgarh">Chhattisgarh</option>
+                  <option value="Goa">Goa</option>
+                  <option value="Gujarat">Gujarat</option>
+                  <option value="Haryana">Haryana</option>
+                  <option value="Himachal Pradesh">Himachal Pradesh</option>
+                  <option value="Jharkhand">Jharkhand</option>
+                  <option value="Karnataka">Karnataka</option>
+                  <option value="Kerala">Kerala</option>
+                  <option value="Madhya Pradesh">Madhya Pradesh</option>
+                  <option value="Maharashtra">Maharashtra</option>
+                  <option value="Manipur">Manipur</option>
+                  <option value="Meghalaya">Meghalaya</option>
+                  <option value="Mizoram">Mizoram</option>
+                  <option value="Nagaland">Nagaland</option>
+                  <option value="Odisha">Odisha</option>
+                  <option value="Punjab">Punjab</option>
+                  <option value="Rajasthan">Rajasthan</option>
+                  <option value="Sikkim">Sikkim</option>
+                  <option value="Tamil Nadu">Tamil Nadu</option>
+                  <option value="Telangana">Telangana</option>
+                  <option value="Tripura">Tripura</option>
+                  <option value="Uttar Pradesh">Uttar Pradesh</option>
+                  <option value="Uttarakhand">Uttarakhand</option>
+                  <option value="West Bengal">West Bengal</option>
+                  <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                  <option value="Chandigarh">Chandigarh</option>
+                  <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+                  <option value="Delhi">Delhi</option>
+                  <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                  <option value="Ladakh">Ladakh</option>
+                  <option value="Lakshadweep">Lakshadweep</option>
+                  <option value="Puducherry">Puducherry</option>
+                </select>
+                {errors.state && <p className="text-[11px] text-red-600 mt-1">{errors.state}</p>}
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  City *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Mumbai, Bengaluru, Delhi"
+                  value={formData.city}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  className={`w-full px-3 py-2 text-xs rounded-lg border ${
+                    errors.city ? 'border-red-500 bg-red-50/40' : 'border-slate-300'
+                  } focus:outline-none focus:ring-2 focus:ring-[#0077B6]`}
+                />
+                {errors.city && <p className="text-[11px] text-red-600 mt-1">{errors.city}</p>}
               </div>
             </div>
 
@@ -299,16 +380,16 @@ export function FreePilotForm() {
                 className="w-full py-3 px-6 bg-[#0077B6] hover:bg-[#023E8A] disabled:bg-slate-400 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
               >
                 {isSubmitting ? (
-                  <span>Submitting Application...</span>
+                   <span>Submitting Application...</span>
                 ) : (
                   <>
-                    <span>Submit Free Pilot Application</span>
+                    <span>Join the free testing</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
               <p className="text-[11px] text-slate-400 text-center mt-2">
-                No credit card required &bull; Direct access &bull; 100% confidential
+                Free for every agency during testing &bull; Direct access &bull; 100% confidential
               </p>
             </div>
           </form>

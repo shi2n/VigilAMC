@@ -1,33 +1,65 @@
 'use client';
 
-import React from 'react';
-import { Mail, RefreshCw, AlertTriangle, Sparkles, Settings as SettingsIcon, Building2, FileSpreadsheet, Upload, TrendingUp } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  Mail,
+  RefreshCw,
+  AlertTriangle,
+  Sparkles,
+  Settings as SettingsIcon,
+  Building2,
+  FileSpreadsheet,
+  Upload,
+  TrendingUp,
+  Users,
+  ShieldCheck,
+  Bell,
+  Download,
+} from 'lucide-react';
 import { InvestorLeadsView } from './InvestorLeadsView';
+import { AlertsSettingsView } from './AlertsSettingsView';
+import { TechnicianManagement } from './TechnicianManagement';
+import { AdminUsersView } from './AdminUsersView';
+
+export type SettingsSubTab =
+  | 'AGENCY'
+  | 'TEAM'
+  | 'ADMINS'
+  | 'ALERTS'
+  | 'IMPORT_EXPORT'
+  | 'LEADS'
+  | 'INVESTORS'
+  | 'TOOLS';
 
 interface SettingsViewProps {
-  subTab: 'LEADS' | 'TOOLS' | 'AGENCY' | 'INVESTORS';
-  setSubTab: (tab: 'LEADS' | 'TOOLS' | 'AGENCY' | 'INVESTORS') => void;
-  enquiriesList: any[];
-  enquiryStatusFilter: string;
-  setEnquiryStatusFilter: (st: string) => void;
-  loadingEnquiries: boolean;
-  onRefreshEnquiries: () => void;
-  onUpdateEnquiryStatus: (id: string, newStatus: string) => void;
-  onWipeAllDemo: () => void;
-  onSeedCleanData: () => void;
+  subTab?: SettingsSubTab;
+  setSubTab?: (tab: SettingsSubTab) => void;
+  enquiriesList?: any[];
+  enquiryStatusFilter?: string;
+  setEnquiryStatusFilter?: (st: string) => void;
+  loadingEnquiries?: boolean;
+  onRefreshEnquiries?: () => void;
+  onUpdateEnquiryStatus?: (id: string, newStatus: string) => void;
+  onWipeAllDemo?: () => void;
+  onSeedCleanData?: () => void;
   companyForm: any;
   setCompanyForm: any;
   handleSaveCompany: (e: React.FormEvent) => void;
   onOpenImport?: (type?: any) => void;
+  onOpenExport?: (type?: any) => void;
+  isPlatformOwner?: boolean;
+  currentUser?: any;
+  company?: any;
+  showToast: (msg: string) => void;
 }
 
 export function SettingsView({
-  subTab,
-  setSubTab,
-  enquiriesList,
-  enquiryStatusFilter,
+  subTab: externalSubTab,
+  setSubTab: externalSetSubTab,
+  enquiriesList = [],
+  enquiryStatusFilter = 'ALL',
   setEnquiryStatusFilter,
-  loadingEnquiries,
+  loadingEnquiries = false,
   onRefreshEnquiries,
   onUpdateEnquiryStatus,
   onWipeAllDemo,
@@ -36,40 +68,67 @@ export function SettingsView({
   setCompanyForm,
   handleSaveCompany,
   onOpenImport,
+  onOpenExport,
+  isPlatformOwner = false,
+  currentUser,
+  company,
+  showToast,
 }: SettingsViewProps) {
+  const [internalSubTab, setInternalSubTab] = useState<SettingsSubTab>('AGENCY');
+  const activeSubTab = externalSubTab || internalSubTab;
+  const setActiveSubTab = (tab: SettingsSubTab) => {
+    if (externalSetSubTab) externalSetSubTab(tab);
+    setInternalSubTab(tab);
+  };
+
+  // Standard Agency settings tabs
+  const agencyTabs = [
+    { id: 'AGENCY', label: 'Agency Profile & License', icon: Building2 },
+    { id: 'TEAM', label: 'Technician Workforce', icon: Users },
+    { id: 'ADMINS', label: 'Admin Users & Roles', icon: ShieldCheck },
+    { id: 'ALERTS', label: 'Alerts & Notifications', icon: Bell },
+    { id: 'IMPORT_EXPORT', label: 'Import & Export Data', icon: FileSpreadsheet },
+  ];
+
+  // Platform Owner ONLY tabs
+  const platformTabs = isPlatformOwner
+    ? [
+        {
+          id: 'LEADS',
+          label: `Website Leads (${enquiriesList.length})`,
+          icon: Mail,
+          badge: enquiriesList.filter((e) => e.status === 'NEW').length || undefined,
+        },
+        {
+          id: 'INVESTORS',
+          label: 'Investor Leads',
+          icon: TrendingUp,
+        },
+        { id: 'TOOLS', label: 'Platform Data Maintenance', icon: AlertTriangle },
+      ]
+    : [];
+
+  const allTabs: Array<{ id: string; label: string; icon: any; badge?: number | string }> = [...agencyTabs, ...platformTabs];
+
   return (
-    <div className="tactile-card rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl p-5 sm:p-6 space-y-6 text-slate-100">
+    <div className="rounded-2xl bg-white border border-[#E2E8F0] shadow-xs p-5 sm:p-6 space-y-6 text-slate-800 dark:bg-[#172033] dark:border-[#293548] dark:shadow-xl dark:text-slate-100">
       {/* Sub Navigation Bar */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-4 flex-wrap gap-3">
-        <div className="flex items-center gap-2 overflow-x-auto">
-          {[
-            {
-              id: 'LEADS',
-              label: `Website Leads (${enquiriesList.length})`,
-              icon: Mail,
-              badge: enquiriesList.filter((e) => e.status === 'NEW').length || undefined,
-            },
-            {
-              id: 'INVESTORS',
-              label: 'Investor Leads',
-              icon: TrendingUp,
-            },
-            { id: 'TOOLS', label: 'Data Management & Maintenance', icon: AlertTriangle },
-            { id: 'AGENCY', label: 'Agency Profile & License', icon: Building2 },
-          ].map((tab) => {
+      <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4 flex-wrap gap-3 dark:border-[#293548]">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full">
+          {allTabs.map((tab) => {
             const Icon = tab.icon;
-            const active = subTab === tab.id;
+            const active = activeSubTab === tab.id;
             return (
               <button
                 key={tab.id}
-                onClick={() => setSubTab(tab.id as any)}
+                onClick={() => setActiveSubTab(tab.id as SettingsSubTab)}
                 className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                   active
-                    ? 'bg-amber-500 text-slate-950 shadow-md font-black'
-                    : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                    ? 'bg-[#EFF6FF] text-[#2563EB] border border-[#2563EB]/30 font-bold shadow-xs dark:bg-blue-600 dark:text-white dark:border-blue-500'
+                    : 'bg-slate-50 text-slate-600 hover:text-slate-900 border border-[#E2E8F0] dark:bg-[#111827] dark:text-[#94A3B8] dark:hover:text-white dark:border-[#293548]'
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
+                <Icon className="w-3.5 h-3.5 text-[#2563EB] dark:text-inherit" />
                 <span>{tab.label}</span>
                 {tab.badge && (
                   <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-black bg-red-500 text-white">
@@ -81,24 +140,250 @@ export function SettingsView({
           })}
         </div>
 
-        {subTab === 'LEADS' && (
+        {activeSubTab === 'LEADS' && onRefreshEnquiries && (
           <button
             onClick={onRefreshEnquiries}
-            className="p-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800"
+            className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-[#E2E8F0] dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-400 dark:hover:text-white dark:border-[#293548]"
             title="Refresh Leads"
           >
-            <RefreshCw className={`w-4 h-4 ${loadingEnquiries ? 'animate-spin text-amber-400' : ''}`} />
+            <RefreshCw
+              className={`w-4 h-4 ${loadingEnquiries ? 'animate-spin text-[#2563EB] dark:text-[#60A5FA]' : ''}`}
+            />
           </button>
         )}
       </div>
 
-      {/* SUB-VIEW 1: LEADS & ENQUIRIES */}
-      {subTab === 'LEADS' && (
+      {/* =========================================================================
+          TAB: AGENCY PROFILE & LICENSE
+      ========================================================================= */}
+      {activeSubTab === 'AGENCY' && (
+        <div className="space-y-4 max-w-2xl">
+          <div>
+            <h3 className="text-base font-bold text-[#0F172A] dark:text-white">Agency Organization Profile</h3>
+            <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+              Official statutory credentials printed on state fire compliance certificates and equipment schedules.
+            </p>
+          </div>
+
+          <form
+            onSubmit={handleSaveCompany}
+            className="p-5 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-4 text-xs dark:bg-[#0B1220] dark:border-[#293548]"
+          >
+            <div>
+              <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">
+                Company / Agency Name *
+              </label>
+              <input
+                type="text"
+                required
+                value={companyForm.name}
+                onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
+                placeholder="e.g. National Fire Safety & AMC Services"
+                className="w-full bg-white border border-[#E2E8F0] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#2563EB] font-medium shadow-xs dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">
+                  Govt. Fire License Number *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={companyForm.licenseNumber}
+                  onChange={(e) => setCompanyForm({ ...companyForm, licenseNumber: e.target.value })}
+                  placeholder="e.g. DL/FIRE/LIC/2026/042"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#2563EB] font-medium shadow-xs dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
+                />
+              </div>
+              <div>
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">
+                  Emergency Dispatch Phone *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={companyForm.phone}
+                  onChange={(e) => setCompanyForm({ ...companyForm, phone: e.target.value })}
+                  placeholder="e.g. +91 98200 11223"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#2563EB] font-medium shadow-xs dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">
+                Official Service Email *
+              </label>
+              <input
+                type="email"
+                required
+                value={companyForm.email}
+                onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })}
+                placeholder="e.g. service@nationalfireamc.in"
+                className="w-full bg-white border border-[#E2E8F0] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#2563EB] font-medium shadow-xs dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">
+                Registered Service Office Address *
+              </label>
+              <textarea
+                rows={2}
+                required
+                value={companyForm.address}
+                onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })}
+                placeholder="e.g. Plot 24, Industrial Area Phase III, New Delhi - 110020"
+                className="w-full bg-white border border-[#E2E8F0] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#2563EB] font-medium shadow-xs dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
+              />
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                type="submit"
+                className="px-6 py-3 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold text-xs shadow-xs transition-all hover:scale-[1.02]"
+              >
+                Save Agency Profile
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* =========================================================================
+          TAB: TEAM & TECHNICIANS
+      ========================================================================= */}
+      {activeSubTab === 'TEAM' && (
+        <TechnicianManagement showToast={showToast} onOpenImport={() => onOpenImport?.('TECHNICIANS')} />
+      )}
+
+      {/* =========================================================================
+          TAB: ADMIN USERS & ROLES
+      ========================================================================= */}
+      {activeSubTab === 'ADMINS' && <AdminUsersView currentUser={currentUser} company={company} />}
+
+      {/* =========================================================================
+          TAB: ALERTS & NOTIFICATIONS
+      ========================================================================= */}
+      {activeSubTab === 'ALERTS' && <AlertsSettingsView company={company} showToast={showToast} />}
+
+      {/* =========================================================================
+          TAB: IMPORT & EXPORT
+      ========================================================================= */}
+      {activeSubTab === 'IMPORT_EXPORT' && (
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-base font-bold text-[#073F8F] dark:text-white">Excel Import &amp; Export Center</h3>
+            <p className="text-xs text-[#475569] dark:text-slate-400">
+              Bulk upload existing spreadsheets or download operational records in Excel (.xlsx) format.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Import Card */}
+            <div className="p-5 rounded-2xl bg-slate-50 border border-[#E2E8F0] dark:bg-[#0B1220] dark:border-[#293548] space-y-4">
+              <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white text-sm">
+                <Upload className="w-5 h-5 text-[#2563EB] dark:text-[#60A5FA]" />
+                <span>Import Spreadsheets (.xlsx)</span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-[#94A3B8]">
+                Upload existing client lists, building rosters, equipment schedules, or technician records.
+              </p>
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => onOpenImport?.('CLIENTS')}
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#E2E8F0] shadow-xs flex items-center justify-center gap-1.5 dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-200 dark:border-[#293548]"
+                >
+                  <Upload className="w-3.5 h-3.5 text-blue-500" />
+                  <span>Clients</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onOpenImport?.('BUILDINGS')}
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#E2E8F0] shadow-xs flex items-center justify-center gap-1.5 dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-200 dark:border-[#293548]"
+                >
+                  <Upload className="w-3.5 h-3.5 text-indigo-500" />
+                  <span>Buildings</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onOpenImport?.('FIRE_ASSETS')}
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#E2E8F0] shadow-xs flex items-center justify-center gap-1.5 dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-200 dark:border-[#293548]"
+                >
+                  <Upload className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Equipment</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onOpenImport?.('TECHNICIANS')}
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#E2E8F0] shadow-xs flex items-center justify-center gap-1.5 dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-200 dark:border-[#293548]"
+                >
+                  <Upload className="w-3.5 h-3.5 text-purple-500" />
+                  <span>Technicians</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Export Card */}
+            <div className="p-5 rounded-2xl bg-slate-50 border border-[#E2E8F0] dark:bg-[#0B1220] dark:border-[#293548] space-y-4">
+              <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white text-sm">
+                <Download className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                <span>Export Operations Data (.xlsx)</span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-[#94A3B8]">
+                Download verified records for statutory audits, client handover reports, or external accounting.
+              </p>
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => onOpenExport?.('CLIENTS')}
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#E2E8F0] shadow-xs flex items-center justify-center gap-1.5 dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-200 dark:border-[#293548]"
+                >
+                  <Download className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Clients</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onOpenExport?.('BUILDINGS')}
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#E2E8F0] shadow-xs flex items-center justify-center gap-1.5 dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-200 dark:border-[#293548]"
+                >
+                  <Download className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Buildings</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onOpenExport?.('FIRE_ASSETS')}
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#E2E8F0] shadow-xs flex items-center justify-center gap-1.5 dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-200 dark:border-[#293548]"
+                >
+                  <Download className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Equipment</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onOpenExport?.('INSPECTIONS')}
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#E2E8F0] shadow-xs flex items-center justify-center gap-1.5 dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-200 dark:border-[#293548]"
+                >
+                  <Download className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Inspections</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          PLATFORM OWNER ONLY TABS
+      ========================================================================= */}
+      {isPlatformOwner && activeSubTab === 'LEADS' && (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h3 className="text-base font-bold text-white">Inbound Website Inquiries</h3>
-              <p className="text-xs text-slate-400">
+              <h3 className="text-base font-bold text-[#073F8F] dark:text-white">Inbound Website Inquiries</h3>
+              <p className="text-xs text-[#475569] dark:text-slate-400">
                 Direct submissions from public contact and demo forms stored in Supabase PostgreSQL.
               </p>
             </div>
@@ -108,11 +393,11 @@ export function SettingsView({
               {['ALL', 'NEW', 'CONTACTED', 'CONVERTED', 'ARCHIVED'].map((st) => (
                 <button
                   key={st}
-                  onClick={() => setEnquiryStatusFilter(st)}
+                  onClick={() => setEnquiryStatusFilter && setEnquiryStatusFilter(st)}
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                     enquiryStatusFilter === st
-                      ? 'bg-amber-500 text-slate-950 shadow'
-                      : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                      ? 'bg-[#007DB8] text-white shadow-sm dark:bg-amber-500 dark:text-slate-950'
+                      : 'bg-slate-50 text-slate-600 hover:text-slate-900 border border-[#DCE7F2] dark:bg-slate-950 dark:text-slate-400 dark:hover:text-white dark:border-slate-800'
                   }`}
                 >
                   {st}
@@ -121,97 +406,62 @@ export function SettingsView({
             </div>
           </div>
 
-          {loadingEnquiries ? (
-            <div className="py-16 text-center text-slate-400 flex flex-col items-center justify-center gap-2">
-              <RefreshCw className="w-6 h-6 animate-spin text-amber-500" />
-              <p className="text-xs">Loading inbound leads...</p>
-            </div>
-          ) : enquiriesList.length === 0 ? (
-            <div className="py-16 text-center text-slate-400 space-y-3">
-              <Mail className="w-12 h-12 text-slate-600 mx-auto" />
-              <h3 className="text-sm font-bold text-white">No inquiries received yet</h3>
-              <p className="text-xs text-slate-400 max-w-md mx-auto">
-                When prospective clients submit forms on your public website, their contact details, facility type, and requested demo slot will appear here instantly.
-              </p>
+          {/* Enquiries Table */}
+          {enquiriesList.length === 0 ? (
+            <div className="p-8 text-center text-slate-500 dark:text-slate-400 text-xs">
+              No website leads received yet.
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-slate-800">
-              <table className="w-full text-left text-xs text-slate-300">
-                <thead className="bg-slate-950 text-slate-400 uppercase font-semibold text-[10px] tracking-wider border-b border-slate-800">
+            <div className="border border-[#DCE7F2] rounded-xl overflow-x-auto dark:border-slate-800">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold border-b border-[#DCE7F2] dark:bg-slate-950 dark:border-slate-800 dark:text-slate-400">
                   <tr>
-                    <th className="py-3 px-4">Date / Source</th>
-                    <th className="py-3 px-4">Name &amp; Company</th>
-                    <th className="py-3 px-4">Contact</th>
-                    <th className="py-3 px-4">Requirement / Facility</th>
-                    <th className="py-3 px-4">Notes / Message</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
+                    <th className="py-2.5 px-3">Date</th>
+                    <th className="py-2.5 px-3">Name / Contact</th>
+                    <th className="py-2.5 px-3">Type / Subject</th>
+                    <th className="py-2.5 px-3">Message / Payload</th>
+                    <th className="py-2.5 px-3 text-right">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60 bg-slate-900/60">
-                  {enquiriesList.map((lead: any) => (
-                    <tr key={lead.id} className="hover:bg-slate-850/50 transition-colors">
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        <div className="font-semibold text-white">
-                          {new Date(lead.createdAt).toLocaleDateString('en-IN', {
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {enquiriesList
+                    .filter((e) => (enquiryStatusFilter === 'ALL' ? true : e.status === enquiryStatusFilter))
+                    .map((item) => (
+                      <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                        <td className="py-2.5 px-3 font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                          {new Date(item.createdAt).toLocaleDateString('en-IN', {
                             day: 'numeric',
                             month: 'short',
-                            year: 'numeric',
                           })}
-                        </div>
-                        <span className="text-[10px] text-amber-400/90 font-medium">{lead.source || 'Website'}</span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="font-bold text-white">{lead.name || 'Unnamed Prospect'}</div>
-                        <div className="text-[11px] text-slate-400">{lead.company || lead.city || 'Direct Inquiry'}</div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="text-slate-200">{lead.email}</div>
-                        {lead.phone && <div className="text-[11px] text-slate-400">{lead.phone}</div>}
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="font-medium text-slate-200">{lead.facilityType || lead.type || 'Demo'}</div>
-                        {(lead.assetCount || lead.preferredDate) && (
-                          <div className="text-[10px] text-slate-400">
-                            {lead.assetCount && `${lead.assetCount} assets • `}
-                            {lead.preferredDate && `Slot: ${lead.preferredDate} ${lead.preferredTime || ''}`}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <div className="font-bold text-slate-800 dark:text-white">{item.name || 'Anonymous'}</div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                            {item.email} {item.phone ? `• ${item.phone}` : ''}
                           </div>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 max-w-xs">
-                        <p className="line-clamp-2 text-slate-400 text-[11px]">
-                          {lead.message || 'No additional message provided.'}
-                        </p>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                            lead.status === 'NEW'
-                              ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
-                              : lead.status === 'CONTACTED'
-                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                              : lead.status === 'CONVERTED'
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                              : 'bg-slate-700/40 text-slate-400 border border-slate-700'
-                          }`}
-                        >
-                          {lead.status}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
-                        <select
-                          value={lead.status}
-                          onChange={(e) => onUpdateEnquiryStatus(lead.id, e.target.value)}
-                          className="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-300 font-semibold focus:outline-none focus:border-amber-500"
-                        >
-                          <option value="NEW">NEW</option>
-                          <option value="CONTACTED">CONTACTED</option>
-                          <option value="CONVERTED">CONVERTED</option>
-                          <option value="ARCHIVED">ARCHIVED</option>
-                        </select>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 dark:text-slate-300">
+                            {item.type}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 max-w-xs truncate text-slate-600 dark:text-slate-300">
+                          {item.message || (item.payload ? JSON.stringify(item.payload) : '—')}
+                        </td>
+                        <td className="py-2.5 px-3 text-right">
+                          <select
+                            value={item.status}
+                            onChange={(e) => onUpdateEnquiryStatus && onUpdateEnquiryStatus(item.id, e.target.value)}
+                            className="bg-white border border-[#DCE7F2] rounded-lg px-2 py-1 text-[11px] text-slate-800 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+                          >
+                            <option value="NEW">NEW</option>
+                            <option value="CONTACTED">CONTACTED</option>
+                            <option value="CONVERTED">CONVERTED</option>
+                            <option value="ARCHIVED">ARCHIVED</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>
@@ -219,115 +469,51 @@ export function SettingsView({
         </div>
       )}
 
-      {/* SUB-VIEW 2: DATA MANAGEMENT & DATABASE WIPE */}
-      {subTab === 'TOOLS' && (
+      {isPlatformOwner && activeSubTab === 'INVESTORS' && <InvestorLeadsView />}
+
+      {isPlatformOwner && activeSubTab === 'TOOLS' && (
         <div className="space-y-6 max-w-2xl">
           <div>
-            <h3 className="text-base font-bold text-white">Data Management &amp; System Maintenance</h3>
-            <p className="text-xs text-slate-400">
-              Bulk import legacy Excel spreadsheets, wipe demo records, or load clean starter templates.
+            <h3 className="text-base font-bold text-[#073F8F] dark:text-white">Platform Data Maintenance Tools</h3>
+            <p className="text-xs text-[#475569] dark:text-slate-400">
+              Founder operations for resetting test databases or loading clean non-trademarked evaluation records.
             </p>
-          </div>
-
-          {/* Central Excel Import System */}
-          <div className="p-5 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
-                <FileSpreadsheet className="w-5 h-5 text-amber-400" />
-                <span>Import Existing Data (Excel &amp; CSV Migration)</span>
-              </div>
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30 uppercase">
-                Smart Engine
-              </span>
-            </div>
-            <p className="text-xs text-slate-300">
-              Already managing your fire safety equipment, clients, or inspection cycles in Excel? Use our multi-module import engine to bring your existing data directly into VigilAMC with automatic column matching and duplicate protection.
-            </p>
-
-            <div className="pt-2 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => onOpenImport?.('CLIENTS')}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all border border-slate-700 flex items-center gap-1.5"
-              >
-                <Upload className="w-3.5 h-3.5 text-blue-400" />
-                <span>Import Clients</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onOpenImport?.('BUILDINGS')}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all border border-slate-700 flex items-center gap-1.5"
-              >
-                <Upload className="w-3.5 h-3.5 text-amber-400" />
-                <span>Import Buildings</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onOpenImport?.('FIRE_ASSETS')}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all border border-slate-700 flex items-center gap-1.5"
-              >
-                <Upload className="w-3.5 h-3.5 text-red-400" />
-                <span>Import Fire Assets</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onOpenImport?.('TECHNICIANS')}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all border border-slate-700 flex items-center gap-1.5"
-              >
-                <Upload className="w-3.5 h-3.5 text-purple-400" />
-                <span>Import Technicians</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onOpenImport?.('INSPECTIONS')}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all border border-slate-700 flex items-center gap-1.5"
-              >
-                <Upload className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Import Inspections</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onOpenImport?.('WORK_ORDERS')}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all border border-slate-700 flex items-center gap-1.5"
-              >
-                <Upload className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Import Work Orders</span>
-              </button>
-            </div>
           </div>
 
           {/* Danger Zone: Wipe All Demo Data */}
-          <div className="p-5 rounded-2xl bg-red-950/20 border-2 border-red-500/40 space-y-3">
-            <div className="flex items-center gap-2 text-red-400 font-bold text-sm">
-              <AlertTriangle className="w-5 h-5 text-red-400" />
+          <div className="p-5 rounded-2xl bg-red-50 border-2 border-red-200 space-y-3 dark:bg-red-950/20 dark:border-red-500/40">
+            <div className="flex items-center gap-2 text-red-700 dark:text-red-400 font-bold text-sm">
+              <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
               <span>Wipe All Demo Companies &amp; Data</span>
             </div>
-            <p className="text-xs text-slate-300">
-              This permanently removes all existing demo client societies, demo buildings, demo equipment records, and test service logs. Your database will be completely empty and 100% clean so you can register your actual real-world AMC contracts.
+            <p className="text-xs text-red-900/80 dark:text-slate-300">
+              This permanently removes all test companies, test client societies, buildings, and equipment records.
+              Requires typing <strong className="font-mono font-bold">DELETE</strong> to confirm.
             </p>
             <div className="pt-1">
               <button
                 onClick={onWipeAllDemo}
-                className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black text-xs shadow-md transition-all hover:scale-[1.02]"
+                className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-md transition-all hover:scale-[1.02]"
               >
-                Confirm: Wipe All Demo Records
+                Wipe All Demo Records
               </button>
             </div>
           </div>
 
           {/* Template Starter: Seed Clean Unbranded Data */}
-          <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
-            <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
-              <Sparkles className="w-5 h-5 text-amber-400" />
-              <span>Load Clean Starter Template (No Brand Names)</span>
+          <div className="p-5 rounded-2xl bg-slate-50 border border-[#DCE7F2] space-y-3 dark:bg-slate-950/80 dark:border-slate-800">
+            <div className="flex items-center gap-2 text-[#073F8F] dark:text-amber-400 font-bold text-sm">
+              <Sparkles className="w-5 h-5 text-[#007DB8] dark:text-amber-400" />
+              <span>Load Clean Starter Template</span>
             </div>
-            <p className="text-xs text-slate-400">
-              Seeds a clean, unbranded reference structure with generic facilities (Horizon Tech IT Tower &amp; Emerald Heights Society) to test QR code scanning, inspection logs, and Delhi NCR Statutory Form-B PDF generation.
+            <p className="text-xs text-[#475569] dark:text-slate-400">
+              Seeds a clean, unbranded reference structure with generic facilities (Horizon Tech Tower &amp; Emerald
+              Heights) to test field inspections, GPS logs, and Form-B reports.
             </p>
             <div className="pt-1">
               <button
                 onClick={onSeedCleanData}
-                className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/40 font-bold text-xs transition-colors"
+                className="px-5 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-[#073F8F] border border-[#DCE7F2] font-bold text-xs transition-colors shadow-sm dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-amber-400 dark:border-amber-500/40"
               >
                 Load Clean Template Data
               </button>
@@ -335,93 +521,6 @@ export function SettingsView({
           </div>
         </div>
       )}
-
-      {/* SUB-VIEW 3: AGENCY PROFILE & LICENSE */}
-      {subTab === 'AGENCY' && (
-        <div className="space-y-4 max-w-2xl">
-          <div>
-            <h3 className="text-base font-bold text-white">Agency Organization Profile</h3>
-            <p className="text-xs text-slate-400">
-              Official statutory credentials printed on Delhi Fire Service &amp; NBC 2016 certificates, inspection logs, and technician tags.
-            </p>
-          </div>
-
-          <form onSubmit={handleSaveCompany} className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-4 text-xs">
-            <div>
-              <label className="block text-slate-300 font-bold mb-1">Company / Business Name *</label>
-              <input
-                type="text"
-                required
-                value={companyForm.name}
-                onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
-                placeholder="e.g. National Fire Safety & AMC Services"
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-slate-300 font-bold mb-1">Govt. Fire License Number *</label>
-                <input
-                  type="text"
-                  required
-                  value={companyForm.licenseNumber}
-                  onChange={(e) => setCompanyForm({ ...companyForm, licenseNumber: e.target.value })}
-                  placeholder="e.g. DL/FIRE/LIC/2026/042"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-300 font-bold mb-1">Emergency Dispatch Phone *</label>
-                <input
-                  type="text"
-                  required
-                  value={companyForm.phone}
-                  onChange={(e) => setCompanyForm({ ...companyForm, phone: e.target.value })}
-                  placeholder="e.g. +91 98200 11223"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-slate-300 font-bold mb-1">Official Service Email *</label>
-              <input
-                type="email"
-                required
-                value={companyForm.email}
-                onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })}
-                placeholder="e.g. service@nationalfireamc.in"
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
-              />
-            </div>
-
-            <div>
-              <label className="block text-slate-300 font-bold mb-1">Registered Service Office Address *</label>
-              <textarea
-                rows={2}
-                required
-                value={companyForm.address}
-                onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })}
-                placeholder="e.g. Plot 24, Okhla Industrial Area Phase III, New Delhi - 110020"
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-medium"
-              />
-            </div>
-
-            <div className="pt-2 flex justify-end">
-              <button
-                type="submit"
-                className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 transition-all hover:scale-[1.02]"
-              >
-                Save Agency Profile
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Subtab: Investor Leads */}
-      {subTab === 'INVESTORS' && <InvestorLeadsView />}
     </div>
   );
 }

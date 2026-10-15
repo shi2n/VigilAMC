@@ -81,12 +81,12 @@ export function CorporateFooter() {
               <img
                 src="/logo.jpg"
                 alt="VigilAMC - Premium AMC Services"
-                className="h-10 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105 mix-blend-multiply"
+                className="h-10 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105 rounded-lg"
               />
             </Link>
 
             <p className="text-sm text-slate-400 leading-relaxed max-w-sm text-pretty">
-              VigilAMC helps fire-safety AMC and service teams track assets, service schedules, QR-based visits, evidence and client compliance reports from one platform.
+              VigilAMC helps fire-safety AMC and service teams track assets, service schedules, GPS and photo-verified visits, evidence and client compliance reports from one platform.
             </p>
 
             <div className="pt-2 flex flex-wrap items-center gap-2 text-xs">
@@ -94,7 +94,7 @@ export function CorporateFooter() {
                 Built for Fire AMC
               </span>
               <span className="px-2.5 py-1 rounded-md bg-slate-900/90 text-cyan-200 border border-slate-700/70 font-medium">
-                QR Service Verification
+                GPS &amp; Photo Verification
               </span>
               <span className="px-2.5 py-1 rounded-md bg-slate-900/90 text-cyan-200 border border-slate-700/70 font-medium">
                 Form-B Structuring
@@ -181,11 +181,6 @@ export function CorporateFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/pricing" className="text-slate-300 hover:text-cyan-300 transition-colors">
-                  Pricing &amp; Pilot
-                </Link>
-              </li>
-              <li>
                 <Link href="/about" className="text-slate-300 hover:text-cyan-300 transition-colors">
                   About &amp; Mission
                 </Link>
@@ -214,7 +209,7 @@ export function CorporateFooter() {
             <ul className="space-y-2 text-sm text-slate-300">
               <li>
                 <Link href="/features" className="hover:text-cyan-300 transition-colors">
-                  Fire Extinguisher QR Tagging
+                  GPS-Verified Asset Inspections
                 </Link>
               </li>
               <li>
@@ -237,11 +232,6 @@ export function CorporateFooter() {
                   Security &amp; Data Architecture
                 </Link>
               </li>
-              <li>
-                <Link href="/scan" className="hover:text-cyan-300 transition-colors">
-                  Technician Mobile Scanner
-                </Link>
-              </li>
             </ul>
           </div>
 
@@ -253,9 +243,10 @@ export function CorporateFooter() {
             <ul className="space-y-2.5 text-sm text-slate-300">
               <li className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-[#48CAE4] shrink-0 mt-0.5" />
-                <span>
-                  New Delhi 110092, India
-                </span>
+                <div className="space-y-0.5">
+                  <span className="block font-medium">New Delhi 110092, India</span>
+                  <span className="text-[11px] text-cyan-200/90 block">Based in New Delhi, serving agencies across India</span>
+                </div>
               </li>
               <li className="flex items-center gap-2.5">
                 <Phone className="w-4 h-4 text-[#48CAE4] shrink-0" />
@@ -312,7 +303,7 @@ export function CorporateFooter() {
         {/* Bottom row: Disclaimers and copyright */}
         <div className="pt-8 flex flex-col md:flex-row items-center justify-between text-xs text-slate-400 gap-4">
           <p>
-            &copy; {new Date().getFullYear()} VigilAMC. [ADD COMPANY LEGAL DETAILS]. All rights reserved.
+            &copy; {new Date().getFullYear()} VigilAMC. All rights reserved.
           </p>
           <div className="flex flex-wrap items-center gap-4 text-xs">
             <Link href="/privacy" className="hover:text-slate-200 transition-colors">
@@ -320,7 +311,11 @@ export function CorporateFooter() {
             </Link>
             <span>&bull;</span>
             <Link href="/terms" className="hover:text-slate-200 transition-colors">
-              Terms of Service
+              Terms &amp; Conditions
+            </Link>
+            <span>&bull;</span>
+            <Link href="/cookies" className="hover:text-slate-200 transition-colors">
+              Cookie Policy
             </Link>
             <span>&bull;</span>
             <Link href="/security" className="hover:text-slate-200 transition-colors">
