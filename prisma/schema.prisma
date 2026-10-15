@@ -445,4 +445,3 @@ model Feedback {
   rating          Int?
   createdAt       DateTime @default(now())
 }
-

@@ -3,9 +3,9 @@ const path = require('path');
 
 const dirs = ['src/app/dashboard', 'src/components/admin'];
 const keywords = [
-  'QR', 'scanner', 'scan', 'tag', 'Delhi', 'NCR', 'Rule 33', 
-  'Fleet', 'Telemetry', 'Radar', 'Statutory', 'Admin OS', 
-  'Executive Overview', 'Dispatch', 'Premises Roster', 'Plan', 
+  'QR', 'scanner', 'scan', 'tag', 'Delhi', 'NCR', 'Rule 33',
+  'Fleet', 'Telemetry', 'Radar', 'Statutory', 'Admin OS',
+  'Executive Overview', 'Dispatch', 'Premises Roster', 'Plan',
   'Upgrade', 'Subscription', 'Renews'
 ];
 
