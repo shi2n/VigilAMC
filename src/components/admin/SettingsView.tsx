@@ -111,9 +111,9 @@ export function SettingsView({
   const allTabs: Array<{ id: string; label: string; icon: any; badge?: number | string }> = [...agencyTabs, ...platformTabs];
 
   return (
-    <div className="rounded-2xl bg-white border border-[#DCE7F2] shadow-sm p-5 sm:p-6 space-y-6 text-slate-800 dark:bg-slate-900/90 dark:border-slate-800 dark:shadow-2xl dark:text-slate-100">
+    <div className="rounded-2xl bg-white border border-[#E2E8F0] shadow-xs p-5 sm:p-6 space-y-6 text-slate-800 dark:bg-[#172033] dark:border-[#293548] dark:shadow-xl dark:text-slate-100">
       {/* Sub Navigation Bar */}
-      <div className="flex items-center justify-between border-b border-[#DCE7F2] pb-4 flex-wrap gap-3 dark:border-slate-800">
+      <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4 flex-wrap gap-3 dark:border-[#293548]">
         <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full">
           {allTabs.map((tab) => {
             const Icon = tab.icon;
@@ -124,11 +124,11 @@ export function SettingsView({
                 onClick={() => setActiveSubTab(tab.id as SettingsSubTab)}
                 className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                   active
-                    ? 'bg-[#EAF6FF] text-[#073F8F] border border-[#007DB8]/30 font-bold shadow-sm dark:bg-amber-500 dark:text-slate-950 dark:font-black'
-                    : 'bg-slate-50 text-slate-600 hover:text-slate-900 border border-[#DCE7F2] dark:bg-slate-950 dark:text-slate-400 dark:hover:text-white dark:border-slate-800'
+                    ? 'bg-[#EFF6FF] text-[#2563EB] border border-[#2563EB]/30 font-bold shadow-xs dark:bg-blue-600 dark:text-white dark:border-blue-500'
+                    : 'bg-slate-50 text-slate-600 hover:text-slate-900 border border-[#E2E8F0] dark:bg-[#111827] dark:text-[#94A3B8] dark:hover:text-white dark:border-[#293548]'
                 }`}
               >
-                <Icon className="w-3.5 h-3.5 text-[#007DB8] dark:text-inherit" />
+                <Icon className="w-3.5 h-3.5 text-[#2563EB] dark:text-inherit" />
                 <span>{tab.label}</span>
                 {tab.badge && (
                   <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-black bg-red-500 text-white">
@@ -143,11 +143,11 @@ export function SettingsView({
         {activeSubTab === 'LEADS' && onRefreshEnquiries && (
           <button
             onClick={onRefreshEnquiries}
-            className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-[#DCE7F2] dark:bg-slate-950 dark:hover:bg-slate-800 dark:text-slate-400 dark:hover:text-white dark:border-slate-800"
+            className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-[#E2E8F0] dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-400 dark:hover:text-white dark:border-[#293548]"
             title="Refresh Leads"
           >
             <RefreshCw
-              className={`w-4 h-4 ${loadingEnquiries ? 'animate-spin text-[#007DB8] dark:text-amber-400' : ''}`}
+              className={`w-4 h-4 ${loadingEnquiries ? 'animate-spin text-[#2563EB] dark:text-[#60A5FA]' : ''}`}
             />
           </button>
         )}
@@ -159,15 +159,15 @@ export function SettingsView({
       {activeSubTab === 'AGENCY' && (
         <div className="space-y-4 max-w-2xl">
           <div>
-            <h3 className="text-base font-bold text-[#073F8F] dark:text-white">Agency Organization Profile</h3>
-            <p className="text-xs text-[#475569] dark:text-slate-400">
+            <h3 className="text-base font-bold text-[#0F172A] dark:text-white">Agency Organization Profile</h3>
+            <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
               Official statutory credentials printed on state fire compliance certificates and equipment schedules.
             </p>
           </div>
 
           <form
             onSubmit={handleSaveCompany}
-            className="p-5 rounded-2xl bg-[#F8FAFC] border border-[#DCE7F2] space-y-4 text-xs dark:bg-slate-950/80 dark:border-slate-800"
+            className="p-5 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-4 text-xs dark:bg-[#0B1220] dark:border-[#293548]"
           >
             <div>
               <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">
@@ -179,7 +179,7 @@ export function SettingsView({
                 value={companyForm.name}
                 onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
                 placeholder="e.g. National Fire Safety & AMC Services"
-                className="w-full bg-white border border-[#DCE7F2] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#007DB8] font-medium shadow-sm dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
+                className="w-full bg-white border border-[#E2E8F0] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#2563EB] font-medium shadow-xs dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
               />
             </div>
 
@@ -194,7 +194,7 @@ export function SettingsView({
                   value={companyForm.licenseNumber}
                   onChange={(e) => setCompanyForm({ ...companyForm, licenseNumber: e.target.value })}
                   placeholder="e.g. DL/FIRE/LIC/2026/042"
-                  className="w-full bg-white border border-[#DCE7F2] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#007DB8] font-medium shadow-sm dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#2563EB] font-medium shadow-xs dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
                 />
               </div>
               <div>
@@ -207,7 +207,7 @@ export function SettingsView({
                   value={companyForm.phone}
                   onChange={(e) => setCompanyForm({ ...companyForm, phone: e.target.value })}
                   placeholder="e.g. +91 98200 11223"
-                  className="w-full bg-white border border-[#DCE7F2] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#007DB8] font-medium shadow-sm dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#2563EB] font-medium shadow-xs dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
                 />
               </div>
             </div>
@@ -222,7 +222,7 @@ export function SettingsView({
                 value={companyForm.email}
                 onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })}
                 placeholder="e.g. service@nationalfireamc.in"
-                className="w-full bg-white border border-[#DCE7F2] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#007DB8] font-medium shadow-sm dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
+                className="w-full bg-white border border-[#E2E8F0] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#2563EB] font-medium shadow-xs dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
               />
             </div>
 
@@ -236,14 +236,14 @@ export function SettingsView({
                 value={companyForm.address}
                 onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })}
                 placeholder="e.g. Plot 24, Industrial Area Phase III, New Delhi - 110020"
-                className="w-full bg-white border border-[#DCE7F2] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#007DB8] font-medium shadow-sm dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
+                className="w-full bg-white border border-[#E2E8F0] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#2563EB] font-medium shadow-xs dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
               />
             </div>
 
             <div className="pt-2 flex justify-end">
               <button
                 type="submit"
-                className="px-6 py-3 rounded-xl bg-[#007DB8] hover:bg-[#073F8F] text-white font-bold text-xs shadow-md transition-all hover:scale-[1.02] dark:bg-gradient-to-r dark:from-amber-500 dark:to-orange-500 dark:text-slate-950 dark:font-black"
+                className="px-6 py-3 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold text-xs shadow-xs transition-all hover:scale-[1.02]"
               >
                 Save Agency Profile
               </button>
@@ -283,19 +283,19 @@ export function SettingsView({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Import Card */}
-            <div className="p-5 rounded-2xl bg-slate-50 border border-[#DCE7F2] dark:bg-slate-950/80 dark:border-slate-800 space-y-4">
+            <div className="p-5 rounded-2xl bg-slate-50 border border-[#E2E8F0] dark:bg-[#0B1220] dark:border-[#293548] space-y-4">
               <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white text-sm">
-                <Upload className="w-5 h-5 text-[#007DB8] dark:text-amber-400" />
+                <Upload className="w-5 h-5 text-[#2563EB] dark:text-[#60A5FA]" />
                 <span>Import Spreadsheets (.xlsx)</span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-[#94A3B8]">
                 Upload existing client lists, building rosters, equipment schedules, or technician records.
               </p>
               <div className="grid grid-cols-2 gap-2 pt-1">
                 <button
                   type="button"
                   onClick={() => onOpenImport?.('CLIENTS')}
-                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#DCE7F2] shadow-xs flex items-center justify-center gap-1.5 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-800"
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#E2E8F0] shadow-xs flex items-center justify-center gap-1.5 dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-200 dark:border-[#293548]"
                 >
                   <Upload className="w-3.5 h-3.5 text-blue-500" />
                   <span>Clients</span>
@@ -303,7 +303,7 @@ export function SettingsView({
                 <button
                   type="button"
                   onClick={() => onOpenImport?.('BUILDINGS')}
-                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#DCE7F2] shadow-xs flex items-center justify-center gap-1.5 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-800"
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#E2E8F0] shadow-xs flex items-center justify-center gap-1.5 dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-200 dark:border-[#293548]"
                 >
                   <Upload className="w-3.5 h-3.5 text-indigo-500" />
                   <span>Buildings</span>
@@ -311,15 +311,15 @@ export function SettingsView({
                 <button
                   type="button"
                   onClick={() => onOpenImport?.('FIRE_ASSETS')}
-                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#DCE7F2] shadow-xs flex items-center justify-center gap-1.5 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-800"
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#E2E8F0] shadow-xs flex items-center justify-center gap-1.5 dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-200 dark:border-[#293548]"
                 >
-                  <Upload className="w-3.5 h-3.5 text-amber-500" />
+                  <Upload className="w-3.5 h-3.5 text-blue-400" />
                   <span>Equipment</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => onOpenImport?.('TECHNICIANS')}
-                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#DCE7F2] shadow-xs flex items-center justify-center gap-1.5 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-800"
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#E2E8F0] shadow-xs flex items-center justify-center gap-1.5 dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-200 dark:border-[#293548]"
                 >
                   <Upload className="w-3.5 h-3.5 text-purple-500" />
                   <span>Technicians</span>
@@ -328,19 +328,19 @@ export function SettingsView({
             </div>
 
             {/* Export Card */}
-            <div className="p-5 rounded-2xl bg-slate-50 border border-[#DCE7F2] dark:bg-slate-950/80 dark:border-slate-800 space-y-4">
+            <div className="p-5 rounded-2xl bg-slate-50 border border-[#E2E8F0] dark:bg-[#0B1220] dark:border-[#293548] space-y-4">
               <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white text-sm">
                 <Download className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 <span>Export Operations Data (.xlsx)</span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-[#94A3B8]">
                 Download verified records for statutory audits, client handover reports, or external accounting.
               </p>
               <div className="grid grid-cols-2 gap-2 pt-1">
                 <button
                   type="button"
                   onClick={() => onOpenExport?.('CLIENTS')}
-                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#DCE7F2] shadow-xs flex items-center justify-center gap-1.5 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-800"
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#E2E8F0] shadow-xs flex items-center justify-center gap-1.5 dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-200 dark:border-[#293548]"
                 >
                   <Download className="w-3.5 h-3.5 text-emerald-600" />
                   <span>Clients</span>
@@ -348,7 +348,7 @@ export function SettingsView({
                 <button
                   type="button"
                   onClick={() => onOpenExport?.('BUILDINGS')}
-                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#DCE7F2] shadow-xs flex items-center justify-center gap-1.5 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-800"
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#E2E8F0] shadow-xs flex items-center justify-center gap-1.5 dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-200 dark:border-[#293548]"
                 >
                   <Download className="w-3.5 h-3.5 text-emerald-600" />
                   <span>Buildings</span>
@@ -356,7 +356,7 @@ export function SettingsView({
                 <button
                   type="button"
                   onClick={() => onOpenExport?.('FIRE_ASSETS')}
-                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#DCE7F2] shadow-xs flex items-center justify-center gap-1.5 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-800"
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#E2E8F0] shadow-xs flex items-center justify-center gap-1.5 dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-200 dark:border-[#293548]"
                 >
                   <Download className="w-3.5 h-3.5 text-emerald-600" />
                   <span>Equipment</span>
@@ -364,7 +364,7 @@ export function SettingsView({
                 <button
                   type="button"
                   onClick={() => onOpenExport?.('INSPECTIONS')}
-                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#DCE7F2] shadow-xs flex items-center justify-center gap-1.5 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-800"
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#E2E8F0] shadow-xs flex items-center justify-center gap-1.5 dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-200 dark:border-[#293548]"
                 >
                   <Download className="w-3.5 h-3.5 text-emerald-600" />
                   <span>Inspections</span>

@@ -95,9 +95,11 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Authenticated Admin Navigation Tab (6 Items)
-  const [activeTab, setActiveTab] = useState<AdminNavTab>('HOME');
-  const [sitesSubTab, setSitesSubTab] = useState<'EQUIPMENT' | 'BUILDINGS' | 'CLIENTS'>('EQUIPMENT');
+  // Authenticated Admin Navigation Tab (6 Core Groups)
+  const [activeTab, setActiveTab] = useState<AdminNavTab>('OVERVIEW');
+  const [clientsSitesSubTab, setClientsSitesSubTab] = useState<'BUILDINGS' | 'CLIENTS'>('BUILDINGS');
+  const [inspectionsWorkSubTab, setInspectionsWorkSubTab] = useState<'INSPECTIONS' | 'REPAIRS'>('INSPECTIONS');
+  const [sitesSubTab, setSitesSubTab] = useState<'EQUIPMENT' | 'BUILDINGS' | 'CLIENTS'>('BUILDINGS');
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [techSubTab, setTechSubTab] = useState<'ROSTER' | 'ASSIGNMENTS' | 'AUDIT_LOG'>('ROSTER');
@@ -356,13 +358,16 @@ export default function AdminDashboardPage() {
       setExportConfigKey(key);
     } else {
       const tabMap: Record<string, string> = {
-        CLIENTS: 'CLIENTS',
-        BUILDINGS: 'BUILDINGS',
-        FIRE_ASSETS: 'FIRE_ASSETS',
-        TECHNICIANS: 'TECHNICIANS',
+        OVERVIEW: 'FIRE_ASSETS',
+        HOME: 'FIRE_ASSETS',
+        CLIENTS_SITES: clientsSitesSubTab === 'BUILDINGS' ? 'BUILDINGS' : 'CLIENTS',
+        SITES: 'BUILDINGS',
+        FIRE_EQUIPMENT: 'FIRE_ASSETS',
+        INSPECTIONS_WORK: inspectionsWorkSubTab === 'INSPECTIONS' ? 'INSPECTIONS' : 'WORK_ORDERS',
         INSPECTIONS: 'INSPECTIONS',
-        WORK_ORDERS: 'WORK_ORDERS',
+        REPAIRS: 'WORK_ORDERS',
         REPORTS: 'FIRE_ASSETS',
+        SETTINGS: 'CLIENTS',
       };
       setExportConfigKey(tabMap[activeTab] || 'FIRE_ASSETS');
     }
@@ -402,15 +407,17 @@ export default function AdminDashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'HOME') {
+    if (activeTab === 'OVERVIEW' || activeTab === 'HOME') {
       fetchKpis();
-    } else if (activeTab === 'SITES') {
+    } else if (activeTab === 'CLIENTS_SITES' || activeTab === 'SITES') {
       fetchClients();
+    } else if (activeTab === 'FIRE_EQUIPMENT') {
       fetchEquipments();
-    } else if (activeTab === 'REPAIRS') {
-      fetchWorkOrders();
-    } else if (activeTab === 'INSPECTIONS') {
+    } else if (activeTab === 'INSPECTIONS_WORK' || activeTab === 'INSPECTIONS' || activeTab === 'REPAIRS') {
       fetchInspections();
+      fetchWorkOrders();
+    } else if (activeTab === 'REPORTS') {
+      fetchData();
     } else if (activeTab === 'SETTINGS') {
       fetchEnquiries();
       fetchTechnicians();
@@ -759,11 +766,11 @@ export default function AdminDashboardPage() {
       <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-6 overflow-y-auto">
         
         {/* Top Header Bar */}
-        <div className="rounded-2xl bg-white border border-[#DCE7F2] p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-900/90 dark:border-slate-800 dark:shadow-2xl">
+        <div className="rounded-2xl bg-white border border-[#E2E8F0] p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-[#111827] dark:border-[#293548]">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 hover:text-slate-900 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-300 dark:hover:text-white"
+              className="lg:hidden p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 hover:text-slate-900 dark:bg-[#172033] dark:border-[#293548] dark:text-slate-300 dark:hover:text-white"
               aria-label="Open navigation menu"
             >
               <Menu className="w-5 h-5" />
@@ -771,18 +778,18 @@ export default function AdminDashboardPage() {
 
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-[#007DB8] dark:text-slate-400">VigilAMC</span>
+                <span className="text-xs font-semibold text-[#2563EB] dark:text-[#60A5FA]">VigilAMC</span>
                 <span className="text-slate-400 dark:text-slate-600">/</span>
-                <h1 className="text-lg sm:text-xl font-black text-[#073F8F] dark:text-white tracking-tight">
-                  {activeTab === 'HOME' && 'Home'}
-                  {activeTab === 'SITES' && 'Sites & Fire Equipment'}
-                  {activeTab === 'INSPECTIONS' && 'Field Inspections'}
-                  {activeTab === 'REPAIRS' && 'Repairs & Work Orders'}
+                <h1 className="text-lg sm:text-xl font-black text-[#0F172A] dark:text-white tracking-tight">
+                  {(activeTab === 'OVERVIEW' || activeTab === 'HOME') && 'Overview'}
+                  {(activeTab === 'CLIENTS_SITES' || activeTab === 'SITES') && 'Clients & Sites'}
+                  {activeTab === 'FIRE_EQUIPMENT' && 'Fire Equipment'}
+                  {(activeTab === 'INSPECTIONS_WORK' || activeTab === 'INSPECTIONS' || activeTab === 'REPAIRS') && 'Inspections & Work'}
                   {activeTab === 'REPORTS' && 'Compliance Reports'}
-                  {activeTab === 'SETTINGS' && 'Team & Agency Settings'}
+                  {activeTab === 'SETTINGS' && 'Agency Settings'}
                 </h1>
               </div>
-              <p className="text-xs text-[#475569] dark:text-slate-400 mt-0.5">
+              <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-0.5">
                 Managing operations for <strong className="text-slate-800 dark:text-slate-200 font-semibold">{agencyName}</strong>
                 {licenseNo && <> &bull; License: <strong className="text-slate-800 dark:text-slate-300 font-semibold">{licenseNo}</strong></>}
               </p>
@@ -793,38 +800,38 @@ export default function AdminDashboardPage() {
           <div className="flex items-center gap-2.5 flex-wrap self-end md:self-auto">
             <button
               onClick={() => setFeedbackModalOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#EAF6FF] hover:bg-[#d0ebff] text-[#073F8F] border border-[#007DB8]/30 text-xs font-bold transition-all shadow-xs dark:bg-amber-500/10 dark:hover:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#EFF6FF] hover:bg-blue-100 text-[#2563EB] border border-[#2563EB]/20 text-xs font-bold transition-all shadow-xs dark:bg-blue-500/10 dark:hover:bg-blue-500/20 dark:text-[#60A5FA] dark:border-blue-500/30"
               title="Give product feedback"
             >
-              <MessageSquare className="w-4 h-4 text-[#007DB8] dark:text-amber-400" />
+              <MessageSquare className="w-4 h-4 text-[#2563EB] dark:text-[#60A5FA]" />
               <span>Give Feedback</span>
             </button>
 
             {/* Theme Toggle (Light / Dark Mode) */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-amber-400 dark:border-slate-700 transition-all shadow-xs"
+              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 dark:bg-[#172033] dark:hover:bg-slate-700 dark:text-slate-200 dark:border-[#293548] transition-all shadow-xs"
               title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
               aria-label="Toggle Theme"
             >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4 text-slate-700" />}
+              {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
             </button>
 
             <button
               onClick={handleLogout}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold transition-all shadow-xs dark:bg-red-950/40 dark:hover:bg-red-900/60 dark:text-red-300 dark:border-red-800/50"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition-all shadow-xs dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:text-rose-300 dark:border-rose-800/50"
               title="Sign Out"
             >
-              <LogOut className="w-4 h-4 text-red-600 dark:text-red-400" />
+              <LogOut className="w-4 h-4 text-rose-600 dark:text-rose-400" />
               <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
         </div>
 
         {/* =========================================================================
-            VIEW 1: HOME (OVERVIEW SCREEN)
+            GROUP 1: OVERVIEW SCREEN
         ========================================================================= */}
-        {activeTab === 'HOME' && (
+        {(activeTab === 'OVERVIEW' || activeTab === 'HOME') && (
           <DashboardOverview
             kpis={{
               overdueCount: summary?.overdueEquipments || summary?.overdueBuildings || 0,
@@ -838,9 +845,17 @@ export default function AdminDashboardPage() {
             company={company}
             buildings={buildings}
             onNavigateTab={(tab: any) => {
-              if (['HOME', 'SITES', 'INSPECTIONS', 'REPAIRS', 'REPORTS', 'SETTINGS'].includes(tab)) {
-                setActiveTab(tab);
-              }
+              if (tab === 'OVERVIEW' || tab === 'HOME') setActiveTab('OVERVIEW');
+              else if (tab === 'CLIENTS_SITES' || tab === 'SITES') setActiveTab('CLIENTS_SITES');
+              else if (tab === 'FIRE_EQUIPMENT') setActiveTab('FIRE_EQUIPMENT');
+              else if (tab === 'INSPECTIONS_WORK' || tab === 'INSPECTIONS') {
+                setActiveTab('INSPECTIONS_WORK');
+                setInspectionsWorkSubTab('INSPECTIONS');
+              } else if (tab === 'REPAIRS') {
+                setActiveTab('INSPECTIONS_WORK');
+                setInspectionsWorkSubTab('REPAIRS');
+              } else if (tab === 'REPORTS') setActiveTab('REPORTS');
+              else if (tab === 'SETTINGS') setActiveTab('SETTINGS');
             }}
             onAddEquipment={() => {
               if (buildings.length > 0) {
@@ -850,7 +865,8 @@ export default function AdminDashboardPage() {
               }
             }}
             onCreateRepairJob={() => {
-              setActiveTab('REPAIRS');
+              setActiveTab('INSPECTIONS_WORK');
+              setInspectionsWorkSubTab('REPAIRS');
             }}
             onOpenFeedback={() => setFeedbackModalOpen(true)}
             onOpenImport={() => handleOpenImport('FIRE_ASSETS')}
@@ -858,127 +874,64 @@ export default function AdminDashboardPage() {
         )}
 
         {/* =========================================================================
-            VIEW 2: SITES (EQUIPMENT, BUILDINGS & CLIENT SOCIETIES)
+            GROUP 2: CLIENTS & SITES
         ========================================================================= */}
-        {activeTab === 'SITES' && (
+        {(activeTab === 'CLIENTS_SITES' || activeTab === 'SITES') && (
           <div className="space-y-6">
-            {/* Sites Sub-navigation and Quick Actions */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#DCE7F2] shadow-sm dark:bg-slate-900/60 dark:border-slate-800">
-              <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs dark:bg-slate-950 dark:border-slate-800">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-xs dark:bg-[#111827] dark:border-[#293548]">
+              <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs dark:bg-[#0B1220] dark:border-[#293548]">
                 <button
-                  onClick={() => setSitesSubTab('EQUIPMENT')}
+                  onClick={() => setClientsSitesSubTab('BUILDINGS')}
                   className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
-                    sitesSubTab === 'EQUIPMENT'
-                      ? 'bg-[#007DB8] text-white shadow-sm dark:bg-amber-500 dark:text-slate-950'
+                    clientsSitesSubTab === 'BUILDINGS'
+                      ? 'bg-[#2563EB] text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                   }`}
                 >
-                  Fire Equipment ({equipmentsList.length})
+                  Buildings &amp; Towers ({buildings.length})
                 </button>
                 <button
-                  onClick={() => setSitesSubTab('BUILDINGS')}
+                  onClick={() => setClientsSitesSubTab('CLIENTS')}
                   className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
-                    sitesSubTab === 'BUILDINGS'
-                      ? 'bg-[#007DB8] text-white shadow-sm dark:bg-amber-500 dark:text-slate-950'
+                    clientsSitesSubTab === 'CLIENTS'
+                      ? 'bg-[#2563EB] text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                   }`}
                 >
-                  Buildings &amp; Sites ({buildings.length})
-                </button>
-                <button
-                  onClick={() => setSitesSubTab('CLIENTS')}
-                  className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
-                    sitesSubTab === 'CLIENTS'
-                      ? 'bg-[#007DB8] text-white shadow-sm dark:bg-amber-500 dark:text-slate-950'
-                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-                  }`}
-                >
-                  Client Accounts ({clientsList.length})
+                  Client Societies ({clientsList.length})
                 </button>
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
                 <button
-                  onClick={() =>
-                    handleOpenImport(
-                      sitesSubTab === 'EQUIPMENT'
-                        ? 'FIRE_ASSETS'
-                        : sitesSubTab === 'BUILDINGS'
-                        ? 'BUILDINGS'
-                        : 'CLIENTS'
-                    )
-                  }
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#EAF6FF] hover:bg-[#d0ebff] text-[#073F8F] border border-[#007DB8]/30 text-xs font-bold transition-all shadow-sm dark:bg-amber-500/10 dark:hover:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40"
+                  onClick={() => handleOpenImport(clientsSitesSubTab === 'BUILDINGS' ? 'BUILDINGS' : 'CLIENTS')}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#EFF6FF] hover:bg-blue-100 text-[#2563EB] border border-[#2563EB]/20 text-xs font-bold transition-all shadow-xs dark:bg-blue-500/10 dark:hover:bg-blue-500/20 dark:text-[#60A5FA] dark:border-blue-500/30"
                   title="Import from Excel (.xlsx)"
                 >
-                  <FileSpreadsheet className="w-4 h-4 text-[#007DB8] dark:text-amber-400" />
+                  <FileSpreadsheet className="w-4 h-4" />
                   <span>Import Excel</span>
                 </button>
 
                 <button
-                  onClick={() =>
-                    handleOpenExport(
-                      sitesSubTab === 'EQUIPMENT'
-                        ? 'FIRE_ASSETS'
-                        : sitesSubTab === 'BUILDINGS'
-                        ? 'BUILDINGS'
-                        : 'CLIENTS'
-                    )
-                  }
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-sm dark:bg-emerald-600/20 dark:hover:bg-emerald-600/30 dark:text-emerald-300 dark:border-emerald-500/40"
+                  onClick={() => handleOpenExport(clientsSitesSubTab === 'BUILDINGS' ? 'BUILDINGS' : 'CLIENTS')}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-xs dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:text-emerald-300 dark:border-emerald-800"
                   title="Export to Excel (.xlsx)"
                 >
-                  <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <FileSpreadsheet className="w-4 h-4" />
                   <span>Export Excel</span>
                 </button>
 
-                {sitesSubTab === 'EQUIPMENT' ? (
-                  <button
-                    onClick={() => {
-                      if (buildings.length > 0) setSingleAddEquipModalOpen(buildings[0]);
-                      else setAddBuildingModalOpen(true);
-                    }}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#007DB8] to-[#073F8F] hover:from-[#006494] hover:to-[#011F48] text-white text-xs font-bold shadow-md transition-all"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Add Equipment</span>
-                  </button>
-                ) : sitesSubTab === 'BUILDINGS' ? (
-                  <button
-                    onClick={() => setAddBuildingModalOpen(true)}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#007DB8] to-[#073F8F] hover:from-[#006494] hover:to-[#011F48] text-white text-xs font-bold shadow-md transition-all"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Add Building</span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => setAddBuildingModalOpen(true)}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#007DB8] to-[#073F8F] hover:from-[#006494] hover:to-[#011F48] text-white text-xs font-bold shadow-md transition-all"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Add Client</span>
-                  </button>
-                )}
+                <button
+                  onClick={() => setAddBuildingModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold shadow-xs transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{clientsSitesSubTab === 'BUILDINGS' ? 'Add Building' : 'Add Client'}</span>
+                </button>
               </div>
             </div>
 
-            {sitesSubTab === 'EQUIPMENT' && (
-              <FireAssetsView
-                equipmentsList={equipmentsList}
-                buildings={buildings}
-                equipFilterBuilding={equipFilterBuilding}
-                setEquipFilterBuilding={setEquipFilterBuilding}
-                equipSearch={equipSearch}
-                setEquipSearch={setEquipSearch}
-                onEditEquipment={(eq) => setEditEquipmentModal(eq)}
-                onDeleteEquipment={handleDeleteEquipment}
-                onOpenExport={() => handleOpenExport('FIRE_ASSETS')}
-                onOpenImport={() => handleOpenImport('FIRE_ASSETS')}
-              />
-            )}
-
-            {sitesSubTab === 'BUILDINGS' && (
+            {clientsSitesSubTab === 'BUILDINGS' ? (
               <BuildingsView
                 buildings={buildings}
                 summary={summary}
@@ -992,9 +945,7 @@ export default function AdminDashboardPage() {
                 onOpenExport={() => handleOpenExport('BUILDINGS')}
                 onOpenImport={() => handleOpenImport('BUILDINGS')}
               />
-            )}
-
-            {sitesSubTab === 'CLIENTS' && (
+            ) : (
               <ClientsView
                 clientsList={clientsList}
                 onAddClient={() => setAddBuildingModalOpen(true)}
@@ -1008,58 +959,110 @@ export default function AdminDashboardPage() {
         )}
 
         {/* =========================================================================
-            VIEW 3: FIELD INSPECTIONS
+            GROUP 3: FIRE EQUIPMENT
         ========================================================================= */}
-        {activeTab === 'INSPECTIONS' && (
-          <div className="space-y-4">
-            <div className="flex justify-end">
+        {activeTab === 'FIRE_EQUIPMENT' && (
+          <div className="space-y-6">
+            <div className="flex justify-end gap-2">
               <button
-                onClick={() => handleOpenExport('INSPECTIONS')}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-sm dark:bg-emerald-600/20 dark:hover:bg-emerald-600/30 dark:text-emerald-300 dark:border-emerald-500/30"
-                title="Export Inspections to Excel (.xlsx)"
+                onClick={() => {
+                  if (buildings.length > 0) setSingleAddEquipModalOpen(buildings[0]);
+                  else setAddBuildingModalOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold shadow-xs transition-all"
               >
-                <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span>Export Excel</span>
+                <Plus className="w-4 h-4" />
+                <span>Add Fire Equipment</span>
               </button>
             </div>
-            <InspectionsView
-              showToast={showToast}
-              onOpenImport={() => handleOpenImport('INSPECTIONS')}
+            <FireAssetsView
+              equipmentsList={equipmentsList}
+              buildings={buildings}
+              equipFilterBuilding={equipFilterBuilding}
+              setEquipFilterBuilding={setEquipFilterBuilding}
+              equipSearch={equipSearch}
+              setEquipSearch={setEquipSearch}
+              onEditEquipment={(eq) => setEditEquipmentModal(eq)}
+              onDeleteEquipment={handleDeleteEquipment}
+              onOpenExport={() => handleOpenExport('FIRE_ASSETS')}
+              onOpenImport={() => handleOpenImport('FIRE_ASSETS')}
             />
           </div>
         )}
 
         {/* =========================================================================
-            VIEW 4: REPAIRS (WORK ORDERS)
+            GROUP 4: INSPECTIONS & WORK
         ========================================================================= */}
-        {activeTab === 'REPAIRS' && (
-          <div className="space-y-4">
-            <div className="flex justify-end">
-              <button
-                onClick={() => handleOpenExport('WORK_ORDERS')}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-sm dark:bg-emerald-600/20 dark:hover:bg-emerald-600/30 dark:text-emerald-300 dark:border-emerald-500/30"
-                title="Export Repairs to Excel (.xlsx)"
-              >
-                <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span>Export Excel</span>
-              </button>
+        {(activeTab === 'INSPECTIONS_WORK' || activeTab === 'INSPECTIONS' || activeTab === 'REPAIRS') && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-xs dark:bg-[#111827] dark:border-[#293548]">
+              <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs dark:bg-[#0B1220] dark:border-[#293548]">
+                <button
+                  onClick={() => setInspectionsWorkSubTab('INSPECTIONS')}
+                  className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                    inspectionsWorkSubTab === 'INSPECTIONS'
+                      ? 'bg-[#2563EB] text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  }`}
+                >
+                  Field Inspections ({inspectionsList.length})
+                </button>
+                <button
+                  onClick={() => setInspectionsWorkSubTab('REPAIRS')}
+                  className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
+                    inspectionsWorkSubTab === 'REPAIRS'
+                      ? 'bg-[#2563EB] text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  }`}
+                >
+                  <span>Repairs &amp; Work Orders</span>
+                  {kpis.openWorkOrders > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-rose-500 text-white font-bold">
+                      {kpis.openWorkOrders}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() =>
+                    handleOpenExport(
+                      inspectionsWorkSubTab === 'INSPECTIONS' ? 'INSPECTIONS' : 'WORK_ORDERS'
+                    )
+                  }
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-xs dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:text-emerald-300 dark:border-emerald-800"
+                  title="Export to Excel (.xlsx)"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span>Export Excel</span>
+                </button>
+              </div>
             </div>
-            <WorkOrdersView
-              showToast={showToast}
-              onOpenImport={() => handleOpenImport('WORK_ORDERS')}
-            />
+
+            {inspectionsWorkSubTab === 'INSPECTIONS' ? (
+              <InspectionsView
+                showToast={showToast}
+                onOpenImport={() => handleOpenImport('INSPECTIONS')}
+              />
+            ) : (
+              <WorkOrdersView
+                showToast={showToast}
+                onOpenImport={() => handleOpenImport('WORK_ORDERS')}
+              />
+            )}
           </div>
         )}
 
         {/* =========================================================================
-            VIEW 5: COMPLIANCE REPORTS (FORM-B)
+            GROUP 5: COMPLIANCE REPORTS
         ========================================================================= */}
         {activeTab === 'REPORTS' && (
           <div className="space-y-4">
             <div className="flex justify-end">
               <button
                 onClick={() => handleOpenExport('REPORTS')}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-sm dark:bg-emerald-600/20 dark:hover:bg-emerald-600/30 dark:text-emerald-300 dark:border-emerald-500/30"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-xs dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:text-emerald-300 dark:border-emerald-800"
                 title="Export Report Data to Excel (.xlsx)"
               >
                 <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -1071,7 +1074,7 @@ export default function AdminDashboardPage() {
         )}
 
         {/* =========================================================================
-            VIEW 6: TEAM & SETTINGS
+            GROUP 6: SETTINGS
         ========================================================================= */}
         {activeTab === 'SETTINGS' && (
           <SettingsView
@@ -1120,12 +1123,12 @@ export default function AdminDashboardPage() {
       ========================================================================= */}
       {addBuildingModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-[#DCE7F2] max-h-[90vh] overflow-y-auto text-slate-900 dark:bg-[#0d1424] dark:border-slate-700/80 dark:text-white">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-[#E2E8F0] max-h-[90vh] overflow-y-auto text-slate-900 dark:bg-[#172033] dark:border-[#293548] dark:text-white">
             
-            <div className="flex items-center justify-between border-b border-[#DCE7F2] pb-3 dark:border-slate-800">
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3 dark:border-[#293548]">
               <div className="flex items-center gap-2.5">
-                <Building2 className="w-5 h-5 text-[#007DB8] dark:text-amber-400" />
-                <h3 className="font-bold text-[#073F8F] text-base dark:text-white">Register Client &amp; Building</h3>
+                <Building2 className="w-5 h-5 text-[#2563EB] dark:text-[#60A5FA]" />
+                <h3 className="font-bold text-[#0F172A] text-base dark:text-white">Register Client &amp; Building</h3>
               </div>
               <button
                 onClick={() => setAddBuildingModalOpen(false)}
@@ -1136,8 +1139,8 @@ export default function AdminDashboardPage() {
             </div>
 
             <form onSubmit={handleCreateBuilding} className="space-y-4 text-xs">
-              <div className="p-3.5 bg-[#F8FAFC] rounded-xl space-y-2.5 border border-[#DCE7F2] dark:bg-slate-950/80 dark:border-slate-800">
-                <h4 className="font-bold text-[#007DB8] uppercase text-[10px] tracking-wider dark:text-amber-400">Client &amp; Society Details</h4>
+              <div className="p-3.5 bg-[#F8FAFC] rounded-xl space-y-2.5 border border-[#E2E8F0] dark:bg-[#0B1220] dark:border-[#293548]">
+                <h4 className="font-bold text-[#2563EB] uppercase text-[10px] tracking-wider dark:text-[#60A5FA]">Client &amp; Society Details</h4>
                 <div>
                   <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Client / Society Name *</label>
                   <input
@@ -1146,7 +1149,7 @@ export default function AdminDashboardPage() {
                     placeholder="e.g. Horizon Co-op Housing Society"
                     value={buildingForm.clientName}
                     onChange={(e) => setBuildingForm({ ...buildingForm, clientName: e.target.value })}
-                    className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:placeholder-slate-500 dark:focus:border-amber-500"
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:placeholder-slate-500 dark:focus:border-[#60A5FA]"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -1157,7 +1160,7 @@ export default function AdminDashboardPage() {
                       placeholder="Secretary / Facility Manager"
                       value={buildingForm.contactPerson}
                       onChange={(e) => setBuildingForm({ ...buildingForm, contactPerson: e.target.value })}
-                      className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:placeholder-slate-500 dark:focus:border-amber-500"
+                      className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:placeholder-slate-500 dark:focus:border-[#60A5FA]"
                     />
                   </div>
                   <div>
@@ -1168,14 +1171,14 @@ export default function AdminDashboardPage() {
                       placeholder="+91 98XXX XXXXX"
                       value={buildingForm.phone}
                       onChange={(e) => setBuildingForm({ ...buildingForm, phone: e.target.value })}
-                      className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:placeholder-slate-500 dark:focus:border-amber-500"
+                      className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:placeholder-slate-500 dark:focus:border-[#60A5FA]"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="p-3.5 bg-[#F8FAFC] rounded-xl space-y-2.5 border border-[#DCE7F2] dark:bg-slate-950/80 dark:border-slate-800">
-                <h4 className="font-bold text-[#007DB8] uppercase text-[10px] tracking-wider dark:text-amber-400">Building &amp; Compliance Cycle</h4>
+              <div className="p-3.5 bg-[#F8FAFC] rounded-xl space-y-2.5 border border-[#E2E8F0] dark:bg-[#0B1220] dark:border-[#293548]">
+                <h4 className="font-bold text-[#2563EB] uppercase text-[10px] tracking-wider dark:text-[#60A5FA]">Building &amp; Compliance Cycle</h4>
                 <div>
                   <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Building / Tower Name *</label>
                   <input
@@ -1184,7 +1187,7 @@ export default function AdminDashboardPage() {
                     placeholder="e.g. Horizon Heights Tower C"
                     value={buildingForm.buildingName}
                     onChange={(e) => setBuildingForm({ ...buildingForm, buildingName: e.target.value })}
-                    className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:placeholder-slate-500 dark:focus:border-amber-500"
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:placeholder-slate-500 dark:focus:border-[#60A5FA]"
                   />
                 </div>
                 <div>
@@ -1195,7 +1198,7 @@ export default function AdminDashboardPage() {
                     placeholder="Street, Area, City, Pin Code"
                     value={buildingForm.address}
                     onChange={(e) => setBuildingForm({ ...buildingForm, address: e.target.value })}
-                    className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:placeholder-slate-500 dark:focus:border-amber-500"
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:placeholder-slate-500 dark:focus:border-[#60A5FA]"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -1204,7 +1207,7 @@ export default function AdminDashboardPage() {
                     <select
                       value={buildingForm.state}
                       onChange={(e) => setBuildingForm({ ...buildingForm, state: e.target.value })}
-                      className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
+                      className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
                     >
                       {INDIAN_STATES_AND_UTS.map((st) => (
                         <option key={st} value={st}>{st}</option>
@@ -1220,7 +1223,7 @@ export default function AdminDashboardPage() {
                         const mos = val === 'Monthly' ? 1 : val === 'Quarterly' ? 3 : val === 'Half-Yearly' ? 6 : 12;
                         setBuildingForm({ ...buildingForm, reportingCycle: val, complianceCycle: val, cycleIntervalMos: mos });
                       }}
-                      className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
+                      className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
                     >
                       {REPORTING_CYCLES.map((rc) => (
                         <option key={rc.value} value={rc.value}>{rc.label}</option>
@@ -1236,7 +1239,7 @@ export default function AdminDashboardPage() {
                     placeholder="e.g. Rule 33, Form-B, NBC 2016, or state mandate"
                     value={buildingForm.complianceRuleName}
                     onChange={(e) => setBuildingForm({ ...buildingForm, complianceRuleName: e.target.value })}
-                    className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:placeholder-slate-500 dark:focus:border-amber-500"
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:placeholder-slate-500 dark:focus:border-[#60A5FA]"
                   />
                 </div>
               </div>
@@ -1245,13 +1248,13 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setAddBuildingModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:text-white"
+                  className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-[#111827] dark:text-slate-300 dark:hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-[#007DB8] hover:bg-[#073F8F] text-white font-bold shadow-md hover:scale-[1.02] transition-all dark:bg-gradient-to-r dark:from-amber-500 dark:to-orange-500 dark:text-slate-950 dark:font-black"
+                  className="px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold shadow-xs transition-all"
                 >
                   Create Building
                 </button>
@@ -1266,12 +1269,12 @@ export default function AdminDashboardPage() {
       ========================================================================= */}
       {bulkAddModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-[#DCE7F2] max-h-[90vh] overflow-y-auto text-slate-900 dark:bg-[#0d1424] dark:border-slate-700/80 dark:text-white">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-[#E2E8F0] max-h-[90vh] overflow-y-auto text-slate-900 dark:bg-[#172033] dark:border-[#293548] dark:text-white">
             
-            <div className="flex items-center justify-between border-b border-[#DCE7F2] pb-3 dark:border-slate-800">
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3 dark:border-[#293548]">
               <div>
-                <h3 className="font-bold text-[#073F8F] text-base dark:text-white">Bulk Add Equipment</h3>
-                <p className="text-xs text-[#007DB8] font-semibold mt-0.5 dark:text-amber-400">{bulkAddModalOpen.name}</p>
+                <h3 className="font-bold text-[#0F172A] text-base dark:text-white">Bulk Add Equipment</h3>
+                <p className="text-xs text-[#2563EB] font-semibold mt-0.5 dark:text-[#60A5FA]">{bulkAddModalOpen.name}</p>
               </div>
               <button
                 onClick={() => setBulkAddModalOpen(null)}
@@ -1288,7 +1291,7 @@ export default function AdminDashboardPage() {
                   <select
                     value={equipmentForm.type}
                     onChange={(e) => setEquipmentForm({ ...equipmentForm, type: e.target.value })}
-                    className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
                   >
                     <option value="Fire Extinguisher">Fire Extinguisher</option>
                     <option value="Hydrant Valve">Hydrant Valve</option>
@@ -1305,7 +1308,7 @@ export default function AdminDashboardPage() {
                     value={equipmentForm.capacity}
                     onChange={(e) => setEquipmentForm({ ...equipmentForm, capacity: e.target.value })}
                     placeholder="e.g. ABC Dry Powder 6kg"
-                    className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:placeholder-slate-500 dark:focus:border-amber-500"
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:placeholder-slate-500 dark:focus:border-[#60A5FA]"
                   />
                 </div>
               </div>
@@ -1318,7 +1321,7 @@ export default function AdminDashboardPage() {
                     value={equipmentForm.prefix}
                     onChange={(e) => setEquipmentForm({ ...equipmentForm, prefix: e.target.value.toUpperCase() })}
                     placeholder="e.g. EXT or TWR"
-                    className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 font-mono uppercase focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 font-mono uppercase focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
                   />
                 </div>
                 <div>
@@ -1329,7 +1332,7 @@ export default function AdminDashboardPage() {
                     max="50"
                     value={equipmentForm.count}
                     onChange={(e) => setEquipmentForm({ ...equipmentForm, count: Number(e.target.value) })}
-                    className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
                   />
                 </div>
               </div>
@@ -1341,7 +1344,7 @@ export default function AdminDashboardPage() {
                   value={equipmentForm.locationBase}
                   onChange={(e) => setEquipmentForm({ ...equipmentForm, locationBase: e.target.value })}
                   placeholder="e.g. Floor Landing Lift Lobby"
-                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:placeholder-slate-500 dark:focus:border-amber-500"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:placeholder-slate-500 dark:focus:border-[#60A5FA]"
                 />
               </div>
 
@@ -1350,7 +1353,7 @@ export default function AdminDashboardPage() {
                 <select
                   value={equipmentForm.serviceIntervalMonths}
                   onChange={(e) => setEquipmentForm({ ...equipmentForm, serviceIntervalMonths: Number(e.target.value) })}
-                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
                 >
                   <option value={12}>12 Months (Annual Extinguisher Refill - IS 2190)</option>
                   <option value={6}>6 Months (Half-Yearly Hydrant &amp; Pump Check)</option>
@@ -1362,13 +1365,13 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setBulkAddModalOpen(null)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:text-white"
+                  className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-[#111827] dark:text-slate-300 dark:hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-[#007DB8] hover:bg-[#073F8F] text-white font-bold shadow-md hover:scale-[1.02] transition-all dark:bg-gradient-to-r dark:from-amber-500 dark:to-orange-500 dark:text-slate-950 dark:font-black"
+                  className="px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold shadow-xs transition-all"
                 >
                   Create {equipmentForm.count} Equipment Records
                 </button>
@@ -1383,11 +1386,11 @@ export default function AdminDashboardPage() {
       ========================================================================= */}
       {singleAddEquipModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#DCE7F2] text-slate-900 dark:bg-[#0d1424] dark:border-slate-700/80 dark:text-white">
-            <div className="flex items-center justify-between border-b border-[#DCE7F2] pb-3 dark:border-slate-800">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#E2E8F0] text-slate-900 dark:bg-[#172033] dark:border-[#293548] dark:text-white">
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3 dark:border-[#293548]">
               <div>
-                <h3 className="font-bold text-[#073F8F] text-base dark:text-white">Add Single Fire Equipment</h3>
-                <p className="text-xs text-[#007DB8] font-semibold mt-0.5 dark:text-amber-400">{singleAddEquipModalOpen.name}</p>
+                <h3 className="font-bold text-[#0F172A] text-base dark:text-white">Add Single Fire Equipment</h3>
+                <p className="text-xs text-[#2563EB] font-semibold mt-0.5 dark:text-[#60A5FA]">{singleAddEquipModalOpen.name}</p>
               </div>
               <button onClick={() => setSingleAddEquipModalOpen(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">✕</button>
             </div>
@@ -1401,7 +1404,7 @@ export default function AdminDashboardPage() {
                   placeholder="e.g. HTP-EXT-05"
                   value={singleEquipForm.qrCode}
                   onChange={(e) => setSingleEquipForm({ ...singleEquipForm, qrCode: e.target.value.toUpperCase() })}
-                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 font-mono uppercase focus:border-[#007DB8] dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 font-mono uppercase focus:border-[#2563EB] dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
                 />
               </div>
 
@@ -1410,7 +1413,7 @@ export default function AdminDashboardPage() {
                 <select
                   value={singleEquipForm.type}
                   onChange={(e) => setSingleEquipForm({ ...singleEquipForm, type: e.target.value })}
-                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 focus:border-[#007DB8] dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
                 >
                   <option value="Fire Extinguisher">Fire Extinguisher</option>
                   <option value="Hydrant Valve">Hydrant Valve</option>
@@ -1427,7 +1430,7 @@ export default function AdminDashboardPage() {
                   required
                   value={singleEquipForm.capacity}
                   onChange={(e) => setSingleEquipForm({ ...singleEquipForm, capacity: e.target.value })}
-                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 focus:border-[#007DB8] dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
                 />
               </div>
 
@@ -1439,7 +1442,7 @@ export default function AdminDashboardPage() {
                   placeholder="e.g. Basement 1 - Electric Meter Room"
                   value={singleEquipForm.location}
                   onChange={(e) => setSingleEquipForm({ ...singleEquipForm, location: e.target.value })}
-                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 focus:border-[#007DB8] dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
                 />
               </div>
 
@@ -1447,13 +1450,13 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setSingleAddEquipModalOpen(null)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:text-white"
+                  className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-[#111827] dark:text-slate-300 dark:hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-[#007DB8] hover:bg-[#073F8F] text-white font-bold shadow-md dark:bg-gradient-to-r dark:from-amber-500 dark:to-orange-500 dark:text-slate-950 dark:font-black"
+                  className="px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold shadow-xs transition-all"
                 >
                   Add Equipment
                 </button>
@@ -1468,9 +1471,9 @@ export default function AdminDashboardPage() {
       ========================================================================= */}
       {editClientModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#DCE7F2] text-slate-900 text-xs dark:bg-[#0d1424] dark:border-slate-700 dark:text-white">
-            <div className="flex items-center justify-between border-b border-[#DCE7F2] pb-3 dark:border-slate-800">
-              <h3 className="font-bold text-[#073F8F] text-base dark:text-white">Edit Client</h3>
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#E2E8F0] text-slate-900 text-xs dark:bg-[#172033] dark:border-[#293548] dark:text-white">
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3 dark:border-[#293548]">
+              <h3 className="font-bold text-[#0F172A] text-base dark:text-white">Edit Client</h3>
               <button onClick={() => setEditClientModal(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">✕</button>
             </div>
 
@@ -1482,7 +1485,7 @@ export default function AdminDashboardPage() {
                   required
                   value={editClientModal.name}
                   onChange={(e) => setEditClientModal({ ...editClientModal, name: e.target.value })}
-                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
                 />
               </div>
               <div>
@@ -1491,7 +1494,7 @@ export default function AdminDashboardPage() {
                   type="text"
                   value={editClientModal.contactPerson}
                   onChange={(e) => setEditClientModal({ ...editClientModal, contactPerson: e.target.value })}
-                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
                 />
               </div>
               <div>
@@ -1501,7 +1504,7 @@ export default function AdminDashboardPage() {
                   required
                   value={editClientModal.phone}
                   onChange={(e) => setEditClientModal({ ...editClientModal, phone: e.target.value })}
-                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
                 />
               </div>
               <div>
@@ -1510,7 +1513,7 @@ export default function AdminDashboardPage() {
                   type="email"
                   value={editClientModal.email || ''}
                   onChange={(e) => setEditClientModal({ ...editClientModal, email: e.target.value })}
-                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
                 />
               </div>
 
@@ -1518,13 +1521,13 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setEditClientModal(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-[#111827] dark:text-slate-300"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#007DB8] hover:bg-[#073F8F] text-white font-bold dark:bg-amber-500 dark:text-slate-950 dark:font-black"
+                  className="px-5 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold shadow-xs transition-all"
                 >
                   Save Changes
                 </button>
@@ -1539,9 +1542,9 @@ export default function AdminDashboardPage() {
       ========================================================================= */}
       {editBuildingModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#DCE7F2] text-slate-900 text-xs dark:bg-[#0d1424] dark:border-slate-700 dark:text-white">
-            <div className="flex items-center justify-between border-b border-[#DCE7F2] pb-3 dark:border-slate-800">
-              <h3 className="font-bold text-[#073F8F] text-base dark:text-white">Edit Building</h3>
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#E2E8F0] text-slate-900 text-xs dark:bg-[#172033] dark:border-[#293548] dark:text-white">
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3 dark:border-[#293548]">
+              <h3 className="font-bold text-[#0F172A] text-base dark:text-white">Edit Building</h3>
               <button onClick={() => setEditBuildingModal(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">✕</button>
             </div>
 
@@ -1553,7 +1556,7 @@ export default function AdminDashboardPage() {
                   required
                   value={editBuildingModal.name}
                   onChange={(e) => setEditBuildingModal({ ...editBuildingModal, name: e.target.value })}
-                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
                 />
               </div>
               <div>
@@ -1563,7 +1566,7 @@ export default function AdminDashboardPage() {
                   required
                   value={editBuildingModal.address}
                   onChange={(e) => setEditBuildingModal({ ...editBuildingModal, address: e.target.value })}
-                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
                 />
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -1572,7 +1575,7 @@ export default function AdminDashboardPage() {
                   <select
                     value={editBuildingModal.state || 'Delhi'}
                     onChange={(e) => setEditBuildingModal({ ...editBuildingModal, state: e.target.value })}
-                    className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
                   >
                     {INDIAN_STATES_AND_UTS.map((st) => (
                       <option key={st} value={st}>{st}</option>
@@ -1584,7 +1587,7 @@ export default function AdminDashboardPage() {
                   <select
                     value={editBuildingModal.reportingCycle || 'Quarterly'}
                     onChange={(e) => setEditBuildingModal({ ...editBuildingModal, reportingCycle: e.target.value, complianceCycle: e.target.value })}
-                    className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
                   >
                     {REPORTING_CYCLES.map((rc) => (
                       <option key={rc.value} value={rc.value}>{rc.label}</option>
@@ -1600,7 +1603,7 @@ export default function AdminDashboardPage() {
                   placeholder="e.g. Rule 33, Form-B, NBC 2016"
                   value={editBuildingModal.complianceRuleName || ''}
                   onChange={(e) => setEditBuildingModal({ ...editBuildingModal, complianceRuleName: e.target.value })}
-                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
                 />
               </div>
 
@@ -1608,13 +1611,13 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setEditBuildingModal(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-[#111827] dark:text-slate-300"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#007DB8] hover:bg-[#073F8F] text-white font-bold dark:bg-amber-500 dark:text-slate-950 dark:font-black"
+                  className="px-5 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold shadow-xs transition-all"
                 >
                   Save Building
                 </button>
@@ -1629,9 +1632,9 @@ export default function AdminDashboardPage() {
       ========================================================================= */}
       {editEquipmentModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#DCE7F2] text-slate-900 text-xs dark:bg-[#0d1424] dark:border-slate-700 dark:text-white">
-            <div className="flex items-center justify-between border-b border-[#DCE7F2] pb-3 dark:border-slate-800">
-              <h3 className="font-bold text-[#073F8F] text-base dark:text-white">Edit Equipment Asset</h3>
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#E2E8F0] text-slate-900 text-xs dark:bg-[#172033] dark:border-[#293548] dark:text-white">
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3 dark:border-[#293548]">
+              <h3 className="font-bold text-[#0F172A] text-base dark:text-white">Edit Equipment Asset</h3>
               <button onClick={() => setEditEquipmentModal(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">✕</button>
             </div>
 
@@ -1643,7 +1646,7 @@ export default function AdminDashboardPage() {
                   required
                   value={editEquipmentModal.qrCode}
                   onChange={(e) => setEditEquipmentModal({ ...editEquipmentModal, qrCode: e.target.value.toUpperCase() })}
-                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 font-mono uppercase dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 font-mono uppercase dark:bg-[#111827] dark:border-[#293548] dark:text-white"
                 />
               </div>
               <div>
@@ -1653,7 +1656,7 @@ export default function AdminDashboardPage() {
                   required
                   value={editEquipmentModal.capacity}
                   onChange={(e) => setEditEquipmentModal({ ...editEquipmentModal, capacity: e.target.value })}
-                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
                 />
               </div>
               <div>
@@ -1663,7 +1666,7 @@ export default function AdminDashboardPage() {
                   required
                   value={editEquipmentModal.location}
                   onChange={(e) => setEditEquipmentModal({ ...editEquipmentModal, location: e.target.value })}
-                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
                 />
               </div>
               <div>
@@ -1672,7 +1675,7 @@ export default function AdminDashboardPage() {
                   type="number"
                   value={editEquipmentModal.serviceIntervalMonths}
                   onChange={(e) => setEditEquipmentModal({ ...editEquipmentModal, serviceIntervalMonths: Number(e.target.value) })}
-                  className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
                 />
               </div>
 
@@ -1680,13 +1683,13 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setEditEquipmentModal(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-[#111827] dark:text-slate-300"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#007DB8] hover:bg-[#073F8F] text-white font-bold dark:bg-amber-500 dark:text-slate-950 dark:font-black"
+                  className="px-5 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold shadow-xs transition-all"
                 >
                   Save Equipment
                 </button>

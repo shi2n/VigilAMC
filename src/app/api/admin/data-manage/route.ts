@@ -4,9 +4,10 @@ import { getCurrentUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const auth = await getCurrentUser();
+    const { requirePlatformOwner } = await import('@/lib/auth');
+    const auth = await requirePlatformOwner(request);
     if (!auth || !auth.organization) {
       return NextResponse.json({
         company: null,

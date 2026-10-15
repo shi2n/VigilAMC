@@ -45,7 +45,8 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const auth = await getCurrentUser();
+    const { requireAdmin } = await import('@/lib/auth');
+    const auth = await requireAdmin(request);
     if (!auth || !auth.organization) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -74,11 +75,11 @@ export async function PUT(
       return NextResponse.json({ error: 'Equipment not found or access denied' }, { status: 404 });
     }
 
-    // Check if qrCode is being changed and if new code already exists
+    // Check if asset ID is being changed and if new code already exists
     if (qrCode && qrCode.trim().toUpperCase() !== existing.qrCode) {
       const duplicate = await (db as any).equipment.findUnique({ where: { qrCode: qrCode.trim().toUpperCase() } });
       if (duplicate) {
-        return NextResponse.json({ error: `QR Code '${qrCode}' already in use.` }, { status: 400 });
+        return NextResponse.json({ error: `Asset ID '${qrCode}' already in use.` }, { status: 400 });
       }
     }
 
@@ -100,7 +101,8 @@ export async function PUT(
     return NextResponse.json({ success: true, equipment: updated });
   } catch (error: any) {
     console.error('Error updating equipment:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const status = error.message?.startsWith('FORBIDDEN') ? 403 : error.message?.startsWith('UNAUTHORIZED') ? 401 : 500;
+    return NextResponse.json({ error: error.message }, { status });
   }
 }
 
@@ -109,7 +111,8 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const auth = await getCurrentUser();
+    const { requireAdmin } = await import('@/lib/auth');
+    const auth = await requireAdmin(request);
     if (!auth || !auth.organization) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -130,6 +133,7 @@ export async function DELETE(
     return NextResponse.json({ success: true, message: 'Equipment deleted' });
   } catch (error: any) {
     console.error('Error deleting equipment:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const status = error.message?.startsWith('FORBIDDEN') ? 403 : error.message?.startsWith('UNAUTHORIZED') ? 401 : 500;
+    return NextResponse.json({ error: error.message }, { status });
   }
 }

@@ -44,7 +44,8 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const auth = await getCurrentUser();
+    const { requireAdmin } = await import('@/lib/auth');
+    const auth = await requireAdmin(request);
     if (!auth || !auth.organization) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -76,7 +77,8 @@ export async function PUT(
     return NextResponse.json({ success: true, client: updated });
   } catch (error: any) {
     console.error('Error updating client:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const status = error.message?.startsWith('FORBIDDEN') ? 403 : error.message?.startsWith('UNAUTHORIZED') ? 401 : 500;
+    return NextResponse.json({ error: error.message }, { status });
   }
 }
 
@@ -85,7 +87,8 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const auth = await getCurrentUser();
+    const { requireAdmin } = await import('@/lib/auth');
+    const auth = await requireAdmin(request);
     if (!auth || !auth.organization) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -106,6 +109,7 @@ export async function DELETE(
     return NextResponse.json({ success: true, message: 'Client and associated buildings deleted' });
   } catch (error: any) {
     console.error('Error deleting client:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const status = error.message?.startsWith('FORBIDDEN') ? 403 : error.message?.startsWith('UNAUTHORIZED') ? 401 : 500;
+    return NextResponse.json({ error: error.message }, { status });
   }
 }

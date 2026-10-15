@@ -49,8 +49,8 @@ export const EXPORT_CONFIGS: Record<
       { id: 'name', label: 'Building / Tower Name', defaultSelected: true, getValue: (b) => b.name || '—' },
       { id: 'clientName', label: 'Client / Society', defaultSelected: true, getValue: (b) => b.client?.name || '—' },
       { id: 'address', label: 'Premises Address', defaultSelected: true, getValue: (b) => b.address || '—' },
-      { id: 'complianceCycle', label: 'Compliance Cycle', defaultSelected: true, getValue: (b) => b.complianceCycle || 'Delhi NCR Statutory Form-B' },
-      { id: 'nextFilingDueDate', label: 'Next Filing Due', defaultSelected: true, getValue: (b) => b.nextFilingDueDate ? new Date(b.nextFilingDueDate).toLocaleDateString('en-IN') : '—' },
+      { id: 'complianceCycle', label: 'Compliance Cycle', defaultSelected: true, getValue: (b) => b.complianceCycle || 'Form-B' },
+      { id: 'nextFilingDueDate', label: 'Next Filing Due', defaultSelected: true, getValue: (b) => b.nextFilingDueDate ? new Date(b.nextFilingDueDate).toLocaleDateString('en-GB') : '—' },
       { id: 'totalEquipments', label: 'Total Assets', defaultSelected: true, getValue: (b) => b.totalEquipments ?? b.equipments?.length ?? 0 },
       { id: 'overallStatus', label: 'Compliance Status', defaultSelected: true, getValue: (b) => b.overallStatus || 'COMPLIANT' },
     ],
@@ -66,13 +66,13 @@ export const EXPORT_CONFIGS: Record<
       { id: 'OVERDUE', label: 'Overdue' },
     ],
     columns: [
-      { id: 'qrCode', label: 'QR Tag Code', defaultSelected: true, getValue: (a) => a.qrCode || '—' },
+      { id: 'qrCode', label: 'Asset ID', defaultSelected: true, getValue: (a) => a.qrCode || '—' },
       { id: 'building', label: 'Building / Tower', defaultSelected: true, getValue: (a) => a.building?.name || '—' },
       { id: 'type', label: 'Asset Type', defaultSelected: true, getValue: (a) => a.type || '—' },
       { id: 'capacity', label: 'Capacity / Spec', defaultSelected: true, getValue: (a) => a.capacity || '—' },
       { id: 'location', label: 'Location / Floor', defaultSelected: true, getValue: (a) => a.location || '—' },
-      { id: 'lastServiceDate', label: 'Last Service Date', defaultSelected: true, getValue: (a) => a.lastServiceDate ? new Date(a.lastServiceDate).toLocaleDateString('en-IN') : '—' },
-      { id: 'nextDueDate', label: 'Next Service Due', defaultSelected: true, getValue: (a) => a.nextDueDate ? new Date(a.nextDueDate).toLocaleDateString('en-IN') : '—' },
+      { id: 'lastServiceDate', label: 'Last Service Date', defaultSelected: true, getValue: (a) => a.lastServiceDate ? new Date(a.lastServiceDate).toLocaleDateString('en-GB') : '—' },
+      { id: 'nextDueDate', label: 'Next Service Due', defaultSelected: true, getValue: (a) => a.nextDueDate ? new Date(a.nextDueDate).toLocaleDateString('en-GB') : '—' },
       { id: 'status', label: 'Status', defaultSelected: true, getValue: (a) => {
         const diff = Math.ceil((new Date(a.nextDueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
         return diff < 0 ? 'OVERDUE' : diff <= 30 ? 'DUE_SOON' : 'COMPLIANT';
@@ -95,7 +95,7 @@ export const EXPORT_CONFIGS: Record<
       { id: 'employeeId', label: 'Employee ID', defaultSelected: true, getValue: (t) => t.employeeId || '—' },
       { id: 'assignedBuildings', label: 'Assigned Facilities', defaultSelected: true, getValue: (t) => t.assignedBuildings?.map((a: any) => a.building?.name || a.buildingName).filter(Boolean).join(', ') || 'None' },
       { id: 'status', label: 'Seat Status', defaultSelected: true, getValue: (t) => t.status || 'ACTIVE' },
-      { id: 'lastLoginAt', label: 'Last Login', defaultSelected: true, getValue: (t) => t.lastLoginAt ? new Date(t.lastLoginAt).toLocaleDateString('en-IN') : 'Never' },
+      { id: 'lastLoginAt', label: 'Last Login', defaultSelected: true, getValue: (t) => t.lastLoginAt ? new Date(t.lastLoginAt).toLocaleDateString('en-GB') : 'Never' },
     ],
   },
   WORK_ORDERS: {
@@ -115,8 +115,8 @@ export const EXPORT_CONFIGS: Record<
       { id: 'priority', label: 'Priority', defaultSelected: true, getValue: (w) => w.priority || 'MEDIUM' },
       { id: 'status', label: 'Status', defaultSelected: true, getValue: (w) => w.status || 'OPEN' },
       { id: 'assignedTo', label: 'Technician', defaultSelected: true, getValue: (w) => w.assignedTo?.fullName || 'Unassigned' },
-      { id: 'dueDate', label: 'Due Date', defaultSelected: true, getValue: (w) => w.dueDate ? new Date(w.dueDate).toLocaleDateString('en-IN') : '—' },
-      { id: 'createdAt', label: 'Created At', defaultSelected: true, getValue: (w) => w.createdAt ? new Date(w.createdAt).toLocaleDateString('en-IN') : '—' },
+      { id: 'dueDate', label: 'Due Date', defaultSelected: true, getValue: (w) => w.dueDate ? new Date(w.dueDate).toLocaleDateString('en-GB') : '—' },
+      { id: 'createdAt', label: 'Created At', defaultSelected: true, getValue: (w) => w.createdAt ? new Date(w.createdAt).toLocaleDateString('en-GB') : '—' },
     ],
   },
   INSPECTIONS: {
@@ -129,9 +129,9 @@ export const EXPORT_CONFIGS: Record<
       { id: 'FAILED', label: 'Action Required' },
     ],
     columns: [
-      { id: 'date', label: 'Service Date', defaultSelected: true, getValue: (i) => i.serviceDate ? new Date(i.serviceDate).toLocaleDateString('en-IN') : (i.createdAt ? new Date(i.createdAt).toLocaleDateString('en-IN') : '—') },
+      { id: 'date', label: 'Service Date', defaultSelected: true, getValue: (i) => i.serviceDate ? new Date(i.serviceDate).toLocaleDateString('en-GB') : (i.createdAt ? new Date(i.createdAt).toLocaleDateString('en-GB') : '—') },
       { id: 'building', label: 'Facility', defaultSelected: true, getValue: (i) => i.equipment?.building?.name || i.building?.name || '—' },
-      { id: 'qrCode', label: 'Asset QR', defaultSelected: true, getValue: (i) => i.equipment?.qrCode || i.qrCode || '—' },
+      { id: 'qrCode', label: 'Asset ID', defaultSelected: true, getValue: (i) => i.equipment?.qrCode || i.qrCode || '—' },
       { id: 'technician', label: 'Technician', defaultSelected: true, getValue: (i) => i.technicianName || i.technician?.fullName || 'Official Inspector' },
       { id: 'status', label: 'Inspection Result', defaultSelected: true, getValue: (i) => i.status || 'PASSED' },
       { id: 'remarks', label: 'Remarks / Findings', defaultSelected: true, getValue: (i) => i.remarks || i.notes || 'Routine check passed' },
