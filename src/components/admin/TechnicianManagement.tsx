@@ -300,11 +300,7 @@ export function TechnicianManagement({
   return (
     <div className="space-y-6">
       {/* 1. Seat Counter Bar */}
-      <SeatCounter
-        usage={seatUsage}
-        planName={plan?.name}
-        onUpgradeClick={onNavigateToSubscription}
-      />
+      <SeatCounter usage={seatUsage} />
 
       {/* 2. Action & Filter Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#DCE7F2] shadow-sm dark:bg-slate-900/60 dark:border-slate-800">
@@ -585,7 +581,7 @@ export function TechnicianManagement({
                 <div>
                   <h3 className="text-base font-bold text-white">Add New Technician</h3>
                   <p className="text-xs text-slate-400">
-                    Plan Seat: {seatUsage?.active} / {seatUsage?.max} active used
+                    Field technician account with mobile portal access
                   </p>
                 </div>
               </div>
@@ -600,21 +596,7 @@ export function TechnicianManagement({
             {formError && (
               <div className="p-3.5 rounded-xl bg-red-950/50 border border-red-500/50 text-red-200 text-xs flex items-start gap-2.5">
                 <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <p className="font-semibold">{formError}</p>
-                  {formError.includes('limit reached') && onNavigateToSubscription && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAddModalOpen(false);
-                        onNavigateToSubscription();
-                      }}
-                      className="text-amber-400 underline font-bold hover:text-amber-300 block text-[11px]"
-                    >
-                      View Subscription Plans to Upgrade →
-                    </button>
-                  )}
-                </div>
+                <p className="font-semibold">{formError}</p>
               </div>
             )}
 
@@ -878,8 +860,8 @@ export function TechnicianManagement({
                     onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
                   >
-                    <option value="ACTIVE">ACTIVE (Consumes 1 seat)</option>
-                    <option value="INACTIVE">INACTIVE (Frees seat)</option>
+                    <option value="ACTIVE">Active</option>
+                    <option value="INACTIVE">Inactive</option>
                   </select>
                 </div>
               </div>
@@ -1130,7 +1112,7 @@ export function TechnicianManagement({
                 Audit Trail Protection
               </p>
               <p>
-                If this technician has completed historical inspections or work orders, their account will be deactivated rather than purged. Historical Form-B records and QR service logs remain permanently intact.
+                If this technician has completed historical inspections or work orders, their account will be deactivated rather than purged. Historical compliance records and service logs remain permanently intact.
               </p>
             </div>
 

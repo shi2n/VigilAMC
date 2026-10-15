@@ -1,23 +1,92 @@
-export interface EquipmentTypeInfo {
-  code: string;
-  name: string;
-  defaultCapacity: string;
-  suitableFor: string[];
-  notSuitableFor: string[];
-  refillIntervalMonths: number;
-  hydroTestIntervalMonths: number;
-  colorCode: string;
-  description: string;
-  passGuide: {
-    p: string;
-    a: string;
-    s1: string;
-    s2: string;
-    caution: string;
+export type ComplianceStatus = 'NOT_INSPECTED' | 'DUE_SOON' | 'OVERDUE' | 'VERIFIED';
+
+export interface EquipmentStatusResult {
+  status: ComplianceStatus;
+  label: string;
+  color: string;
+  badgeClass: string;
+  diffDays: number;
+  lastVerifiedDate: Date | null;
+  hasGPS: boolean;
+  hasPhoto: boolean;
+  isImported: boolean;
+}
+
+export function evaluateEquipmentStatus(eq: any, now: Date = new Date()): EquipmentStatusResult {
+  const nextDue = eq.nextDueDate ? new Date(eq.nextDueDate) : null;
+  const diffDays = nextDue ? Math.ceil((nextDue.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+
+  const latestInspection = eq.inspections?.[0] || eq.serviceLogs?.[0] || null;
+  const hasInspection = !!latestInspection;
+  const isImported = Boolean(latestInspection?.isImported || eq.isImported);
+  const hasGPS = Boolean(latestInspection?.latitude && latestInspection?.longitude);
+  const hasPhoto = Boolean(
+    latestInspection?.photos ||
+    (latestInspection?.inspectionPhotos && latestInspection.inspectionPhotos.length > 0)
+  );
+
+  // 1. Not inspected yet (grey)
+  if (!hasInspection) {
+    return {
+      status: 'NOT_INSPECTED',
+      label: 'Not inspected yet',
+      color: 'slate',
+      badgeClass: 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800/80 dark:text-slate-400 dark:border-slate-700',
+      diffDays,
+      lastVerifiedDate: null,
+      hasGPS: false,
+      hasPhoto: false,
+      isImported: false,
+    };
+  }
+
+  // 2. Overdue (red)
+  if (diffDays < 0) {
+    return {
+      status: 'OVERDUE',
+      label: 'Overdue',
+      color: 'rose',
+      badgeClass: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800/50',
+      diffDays,
+      lastVerifiedDate: latestInspection ? new Date(latestInspection.date || latestInspection.servicedAt) : null,
+      hasGPS,
+      hasPhoto,
+      isImported,
+    };
+  }
+
+  // 3. Due soon (amber, due within 30 days)
+  if (diffDays <= 30) {
+    return {
+      status: 'DUE_SOON',
+      label: 'Due soon',
+      color: 'amber',
+      badgeClass: 'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/50',
+      diffDays,
+      lastVerifiedDate: latestInspection ? new Date(latestInspection.date || latestInspection.servicedAt) : null,
+      hasGPS,
+      hasPhoto,
+      isImported,
+    };
+  }
+
+  // 4. Verified (green)
+  return {
+    status: 'VERIFIED',
+    label: isImported ? 'Imported (not field-verified)' : 'Verified',
+    color: isImported ? 'blue' : 'emerald',
+    badgeClass: isImported
+      ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/50'
+      : 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/50',
+    diffDays,
+    lastVerifiedDate: new Date(latestInspection.date || latestInspection.servicedAt),
+    hasGPS,
+    hasPhoto,
+    isImported,
   };
 }
 
-export const EQUIPMENT_TYPES: Record<string, EquipmentTypeInfo> = {
+export const EQUIPMENT_TYPES: Record<string, any> = {
   ABC_DRY_POWDER: {
     code: 'ABC_DRY_POWDER',
     name: 'ABC Dry Powder (Stored Pressure)',
@@ -25,16 +94,9 @@ export const EQUIPMENT_TYPES: Record<string, EquipmentTypeInfo> = {
     suitableFor: ['Class A (Wood, Paper, Cloth)', 'Class B (Flammable Liquids)', 'Class C (Flammable Gases)', 'Electrical Fires'],
     notSuitableFor: ['Cooking oil/kitchen deep fat fryers (Class F)'],
     refillIntervalMonths: 12,
-    hydroTestIntervalMonths: 36, // 3 years per IS 2190
-    colorCode: '#3b82f6', // Blue tag standard in India
+    hydroTestIntervalMonths: 36,
+    colorCode: '#3b82f6',
     description: 'Multi-purpose powder extinguisher suitable for standard commercial and residential hazards.',
-    passGuide: {
-      p: 'Pull the safety pin by breaking the plastic tamper seal.',
-      a: 'Aim low, pointing the nozzle or hose directly at the base of the fire.',
-      s1: 'Squeeze the operating lever smoothly to discharge monoammonium phosphate powder.',
-      s2: 'Sweep slowly from side to side across the base until fire is completely extinguished.',
-      caution: 'Leaves chemical powder residue. Ventilate area after use.'
-    }
   },
   CO2: {
     code: 'CO2',
@@ -42,53 +104,32 @@ export const EQUIPMENT_TYPES: Record<string, EquipmentTypeInfo> = {
     defaultCapacity: '4.5 KG',
     suitableFor: ['Electrical Hazards (Panels, Server Racks)', 'Class B (Flammable Liquids: Petrol, Diesel, Paint)'],
     notSuitableFor: ['Class A solids in deep seated fires', 'Confined unventilated spaces without breathing apparatus'],
-    refillIntervalMonths: 12, // Annual weight loss check / 10% discharge
-    hydroTestIntervalMonths: 60, // 5 years per Gas Cylinder Rules & IS 2190
-    colorCode: '#1f2937', // Black band
+    refillIntervalMonths: 12,
+    hydroTestIntervalMonths: 60,
+    colorCode: '#1f2937',
     description: 'Clean residue-free gas discharge ideal for server rooms, electronics, and switchgear.',
-    passGuide: {
-      p: 'Pull out the locking pin on the wheel or squeeze grip valve.',
-      a: 'Aim the discharge horn at the base of the fire.',
-      s1: 'Squeeze handle. HOLD ONLY the frost-free insulated handle/grip.',
-      s2: 'Sweep edge to edge. Smothers oxygen rapidly.',
-      caution: 'Extreme Cold Discharge (-78°C). Never touch the horn with bare skin (risk of severe frostbite)!'
-    }
   },
   FOAM_AFFF: {
     code: 'FOAM_AFFF',
     name: 'Mechanical Foam (AFFF)',
     defaultCapacity: '9 LTR',
     suitableFor: ['Class A (Wood, Paper, Textiles)', 'Class B (Spilled Petrol, Diesel, Kerosene, Lubricants)'],
-    notSuitableFor: ['LIVE ELECTRICAL FIRES (Water conducts electricity!)', 'Cooking oils'],
+    notSuitableFor: ['LIVE ELECTRICAL FIRES', 'Cooking oils'],
     refillIntervalMonths: 12,
     hydroTestIntervalMonths: 36,
-    colorCode: '#eab308', // Cream / Yellow band
+    colorCode: '#eab308',
     description: 'Forms an aqueous film over liquid fuels, smothering vapor release and preventing flashback.',
-    passGuide: {
-      p: 'Pull out safety pin.',
-      a: 'Aim at an adjacent vertical surface or the back edge of the liquid pool so foam gently spreads.',
-      s1: 'Squeeze trigger to release foaming blanket.',
-      s2: 'Sweep across liquid surface without agitating the fire.',
-      caution: 'DANGER: DO NOT spray directly on high voltage electrical equipment.'
-    }
   },
   WATER_CO2: {
     code: 'WATER_CO2',
     name: 'Water-CO2 / Stored Water',
     defaultCapacity: '9 LTR',
     suitableFor: ['Class A (Wood, Paper, Cotton, Fabric, Cardboard)'],
-    notSuitableFor: ['ELECTRICAL FIRES (Conductive)', 'Flammable liquid fuel spills (Spreads fire)'],
+    notSuitableFor: ['ELECTRICAL FIRES', 'Flammable liquid fuel spills'],
     refillIntervalMonths: 12,
     hydroTestIntervalMonths: 36,
-    colorCode: '#ef4444', // Red
+    colorCode: '#ef4444',
     description: 'Cools glowing embers and penetrates deep-seated cellulosic fuels.',
-    passGuide: {
-      p: 'Pull safety pin.',
-      a: 'Aim at the bottom of flames.',
-      s1: 'Squeeze lever steadily.',
-      s2: 'Sweep thoroughly until all embers are fully drenched.',
-      caution: 'ELECTRICITY SHOCK RISK: Ensure circuit breaker tripped before applying water near fixtures.'
-    }
   },
   CLEAN_AGENT_FM200: {
     code: 'CLEAN_AGENT_FM200',
@@ -98,15 +139,8 @@ export const EQUIPMENT_TYPES: Record<string, EquipmentTypeInfo> = {
     notSuitableFor: ['Metal fires (Magnesium, Lithium)'],
     refillIntervalMonths: 12,
     hydroTestIntervalMonths: 60,
-    colorCode: '#10b981', // Emerald green
+    colorCode: '#10b981',
     description: 'Zero ozone depletion, zero residue, non-conductive gas for high-value asset protection.',
-    passGuide: {
-      p: 'Pull the pin from valve.',
-      a: 'Aim nozzle at base of fire.',
-      s1: 'Squeeze lever to discharge gas.',
-      s2: 'Sweep across burning area.',
-      caution: 'Safe for occupied computer rooms when discharged according to standard concentration limits.'
-    }
   },
   HYDRANT_VALVE: {
     code: 'HYDRANT_VALVE',
@@ -114,17 +148,10 @@ export const EQUIPMENT_TYPES: Record<string, EquipmentTypeInfo> = {
     defaultCapacity: '63mm Single/Double Head',
     suitableFor: ['Heavy structural firefighting', 'High-rise water supply'],
     notSuitableFor: ['Small kitchen fires'],
-    refillIntervalMonths: 6, // Bi-annual flow & gland packing test
-    hydroTestIntervalMonths: 12, // Annual hydrostatic line test
+    refillIntervalMonths: 6,
+    hydroTestIntervalMonths: 12,
     colorCode: '#b91c1c',
     description: 'Internal wet riser landing valve connected to rooftop booster and basement fire pumps.',
-    passGuide: {
-      p: 'Verify hose coupling connected tightly into instantaneous 63mm female outlet.',
-      a: 'Ensure nozzle branch pipe held firmly by 2 trained personnel.',
-      s1: 'Turn handwheel anti-clockwise slowly to open water supply.',
-      s2: 'Maintain 3.5 to 5.5 bar nozzle pressure for jet stream.',
-      caution: 'High recoil pressure! Always brace feet securely before opening valve.'
-    }
   }
 };
 

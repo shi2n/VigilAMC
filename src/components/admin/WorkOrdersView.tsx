@@ -238,45 +238,61 @@ export function WorkOrdersView({ showToast, onOpenImport }: WorkOrdersViewProps)
           </div>
         ) : (
           <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
-            {filteredOrders.map((wo) => (
-              <div key={wo.id} className="p-4 sm:p-5 hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1.5 flex-1">
-                  <div className="flex items-center gap-2.5">
-                    <span
-                      className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
-                        wo.priority === 'URGENT'
-                          ? 'bg-rose-100 text-rose-800 border border-rose-200 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/40'
-                          : wo.priority === 'HIGH'
-                          ? 'bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/40'
-                          : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                      }`}
-                    >
-                      {wo.priority}
-                    </span>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">{wo.title}</h4>
-                  </div>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{wo.description}</p>
-                  <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 pt-1">
-                    <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-                      <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                      {wo.building?.name || 'Facility'}
-                    </span>
-                    <span>&bull;</span>
-                    <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-                      <User className="w-3.5 h-3.5 text-[#007DB8]" />
-                      Assigned: <strong className="text-slate-800 dark:text-slate-200 font-semibold">{wo.assignedTo?.fullName || 'Unassigned'}</strong>
-                    </span>
-                    {wo.dueDate && (
-                      <>
-                        <span>&bull;</span>
-                        <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                          Due: {new Date(wo.dueDate).toLocaleDateString('en-IN')}
+            {filteredOrders.map((wo) => {
+              const isOverdue = wo.status !== 'COMPLETED' && wo.dueDate && new Date(wo.dueDate) < new Date();
+              const isUnassigned = !wo.assignedToId && !wo.assignedTo;
+
+              return (
+                <div
+                  key={wo.id}
+                  className={`p-4 sm:p-5 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                    isOverdue
+                      ? 'bg-rose-50/60 dark:bg-red-950/20 border-l-4 border-l-red-500'
+                      : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/30'
+                  }`}
+                >
+                  <div className="space-y-1.5 flex-1">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <span
+                        className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
+                          wo.priority === 'URGENT'
+                            ? 'bg-rose-100 text-rose-800 border border-rose-200 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/40'
+                            : wo.priority === 'HIGH'
+                            ? 'bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/40'
+                            : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                        }`}
+                      >
+                        {wo.priority}
+                      </span>
+                      {isOverdue && (
+                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-300 dark:bg-red-950 dark:text-red-400">
+                          ✕ Overdue
                         </span>
-                      </>
-                    )}
+                      )}
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">{wo.title}</h4>
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{wo.description}</p>
+                    <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 pt-1">
+                      <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
+                        <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                        {wo.building?.name || 'Facility'}
+                      </span>
+                      <span>&bull;</span>
+                      <span className={`flex items-center gap-1 ${isUnassigned ? 'text-rose-600 dark:text-red-400 font-bold' : 'text-slate-600 dark:text-slate-400'}`}>
+                        <User className="w-3.5 h-3.5 text-[#007DB8]" />
+                        Assigned: <strong className="font-semibold">{wo.assignedTo?.fullName || '⚠ Unassigned'}</strong>
+                      </span>
+                      {wo.dueDate && (
+                        <>
+                          <span>&bull;</span>
+                          <span className={`flex items-center gap-1 ${isOverdue ? 'text-rose-600 dark:text-red-400 font-bold' : 'text-slate-600 dark:text-slate-400'}`}>
+                            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                            Due: {new Date(wo.dueDate).toLocaleDateString('en-IN')}
+                          </span>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
 
                 <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
                   <select
@@ -291,7 +307,8 @@ export function WorkOrdersView({ showToast, onOpenImport }: WorkOrdersViewProps)
                   </select>
                 </div>
               </div>
-            ))}
+            );
+          })}
           </div>
         )}
       </div>

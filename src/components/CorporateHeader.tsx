@@ -130,7 +130,7 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
               href="/login"
               className="text-white hover:text-cyan-200 font-semibold flex items-center gap-1 transition-colors"
             >
-              <span>Client Portal</span>
+              <span>Agency Login</span>
               <ArrowRight className="w-3 h-3" />
             </Link>
           </div>

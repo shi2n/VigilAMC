@@ -133,7 +133,9 @@ model Building {
   address           String
   city              String?
   state             String?
-  complianceCycle   String             @default("Delhi NCR Statutory Form-B (Half-Yearly)")
+  complianceCycle   String             @default("Half-Yearly")
+  reportingCycle    String?            @default("Half-Yearly") // Monthly, Quarterly, Half-Yearly, Yearly
+  complianceRuleName String?
   cycleIntervalMos  Int                @default(6)
   nextFilingDueDate DateTime?
   equipments        Equipment[]
@@ -256,6 +258,9 @@ model Inspection {
   customerSignature   String?           // Digital signature data URL
   technicianSignature String?           // Technician signature data URL
   photos              String?           // Legacy JSON array of URLs
+  latitude            Float?
+  longitude           Float?
+  isImported          Boolean           @default(false)
   inspectionPhotos    InspectionPhoto[]
   issues              InspectionIssue[]
   partsUsed           InspectionPart[]
@@ -428,3 +433,16 @@ model TechnicianBuildingAssignment {
 
   @@unique([technicianId, buildingId])
 }
+
+model Feedback {
+  id              String   @id @default(cuid())
+  organizationId  String?
+  userId          String?
+  userEmail       String?
+  confusingText   String?
+  missingFeatures String?
+  fairPrice       String?
+  rating          Int?
+  createdAt       DateTime @default(now())
+}
+

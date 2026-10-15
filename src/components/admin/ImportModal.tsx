@@ -529,13 +529,13 @@ export function ImportModal({
                       {
                         type: 'BUILDINGS' as ImportType,
                         title: 'Buildings & Towers',
-                        desc: 'Premises addresses, tower names, and Delhi NCR statutory compliance cycles.',
+                        desc: 'Premises addresses, tower names, state, and reporting compliance cycles.',
                         icon: Building2,
                         color: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
                       },
                       {
                         type: 'FIRE_ASSETS' as ImportType,
-                        title: 'Fire Equipment & QR Tags',
+                        title: 'Fire Equipment Inventory',
                         desc: 'Extinguishers, hydrants, hose reels, panel tags, and inspection due dates.',
                         icon: Flame,
                         color: 'text-red-400 bg-red-500/10 border-red-500/20',

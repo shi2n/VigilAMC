@@ -2,533 +2,438 @@
 
 import React from 'react';
 import {
-  Users,
-  Building2,
-  Flame,
-  Wrench,
-  Clock,
   AlertTriangle,
-  ShieldCheck,
+  Clock,
+  Wrench,
   CheckCircle2,
-  ArrowRight,
   Plus,
+  ArrowRight,
+  ShieldAlert,
+  Building2,
+  Users,
+  Check,
   FileSpreadsheet,
-  Printer,
+  MessageSquare,
   Sparkles,
-  TrendingUp,
-  ExternalLink
 } from 'lucide-react';
-import Link from 'next/link';
+import { formatStandardDate } from '@/lib/constants/india';
 
 interface DashboardOverviewProps {
   kpis: {
-    totalClients: number;
-    totalBuildings: number;
-    totalEquipments: number;
-    activeTechnicians: number;
-    openWorkOrders: number;
-    dueInspections: number;
-    overdueInspections: number;
-    complianceRate: number;
+    overdueCount: number;
+    dueSoonCount: number;
+    openRepairsCount: number;
+    inspectionsThisWeek: number;
+    totalEquipments?: number;
+    totalBuildings?: number;
+    activeTechnicians?: number;
   };
-  subscriptionData?: any;
-  subscription?: any;
   company?: any;
   buildings?: any[];
-  onNavigateTab?: (tab: string) => void;
-  onNavigate?: (tab: any) => void;
-  onOpenExport?: (type?: string) => void;
-  onOpenImport?: (type?: any) => void;
-  onAddBuilding?: () => void;
+  onNavigateTab: (tab: string) => void;
+  onAddEquipment: () => void;
+  onCreateRepairJob: () => void;
+  onOpenFeedback: () => void;
+  onOpenImport?: () => void;
 }
 
 export function DashboardOverview({
   kpis,
-  subscriptionData,
-  subscription,
   company,
   buildings = [],
   onNavigateTab,
-  onNavigate,
-  onOpenExport = () => {},
+  onAddEquipment,
+  onCreateRepairJob,
+  onOpenFeedback,
   onOpenImport,
-  onAddBuilding,
 }: DashboardOverviewProps) {
-  const currentSub = subscription ?? subscriptionData;
-  const navigate = (tab: string) => {
-    if (onNavigate) onNavigate(tab);
-    else if (onNavigateTab) onNavigateTab(tab);
-  };
-  const overdueBuildings = buildings.filter((b) => b.overallStatus === 'OVERDUE');
-  const dueSoonBuildings = buildings.filter((b) => b.overallStatus === 'DUE_SOON');
+  // Compute First-Time Setup Checklist (1 to 5)
+  const hasAgencyDetails = Boolean(
+    company?.name &&
+    company?.phone &&
+    company.name !== 'Vigil Fire & Safety Solutions'
+  );
+  const hasClientAndBuilding = buildings.length > 0;
+  const hasEquipment = (kpis.totalEquipments || 0) > 0;
+  const hasTechnician = (kpis.activeTechnicians || 0) > 0;
+  const hasInspection = (kpis.inspectionsThisWeek || 0) > 0;
+
+  const checklistItems = [
+    {
+      id: 1,
+      title: 'Add agency details',
+      desc: 'Set your agency name, phone number, and address',
+      done: hasAgencyDetails,
+      action: () => onNavigateTab('SETTINGS'),
+      btnText: 'Edit profile',
+    },
+    {
+      id: 2,
+      title: 'Add a client and building',
+      desc: 'Add the first commercial tower or residential society',
+      done: hasClientAndBuilding,
+      action: () => onNavigateTab('SITES'),
+      btnText: 'Add site',
+    },
+    {
+      id: 3,
+      title: 'Add equipment or import Excel',
+      desc: 'Register fire extinguishers, hydrants, or upload spreadsheet',
+      done: hasEquipment,
+      action: () => onAddEquipment(),
+      btnText: 'Add equipment',
+    },
+    {
+      id: 4,
+      title: 'Invite a technician',
+      desc: 'Create login for a field technician to record site visits',
+      done: hasTechnician,
+      action: () => onNavigateTab('SETTINGS'),
+      btnText: 'Add technician',
+    },
+    {
+      id: 5,
+      title: 'Record a test inspection',
+      desc: 'Record a field check with GPS location and photo proof',
+      done: hasInspection,
+      action: () => onNavigateTab('INSPECTIONS'),
+      btnText: 'Record test inspection',
+    },
+  ];
+
+  const completedCount = checklistItems.filter((item) => item.done).length;
+  const progressPercent = Math.round((completedCount / checklistItems.length) * 100);
+  const isChecklistComplete = completedCount === checklistItems.length;
+
+  // Build the "Needs attention" list of top 10 due or overdue items
+  const allEquipments: any[] = [];
+  buildings.forEach((b) => {
+    (b.equipments || []).forEach((eq: any) => {
+      allEquipments.push({
+        ...eq,
+        buildingName: b.name,
+        buildingId: b.id,
+        clientName: b.client?.name || 'Client',
+      });
+    });
+  });
+
+  const now = new Date();
+  const needsAttentionList = allEquipments
+    .map((eq) => {
+      const diffDays = eq.nextDueDate
+        ? Math.ceil((new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+        : 0;
+      return { ...eq, diffDays };
+    })
+    .filter((eq) => eq.diffDays <= 30) // Overdue or due within 30 days
+    .sort((a, b) => a.diffDays - b.diffDays)
+    .slice(0, 10);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       
-      {/* =========================================================================
-          1. TOP 8 OPERATIONAL KPI CARDS
-      ========================================================================= */}
-      <div>
-        <div className="flex items-center justify-between mb-3.5">
-          <div>
-            <h2 className="text-base sm:text-lg font-black text-[#023E8A] dark:text-white tracking-tight flex items-center gap-2">
-              <span>Operational Performance Radar</span>
-              <span className="px-2.5 py-0.5 rounded-full bg-[#EAF6FF] text-[#007DB8] border border-[#007DB8]/30 text-[10px] font-extrabold uppercase dark:bg-blue-950/60 dark:text-blue-300">
-                Real-Time Telemetry
-              </span>
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Live aggregated metrics across your contracted facilities and technician workforce.
-            </p>
+      {/* Top Bar: Title, Badge, and Action Buttons */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-black text-[#023E8A] dark:text-white tracking-tight">
+              Home
+            </h1>
+            <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-300 text-xs font-bold dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">
+              Free testing access
+            </span>
           </div>
-
-          <div className="flex items-center gap-2">
-            {onOpenImport && (
-              <button
-                onClick={() => onOpenImport('FIRE_ASSETS')}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-[#007DB8] border border-[#DCE7F2] hover:border-[#007DB8]/40 text-xs font-bold transition-all shadow-sm dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-amber-400 dark:border-amber-500/30"
-                title="Import Data from Excel (.xlsx)"
-              >
-                <FileSpreadsheet className="w-3.5 h-3.5" />
-                <span>Import Excel</span>
-              </button>
-            )}
-
-            <button
-              onClick={() => onOpenExport('FIRE_ASSETS')}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100/80 text-emerald-700 border border-emerald-200 text-xs font-bold transition-all shadow-sm dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-emerald-400 dark:border-emerald-500/30"
-              title="Export Current View Data to Excel"
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5" />
-              <span>Export Excel</span>
-            </button>
-          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {company?.name || 'VigilAMC Agency Dashboard'}
+          </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-          
-          {/* 1. Total Clients */}
-          <div
-            onClick={() => navigate('CLIENTS')}
-            className="p-4 rounded-2xl bg-white border border-[#DCE7F2] hover:border-[#007DB8]/50 cursor-pointer transition-all shadow-sm hover:shadow-md group space-y-1.5 dark:bg-slate-900/90 dark:border-slate-800 dark:hover:border-blue-500/40"
+        {/* The Two Primary Action Buttons */}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            onClick={onAddEquipment}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0077B6] hover:bg-[#023E8A] text-white text-xs font-bold shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                Total Clients
-              </span>
-              <div className="p-1.5 rounded-lg bg-blue-50 text-[#007DB8] group-hover:scale-110 transition-transform dark:bg-blue-500/10 dark:text-blue-400">
-                <Users className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-2xl sm:text-3xl font-black text-[#023E8A] dark:text-white">
-              {kpis.totalClients}
-            </div>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 block group-hover:text-[#007DB8] dark:group-hover:text-blue-400 font-semibold transition-colors">
-              Managed Societies →
-            </span>
-          </div>
+            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+            <span>Add equipment</span>
+          </button>
 
-          {/* 2. Total Buildings */}
-          <div
-            onClick={() => navigate('BUILDINGS')}
-            className="p-4 rounded-2xl bg-white border border-[#DCE7F2] hover:border-[#007DB8]/50 cursor-pointer transition-all shadow-sm hover:shadow-md group space-y-1.5 dark:bg-slate-900/90 dark:border-slate-800 dark:hover:border-blue-500/40"
+          <button
+            onClick={onCreateRepairJob}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-slate-50 text-[#023E8A] border border-slate-200 text-xs font-bold transition-all shadow-sm dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-cyan-300 dark:border-slate-700"
           >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                Buildings / Towers
-              </span>
-              <div className="p-1.5 rounded-lg bg-indigo-50 text-[#023E8A] group-hover:scale-110 transition-transform dark:bg-indigo-500/10 dark:text-indigo-400">
-                <Building2 className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-2xl sm:text-3xl font-black text-[#023E8A] dark:text-white">
-              {kpis.totalBuildings}
-            </div>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 block group-hover:text-[#007DB8] dark:group-hover:text-blue-400 font-semibold transition-colors">
-              Premises Roster →
-            </span>
-          </div>
+            <Wrench className="w-3.5 h-3.5 text-[#0077B6]" />
+            <span>Create repair job</span>
+          </button>
 
-          {/* 3. Total Fire Assets */}
-          <div
-            onClick={() => navigate('FIRE_ASSETS')}
-            className="p-4 rounded-2xl bg-white border border-[#DCE7F2] hover:border-rose-400 cursor-pointer transition-all shadow-sm hover:shadow-md group space-y-1.5 dark:bg-slate-900/90 dark:border-slate-800 dark:hover:border-rose-500/40"
+          <button
+            onClick={onOpenFeedback}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 text-xs font-semibold transition-all dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+            title="Tell us what is confusing or missing"
           >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                Fire Assets
-              </span>
-              <div className="p-1.5 rounded-lg bg-rose-50 text-rose-600 group-hover:scale-110 transition-transform dark:bg-red-500/10 dark:text-red-400">
-                <Flame className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-              {kpis.totalEquipments}
-            </div>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 block group-hover:text-rose-600 dark:group-hover:text-rose-400 font-semibold transition-colors">
-              Tagged Equipment →
-            </span>
-          </div>
-
-          {/* 4. Active Technicians */}
-          <div
-            onClick={() => navigate('TECHNICIANS')}
-            className="p-4 rounded-2xl bg-white border border-[#DCE7F2] hover:border-sky-400 cursor-pointer transition-all shadow-sm hover:shadow-md group space-y-1.5 dark:bg-slate-900/90 dark:border-slate-800 dark:hover:border-cyan-500/40"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                Active Techs
-              </span>
-              <div className="p-1.5 rounded-lg bg-sky-50 text-sky-600 group-hover:scale-110 transition-transform dark:bg-cyan-500/10 dark:text-cyan-400">
-                <Users className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-              {kpis.activeTechnicians}
-            </div>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 block group-hover:text-sky-600 dark:group-hover:text-cyan-400 font-semibold transition-colors">
-              Assigned Field Staff →
-            </span>
-          </div>
-
-          {/* 5. Open Work Orders */}
-          <div
-            onClick={() => navigate('WORK_ORDERS')}
-            className="p-4 rounded-2xl bg-white border border-[#DCE7F2] hover:border-amber-400 cursor-pointer transition-all shadow-sm hover:shadow-md group space-y-1.5 dark:bg-slate-900/90 dark:border-slate-800 dark:hover:border-amber-500/40"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                Open Work Orders
-              </span>
-              <div className="p-1.5 rounded-lg bg-amber-50 text-amber-600 group-hover:scale-110 transition-transform dark:bg-purple-500/10 dark:text-purple-400">
-                <Wrench className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-              {kpis.openWorkOrders}
-            </div>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 block group-hover:text-amber-600 dark:group-hover:text-amber-400 font-semibold transition-colors">
-              Dispatch Board →
-            </span>
-          </div>
-
-          {/* 6. Due Inspections (<30d) */}
-          <div
-            onClick={() => navigate('INSPECTIONS')}
-            className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 hover:border-amber-400 cursor-pointer transition-all shadow-sm hover:shadow-md group space-y-1.5 dark:bg-amber-950/20 dark:border-amber-500/30 dark:hover:border-amber-500/60"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                Due Soon (&lt;30d)
-              </span>
-              <div className="p-1.5 rounded-lg bg-amber-100 text-amber-700 group-hover:scale-110 transition-transform dark:bg-amber-500/10 dark:text-amber-400">
-                <Clock className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-2xl sm:text-3xl font-black text-amber-900 dark:text-amber-400">
-              {kpis.dueInspections}
-            </div>
-            <span className="text-[10px] text-amber-700 dark:text-amber-300/80 block group-hover:underline font-semibold transition-colors">
-              Action Pending →
-            </span>
-          </div>
-
-          {/* 7. Overdue Inspections */}
-          <div
-            onClick={() => navigate('INSPECTIONS')}
-            className="p-4 rounded-2xl bg-rose-50/70 border border-rose-200 hover:border-rose-400 cursor-pointer transition-all shadow-sm hover:shadow-md group space-y-1.5 dark:bg-red-950/20 dark:border-red-500/30 dark:hover:border-red-500/60"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-rose-800 dark:text-red-400 uppercase tracking-wider flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
-                Overdue
-              </span>
-              <div className="p-1.5 rounded-lg bg-rose-100 text-rose-700 group-hover:scale-110 transition-transform dark:bg-red-500/10 dark:text-red-400">
-                <AlertTriangle className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-2xl sm:text-3xl font-black text-rose-900 dark:text-red-400">
-              {kpis.overdueInspections}
-            </div>
-            <span className="text-[10px] text-rose-700 dark:text-red-300/80 block group-hover:underline font-semibold transition-colors">
-              Statutory Non-Compliance →
-            </span>
-          </div>
-
-          {/* 8. Compliance Rate (%) */}
-          <div
-            onClick={() => navigate('REPORTS')}
-            className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 hover:border-emerald-400 cursor-pointer transition-all shadow-sm hover:shadow-md group space-y-1.5 dark:bg-emerald-950/20 dark:border-emerald-500/30 dark:hover:border-emerald-500/60"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Compliance Rate
-              </span>
-              <div className="p-1.5 rounded-lg bg-emerald-100 text-emerald-700 group-hover:scale-110 transition-transform dark:bg-emerald-500/10 dark:text-emerald-400">
-                <ShieldCheck className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-2xl sm:text-3xl font-black text-emerald-900 dark:text-emerald-400">
-              {kpis.complianceRate}%
-            </div>
-            <span className="text-[10px] text-emerald-700 dark:text-emerald-300/80 block group-hover:underline font-semibold transition-colors">
-              Form-B Audit Ready →
-            </span>
-          </div>
-
+            <MessageSquare className="w-3.5 h-3.5 text-amber-500" />
+            <span>Give feedback</span>
+          </button>
         </div>
       </div>
 
       {/* =========================================================================
-          2. SUBSCRIPTION QUOTA & CAPACITY CARD
-      ========================================================================= */}
-      {currentSub && (
-        <div className="rounded-2xl bg-gradient-to-r from-blue-50/80 via-white to-sky-50/50 border border-[#DCE7F2] p-5 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-5 dark:bg-slate-900/90 dark:border-slate-800 dark:from-slate-900 dark:to-slate-900 dark:shadow-xl">
-          <div className="flex items-start gap-3.5">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#007DB8]/15 to-[#073F8F]/15 border border-[#007DB8]/30 flex items-center justify-center text-[#007DB8] shrink-0 dark:from-amber-500/20 dark:to-orange-500/20 dark:border-amber-500/30 dark:text-amber-400">
-              <Sparkles className="w-6 h-6" />
+          FOUR NUMBERS ONLY
+          ========================================================================= */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        
+        {/* 1. Overdue */}
+        <div
+          onClick={() => onNavigateTab('SITES')}
+          className="p-5 rounded-2xl bg-white border border-slate-200 dark:bg-slate-900 dark:border-slate-800 shadow-xs hover:border-rose-300 dark:hover:border-rose-800 transition-all cursor-pointer group"
+        >
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
+            <span className="text-xs font-semibold">Overdue</span>
+            <div className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400">
+              <AlertTriangle className="w-4 h-4" />
             </div>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black text-rose-600 dark:text-rose-400 tracking-tight">
+            {kpis.overdueCount}
+          </div>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+            {kpis.overdueCount === 0 ? 'No overdue equipment' : 'Equipment past due cycle'}
+          </p>
+        </div>
+
+        {/* 2. Due in 30 days */}
+        <div
+          onClick={() => onNavigateTab('SITES')}
+          className="p-5 rounded-2xl bg-white border border-slate-200 dark:bg-slate-900 dark:border-slate-800 shadow-xs hover:border-amber-300 dark:hover:border-amber-800 transition-all cursor-pointer group"
+        >
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
+            <span className="text-xs font-semibold">Due in 30 days</span>
+            <div className="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400">
+              <Clock className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400 tracking-tight">
+            {kpis.dueSoonCount}
+          </div>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+            Upcoming service due
+          </p>
+        </div>
+
+        {/* 3. Open repairs */}
+        <div
+          onClick={() => onNavigateTab('REPAIRS')}
+          className="p-5 rounded-2xl bg-white border border-slate-200 dark:bg-slate-900 dark:border-slate-800 shadow-xs hover:border-blue-300 dark:hover:border-blue-800 transition-all cursor-pointer group"
+        >
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
+            <span className="text-xs font-semibold">Open repairs</span>
+            <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-[#0077B6] dark:text-blue-400">
+              <Wrench className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black text-[#023E8A] dark:text-blue-400 tracking-tight">
+            {kpis.openRepairsCount}
+          </div>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+            Active repair jobs
+          </p>
+        </div>
+
+        {/* 4. Inspections this week */}
+        <div
+          onClick={() => onNavigateTab('INSPECTIONS')}
+          className="p-5 rounded-2xl bg-white border border-slate-200 dark:bg-slate-900 dark:border-slate-800 shadow-xs hover:border-emerald-300 dark:hover:border-emerald-800 transition-all cursor-pointer group"
+        >
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
+            <span className="text-xs font-semibold">Inspections this week</span>
+            <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
+            {kpis.inspectionsThisWeek}
+          </div>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+            Completed site checks
+          </p>
+        </div>
+
+      </div>
+
+      {/* =========================================================================
+          FIRST-TIME CHECKLIST (Shown until complete)
+          ========================================================================= */}
+      {!isChecklistComplete && (
+        <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-slate-50 to-blue-50/40 dark:from-slate-900 dark:to-[#0a1426] border border-blue-200/80 dark:border-slate-800 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-[#023E8A] dark:text-white">
-                  {currentSub.plan?.name || 'Basic AMC'}
-                </h3>
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-bold dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30">
-                  {currentSub.subscription?.billingCycle || 'ANNUAL'} (Active)
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span>Getting started with VigilAMC</span>
+                <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
+                  ({completedCount} of 5 completed)
                 </span>
-              </div>
+              </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Multi-tenant capacity limits actively guarded across technicians, buildings, and fire equipment.
+                Complete these 5 simple steps to get your fire AMC operations fully online.
               </p>
+            </div>
+            <div className="text-xs font-bold text-[#0077B6] dark:text-cyan-400">
+              {progressPercent}% ready
             </div>
           </div>
 
-          <div className="flex items-center gap-4 flex-wrap text-xs">
-            {/* Tech Seats */}
-            <div className="space-y-1 min-w-[140px]">
-              <div className="flex justify-between text-[11px]">
-                <span className="text-slate-500 dark:text-slate-400 font-semibold">Tech Seats:</span>
-                <span className="text-slate-900 dark:text-white font-bold">
-                  {currentSub.usage?.technicians?.active} / {currentSub.usage?.technicians?.maxNumeric >= 999999 ? '∞' : currentSub.usage?.technicians?.max}
-                </span>
-              </div>
-              <div className="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${
-                    currentSub.usage?.technicians?.isAtLimit ? 'bg-amber-500' : 'bg-[#007DB8]'
-                  }`}
-                  style={{ width: `${Math.min(100, currentSub.usage?.technicians?.percentUsed || 0)}%` }}
-                />
-              </div>
-            </div>
+          {/* Progress bar */}
+          <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-[#0077B6] to-emerald-500 rounded-full transition-all duration-500"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
 
-            {/* Towers */}
-            <div className="space-y-1 min-w-[140px]">
-              <div className="flex justify-between text-[11px]">
-                <span className="text-slate-500 dark:text-slate-400 font-semibold">Buildings:</span>
-                <span className="text-slate-900 dark:text-white font-bold">
-                  {currentSub.usage?.towers?.count} / {currentSub.usage?.towers?.maxNumeric >= 999999 ? '∞' : currentSub.usage?.towers?.max}
-                </span>
-              </div>
-              <div className="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${
-                    currentSub.usage?.towers?.isAtLimit ? 'bg-amber-500' : 'bg-emerald-500'
-                  }`}
-                  style={{ width: `${Math.min(100, currentSub.usage?.towers?.percentUsed || 0)}%` }}
-                />
-              </div>
-            </div>
+          {/* Checklist items */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-1">
+            {checklistItems.map((item) => (
+              <div
+                key={item.id}
+                className={`p-3.5 rounded-xl border transition-all flex flex-col justify-between ${
+                  item.done
+                    ? 'bg-emerald-50/60 border-emerald-200 text-emerald-950 dark:bg-emerald-950/20 dark:border-emerald-800/40 dark:text-emerald-300'
+                    : 'bg-white border-slate-200 dark:bg-slate-950 dark:border-slate-800 text-slate-800 dark:text-slate-200'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Step {item.id}
+                    </span>
+                    {item.done ? (
+                      <span className="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center">
+                        <Check className="w-2.5 h-2.5 stroke-[3]" />
+                      </span>
+                    ) : (
+                      <span className="w-4 h-4 rounded-full border border-slate-300 dark:border-slate-700" />
+                    )}
+                  </div>
+                  <h4 className="text-xs font-bold line-clamp-1">{item.title}</h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
+                    {item.desc}
+                  </p>
+                </div>
 
-            {/* Assets */}
-            <div className="space-y-1 min-w-[140px]">
-              <div className="flex justify-between text-[11px]">
-                <span className="text-slate-500 dark:text-slate-400 font-semibold">Equipment Assets:</span>
-                <span className="text-slate-900 dark:text-white font-bold">
-                  {currentSub.usage?.assets?.count} / {currentSub.usage?.assets?.maxNumeric >= 999999 ? '∞' : currentSub.usage?.assets?.max}
-                </span>
+                <div className="pt-3 mt-2 border-t border-slate-100 dark:border-slate-800/60">
+                  {item.done ? (
+                    <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                      <Check className="w-3 h-3" /> Done
+                    </span>
+                  ) : (
+                    <button
+                      onClick={item.action}
+                      className="text-[11px] font-bold text-[#0077B6] dark:text-cyan-400 hover:underline flex items-center gap-1"
+                    >
+                      <span>{item.btnText}</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${
-                    currentSub.usage?.assets?.isAtLimit ? 'bg-amber-500' : 'bg-purple-500'
-                  }`}
-                  style={{ width: `${Math.min(100, currentSub.usage?.assets?.percentUsed || 0)}%` }}
-                />
-              </div>
-            </div>
-
-            <button
-              onClick={() => navigate('AGENCY')}
-              className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-[#007DB8] border border-[#DCE7F2] text-xs font-bold transition-colors ml-auto shadow-sm dark:bg-amber-500/10 dark:hover:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30"
-            >
-              Subscription Details →
-            </button>
+            ))}
           </div>
         </div>
       )}
 
       {/* =========================================================================
-          3. COMPLIANCE ALERTS & QUICK ACTION WORKFLOWS
-      ========================================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Left 2 Cols: Buildings Requiring Attention */}
-        <div className="lg:col-span-2 rounded-2xl bg-white border border-[#DCE7F2] p-5 shadow-sm space-y-4 dark:bg-slate-900/90 dark:border-slate-800 dark:shadow-xl">
-          <div className="flex items-center justify-between border-b border-[#DCE7F2] dark:border-slate-800 pb-3">
-            <div>
-              <h3 className="text-base font-bold text-[#023E8A] dark:text-white flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-500" />
-                <span>Facilities Requiring Statutory Attention</span>
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Premises with overdue inspections or half-yearly filing dates approaching.
-              </p>
-            </div>
-            <button
-              onClick={() => navigate('BUILDINGS')}
-              className="text-xs text-[#007DB8] dark:text-amber-400 hover:underline font-bold"
-            >
-              View All ({buildings.length}) →
-            </button>
+          NEEDS ATTENTION LIST (Top 10 due or overdue items)
+          ========================================================================= */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-amber-500" />
+              <span>Needs attention</span>
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Next 10 equipment units overdue or due for service in the next 30 days.
+            </p>
           </div>
 
-          {overdueBuildings.length === 0 && dueSoonBuildings.length === 0 ? (
-            <div className="p-8 text-center text-slate-500 dark:text-slate-400 space-y-2">
-              <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto" />
-              <p className="text-sm font-bold text-slate-900 dark:text-white">All Contracted Facilities Compliant</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-                No facilities have overdue services. All inspection logs are up to date under NBC 2016 regulations and state fire safety rules.
-              </p>
-            </div>
-          ) : (
-            <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
-              {[...overdueBuildings, ...dueSoonBuildings].slice(0, 5).map((b) => (
-                <div key={b.id} className="py-3 flex items-center justify-between gap-3">
-                  <div className="space-y-0.5 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-slate-900 dark:text-white text-xs truncate">
-                        {b.name}
-                      </span>
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                          b.overallStatus === 'OVERDUE'
-                            ? 'bg-rose-100 text-rose-800 border border-rose-200 dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/40'
-                            : 'bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40'
-                        }`}
-                      >
-                        {b.overallStatus === 'OVERDUE' ? 'OVERDUE' : 'DUE SOON'}
-                      </span>
+          <button
+            onClick={() => onNavigateTab('SITES')}
+            className="text-xs font-semibold text-[#0077B6] dark:text-cyan-400 hover:underline flex items-center gap-1"
+          >
+            <span>View all equipment</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {needsAttentionList.length === 0 ? (
+          <div className="py-12 text-center space-y-2 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+            <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
+            <h4 className="text-sm font-bold text-slate-900 dark:text-white">All equipment is up to date</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+              No units are overdue or due in the next 30 days. When an inspection deadline approaches, it will appear here.
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100 dark:divide-slate-800">
+            {needsAttentionList.map((item) => {
+              const isOverdue = item.diffDays < 0;
+              return (
+                <div
+                  key={item.id}
+                  className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/60 dark:hover:bg-slate-800/40 px-2 rounded-xl transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span
+                      className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                        isOverdue ? 'bg-rose-500' : 'bg-amber-500'
+                      }`}
+                    />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-bold text-slate-900 dark:text-white">
+                          {item.type} ({item.capacity})
+                        </span>
+                        <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                          {item.qrCode}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                        {item.buildingName} &bull; {item.location || 'Location not specified'}
+                      </p>
                     </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                      {b.client?.name || 'Direct Client'} • {b.totalEquipments} assets • Next filing: {b.nextFilingDueDate ? new Date(b.nextFilingDueDate).toLocaleDateString('en-IN') : 'Bi-Annual'}
-                    </p>
                   </div>
 
-                  <button
-                    onClick={() => navigate('BUILDINGS')}
-                    className="px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold shrink-0 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
-                  >
-                    Inspect
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                  <div className="flex items-center gap-3 shrink-0 self-start sm:self-auto">
+                    <div className="text-right">
+                      <div
+                        className={`text-xs font-bold ${
+                          isOverdue
+                            ? 'text-rose-600 dark:text-rose-400'
+                            : 'text-amber-600 dark:text-amber-400'
+                        }`}
+                      >
+                        {isOverdue
+                          ? `Overdue by ${Math.abs(item.diffDays)} days`
+                          : `Due in ${item.diffDays} days`}
+                      </div>
+                      <div className="text-[10px] text-slate-400">
+                        Due: {formatStandardDate(item.nextDueDate)}
+                      </div>
+                    </div>
 
-        {/* Right 1 Col: Quick Operational Actions */}
-        <div className="rounded-2xl bg-white border border-[#DCE7F2] p-5 shadow-sm space-y-4 dark:bg-slate-900/90 dark:border-slate-800 dark:shadow-xl">
-          <div className="border-b border-[#DCE7F2] dark:border-slate-800 pb-3">
-            <h3 className="text-base font-bold text-[#023E8A] dark:text-white">Quick Actions</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Fast workflows for day-to-day operations.</p>
+                    <button
+                      onClick={() => onNavigateTab('REPAIRS')}
+                      className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-[#0077B6] hover:text-white text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-[#0077B6] text-xs font-bold transition-all whitespace-nowrap"
+                    >
+                      Create repair job
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-
-          <div className="space-y-2.5">
-            <button
-              onClick={onAddBuilding}
-              className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-[#EAF6FF] border border-slate-200/80 hover:border-[#007DB8]/40 text-left transition-all group dark:bg-slate-950 dark:hover:bg-slate-800 dark:border-slate-800"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-lg bg-indigo-50 text-[#023E8A] group-hover:scale-110 transition-transform dark:bg-amber-500/10 dark:text-amber-400">
-                  <Building2 className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="font-bold text-slate-900 dark:text-white text-xs">Add Client &amp; Building</div>
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400">Register new society or premises</div>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-[#007DB8] dark:group-hover:text-amber-400 transition-colors" />
-            </button>
-
-            <button
-              onClick={() => navigate('TECHNICIANS')}
-              className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-[#EAF6FF] border border-slate-200/80 hover:border-[#007DB8]/40 text-left transition-all group dark:bg-slate-950 dark:hover:bg-slate-800 dark:border-slate-800"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-lg bg-sky-50 text-sky-600 group-hover:scale-110 transition-transform dark:bg-cyan-500/10 dark:text-cyan-400">
-                  <Users className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="font-bold text-slate-900 dark:text-white text-xs">Manage Technicians</div>
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400">Roster, seats, and assignments</div>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-[#007DB8] dark:group-hover:text-amber-400 transition-colors" />
-            </button>
-
-            <button
-              onClick={() => navigate('WORK_ORDERS')}
-              className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-[#EAF6FF] border border-slate-200/80 hover:border-[#007DB8]/40 text-left transition-all group dark:bg-slate-950 dark:hover:bg-slate-800 dark:border-slate-800"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-lg bg-amber-50 text-amber-600 group-hover:scale-110 transition-transform dark:bg-purple-500/10 dark:text-purple-400">
-                  <Wrench className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="font-bold text-slate-900 dark:text-white text-xs">Create Work Order</div>
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400">Dispatch repair or refill job</div>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-[#007DB8] dark:group-hover:text-amber-400 transition-colors" />
-            </button>
-
-            <Link
-              href="/assets/print-qr"
-              className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-[#EAF6FF] border border-slate-200/80 hover:border-[#007DB8]/40 text-left transition-all group dark:bg-slate-950 dark:hover:bg-slate-800 dark:border-slate-800"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600 group-hover:scale-110 transition-transform dark:bg-emerald-500/10 dark:text-emerald-400">
-                  <Printer className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="font-bold text-slate-900 dark:text-white text-xs">Equipment Schedule</div>
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400">Generate printable asset schedules</div>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-[#007DB8] dark:group-hover:text-amber-400 transition-colors" />
-            </Link>
-
-            <button
-              onClick={() => onOpenExport('FIRE_ASSETS')}
-              className="w-full flex items-center justify-between p-3 rounded-xl bg-emerald-50/70 hover:bg-emerald-100/70 border border-emerald-200 text-left transition-all group dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40 dark:border-emerald-500/30"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-lg bg-emerald-100 text-emerald-700 group-hover:scale-110 transition-transform dark:bg-emerald-500/10 dark:text-emerald-400">
-                  <FileSpreadsheet className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="font-bold text-emerald-800 dark:text-emerald-400 text-xs">Export to Excel (.xlsx)</div>
-                  <div className="text-[11px] text-emerald-700/80 dark:text-emerald-300/80">Clients, Buildings, Assets, Reports</div>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-emerald-600 dark:text-emerald-400 group-hover:translate-x-0.5 transition-transform" />
-            </button>
-          </div>
-        </div>
-
+        )}
       </div>
 
     </div>

@@ -46,6 +46,18 @@ export async function GET(request: Request) {
         building: {
           select: { id: true, name: true, client: { select: { name: true } } },
         },
+        inspections: {
+          orderBy: { date: 'desc' },
+          take: 1,
+          select: {
+            id: true,
+            date: true,
+            latitude: true,
+            longitude: true,
+            photos: true,
+            isImported: true,
+          },
+        },
         serviceLogs: {
           orderBy: { servicedAt: 'desc' },
           take: 3,
@@ -54,14 +66,20 @@ export async function GET(request: Request) {
       orderBy: { nextDueDate: 'asc' },
     });
 
+    const { evaluateEquipmentStatus } = await import('@/lib/compliance');
     const now = new Date();
     const evaluated = equipments.map((eq: any) => {
-      const diffDays = Math.ceil((new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      const liveStatus = diffDays < 0 ? 'OVERDUE' : diffDays <= 30 ? 'DUE_SOON' : 'COMPLIANT';
+      const evalResult = evaluateEquipmentStatus(eq, now);
       return {
         ...eq,
-        diffDays,
-        liveStatus,
+        diffDays: evalResult.diffDays,
+        liveStatus: evalResult.status,
+        complianceStatus: evalResult.status,
+        statusLabel: evalResult.label,
+        lastVerifiedDate: evalResult.lastVerifiedDate,
+        hasGPS: evalResult.hasGPS,
+        hasPhoto: evalResult.hasPhoto,
+        isImported: evalResult.isImported,
       };
     });
 

@@ -198,7 +198,7 @@ export default function PublicVerifyPassportPage() {
           <div className="pt-2 text-xs space-y-1.5">
             <div className="text-slate-400 font-semibold text-[11px]">Suitable for Fire Classes:</div>
             <div className="flex flex-wrap gap-1.5">
-              {eqInfo.suitableFor.map((cls, idx) => (
+              {eqInfo.suitableFor.map((cls: string, idx: number) => (
                 <span
                   key={idx}
                   className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 text-[10px] font-medium border border-slate-700"

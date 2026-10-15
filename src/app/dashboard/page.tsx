@@ -42,13 +42,16 @@ import {
   Menu,
   FileSpreadsheet,
   Sun,
-  Moon
+  Moon,
+  MessageSquare
 } from 'lucide-react';
 import { AdminSidebar, AdminNavTab } from '@/components/admin/AdminSidebar';
 import { DashboardOverview } from '@/components/admin/DashboardOverview';
 import { ExportModal } from '@/components/admin/ExportModal';
 import { ImportModal } from '@/components/admin/ImportModal';
+import { FeedbackModal } from '@/components/admin/FeedbackModal';
 import { ImportType } from '@/lib/excelImport';
+import { INDIAN_STATES_AND_UTS, REPORTING_CYCLES } from '@/lib/constants/india';
 import { TechnicianManagement } from '@/components/admin/TechnicianManagement';
 import { TechnicianAssignments } from '@/components/admin/TechnicianAssignments';
 import { TechnicianActivityLog } from '@/components/admin/TechnicianActivityLog';
@@ -92,8 +95,10 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Authenticated Admin OS Navigation Tab
-  const [activeTab, setActiveTab] = useState<AdminNavTab>('DASHBOARD');
+  // Authenticated Admin Navigation Tab (6 Items)
+  const [activeTab, setActiveTab] = useState<AdminNavTab>('HOME');
+  const [sitesSubTab, setSitesSubTab] = useState<'EQUIPMENT' | 'BUILDINGS' | 'CLIENTS'>('EQUIPMENT');
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [techSubTab, setTechSubTab] = useState<'ROSTER' | 'ASSIGNMENTS' | 'AUDIT_LOG'>('ROSTER');
   const [settingsSubTab, setSettingsSubTab] = useState<'LEADS' | 'TOOLS' | 'AGENCY' | 'INVESTORS'>('LEADS');
@@ -154,8 +159,11 @@ export default function AdminDashboardPage() {
     email: '',
     buildingName: '',
     address: '',
-    complianceCycle: 'Delhi NCR Statutory Form-B (Half-Yearly)',
-    cycleIntervalMos: 6,
+    state: 'Delhi',
+    reportingCycle: 'Quarterly',
+    complianceRuleName: '',
+    complianceCycle: 'Quarterly',
+    cycleIntervalMos: 3,
   });
 
   // Bulk add equipment form state
@@ -394,20 +402,18 @@ export default function AdminDashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'CLIENTS') {
-      fetchClients();
-    } else if (activeTab === 'FIRE_ASSETS') {
-      fetchEquipments();
-    } else if (activeTab === 'SETTINGS') {
-      fetchEnquiries();
-    } else if (activeTab === 'DASHBOARD') {
+    if (activeTab === 'HOME') {
       fetchKpis();
-    } else if (activeTab === 'TECHNICIANS') {
-      fetchTechnicians();
-    } else if (activeTab === 'WORK_ORDERS') {
+    } else if (activeTab === 'SITES') {
+      fetchClients();
+      fetchEquipments();
+    } else if (activeTab === 'REPAIRS') {
       fetchWorkOrders();
     } else if (activeTab === 'INSPECTIONS') {
       fetchInspections();
+    } else if (activeTab === 'SETTINGS') {
+      fetchEnquiries();
+      fetchTechnicians();
     }
   }, [activeTab, equipFilterBuilding, equipSearch, enquiryStatusFilter]);
 
@@ -452,8 +458,11 @@ export default function AdminDashboardPage() {
           email: '',
           buildingName: '',
           address: '',
-          complianceCycle: 'Delhi NCR Statutory Form-B (Half-Yearly)',
-          cycleIntervalMos: 6,
+          state: 'Delhi',
+          reportingCycle: 'Quarterly',
+          complianceRuleName: '',
+          complianceCycle: 'Quarterly',
+          cycleIntervalMos: 3,
         });
         fetchData();
       }
@@ -478,7 +487,7 @@ export default function AdminDashboardPage() {
       const resData = await res.json();
       if (resData.success) {
         setBulkAddModalOpen(null);
-        showToast(`Generated ${resData.count} equipment QR units for ${bulkAddModalOpen.name}`);
+        showToast(`Added ${resData.count} fire equipment items for ${bulkAddModalOpen.name}`);
         fetchData();
         fetchEquipments();
       }
@@ -638,13 +647,17 @@ export default function AdminDashboardPage() {
 
   // Data Manage: Wipe All Demo Data
   const handleWipeAllDemo = async () => {
-    if (!confirm('CAUTION: This will delete ALL clients, buildings, and equipment from the database so you can start with a 100% clean slate. Continue?')) return;
+    const confirmation = prompt('DANGER: This will permanently delete all demo companies, clients, buildings, and equipment. Type DELETE to confirm:');
+    if (confirmation !== 'DELETE') {
+      alert('Wipe cancelled. Confirmation word did not match "DELETE".');
+      return;
+    }
     try {
       setLoading(true);
       const res = await fetch('/api/admin/data-manage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'WIPE_ALL_DEMO' }),
+        body: JSON.stringify({ action: 'WIPE_ALL_DEMO', confirmation: 'DELETE' }),
       });
       const json = await res.json();
       if (json.success) {
@@ -652,6 +665,8 @@ export default function AdminDashboardPage() {
         fetchData();
         fetchClients();
         fetchEquipments();
+      } else {
+        alert(json.error || 'Failed to wipe data');
       }
     } catch (e) {
       console.error(e);
@@ -720,30 +735,31 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Admin OS Sidebar */}
+      {/* Sidebar */}
       <AdminSidebar
         activeTab={activeTab}
         onSelectTab={(tab) => {
           setActiveTab(tab);
           setMobileSidebarOpen(false);
         }}
-        onOpenExport={() => handleOpenExport()}
-        onOpenImport={() => handleOpenImport()}
-        unreadLeadsCount={enquiriesList.filter((e) => e.status === 'NEW').length}
-        subscription={subscriptionData}
         isMobileOpen={mobileSidebarOpen}
         onCloseMobile={() => setMobileSidebarOpen(false)}
-        onLogout={handleLogout}
         company={company}
         userEmail={data?.user?.email}
         userProfile={data?.profile}
+        isPlatformOwner={data?.isPlatformOwner}
+        onLogout={handleLogout}
+        openRepairsCount={kpis.openWorkOrders}
+        unreadLeadsCount={enquiriesList.filter((e) => e.status === 'NEW').length}
+        isDarkMode={theme === 'dark'}
+        onToggleDarkMode={toggleTheme}
       />
 
       {/* Main Content Area */}
       <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-6 overflow-y-auto">
         
         {/* Top Header Bar */}
-        <div className="rounded-2xl bg-white border border-[#DCE7F2] p-4 sm:p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-900/90 dark:border-slate-800 dark:shadow-2xl">
+        <div className="rounded-2xl bg-white border border-[#DCE7F2] p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-900/90 dark:border-slate-800 dark:shadow-2xl">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileSidebarOpen(true)}
@@ -755,35 +771,39 @@ export default function AdminDashboardPage() {
 
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-[#007DB8] dark:text-slate-400">Admin OS</span>
+                <span className="text-xs font-semibold text-[#007DB8] dark:text-slate-400">VigilAMC</span>
                 <span className="text-slate-400 dark:text-slate-600">/</span>
                 <h1 className="text-lg sm:text-xl font-black text-[#073F8F] dark:text-white tracking-tight">
-                  {activeTab === 'DASHBOARD' && 'Executive Overview'}
-                  {activeTab === 'AGENCY' && 'Agency Profile & Subscription'}
-                  {activeTab === 'ADMIN_USERS' && 'Admin Users & Roles'}
-                  {activeTab === 'TECHNICIANS' && 'Technician Workforce'}
-                  {activeTab === 'CLIENTS' && 'Client Societies & Accounts'}
-                  {activeTab === 'BUILDINGS' && 'Buildings & Towers'}
-                  {activeTab === 'FIRE_ASSETS' && 'Fire Assets & Inventory'}
-                  {activeTab === 'INSPECTIONS' && 'Inspection Logs & Compliance'}
-                  {activeTab === 'WORK_ORDERS' && 'Work Orders & Dispatch'}
-                  {activeTab === 'REPORTS' && 'Statutory Reports & Form-B'}
-                  {activeTab === 'SETTINGS' && 'System Settings & Inquiries'}
+                  {activeTab === 'HOME' && 'Home'}
+                  {activeTab === 'SITES' && 'Sites & Fire Equipment'}
+                  {activeTab === 'INSPECTIONS' && 'Field Inspections'}
+                  {activeTab === 'REPAIRS' && 'Repairs & Work Orders'}
+                  {activeTab === 'REPORTS' && 'Compliance Reports'}
+                  {activeTab === 'SETTINGS' && 'Team & Agency Settings'}
                 </h1>
               </div>
               <p className="text-xs text-[#475569] dark:text-slate-400 mt-0.5">
-                Welcome back, <strong className="text-slate-800 dark:text-slate-200 font-semibold">{userFirstName}</strong>! • Managing compliance for <strong className="text-slate-800 dark:text-slate-200 font-semibold">{agencyName}</strong> • License:{' '}
-                <strong className="text-slate-800 dark:text-slate-300 font-semibold">{licenseNo}</strong>
+                Managing operations for <strong className="text-slate-800 dark:text-slate-200 font-semibold">{agencyName}</strong>
+                {licenseNo && <> &bull; License: <strong className="text-slate-800 dark:text-slate-300 font-semibold">{licenseNo}</strong></>}
               </p>
             </div>
           </div>
 
-          {/* Quick Actions & Theme Switcher */}
+          {/* Quick Actions, Theme Switcher & Feedback */}
           <div className="flex items-center gap-2.5 flex-wrap self-end md:self-auto">
+            <button
+              onClick={() => setFeedbackModalOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#EAF6FF] hover:bg-[#d0ebff] text-[#073F8F] border border-[#007DB8]/30 text-xs font-bold transition-all shadow-xs dark:bg-amber-500/10 dark:hover:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40"
+              title="Give product feedback"
+            >
+              <MessageSquare className="w-4 h-4 text-[#007DB8] dark:text-amber-400" />
+              <span>Give Feedback</span>
+            </button>
+
             {/* Theme Toggle (Light / Dark Mode) */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-amber-400 dark:border-slate-700 transition-all shadow-sm"
+              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-amber-400 dark:border-slate-700 transition-all shadow-xs"
               title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
               aria-label="Toggle Theme"
             >
@@ -791,35 +811,9 @@ export default function AdminDashboardPage() {
             </button>
 
             <button
-              onClick={() => handleOpenImport('FIRE_ASSETS')}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#EAF6FF] hover:bg-[#d0ebff] text-[#073F8F] border border-[#007DB8]/30 text-xs font-bold transition-all shadow-sm dark:bg-amber-500/10 dark:hover:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40"
-              title="Import Existing Data from Excel (.xlsx)"
-            >
-              <FileSpreadsheet className="w-4 h-4 text-[#007DB8] dark:text-amber-400" />
-              <span>Import Excel</span>
-            </button>
-
-            <button
-              onClick={() => handleOpenExport()}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-sm dark:bg-emerald-600/20 dark:hover:bg-emerald-600/30 dark:text-emerald-300 dark:border-emerald-500/40"
-              title="Export Current View Data to Excel (.xlsx)"
-            >
-              <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Export Excel</span>
-            </button>
-
-            <Link
-              href="/assets/print-qr"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-[#DCE7F2] text-xs font-bold transition-all shadow-sm dark:bg-slate-950 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-800 hover:border-[#007DB8]/40"
-            >
-              <Printer className="w-4 h-4 text-[#007DB8] dark:text-amber-400" />
-              <span className="hidden sm:inline">Print QR Labels</span>
-            </Link>
-
-            <button
               onClick={handleLogout}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold transition-all shadow-sm dark:bg-red-950/40 dark:hover:bg-red-900/60 dark:text-red-300 dark:border-red-800/50"
-              title="Sign Out of Admin OS"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold transition-all shadow-xs dark:bg-red-950/40 dark:hover:bg-red-900/60 dark:text-red-300 dark:border-red-800/50"
+              title="Sign Out"
             >
               <LogOut className="w-4 h-4 text-red-600 dark:text-red-400" />
               <span className="hidden sm:inline">Logout</span>
@@ -828,250 +822,193 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* =========================================================================
-            VIEW: DASHBOARD (EXECUTIVE OVERVIEW WITH 8 REAL DB KPIS)
+            VIEW 1: HOME (OVERVIEW SCREEN)
         ========================================================================= */}
-        {activeTab === 'DASHBOARD' && (
+        {activeTab === 'HOME' && (
           <DashboardOverview
-            kpis={kpis}
-            subscription={subscriptionData}
+            kpis={{
+              overdueCount: summary?.overdueEquipments || summary?.overdueBuildings || 0,
+              dueSoonCount: summary?.dueSoonEquipments || summary?.dueSoonBuildings || 0,
+              openRepairsCount: kpis.openWorkOrders,
+              inspectionsThisWeek: kpis.dueInspections,
+              totalEquipments: summary?.totalEquipments || kpis.totalEquipments,
+              totalBuildings: summary?.totalBuildings || kpis.totalBuildings,
+              activeTechnicians: kpis.activeTechnicians,
+            }}
+            company={company}
             buildings={buildings}
-            onNavigate={(tab) => setActiveTab(tab)}
-            onOpenExport={() => handleOpenExport('FIRE_ASSETS')}
+            onNavigateTab={(tab: any) => {
+              if (['HOME', 'SITES', 'INSPECTIONS', 'REPAIRS', 'REPORTS', 'SETTINGS'].includes(tab)) {
+                setActiveTab(tab);
+              }
+            }}
+            onAddEquipment={() => {
+              if (buildings.length > 0) {
+                setSingleAddEquipModalOpen(buildings[0]);
+              } else {
+                setAddBuildingModalOpen(true);
+              }
+            }}
+            onCreateRepairJob={() => {
+              setActiveTab('REPAIRS');
+            }}
+            onOpenFeedback={() => setFeedbackModalOpen(true)}
             onOpenImport={() => handleOpenImport('FIRE_ASSETS')}
           />
         )}
 
         {/* =========================================================================
-            VIEW: AGENCY & SUBSCRIPTION PLAN TIER
+            VIEW 2: SITES (EQUIPMENT, BUILDINGS & CLIENT SOCIETIES)
         ========================================================================= */}
-        {activeTab === 'AGENCY' && (
-          <div className="space-y-8">
-            <div className="rounded-2xl bg-white border border-[#DCE7F2] shadow-sm p-5 sm:p-6 space-y-4 dark:bg-slate-900/90 dark:border-slate-800 dark:shadow-2xl">
-              <div className="flex items-center justify-between border-b border-[#DCE7F2] pb-3 dark:border-slate-800">
-                <div>
-                  <h2 className="text-base font-bold text-[#073F8F] flex items-center gap-2 dark:text-white">
-                    <Building2 className="w-5 h-5 text-[#007DB8] dark:text-amber-400" />
-                    <span>Agency Organization Profile</span>
-                  </h2>
-                  <p className="text-xs text-[#475569] mt-0.5 dark:text-slate-400">
-                    Official statutory credentials printed on Delhi Fire Service &amp; NBC inspection certificates.
-                  </p>
-                </div>
-              </div>
-
-              <form onSubmit={handleSaveCompany} className="p-5 rounded-2xl bg-[#F8FAFC] border border-[#DCE7F2] space-y-4 text-xs dark:bg-slate-950/80 dark:border-slate-800">
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Company / Agency Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={companyForm.name}
-                    onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
-                    placeholder="e.g. National Fire Safety & AMC Services"
-                    className="w-full bg-white border border-[#DCE7F2] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#007DB8] font-medium shadow-sm dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Govt. Fire License Number *</label>
-                    <input
-                      type="text"
-                      required
-                      value={companyForm.licenseNumber}
-                      onChange={(e) => setCompanyForm({ ...companyForm, licenseNumber: e.target.value })}
-                      placeholder="e.g. DL/FIRE/LIC/2026/042"
-                      className="w-full bg-white border border-[#DCE7F2] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#007DB8] font-medium shadow-sm dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Emergency Dispatch Phone *</label>
-                    <input
-                      type="text"
-                      required
-                      value={companyForm.phone}
-                      onChange={(e) => setCompanyForm({ ...companyForm, phone: e.target.value })}
-                      placeholder="e.g. +91 98200 11223"
-                      className="w-full bg-white border border-[#DCE7F2] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#007DB8] font-medium shadow-sm dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Official Service Email *</label>
-                    <input
-                      type="email"
-                      required
-                      value={companyForm.email}
-                      onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })}
-                      placeholder="e.g. service@nationalfireamc.in"
-                      className="w-full bg-white border border-[#DCE7F2] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#007DB8] font-medium shadow-sm dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Registered Service Office Address</label>
-                    <input
-                      type="text"
-                      value={companyForm.address}
-                      onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })}
-                      placeholder="e.g. Plot 24, Okhla Industrial Area Phase III, New Delhi 110020"
-                      className="w-full bg-white border border-[#DCE7F2] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#007DB8] font-medium shadow-sm dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-[#007DB8] hover:bg-[#073F8F] text-white font-bold text-xs shadow transition-all hover:scale-[1.01] dark:bg-amber-500 dark:hover:bg-amber-400 dark:text-slate-950 dark:font-black"
-                >
-                  Save Agency Profile
-                </button>
-              </form>
-            </div>
-
-            <SubscriptionManager
-              showToast={showToast}
-              onPlanChanged={() => {
-                fetchSubscription();
-                fetchData();
-              }}
-            />
-          </div>
-        )}
-
-        {/* =========================================================================
-            VIEW: ADMIN USERS & RBAC PERMISSIONS
-        ========================================================================= */}
-        {activeTab === 'ADMIN_USERS' && (
-          <AdminUsersView currentUser={data?.user} company={company} />
-        )}
-
-        {/* =========================================================================
-            VIEW: TECHNICIAN MANAGEMENT (ROSTER, SEATS, ASSIGNMENTS, AUDIT)
-        ========================================================================= */}
-        {activeTab === 'TECHNICIANS' && (
+        {activeTab === 'SITES' && (
           <div className="space-y-6">
-            <div className="rounded-2xl bg-white border border-[#DCE7F2] p-4 shadow-sm flex items-center justify-between flex-wrap gap-3 dark:bg-slate-900/90 dark:border-slate-800 dark:shadow-xl">
-              <div className="flex items-center gap-2 overflow-x-auto">
-                {[
-                  { id: 'ROSTER', label: 'Technician Roster & Seats', icon: Users },
-                  { id: 'ASSIGNMENTS', label: 'Facility Assignments', icon: Building2 },
-                  { id: 'AUDIT_LOG', label: 'Compliance Audit Trail', icon: Clock },
-                ].map((sub) => {
-                  const Icon = sub.icon;
-                  const active = techSubTab === sub.id;
-                  return (
-                    <button
-                      key={sub.id}
-                      onClick={() => setTechSubTab(sub.id as any)}
-                      className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                        active
-                          ? 'bg-[#EAF6FF] text-[#073F8F] border border-[#007DB8]/30 font-bold shadow-sm dark:bg-amber-500 dark:text-slate-950 dark:font-black'
-                          : 'bg-slate-50 text-slate-600 hover:text-slate-900 border border-[#DCE7F2] dark:bg-slate-950 dark:text-slate-400 dark:hover:text-white dark:border-slate-800'
-                      }`}
-                    >
-                      <Icon className="w-3.5 h-3.5 text-[#007DB8] dark:text-inherit" />
-                      <span>{sub.label}</span>
-                    </button>
-                  );
-                })}
+            {/* Sites Sub-navigation and Quick Actions */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#DCE7F2] shadow-sm dark:bg-slate-900/60 dark:border-slate-800">
+              <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs dark:bg-slate-950 dark:border-slate-800">
+                <button
+                  onClick={() => setSitesSubTab('EQUIPMENT')}
+                  className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                    sitesSubTab === 'EQUIPMENT'
+                      ? 'bg-[#007DB8] text-white shadow-sm dark:bg-amber-500 dark:text-slate-950'
+                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  }`}
+                >
+                  Fire Equipment ({equipmentsList.length})
+                </button>
+                <button
+                  onClick={() => setSitesSubTab('BUILDINGS')}
+                  className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                    sitesSubTab === 'BUILDINGS'
+                      ? 'bg-[#007DB8] text-white shadow-sm dark:bg-amber-500 dark:text-slate-950'
+                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  }`}
+                >
+                  Buildings &amp; Sites ({buildings.length})
+                </button>
+                <button
+                  onClick={() => setSitesSubTab('CLIENTS')}
+                  className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                    sitesSubTab === 'CLIENTS'
+                      ? 'bg-[#007DB8] text-white shadow-sm dark:bg-amber-500 dark:text-slate-950'
+                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  }`}
+                >
+                  Client Accounts ({clientsList.length})
+                </button>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <button
-                  onClick={() => handleOpenExport('TECHNICIANS')}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-sm dark:bg-emerald-600/20 dark:hover:bg-emerald-600/30 dark:text-emerald-300 dark:border-emerald-500/30"
-                  title="Export Technicians to Excel (.xlsx)"
+                  onClick={() =>
+                    handleOpenImport(
+                      sitesSubTab === 'EQUIPMENT'
+                        ? 'FIRE_ASSETS'
+                        : sitesSubTab === 'BUILDINGS'
+                        ? 'BUILDINGS'
+                        : 'CLIENTS'
+                    )
+                  }
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#EAF6FF] hover:bg-[#d0ebff] text-[#073F8F] border border-[#007DB8]/30 text-xs font-bold transition-all shadow-sm dark:bg-amber-500/10 dark:hover:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40"
+                  title="Import from Excel (.xlsx)"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-[#007DB8] dark:text-amber-400" />
+                  <span>Import Excel</span>
+                </button>
+
+                <button
+                  onClick={() =>
+                    handleOpenExport(
+                      sitesSubTab === 'EQUIPMENT'
+                        ? 'FIRE_ASSETS'
+                        : sitesSubTab === 'BUILDINGS'
+                        ? 'BUILDINGS'
+                        : 'CLIENTS'
+                    )
+                  }
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-sm dark:bg-emerald-600/20 dark:hover:bg-emerald-600/30 dark:text-emerald-300 dark:border-emerald-500/40"
+                  title="Export to Excel (.xlsx)"
                 >
                   <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <span>Export Excel</span>
                 </button>
 
-                <button
-                  onClick={() => {
-                    fetchData();
-                    fetchSubscription();
-                  }}
-                  className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-[#DCE7F2] dark:bg-slate-950 dark:hover:bg-slate-800 dark:text-slate-400 dark:hover:text-white dark:border-slate-800"
-                  title="Refresh Technicians"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                </button>
+                {sitesSubTab === 'EQUIPMENT' ? (
+                  <button
+                    onClick={() => {
+                      if (buildings.length > 0) setSingleAddEquipModalOpen(buildings[0]);
+                      else setAddBuildingModalOpen(true);
+                    }}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#007DB8] to-[#073F8F] hover:from-[#006494] hover:to-[#011F48] text-white text-xs font-bold shadow-md transition-all"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add Equipment</span>
+                  </button>
+                ) : sitesSubTab === 'BUILDINGS' ? (
+                  <button
+                    onClick={() => setAddBuildingModalOpen(true)}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#007DB8] to-[#073F8F] hover:from-[#006494] hover:to-[#011F48] text-white text-xs font-bold shadow-md transition-all"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add Building</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setAddBuildingModalOpen(true)}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#007DB8] to-[#073F8F] hover:from-[#006494] hover:to-[#011F48] text-white text-xs font-bold shadow-md transition-all"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add Client</span>
+                  </button>
+                )}
               </div>
             </div>
 
-            {techSubTab === 'ROSTER' && (
-              <TechnicianManagement
-                onNavigateToSubscription={() => setActiveTab('AGENCY')}
-                showToast={showToast}
-                onOpenImport={() => handleOpenImport('TECHNICIANS')}
+            {sitesSubTab === 'EQUIPMENT' && (
+              <FireAssetsView
+                equipmentsList={equipmentsList}
+                buildings={buildings}
+                equipFilterBuilding={equipFilterBuilding}
+                setEquipFilterBuilding={setEquipFilterBuilding}
+                equipSearch={equipSearch}
+                setEquipSearch={setEquipSearch}
+                onEditEquipment={(eq) => setEditEquipmentModal(eq)}
+                onDeleteEquipment={handleDeleteEquipment}
+                onOpenExport={() => handleOpenExport('FIRE_ASSETS')}
+                onOpenImport={() => handleOpenImport('FIRE_ASSETS')}
               />
             )}
 
-            {techSubTab === 'ASSIGNMENTS' && (
-              <TechnicianAssignments showToast={showToast} />
+            {sitesSubTab === 'BUILDINGS' && (
+              <BuildingsView
+                buildings={buildings}
+                summary={summary}
+                expandedBuildingId={expandedBuildingId}
+                setExpandedBuildingId={setExpandedBuildingId}
+                onAddBuilding={() => setAddBuildingModalOpen(true)}
+                onEditBuilding={(b) => setEditBuildingModal(b)}
+                onDeleteBuilding={handleDeleteBuilding}
+                onBulkAdd={(b) => setBulkAddModalOpen(b)}
+                onSingleAdd={(b) => setSingleAddEquipModalOpen(b)}
+                onOpenExport={() => handleOpenExport('BUILDINGS')}
+                onOpenImport={() => handleOpenImport('BUILDINGS')}
+              />
             )}
 
-            {techSubTab === 'AUDIT_LOG' && (
-              <TechnicianActivityLog />
+            {sitesSubTab === 'CLIENTS' && (
+              <ClientsView
+                clientsList={clientsList}
+                onAddClient={() => setAddBuildingModalOpen(true)}
+                onEditClient={(c) => setEditClientModal(c)}
+                onDeleteClient={handleDeleteClient}
+                onOpenExport={() => handleOpenExport('CLIENTS')}
+                onOpenImport={() => handleOpenImport('CLIENTS')}
+              />
             )}
           </div>
         )}
 
         {/* =========================================================================
-            VIEW: CLIENT SOCIETIES & ACCOUNTS
-        ========================================================================= */}
-        {activeTab === 'CLIENTS' && (
-          <ClientsView
-            clientsList={clientsList}
-            onAddClient={() => setAddBuildingModalOpen(true)}
-            onEditClient={(c) => setEditClientModal(c)}
-            onDeleteClient={handleDeleteClient}
-            onOpenExport={() => handleOpenExport('CLIENTS')}
-            onOpenImport={() => handleOpenImport('CLIENTS')}
-          />
-        )}
-
-        {/* =========================================================================
-            VIEW: BUILDINGS & TOWERS
-        ========================================================================= */}
-        {activeTab === 'BUILDINGS' && (
-          <BuildingsView
-            buildings={buildings}
-            summary={summary}
-            expandedBuildingId={expandedBuildingId}
-            setExpandedBuildingId={setExpandedBuildingId}
-            onAddBuilding={() => setAddBuildingModalOpen(true)}
-            onEditBuilding={(b) => setEditBuildingModal(b)}
-            onDeleteBuilding={handleDeleteBuilding}
-            onBulkAdd={(b) => setBulkAddModalOpen(b)}
-            onSingleAdd={(b) => setSingleAddEquipModalOpen(b)}
-            onOpenExport={() => handleOpenExport('BUILDINGS')}
-            onOpenImport={() => handleOpenImport('BUILDINGS')}
-          />
-        )}
-
-        {/* =========================================================================
-            VIEW: FIRE ASSETS & QR INVENTORY
-        ========================================================================= */}
-        {activeTab === 'FIRE_ASSETS' && (
-          <FireAssetsView
-            equipmentsList={equipmentsList}
-            buildings={buildings}
-            equipFilterBuilding={equipFilterBuilding}
-            setEquipFilterBuilding={setEquipFilterBuilding}
-            equipSearch={equipSearch}
-            setEquipSearch={setEquipSearch}
-            onEditEquipment={(eq) => setEditEquipmentModal(eq)}
-            onDeleteEquipment={handleDeleteEquipment}
-            onOpenExport={() => handleOpenExport('FIRE_ASSETS')}
-            onOpenImport={() => handleOpenImport('FIRE_ASSETS')}
-          />
-        )}
-
-        {/* =========================================================================
-            VIEW: INSPECTION LOGS & COMPLIANCE
+            VIEW 3: FIELD INSPECTIONS
         ========================================================================= */}
         {activeTab === 'INSPECTIONS' && (
           <div className="space-y-4">
@@ -1093,15 +1030,15 @@ export default function AdminDashboardPage() {
         )}
 
         {/* =========================================================================
-            VIEW: WORK ORDERS & DISPATCH
+            VIEW 4: REPAIRS (WORK ORDERS)
         ========================================================================= */}
-        {activeTab === 'WORK_ORDERS' && (
+        {activeTab === 'REPAIRS' && (
           <div className="space-y-4">
             <div className="flex justify-end">
               <button
                 onClick={() => handleOpenExport('WORK_ORDERS')}
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-sm dark:bg-emerald-600/20 dark:hover:bg-emerald-600/30 dark:text-emerald-300 dark:border-emerald-500/30"
-                title="Export Work Orders to Excel (.xlsx)"
+                title="Export Repairs to Excel (.xlsx)"
               >
                 <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span>Export Excel</span>
@@ -1115,7 +1052,7 @@ export default function AdminDashboardPage() {
         )}
 
         {/* =========================================================================
-            VIEW: STATUTORY REPORTS & FORM-B
+            VIEW 5: COMPLIANCE REPORTS (FORM-B)
         ========================================================================= */}
         {activeTab === 'REPORTS' && (
           <div className="space-y-4">
@@ -1134,12 +1071,19 @@ export default function AdminDashboardPage() {
         )}
 
         {/* =========================================================================
-            VIEW: SETTINGS (LEADS, TOOLS & AGENCY PROFILE)
+            VIEW 6: TEAM & SETTINGS
         ========================================================================= */}
         {activeTab === 'SETTINGS' && (
           <SettingsView
-            subTab={settingsSubTab}
-            setSubTab={setSettingsSubTab}
+            companyForm={companyForm}
+            setCompanyForm={setCompanyForm}
+            handleSaveCompany={handleSaveCompany}
+            isPlatformOwner={data?.isPlatformOwner}
+            currentUser={data?.user}
+            company={company}
+            showToast={showToast}
+            onOpenImport={(type) => handleOpenImport(type || 'CLIENTS')}
+            onOpenExport={(type) => handleOpenExport(type || 'CLIENTS')}
             enquiriesList={enquiriesList}
             enquiryStatusFilter={enquiryStatusFilter}
             setEnquiryStatusFilter={setEnquiryStatusFilter}
@@ -1148,10 +1092,6 @@ export default function AdminDashboardPage() {
             onUpdateEnquiryStatus={handleUpdateEnquiryStatus}
             onWipeAllDemo={handleWipeAllDemo}
             onSeedCleanData={handleSeedCleanData}
-            companyForm={companyForm}
-            setCompanyForm={setCompanyForm}
-            handleSaveCompany={handleSaveCompany}
-            onOpenImport={(type) => handleOpenImport(type || 'CLIENTS')}
           />
         )}
 
@@ -1258,18 +1198,46 @@ export default function AdminDashboardPage() {
                     className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:placeholder-slate-500 dark:focus:border-amber-500"
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">State / Union Territory *</label>
+                    <select
+                      value={buildingForm.state}
+                      onChange={(e) => setBuildingForm({ ...buildingForm, state: e.target.value })}
+                      className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
+                    >
+                      {INDIAN_STATES_AND_UTS.map((st) => (
+                        <option key={st} value={st}>{st}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Reporting Cycle *</label>
+                    <select
+                      value={buildingForm.reportingCycle}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const mos = val === 'Monthly' ? 1 : val === 'Quarterly' ? 3 : val === 'Half-Yearly' ? 6 : 12;
+                        setBuildingForm({ ...buildingForm, reportingCycle: val, complianceCycle: val, cycleIntervalMos: mos });
+                      }}
+                      className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
+                    >
+                      {REPORTING_CYCLES.map((rc) => (
+                        <option key={rc.value} value={rc.value}>{rc.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Statutory Compliance Cycle</label>
-                  <select
-                    value={buildingForm.complianceCycle}
-                    onChange={(e) => setBuildingForm({ ...buildingForm, complianceCycle: e.target.value })}
-                    className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
-                  >
-                    <option value="Delhi NCR Statutory Form-B (Half-Yearly)">Delhi NCR Statutory Form-B (DFS / NBC 2016)</option>
-                    <option value="Delhi Fire NOC Rule 33 (Annual)">Delhi Fire NOC Rule 33 (Annual)</option>
-                    <option value="Haryana Fire Safety Rules (Annual)">Haryana Fire Safety Rules (Annual)</option>
-                    <option value="National Building Code Part 4 (Annual)">National Building Code Part 4 (Annual)</option>
-                  </select>
+                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Local Fire Rule / Format (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Rule 33, Form-B, NBC 2016, or state mandate"
+                    value={buildingForm.complianceRuleName}
+                    onChange={(e) => setBuildingForm({ ...buildingForm, complianceRuleName: e.target.value })}
+                    className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#007DB8] focus:outline-none dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:placeholder-slate-500 dark:focus:border-amber-500"
+                  />
                 </div>
               </div>
 
@@ -1344,7 +1312,7 @@ export default function AdminDashboardPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">QR Code Prefix</label>
+                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Asset ID / Tag Prefix</label>
                   <input
                     type="text"
                     value={equipmentForm.prefix}
@@ -1402,7 +1370,7 @@ export default function AdminDashboardPage() {
                   type="submit"
                   className="px-5 py-2.5 rounded-xl bg-[#007DB8] hover:bg-[#073F8F] text-white font-bold shadow-md hover:scale-[1.02] transition-all dark:bg-gradient-to-r dark:from-amber-500 dark:to-orange-500 dark:text-slate-950 dark:font-black"
                 >
-                  Generate {equipmentForm.count} QR Tags
+                  Create {equipmentForm.count} Equipment Records
                 </button>
               </div>
             </form>
@@ -1418,7 +1386,7 @@ export default function AdminDashboardPage() {
           <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#DCE7F2] text-slate-900 dark:bg-[#0d1424] dark:border-slate-700/80 dark:text-white">
             <div className="flex items-center justify-between border-b border-[#DCE7F2] pb-3 dark:border-slate-800">
               <div>
-                <h3 className="font-bold text-[#073F8F] text-base dark:text-white">Add Single Equipment Tag</h3>
+                <h3 className="font-bold text-[#073F8F] text-base dark:text-white">Add Single Fire Equipment</h3>
                 <p className="text-xs text-[#007DB8] font-semibold mt-0.5 dark:text-amber-400">{singleAddEquipModalOpen.name}</p>
               </div>
               <button onClick={() => setSingleAddEquipModalOpen(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">✕</button>
@@ -1426,7 +1394,7 @@ export default function AdminDashboardPage() {
 
             <form onSubmit={handleSingleAddEquipment} className="space-y-4 text-xs">
               <div>
-                <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Custom QR Code ID *</label>
+                <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Asset ID / Serial Number *</label>
                 <input
                   type="text"
                   required
@@ -1598,18 +1566,42 @@ export default function AdminDashboardPage() {
                   className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
                 />
               </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">State / UT</label>
+                  <select
+                    value={editBuildingModal.state || 'Delhi'}
+                    onChange={(e) => setEditBuildingModal({ ...editBuildingModal, state: e.target.value })}
+                    className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+                  >
+                    {INDIAN_STATES_AND_UTS.map((st) => (
+                      <option key={st} value={st}>{st}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Reporting Cycle</label>
+                  <select
+                    value={editBuildingModal.reportingCycle || 'Quarterly'}
+                    onChange={(e) => setEditBuildingModal({ ...editBuildingModal, reportingCycle: e.target.value, complianceCycle: e.target.value })}
+                    className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+                  >
+                    {REPORTING_CYCLES.map((rc) => (
+                      <option key={rc.value} value={rc.value}>{rc.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               <div>
-                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Compliance Cycle</label>
-                <select
-                  value={editBuildingModal.complianceCycle}
-                  onChange={(e) => setEditBuildingModal({ ...editBuildingModal, complianceCycle: e.target.value })}
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Local Fire Rule / Format (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Rule 33, Form-B, NBC 2016"
+                  value={editBuildingModal.complianceRuleName || ''}
+                  onChange={(e) => setEditBuildingModal({ ...editBuildingModal, complianceRuleName: e.target.value })}
                   className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2.5 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
-                >
-                  <option value="Delhi NCR Statutory Form-B (Half-Yearly)">Delhi NCR Statutory Form-B (Half-Yearly)</option>
-                  <option value="Delhi Fire NOC Rule 33 (Annual)">Delhi Fire NOC Rule 33 (Annual)</option>
-                  <option value="Haryana Fire Safety Rules (Annual)">Haryana Fire Safety Rules (Annual)</option>
-                  <option value="National Building Code Part 4 (Annual)">National Building Code Part 4 (Annual)</option>
-                </select>
+                />
               </div>
 
               <div className="pt-2 flex justify-end gap-2">
@@ -1645,7 +1637,7 @@ export default function AdminDashboardPage() {
 
             <form onSubmit={handleUpdateEquipment} className="space-y-3">
               <div>
-                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">QR Code Tag *</label>
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Asset ID / Serial Number *</label>
                 <input
                   type="text"
                   required
@@ -1702,6 +1694,17 @@ export default function AdminDashboardPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* =========================================================================
+          MODAL 7: FEEDBACK
+      ========================================================================= */}
+      {feedbackModalOpen && (
+        <FeedbackModal
+          isOpen={feedbackModalOpen}
+          onClose={() => setFeedbackModalOpen(false)}
+          userEmail={data?.user?.email}
+        />
       )}
 
       </main>

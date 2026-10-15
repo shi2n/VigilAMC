@@ -115,6 +115,9 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
+    const { requirePlatformOwner } = await import('@/lib/auth');
+    await requirePlatformOwner(request);
+
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
     const type = searchParams.get('type');
@@ -132,12 +135,16 @@ export async function GET(request: Request) {
     return NextResponse.json({ enquiries });
   } catch (error: any) {
     console.error('Error fetching enquiries:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const status = error.message?.startsWith('UNAUTHORIZED') ? 401 : error.message?.startsWith('FORBIDDEN') ? 403 : 500;
+    return NextResponse.json({ error: error.message }, { status });
   }
 }
 
 export async function PATCH(request: Request) {
   try {
+    const { requirePlatformOwner } = await import('@/lib/auth');
+    await requirePlatformOwner(request);
+
     const body = await request.json();
     const { id, status } = body;
 
@@ -153,6 +160,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ success: true, enquiry: updated });
   } catch (error: any) {
     console.error('Error updating enquiry status:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const status = error.message?.startsWith('UNAUTHORIZED') ? 401 : error.message?.startsWith('FORBIDDEN') ? 403 : 500;
+    return NextResponse.json({ error: error.message }, { status });
   }
 }

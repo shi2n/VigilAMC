@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { requireAdmin, logAuditActivity } from '@/lib/auth';
+import { requirePlatformOwner, logAuditActivity } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +11,7 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const auth = await requireAdmin(request);
+    const auth = await requirePlatformOwner(request);
     const { id } = params;
 
     if (!id) {

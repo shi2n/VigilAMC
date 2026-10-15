@@ -512,7 +512,7 @@ export default function LoginPage() {
         {/* Security Notice */}
         <div className="pt-2 border-t border-slate-100 flex items-center justify-center gap-1.5 text-slate-400 text-xs">
           <ShieldCheck className="w-4 h-4 text-[#0077B6]" />
-          <span>Encrypted with 256-bit Supabase Cloud Authentication</span>
+          <span>Secure sign-in</span>
         </div>
       </div>
     </div>
