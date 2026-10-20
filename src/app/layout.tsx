@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { SiteLayout } from "@/components/SiteLayout";
+import { SITE_CONFIG } from "@/lib/siteConfig";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://vigilamc.vercel.app"),
+  metadataBase: new URL(SITE_CONFIG.SITE_URL),
   title: "VigilAMC — Never Miss a Compliance Deadline Again | Fire Safety AMC Software India",
-  description: "Serving fire safety AMC teams and fire protection agencies across India. Track annual maintenance contracts, log GPS-verified inspections with location details and photos, and generate client-ready Form-B reports in minutes.",
+  description: "Serving fire safety AMC teams and fire protection agencies across India. Track annual maintenance contracts, log GPS-verified inspections with location details and photos, quote defect repairs, and generate client-ready Form-B reports in minutes.",
   keywords: [
     "Fire Safety AMC Software India",
     "Fire NOC Compliance India",
@@ -20,17 +21,25 @@ export const metadata: Metadata = {
     "IS 2190 Maintenance",
     "VigilAMC"
   ],
-  authors: [{ name: "Shaizan", url: "https://vigilamc.vercel.app" }],
-  creator: "VigilAMC",
-  publisher: "VigilAMC",
+  authors: [{ name: SITE_CONFIG.FOUNDER_NAME, url: SITE_CONFIG.SITE_URL }],
+  creator: SITE_CONFIG.COMPANY_NAME,
+  publisher: SITE_CONFIG.COMPANY_NAME,
   alternates: {
     canonical: "/",
   },
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "any" }
+    ],
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
   openGraph: {
     title: "VigilAMC — Never Miss a Compliance Deadline Again | Pan-India Fire Safety AMC Software",
-    description: "Serving fire safety AMC teams and fire protection agencies across India. Track annual maintenance contracts, log GPS-verified inspections with location details and photos, and generate client-ready Form-B reports in minutes.",
-    url: "https://vigilamc.vercel.app",
-    siteName: "VigilAMC",
+    description: "Serving fire safety AMC teams and fire protection agencies across India. Track annual maintenance contracts, log GPS-verified inspections with location details and photos, quote defect repairs, and generate client-ready Form-B reports in minutes.",
+    url: SITE_CONFIG.SITE_URL,
+    siteName: SITE_CONFIG.COMPANY_NAME,
     images: [
       {
         url: "/brag.jpg",
@@ -45,7 +54,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "VigilAMC — Never Miss a Compliance Deadline Again | Pan-India Fire Safety AMC Software",
-    description: "Serving fire safety AMC teams and fire protection agencies across India. Track annual maintenance contracts, log GPS-verified inspections with location details and photos, and generate client-ready Form-B reports in minutes.",
+    description: "Serving fire safety AMC teams and fire protection agencies across India. Track annual maintenance contracts, log GPS-verified inspections with location details and photos, quote defect repairs, and generate client-ready Form-B reports in minutes.",
     creator: "@vigilamc",
     images: ["/brag.jpg"],
   },

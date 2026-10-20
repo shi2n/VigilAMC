@@ -14,14 +14,14 @@ import {
   Building,
   User,
   ArrowRight,
-  MessageSquare,
-  Sparkles,
-  Layers,
-  AlertCircle,
+  MessageCircle,
+  FileSpreadsheet,
+  Lock,
   Linkedin,
   Instagram,
   Youtube
 } from 'lucide-react';
+import { SITE_CONFIG } from '@/lib/siteConfig';
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -29,7 +29,7 @@ export default function ContactPage() {
     email: '',
     phone: '',
     company: '',
-    facilityType: 'commercial',
+    facilityType: 'contractor',
     assetCount: '300-1000',
     preferredDate: '',
     preferredTime: '11:00 AM IST',
@@ -44,17 +44,13 @@ export default function ContactPage() {
   const validate = () => {
     const errs: Record<string, string> = {};
     if (!formData.fullName.trim()) errs.fullName = 'Full Name is required';
-    if (!formData.email.trim()) {
-      errs.email = 'Corporate email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errs.email = 'Please enter a valid work email address';
+    if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errs.email = 'Valid email address is required (e.g. sharmafire@gmail.com)';
     }
-    if (!formData.phone.trim()) {
-      errs.phone = 'Phone number is required';
-    } else if (formData.phone.replace(/[^0-9]/g, '').length < 8) {
-      errs.phone = 'Please enter a valid phone number with area code';
+    if (!formData.phone.trim() || formData.phone.replace(/[^0-9]/g, '').length < 8) {
+      errs.phone = 'Valid phone or WhatsApp number is required';
     }
-    if (!formData.company.trim()) errs.company = 'Company / Facility name is required';
+    if (!formData.company.trim()) errs.company = 'Agency / Company name is required';
     return errs;
   };
 
@@ -101,45 +97,35 @@ export default function ContactPage() {
     }
   };
 
-  const offices = [
-    {
-      city: 'New Delhi',
-      address: 'New Delhi 110092',
-      phone: '+91 83838 90483',
-      email: 'vigilamc@gmail.com',
-      hours: 'Mon - Sat: 9:00 AM - 7:00 PM IST',
-    },
-  ];
-
   return (
     <div className="w-full bg-white">
-      {/* Header Banner */}
+      {/* Header Banner: Framed for AMC Contractors */}
       <section className="bg-gradient-to-b from-ocean-50 to-white py-20 px-4 sm:px-6 lg:px-8 border-b border-slate-200">
         <div className="max-w-4xl mx-auto text-center">
           <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-white px-3.5 py-1.5 rounded-full border border-ocean-200 shadow-sm">
-            Connect With Our Compliance Engineers
+            Agency Onboarding &amp; Setup
           </span>
           <h1 className="text-4xl sm:text-5xl font-black text-[#023E8A] tracking-tight mt-4">
-            Schedule a Live Demo or Request a Free Audit
+            Schedule an Agency Demo or Request Workflow Setup
           </h1>
           <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
-            Speak directly with our certified fire safety advisors. We will review your equipment roster and demonstrate how VigilAMC automates your exact Form-B compliance flow.
+            Speak directly with our product team. We&apos;ll show you how to import your client asset rosters, configure mobile field checklists, and compile client-ready Form-B reports in minutes.
           </p>
         </div>
       </section>
 
-      {/* Main Form & Calendar Section */}
+      {/* Main Form & Contact Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-          {/* Left Column: Direct Info & Quick Schedule */}
+          {/* Left Column: Direct Info & Quick WhatsApp Option */}
           <div className="lg:col-span-5 space-y-8">
             <div className="corp-card p-6 bg-slate-50 border-ocean-200">
               <h3 className="text-base font-bold text-[#023E8A] flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-[#0077B6]" />
-                Direct Fire Safety Advisory Lines
+                Direct Agency Onboarding Support
               </h3>
               <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                Need urgent assistance ahead of an upcoming Fire Directorate inspection or Form-B renewal deadline? Reach our compliance desk directly:
+                Want to get started immediately or have questions about importing your Excel client rosters? Contact our founder desk directly:
               </p>
 
               <div className="mt-5 space-y-3.5 text-xs text-slate-700">
@@ -148,9 +134,26 @@ export default function ContactPage() {
                     <Phone className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-slate-400 block text-[10px] uppercase font-bold">Direct Phone / Helpline</span>
-                    <a href="tel:+918383890483" className="font-extrabold text-[#023E8A] text-sm hover:underline">
-                      +91 83838 90483
+                    <span className="text-slate-400 block text-[10px] uppercase font-bold">Helpline &amp; Calls</span>
+                    <a href={SITE_CONFIG.PHONE_TEL} className="font-extrabold text-[#023E8A] text-sm hover:underline">
+                      {SITE_CONFIG.PHONE_DISPLAY}
+                    </a>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shadow-sm">
+                    <MessageCircle className="w-4 h-4 fill-current" />
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-bold">WhatsApp Direct</span>
+                    <a
+                      href={SITE_CONFIG.WHATSAPP_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-extrabold text-emerald-700 hover:underline"
+                    >
+                      Chat on WhatsApp (+91 83838 90483)
                     </a>
                   </div>
                 </div>
@@ -161,8 +164,8 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[10px] uppercase font-bold">Email Inquiries</span>
-                    <a href="mailto:vigilamc@gmail.com" className="font-bold text-slate-800 hover:text-[#0077B6]">
-                      vigilamc@gmail.com
+                    <a href={`mailto:${SITE_CONFIG.CONTACT_EMAIL}`} className="font-bold text-slate-800 hover:text-[#0077B6]">
+                      {SITE_CONFIG.CONTACT_EMAIL}
                     </a>
                   </div>
                 </div>
@@ -172,11 +175,22 @@ export default function ContactPage() {
                     <Clock className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-slate-400 block text-[10px] uppercase font-bold">Response Commitment</span>
-                    <span className="font-semibold text-emerald-600">Within 15 minutes during business hours</span>
+                    <span className="text-slate-400 block text-[10px] uppercase font-bold">Support Hours</span>
+                    <span className="font-semibold text-slate-700">Mon &ndash; Sat: 9:00 AM &ndash; 7:00 PM IST</span>
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Non-Compete Guarantee Callout */}
+            <div className="corp-card p-6 bg-slate-900 text-white rounded-2xl border border-slate-800 space-y-3">
+              <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase tracking-wider">
+                <Lock className="w-4 h-4" />
+                <span>Partner Non-Compete Guarantee</span>
+              </div>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                VigilAMC is pure software for fire protection contractors. We never contact your client buildings, pitch renewals, or provide physical AMC services. Your agency data is 100% confidential.
+              </p>
             </div>
 
             {/* Official Social Media Channels */}
@@ -190,11 +204,11 @@ export default function ContactPage() {
                 </span>
               </div>
               <p className="text-xs text-slate-600 mb-4 leading-relaxed">
-                Follow our official company channels for fire compliance updates, Form-B statutory guides, and live demos:
+                Follow our official company channels for fire compliance updates and software release logs:
               </p>
               <div className="grid grid-cols-2 gap-2.5">
                 <a
-                  href="https://www.linkedin.com/company/vigilamc/"
+                  href={SITE_CONFIG.SOCIAL.LINKEDIN}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white border border-slate-200 hover:border-[#0A66C2] hover:bg-sky-50/50 transition-all text-xs font-semibold text-slate-700 hover:text-[#0A66C2] shadow-xs group"
@@ -209,7 +223,7 @@ export default function ContactPage() {
                 </a>
 
                 <a
-                  href="https://www.instagram.com/vigilamc"
+                  href={SITE_CONFIG.SOCIAL.INSTAGRAM}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white border border-slate-200 hover:border-pink-500 hover:bg-pink-50/40 transition-all text-xs font-semibold text-slate-700 hover:text-pink-600 shadow-xs group"
@@ -224,10 +238,10 @@ export default function ContactPage() {
                 </a>
 
                 <a
-                  href="https://x.com/vigilamc"
+                  href={SITE_CONFIG.SOCIAL.TWITTER}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white border border-slate-200 hover:border-slate-800 hover:bg-slate-100/60 transition-all text-xs font-semibold text-slate-700 hover:text-slate-900 shadow-xs group"
+                  className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white border border-slate-200 hover:border-slate-800 hover:bg-slate-100 transition-all text-xs font-semibold text-slate-700 hover:text-black shadow-xs group"
                 >
                   <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-800 group-hover:bg-black group-hover:text-white transition-colors shrink-0">
                     <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
@@ -241,7 +255,7 @@ export default function ContactPage() {
                 </a>
 
                 <a
-                  href="https://www.youtube.com/@vigilamc"
+                  href={SITE_CONFIG.SOCIAL.YOUTUBE}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white border border-slate-200 hover:border-red-500 hover:bg-red-50/40 transition-all text-xs font-semibold text-slate-700 hover:text-red-600 shadow-xs group"
@@ -256,55 +270,38 @@ export default function ContactPage() {
                 </a>
               </div>
             </div>
-
-            {/* Quick Testing Promise */}
-            <div className="p-6 rounded-2xl bg-gradient-to-br from-[#023E8A] to-[#0077B6] text-white space-y-3 shadow-lg">
-              <span className="text-xs font-bold text-cyan-200 uppercase tracking-wider">
-                Free Testing Program
-              </span>
-              <h4 className="text-lg font-bold text-white">
-                Free for Every Agency During Testing
-              </h4>
-              <ul className="space-y-1.5 text-xs text-cyan-100">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-cyan-300 shrink-0" />
-                  Full access to equipment registration and location notes
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-cyan-300 shrink-0" />
-                  Simple mobile inspection form with GPS and photo capture (in beta)
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-cyan-300 shrink-0" />
-                  Instant Form-B standardized PDF generation for your facilities
-                </li>
-              </ul>
-            </div>
           </div>
 
-          {/* Right Column: Contact & Demo Booking Form with Validation */}
+          {/* Right Column: Onboarding Form */}
           <div className="lg:col-span-7">
-            <div className="corp-card p-8 bg-white border-slate-200 shadow-xl">
+            <div className="corp-card p-8 sm:p-10 bg-white border border-slate-200 shadow-xl rounded-2xl">
               {isSubmitted ? (
-                <div className="py-12 text-center space-y-4 animate-in fade-in duration-300">
+                <div className="text-center py-10 space-y-4 animate-in fade-in duration-300">
                   <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
                     <CheckCircle2 className="w-10 h-10" />
                   </div>
                   <h3 className="text-2xl font-black text-[#023E8A]">
-                    Demo Booking Confirmed!
+                    Demo &amp; Onboarding Request Received!
                   </h3>
                   <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
-                    Thank you, <strong>{formData.fullName}</strong>. Your 15-minute live platform walkthrough has been scheduled for{' '}
-                    <strong>{formData.preferredTime}</strong>. A calendar invite and Google Meet link have been sent to{' '}
-                    <strong>{formData.email}</strong>.
+                    Thank you, <strong>{formData.fullName}</strong>. Our onboarding team will connect with you at <strong>{formData.email}</strong> or on WhatsApp at <strong>{formData.phone}</strong>.
                   </p>
-                  <div className="p-4 bg-ocean-50 rounded-xl border border-ocean-200 text-xs text-[#023E8A] max-w-md mx-auto text-left">
+                  <div className="p-4 bg-ocean-50 rounded-xl border border-ocean-200 text-xs text-[#023E8A] max-w-md mx-auto text-left space-y-1">
                     <p className="font-bold">Next Steps:</p>
-                    <p className="text-slate-600 mt-1">
-                      Our product & compliance team will connect with you to demonstrate asset registration, GPS-verified mobile inspections, and Form-B PDF generation tailored to <strong>{formData.company}</strong>.
+                    <p className="text-slate-600 text-[11px]">
+                      We will review your equipment count, set up your trial workspace, and help import a sample building equipment roster.
                     </p>
                   </div>
-                  <div className="pt-4">
+                  <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <a
+                      href={SITE_CONFIG.WHATSAPP_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-[#25D366] hover:bg-[#20BA5C] text-white text-xs font-bold rounded-xl transition-colors"
+                    >
+                      <MessageCircle className="w-4 h-4 fill-current" />
+                      <span>Chat on WhatsApp Directly</span>
+                    </a>
                     <button
                       onClick={() => {
                         setIsSubmitted(false);
@@ -313,14 +310,14 @@ export default function ContactPage() {
                           email: '',
                           phone: '',
                           company: '',
-                          facilityType: 'commercial',
+                          facilityType: 'contractor',
                           assetCount: '300-1000',
                           preferredDate: '',
                           preferredTime: '11:00 AM IST',
                           message: '',
                         });
                       }}
-                      className="px-6 py-2.5 bg-[#0077B6] hover:bg-[#023E8A] text-white text-xs font-bold rounded-xl transition-colors"
+                      className="w-full sm:w-auto px-6 py-2.5 bg-[#0077B6] hover:bg-[#023E8A] text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
                     >
                       Submit Another Inquiry
                     </button>
@@ -330,17 +327,17 @@ export default function ContactPage() {
                 <form onSubmit={handleSubmit} className="space-y-5" noValidate>
                   <div>
                     <h3 className="text-xl font-extrabold text-[#023E8A]">
-                      Request Live Walkthrough &amp; Free AMC Health Check
+                      Book 15-Minute Agency Walkthrough
                     </h3>
                     <p className="text-xs text-slate-500 mt-1">
-                      Fill out the details below and our team will prepare a customized demonstration.
+                      See how VigilAMC sets up your client buildings, logs GPS inspections, and compiles Form-B reports.
                     </p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Full Name *
+                        Contact Name *
                       </label>
                       <div className="relative">
                         <User className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
@@ -359,13 +356,13 @@ export default function ContactPage() {
 
                     <div>
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Work Email *
+                        Email Address *
                       </label>
                       <div className="relative">
                         <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                         <input
                           type="email"
-                          placeholder="ramesh@company.com"
+                          placeholder="e.g. sharmafire@gmail.com"
                           value={formData.email}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                           className={`w-full pl-9 pr-3 py-2 text-sm rounded-lg border ${
@@ -380,7 +377,7 @@ export default function ContactPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Phone / Mobile *
+                        Phone / WhatsApp *
                       </label>
                       <div className="relative">
                         <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
@@ -399,13 +396,13 @@ export default function ContactPage() {
 
                     <div>
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Company / Facility Name *
+                        Agency / Company Name *
                       </label>
                       <div className="relative">
                         <Building className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                         <input
                           type="text"
-                          placeholder="e.g. Apex Fire Engineering"
+                          placeholder="e.g. Apex Fire Protection Services"
                           value={formData.company}
                           onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                           className={`w-full pl-9 pr-3 py-2 text-sm rounded-lg border ${
@@ -420,18 +417,18 @@ export default function ContactPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Facility Occupancy Type
+                        Agency Profile
                       </label>
                       <select
                         value={formData.facilityType}
                         onChange={(e) => setFormData({ ...formData, facilityType: e.target.value })}
                         className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
                       >
-                        <option value="commercial">Commercial Tower / IT Park</option>
-                        <option value="hospital">Healthcare / Hospital</option>
-                        <option value="industrial">Manufacturing &amp; Logistics</option>
-                        <option value="residential">High-Rise Residential Society</option>
                         <option value="contractor">Fire Safety AMC Agency (Multi-Site)</option>
+                        <option value="licensed-agency">State Licensed Fire Agency (Form-B Signatory)</option>
+                        <option value="commercial">Commercial Tower / IT Park Facility Team</option>
+                        <option value="hospital">Hospital / Healthcare Campus</option>
+                        <option value="residential">Residential Society Facility Management</option>
                       </select>
                     </div>
 
@@ -452,7 +449,6 @@ export default function ContactPage() {
                     </div>
                   </div>
 
-                  {/* Preferred Time Slot Simulator */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
@@ -485,11 +481,11 @@ export default function ContactPage() {
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Specific Requirements or Current Challenges
+                      Current Tracking Setup or Questions (Optional)
                     </label>
                     <textarea
                       rows={3}
-                      placeholder="e.g. Currently tracking 850 extinguishers on Excel across 6 buildings. Need Form-B automated for our November audit."
+                      placeholder="e.g. Currently tracking 850 extinguishers on Excel across 6 buildings. Want to see how Form-B PDF reports are compiled."
                       value={formData.message}
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                       className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
@@ -506,19 +502,19 @@ export default function ContactPage() {
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full py-3.5 px-6 bg-[#0077B6] hover:bg-[#023E8A] disabled:bg-slate-400 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                      className="w-full py-3.5 px-6 bg-[#0077B6] hover:bg-[#023E8A] disabled:bg-slate-400 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
                     >
                       {isSubmitting ? (
                         <span>Reserving Your Live Session...</span>
                       ) : (
                         <>
-                          <span>Confirm 15-Minute Live Walkthrough</span>
+                          <span>Confirm 15-Minute Agency Demo</span>
                           <ArrowRight className="w-4 h-4" />
                         </>
                       )}
                     </button>
                     <p className="text-center text-[11px] text-slate-400 mt-2">
-                      Zero spam guarantee &bull; 100% confidential &bull; No credit card needed
+                      Zero spam guarantee &bull; 100% confidential &bull; Free Excel import for your first 3 buildings
                     </p>
                   </div>
                 </form>
@@ -528,57 +524,30 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* Corporate Office Location */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-50 border-t border-slate-200">
+      {/* Corporate Location */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-slate-50 border-t border-slate-200">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-white px-3 py-1 rounded-full border border-slate-200">
-              Corporate Office
-            </span>
-            <h2 className="text-3xl font-extrabold text-[#023E8A] mt-3">
-              New Delhi Location
-            </h2>
-            <p className="text-sm text-slate-600 mt-2">
-              Our core safety compliance advisory and support team is headquartered in New Delhi.
-            </p>
-          </div>
-
-          <div className="max-w-lg mx-auto">
-            {offices.map((office, idx) => (
-              <div key={idx} className="corp-card p-8 bg-white border border-slate-200 shadow-lg rounded-2xl flex flex-col justify-between">
-                <div>
-                  <div className="w-12 h-12 rounded-xl bg-ocean-50 text-[#0077B6] flex items-center justify-center mb-4">
-                    <MapPin className="w-6 h-6" />
-                  </div>
-                  <h4 className="text-lg font-bold text-slate-900">{office.city}</h4>
-                  <p className="text-sm text-slate-600 mt-2 leading-relaxed">
-                    {office.address}
-                  </p>
-                </div>
-
-                <div className="mt-6 pt-5 border-t border-slate-100 text-sm space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Phone / WhatsApp</span>
-                    <a href={`tel:${office.phone.replace(/[^0-9+]/g, '')}`} className="text-[#0077B6] font-bold hover:underline">
-                      {office.phone}
-                    </a>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Email</span>
-                    <a href={`mailto:${office.email}`} className="text-slate-700 hover:text-[#0077B6] font-medium">
-                      {office.email}
-                    </a>
-                  </div>
-                  <div className="flex items-center justify-between pt-1 border-t border-slate-50 text-xs text-slate-500">
-                    <span className="text-slate-400 font-semibold uppercase tracking-wider">Working Hours</span>
-                    <span className="flex items-center gap-1 font-medium">
-                      <Clock className="w-3.5 h-3.5 text-slate-400" />
-                      {office.hours}
-                    </span>
-                  </div>
+          <div className="max-w-lg mx-auto corp-card p-6 bg-white border border-slate-200 shadow-md rounded-2xl">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl bg-ocean-50 text-[#0077B6] flex items-center justify-center shrink-0">
+                <MapPin className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-base font-bold text-slate-900">Headquarters</h4>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  {SITE_CONFIG.ADDRESS_DISPLAY}
+                </p>
+                <div className="pt-2 flex flex-wrap items-center gap-4 text-xs font-semibold">
+                  <a href={SITE_CONFIG.PHONE_TEL} className="text-[#0077B6] hover:underline">
+                    {SITE_CONFIG.PHONE_DISPLAY}
+                  </a>
+                  <span className="text-slate-300">&bull;</span>
+                  <a href={`mailto:${SITE_CONFIG.CONTACT_EMAIL}`} className="text-[#0077B6] hover:underline">
+                    {SITE_CONFIG.CONTACT_EMAIL}
+                  </a>
                 </div>
               </div>
-            ))}
+            </div>
           </div>
         </div>
       </section>

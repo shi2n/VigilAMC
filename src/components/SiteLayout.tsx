@@ -8,6 +8,7 @@ import { BackToTop } from './BackToTop';
 import { StickyCTA } from './StickyCTA';
 import { DemoModal } from './DemoModal';
 import { ScrollObserver } from './ScrollObserver';
+import { FloatingWhatsApp } from './FloatingWhatsApp';
 
 interface SiteLayoutProps {
   children: React.ReactNode;
@@ -40,6 +41,7 @@ export function SiteLayout({ children }: SiteLayoutProps) {
 
       <CorporateFooter />
       <BackToTop />
+      <FloatingWhatsApp />
       <StickyCTA onOpenDemo={() => setDemoModalOpen(true)} />
       <DemoModal isOpen={demoModalOpen} onClose={() => setDemoModalOpen(false)} />
     </div>

@@ -27,6 +27,7 @@ import {
   ArrowDown,
 } from 'lucide-react';
 import { InvestorForm } from '@/components/InvestorForm';
+import { SITE_CONFIG } from '@/lib/siteConfig';
 
 export const metadata: Metadata = {
   title: 'Invest in VigilAMC | SaaS for AMC & Recurring Service Operations',
@@ -45,7 +46,7 @@ export const metadata: Metadata = {
     title: 'Invest in VigilAMC — Modern B2B SaaS for AMC Management',
     description:
       'Digitizing India’s multi-billion rupee AMC & recurring service industry with GPS-verified inspections, photo proof, automated renewal schedules, and client compliance.',
-    url: 'https://vigilamc.vercel.app/invest',
+    url: `${SITE_CONFIG.SITE_URL}/invest`,
     images: [
       {
         url: '/brag.jpg',
@@ -563,11 +564,11 @@ export default function InvestPage() {
               </a>
 
               <a
-                href="mailto:vigilamc@gmail.com"
+                href={`mailto:${SITE_CONFIG.CONTACT_EMAIL}`}
                 className="px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 text-xs font-semibold transition-colors flex items-center gap-2"
               >
                 <Mail className="w-3.5 h-3.5 text-cyan-400" />
-                <span>vigilamc@gmail.com</span>
+                <span>{SITE_CONFIG.CONTACT_EMAIL}</span>
               </a>
 
               <a

@@ -2,8 +2,17 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Play, ArrowRight, Video, Mail, Phone, MapPin, Sparkles } from 'lucide-react';
-import { StatusBadge } from './StatusBadge';
+import {
+  ArrowRight,
+  ShieldCheck,
+  CheckCircle2,
+  Lock,
+  FileSpreadsheet,
+  Download,
+  MessageCircle,
+  Sparkles
+} from 'lucide-react';
+import { SITE_CONFIG } from '@/lib/siteConfig';
 
 export function FounderSection() {
   return (
@@ -12,13 +21,12 @@ export function FounderSection() {
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-ocean-50 text-[#0077B6] text-xs font-bold border border-ocean-200 mb-3">
             <span>Leadership &amp; Mission</span>
-            <StatusBadge status="LIVE" size="xs" />
           </div>
           <h2 className="text-3xl sm:text-4xl font-black text-[#023E8A] tracking-tight">
             Why I Started VigilAMC
           </h2>
           <p className="mt-3 text-base text-slate-600 leading-relaxed">
-            A personal commitment to bringing accountability, transparency, and simplicity to life safety maintenance.
+            A personal commitment to bringing accountability, transparency, and simplicity to life safety maintenance across India.
           </p>
         </div>
 
@@ -30,70 +38,126 @@ export function FounderSection() {
                 From the Founder
               </span>
               <h3 className="text-lg font-black text-[#023E8A]">
-                Shaizan &bull; Founder, VigilAMC
+                {SITE_CONFIG.FOUNDER_NAME} &bull; {SITE_CONFIG.FOUNDER_TITLE}
               </h3>
               <p className="text-xs text-slate-500">
-                New Delhi, India &bull; vigilamc@gmail.com
+                {SITE_CONFIG.FOUNDER_CITY} &bull; <a href={`mailto:${SITE_CONFIG.CONTACT_EMAIL}`} className="text-[#0077B6] hover:underline">{SITE_CONFIG.CONTACT_EMAIL}</a> &bull; <a href={SITE_CONFIG.PHONE_TEL} className="text-[#0077B6] hover:underline">{SITE_CONFIG.PHONE_DISPLAY}</a>
               </p>
             </div>
 
             <p>
-              In talking with fire safety service providers and facility supervisors, one pattern kept surfacing: while fire safety hardware is strictly regulated by state fire acts and national codes, <strong>the day-to-day management of inspections and maintenance still runs on paper checklists, memory, and brittle spreadsheets.</strong>
+              In talking with fire safety contractors and service providers across Delhi NCR, Mumbai, and Bengaluru, one painful truth kept surfacing: while fire safety hardware is strictly governed by state fire acts and national codes, <strong>the day-to-day management of AMCs still runs on paper tags, WhatsApp chats, and fragmented Excel sheets.</strong>
             </p>
 
             <p>
-              When an AMC agency handles hundreds of fire extinguishers, hose reels, and hydrant valves across dozens of commercial and residential towers, tracking hydrostatic pressure test due dates, quarterly refills, and defect repairs manually becomes overwhelming. Too often, a missed refill date is discovered only when a municipal fire officer arrives for an inspection or when an emergency occurs.
+              When your agency handles hundreds of cylinders, hose reels, and hydrant landing valves across dozens of towers, tracking quarterly refills, annual servicing, and 3-to-5-year hydrostatic pressure testing dates manually becomes overwhelming. Too often, a missed refill is caught only during a panicked pre-audit rush or when a client disputes an invoice.
             </p>
 
             <p>
-              <strong>We built VigilAMC to solve this specific problem.</strong> By recording asset details, floor and location notes, GPS position, and photo proof on site, field technicians can log verified inspection checks on mobile phones even when working in shielded basement pump rooms. Service managers gain a live radar of due dates, and clients receive clean, transparent compliance reports.
+              <strong>We built VigilAMC to solve both sides of this equation:</strong> protect your compliance deadlines so you never lose an AMC contract, and arm your technicians with timestamped photo proof on site so facility managers approve billable refills, valve replacements, and spare parts without arguing.
             </p>
 
             <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <a
                 href="#pilot-section"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0077B6] hover:bg-[#023E8A] text-white text-xs font-bold shadow-md transition-all active:scale-[0.98]"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0077B6] hover:bg-[#023E8A] text-white text-xs font-bold shadow-md transition-all active:scale-[0.98] cursor-pointer"
               >
-                <span>Join the free testing</span>
+                <span>Join Free Testing Phase</span>
                 <ArrowRight className="w-4 h-4" />
               </a>
 
-              <Link
-                href="/contact"
+              <a
+                href={SITE_CONFIG.WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-bold transition-all"
               >
-                <span>Meet the Founder &bull; Book a Call</span>
-              </Link>
+                <MessageCircle className="w-4 h-4 text-emerald-600 fill-current" />
+                <span>Chat with Shaizan on WhatsApp</span>
+              </a>
             </div>
           </div>
 
-          {/* Right Column: Founder Video Placeholder */}
+          {/* Right Column: Founding Agency Onboarding Promise Card */}
           <div className="lg:col-span-5">
-            <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xl space-y-4">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-700 pb-2 border-b border-slate-100">
-                <span className="flex items-center gap-1.5 text-[#023E8A]">
-                  <Video className="w-4 h-4 text-[#0077B6]" />
-                  Founder Video Message
-                </span>
-                <StatusBadge status="COMING SOON" size="xs" />
-              </div>
+            <div className="p-6 sm:p-7 rounded-2xl bg-white border border-slate-200 shadow-xl space-y-5 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-28 h-28 bg-ocean-50 rounded-bl-full pointer-events-none" />
 
-              {/* Clean Video Placeholder Box */}
-              <div className="relative aspect-video w-full rounded-xl bg-gradient-to-br from-slate-900 via-navy-900 to-slate-950 flex flex-col items-center justify-center p-6 text-center text-white border border-slate-800 shadow-inner group">
-                <div className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-cyan-300 mb-3 group-hover:scale-105 group-hover:bg-[#0077B6] group-hover:text-white transition-all shadow-md">
-                  <Play className="w-6 h-6 ml-0.5 fill-current" />
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-[#0077B6]" />
+                  <span className="font-extrabold text-sm text-[#023E8A]">
+                    Founding Agency Onboarding Promise
+                  </span>
                 </div>
-                <h4 className="font-bold text-sm text-white">
-                  Founder Story &mdash; Coming Soon
-                </h4>
-                <p className="text-xs text-slate-400 mt-1 max-w-xs leading-relaxed">
-                  A personal walkthrough on building VigilAMC for Indian fire safety teams
-                </p>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                  Guaranteed
+                </span>
               </div>
 
-              <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 text-slate-600 text-xs flex items-center gap-2">
-                <span className="font-mono text-[10px] text-slate-500 uppercase font-bold">Status:</span>
-                <span className="text-[11px]">Recording founder interview &bull; Uploading shortly</span>
+              {/* 3 Core Guarantees */}
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                  <div className="w-8 h-8 rounded-lg bg-ocean-50 text-[#0077B6] flex items-center justify-center shrink-0">
+                    <FileSpreadsheet className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900">
+                      1. Zero Data-Entry Pain
+                    </h4>
+                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
+                      Send your messy Excel or handwritten logbook sheets &mdash; our team imports your first 3 client buildings completely free.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                    <Lock className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900">
+                      2. Your Clients Stay Strictly Yours
+                    </h4>
+                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
+                      Strict multi-tenant database isolation &amp; non-compete guarantee. We never contact your buildings, sell physical hardware, or provide AMC services.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#023E8A] flex items-center justify-center shrink-0">
+                    <Download className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900">
+                      3. Zero Lock-In Anytime
+                    </h4>
+                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
+                      1-click full Excel &amp; PDF export of every asset, service log, and Form-B report whenever you need it. Your data is always yours.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Founder Signature Footer */}
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                <div>
+                  <div className="font-serif italic font-bold text-slate-800 text-sm">
+                    Shaizan
+                  </div>
+                  <div className="text-[10px] text-slate-500 font-medium">
+                    Founder, VigilAMC &bull; New Delhi
+                  </div>
+                </div>
+                <div className="text-right">
+                  <a
+                    href={SITE_CONFIG.PHONE_TEL}
+                    className="text-xs font-bold text-[#0077B6] hover:underline"
+                  >
+                    {SITE_CONFIG.PHONE_DISPLAY}
+                  </a>
+                </div>
               </div>
             </div>
           </div>

@@ -8,15 +8,16 @@ import {
   CheckCircle2,
   Award,
   ArrowRight,
-  Star,
-  Quote,
   TrendingUp,
   Clock,
-  Sparkles,
   ExternalLink,
   ZoomIn,
   AlertTriangle,
-  Download
+  Download,
+  Flame,
+  Gauge,
+  Activity,
+  BellRing
 } from 'lucide-react';
 import { ImageLightbox, LightboxImage } from '@/components/ImageLightbox';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -27,52 +28,44 @@ export default function CustomersPage() {
 
   const galleryImages: LightboxImage[] = [
     {
-      src: 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&w=1200&q=80',
-      title: 'Commercial Multi-Tenant Complex',
-      category: 'Reference Scenario [Sample]',
-      building: 'Multi-Story High-Rise Facility (Representative)',
-      auditDate: 'Inspection Scenario',
+      id: 'extinguishers',
+      title: 'Portable Fire Extinguishers (IS 2190)',
+      category: 'IS 2190 Protocol',
+      specs: '6kg ABC Powder / 4.5kg CO2 / 9L Water Mist',
+      building: 'Commercial Multi-Tenant Complex (Representative)',
+      auditDate: 'Quarterly Physical Inspection + Annual Refill Log',
+      reading: '14.5 Bar [NORMAL]',
       description: 'Extinguishers, landing valves, and yard hydrants mapped to statutory municipal audit cycles with digital timestamps.',
     },
     {
-      src: 'https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&w=1200&q=80',
-      title: 'Healthcare & Hospital Facilities',
-      category: 'Healthcare Scenario [Sample]',
-      building: 'Critical Care Healthcare Campus (Representative)',
-      auditDate: 'Inspection Scenario',
+      id: 'hydrants',
+      title: 'Wet Riser & Hydrant Landing Valves',
+      category: 'NBC Part 4 Protocol',
+      specs: '63mm Single/Double Headed Landing Valve & 30m Hose Reel',
+      building: 'Healthcare & Critical Care Campus (Representative)',
+      auditDate: 'Monthly Hydraulic Flow & Pressure Verification',
+      reading: 'Static 7.0 Bar / Dyn 3.5 Bar',
       description: 'Systematic safety tracking with logging of wet risers, clean-agent suppression in server rooms, and digital records.',
     },
     {
-      src: 'https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&w=1200&q=80',
-      title: 'Industrial Logistics & Warehouses',
-      category: 'Industrial Scenario [Sample]',
-      building: 'Logistics & Warehousing Complex (Representative)',
-      auditDate: 'Inspection Scenario',
-      description: 'Foam systems, yard hydrants, and flame detectors tracked across large industrial footprints with quarterly hydro-pressure schedules.',
+      id: 'pumps',
+      title: 'Basement Fire Pump House (Offline Mode)',
+      category: 'Pump Room Protocol',
+      specs: 'Main Electrical, Diesel Standby & Jockey Pumps',
+      building: 'Industrial Logistics & Warehousing Complex',
+      auditDate: 'Weekly Auto-Cut In/Out Operational Test',
+      reading: 'Cut-In 5.5 Bar / Cut-Out 7.0 Bar',
+      description: 'Main electrical, diesel standby, and jockey pumps tracked across large industrial footprints with offline-capable mobile checklists.',
     },
     {
-      src: 'https://images.unsplash.com/photo-1567157577867-05ccb1388e66?auto=format&fit=crop&w=1200&q=80',
-      title: 'Residential High-Rise Communities',
-      category: 'Residential Scenario [Sample]',
+      id: 'alarms',
+      title: 'Addressable & Conventional Fire Alarm Panels',
+      category: 'IS 2189 Protocol',
+      specs: '4-8 Loop Panels • Smoke/Heat Detectors • MCPs & Sounders',
       building: 'Multi-Tower Residential Society (Representative)',
-      auditDate: 'Inspection Scenario',
-      description: 'Form-B biannual certification readiness. Clear extinguisher pressure logs and defect reporting for resident welfare committees.',
-    },
-    {
-      src: 'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?auto=format&fit=crop&w=1200&q=80',
-      title: 'GPS & Location-Verified Asset Records',
-      category: 'Inspection Benchmark [Sample]',
-      building: 'Industrial Hardware Specification',
-      auditDate: 'Inspection Benchmark',
-      description: 'Asset details, floor and location notes, GPS position, and condition photos recorded on site for every unit.',
-    },
-    {
-      src: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80',
-      title: 'Hydrant Flow & Pressure Verification',
-      category: 'Testing Scenario [Sample]',
-      building: 'Standard Hydraulic Verification',
-      auditDate: 'Technical Benchmark',
-      description: 'Technicians log dynamic pressure at landing valves. Certified Form-B schedule auto-updates upon inspection completion.',
+      auditDate: 'Monthly Loop Walkthrough & Standby Power Check',
+      reading: 'Loops Normal • 27.2V Standby',
+      description: 'Loop health, detector maintenance dates, and power supply verification producing clean compliance logs for resident welfare committees.',
     },
   ];
 
@@ -98,99 +91,75 @@ export default function CustomersPage() {
     {
       client: 'Critical Facility Maintenance Profile [Representative]',
       type: 'Campus Facility Operations Scenario',
-      portfolio: 'High-Density Life Safety Environment',
-      challenge: 'Healthcare and industrial sites require meticulous maintenance documentation, but basement pump rooms and shielded shafts lack cell reception.',
-      solution: 'VigilAMC offline-capable mobile checklist allows technicians to record gauge levels, valve states, floor notes, and photos locally with automatic cloud synchronization.',
+      portfolio: 'High-Density Mixed-Use Facility',
+      challenge: 'Commercial tech parks manage thousands of life safety assets across multiple towers. Tracking hydro-testing windows and defect repairs manually leads to compliance lapses.',
+      solution: 'VigilAMC provides real-time visibility into equipment statuses, inspection timestamps, and unresolved defect tickets across all towers.',
       results: [
-        'Uninterrupted offline logging in underground basements and pump rooms (in beta)',
-        'Verifiable physical inspection proof with GPS coordinates, floor notes, and photos',
-        'Centralized operations dashboard with instant PDF export capabilities',
+        'Instant visibility of overdue or expiring fire extinguishers',
+        'Photo-verified defect tickets for rapid quotation and repair approval',
+        'Multi-facility portfolio overview for operations managers',
+        'One-click statutory Form-B compliance certificate compilation',
       ],
     },
   ];
 
   return (
     <div className="w-full bg-white">
-      {/* Header Banner */}
+      {/* Page Header */}
       <section className="bg-gradient-to-b from-ocean-50 to-white py-20 px-4 sm:px-6 lg:px-8 border-b border-slate-200">
         <div className="max-w-4xl mx-auto text-center">
           <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-white px-3.5 py-1.5 rounded-full border border-ocean-200 shadow-sm">
-            Facility Scenarios &amp; Case Studies
+            Inspection Protocols &amp; Scenarios
           </span>
           <h1 className="text-4xl sm:text-5xl font-black text-[#023E8A] tracking-tight mt-4">
-            Reference Facility Profiles &amp; Inspection Scenarios
+            Field Scenarios &amp; Operational Benchmarks
           </h1>
           <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
-            Explore how VigilAMC solves operational challenges across commercial towers, healthcare environments, industrial plants, and residential societies.
+            Review how asset details, floor and location notes, GPS position, and condition photos are captured across diverse facility types.
           </p>
         </div>
       </section>
 
-      {/* Standards & Guidelines Overview */}
-      <section className="py-12 px-4 sm:px-6 lg:px-8 border-b border-slate-200 bg-white">
-        <div className="max-w-6xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
-          <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
-            <div className="text-2xl sm:text-3xl font-black text-[#023E8A]">NBC 2016</div>
-            <p className="text-xs text-slate-500 font-semibold mt-1">Part 4 Life Safety Framework</p>
-          </div>
-          <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
-            <div className="text-2xl sm:text-3xl font-black text-[#0077B6]">IS 2190</div>
-            <p className="text-xs text-slate-500 font-semibold mt-1">BIS Maintenance Protocols</p>
-          </div>
-          <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
-            <div className="text-2xl sm:text-3xl font-black text-emerald-600">Digital Records</div>
-            <p className="text-xs text-slate-500 font-semibold mt-1">GPS &amp; Photo Verification</p>
-          </div>
-          <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
-            <div className="text-2xl sm:text-3xl font-black text-[#023E8A]">Form-B Ready</div>
-            <p className="text-xs text-slate-500 font-semibold mt-1">Structured PDF Export</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Interactive Lightbox Gallery Section */}
+      {/* Visual Inspection Protocols Grid */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="text-center max-w-3xl mx-auto mb-14">
-          <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-ocean-50 px-3 py-1 rounded-full border border-ocean-200">
-            Field Inspection Gallery
-          </span>
-          <h2 className="text-3xl font-extrabold text-[#023E8A] mt-3">
-            Operational Inspection Scenarios
-          </h2>
-          <p className="text-sm text-slate-600 mt-2">
-            Click any field image below to inspect operational equipment categories and inspection workflows. [Sample Demonstration Data]
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {galleryImages.map((img, idx) => (
             <div
               key={idx}
               onClick={() => handleOpenLightbox(idx)}
-              className="corp-card overflow-hidden group cursor-pointer bg-white transition-all transform hover:-translate-y-1.5 border border-slate-200"
+              className="corp-card overflow-hidden group cursor-pointer bg-white transition-all transform hover:-translate-y-1.5 border border-slate-200 shadow-sm hover:shadow-md flex flex-col justify-between"
             >
-              <div className="relative h-56 overflow-hidden bg-slate-100">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={img.src}
-                  alt={img.title}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-slate-900/30 group-hover:bg-slate-900/10 transition-colors" />
-                <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full bg-white/95 text-[#023E8A] text-xs font-bold shadow-sm">
-                  {img.category}
-                </span>
-                <div className="absolute bottom-3 right-3 p-2 rounded-lg bg-slate-900/80 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 shadow">
-                  <ZoomIn className="w-3.5 h-3.5" />
-                  <span>Inspect Flow</span>
+              <div className="p-5 bg-gradient-to-br from-[#0A1A33] via-[#0F274D] to-[#08152B] text-white">
+                <div className="flex items-center justify-between text-[10px] font-mono text-cyan-300 pb-2 border-b border-slate-700/60">
+                  <span className="truncate pr-1">{img.category}</span>
+                  <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold shrink-0">
+                    {img.reading}
+                  </span>
+                </div>
+
+                <div className="pt-3 pb-2">
+                  <div className="w-10 h-10 rounded-xl bg-[#0077B6]/30 border border-cyan-400/30 flex items-center justify-center text-cyan-300 mb-2 group-hover:scale-110 transition-transform">
+                    {idx === 0 && <Flame className="w-5 h-5 text-amber-400" />}
+                    {idx === 1 && <Gauge className="w-5 h-5 text-cyan-400" />}
+                    {idx === 2 && <Activity className="w-5 h-5 text-emerald-400" />}
+                    {idx === 3 && <BellRing className="w-5 h-5 text-blue-400" />}
+                  </div>
+                  <h4 className="font-bold text-sm text-white line-clamp-1 group-hover:text-cyan-200 transition-colors">
+                    {img.title}
+                  </h4>
+                  <p className="text-[11px] text-cyan-100/70 font-mono mt-0.5 line-clamp-1">
+                    {img.specs}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between text-[10px] text-slate-400 pt-2 border-t border-slate-800 font-mono">
+                  <span>GPS &bull; Time &bull; Photo</span>
+                  <span className="text-cyan-300 group-hover:underline">Inspect &rarr;</span>
                 </div>
               </div>
 
-              <div className="p-5">
-                <h4 className="text-base font-bold text-slate-900 group-hover:text-[#0077B6] transition-colors">
-                  {img.title}
-                </h4>
-                <p className="text-xs text-slate-500 mt-1">
+              <div className="p-5 flex-1 flex flex-col justify-between">
+                <p className="text-xs text-slate-500">
                   {img.building}
                 </p>
                 <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
@@ -198,7 +167,7 @@ export default function CustomersPage() {
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     Inspection Protocol
                   </span>
-                  <span className="text-slate-400">{img.auditDate}</span>
+                  <span className="text-slate-400 text-[11px]">{img.auditDate}</span>
                 </div>
               </div>
             </div>
@@ -265,58 +234,16 @@ export default function CustomersPage() {
               </div>
             </div>
           ))}
-
-          {/* Pilot Feedback Card */}
-          <div className="p-8 rounded-2xl bg-amber-50/60 border border-amber-200 text-slate-800">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="px-2.5 py-1 rounded-full bg-amber-200 text-amber-900 text-xs font-bold">
-                Pilot Partner Feedback
-              </span>
-              <StatusBadge status="DEMO" />
-            </div>
-            <h3 className="font-display font-bold text-lg text-slate-900">
-              Verified Customer Testimonials &bull; Coming Soon
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed italic">
-              We are currently conducting testing programs with licensed fire protection agencies. Formal case studies, contractor quotes, and facility reference letters will be published with explicit partner consent as testing cohorts conclude.
-            </p>
-          </div>
         </div>
       </section>
 
-      {/* Lightbox Modal */}
+      {/* Lightbox Component */}
       <ImageLightbox
         images={galleryImages}
         initialIndex={activeImageIndex}
         isOpen={lightboxOpen}
         onClose={() => setLightboxOpen(false)}
       />
-
-      {/* Bottom CTA */}
-      <section className="py-20 px-4 bg-[#023E8A] text-white text-center">
-        <div className="max-w-3xl mx-auto space-y-4">
-          <h2 className="text-3xl font-extrabold">Ready to Modernize Your Fire AMC Operations?</h2>
-          <p className="text-cyan-100 text-sm max-w-xl mx-auto leading-relaxed">
-            Free for every agency during testing. Test asset registration, GPS-verified mobile forms, and Form-B generation with your team.
-          </p>
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href="/#pilot-section"
-              className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#0077B6] hover:bg-white hover:text-[#023E8A] font-bold text-sm rounded-xl transition-all shadow-lg"
-            >
-              <span>Join the free testing</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link
-              href="/sample-report"
-              className="inline-flex items-center gap-2 px-7 py-3.5 bg-white/10 hover:bg-white/20 text-white font-bold text-sm rounded-xl transition-all border border-white/20"
-            >
-              <Download className="w-4 h-4" />
-              <span>Inspect Sample Form-B</span>
-            </Link>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

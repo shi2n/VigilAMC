@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, ShieldCheck, Database, KeyRound, Lock, Server, Users2, RefreshCw } from 'lucide-react';
 import { StatusBadge } from '@/components/StatusBadge';
+import { SITE_CONFIG } from '@/lib/siteConfig';
 
 export default function SecurityPage() {
   const securityLayers = [
@@ -19,7 +20,7 @@ export default function SecurityPage() {
       title: 'Database Architecture & Multi-Tenant Isolation',
       status: 'LIVE' as const,
       description:
-        'All application data is hosted in dedicated PostgreSQL databases on Supabase cloud infrastructure. Records are segregated by Organization ID, ensuring each AMC contractor and client facility accesses only their authorized rosters and records.',
+        'All application data is hosted in dedicated PostgreSQL databases on Supabase cloud infrastructure. Records are strictly segregated by Organization ID, ensuring each AMC agency and contractor accesses only their own client rosters and service records.',
     },
     {
       icon: Lock,
@@ -47,7 +48,7 @@ export default function SecurityPage() {
       title: 'Backups & Disaster Recovery',
       status: 'LIVE' as const,
       description:
-        'The underlying database benefits from automated daily snapshots and point-in-time recovery capabilities managed directly by Supabase cloud infrastructure.',
+        'The underlying database benefits from automated daily snapshots and point-in-time recovery capabilities managed directly on Supabase cloud infrastructure.',
     },
   ];
 
@@ -65,15 +66,26 @@ export default function SecurityPage() {
         <div className="border-b border-slate-200 pb-6">
           <div className="flex items-center gap-2">
             <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-ocean-50 px-3 py-1 rounded-full border border-ocean-200">
-              Technical Architecture
+              Technical Architecture &amp; Privacy
             </span>
             <StatusBadge status="LIVE" />
           </div>
           <h1 className="text-3xl sm:text-4xl font-black text-[#023E8A] mt-3">
-            Security &amp; Data Architecture
+            Security &amp; Data Lock Guarantee
           </h1>
           <p className="text-sm text-slate-600 mt-2 max-w-2xl leading-relaxed">
             A transparent overview of how VigilAMC protects your facility rosters, inspection records, and organization credentials.
+          </p>
+        </div>
+
+        {/* Explicit Partner Non-Compete & Client Data Lock Trust Banner */}
+        <div className="p-6 rounded-2xl bg-slate-900 text-white border border-slate-800 shadow-md space-y-3">
+          <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+            <Lock className="w-5 h-5 shrink-0" />
+            <span>100% Built for AMC Contractors &mdash; Never Your Competitor</span>
+          </div>
+          <p className="text-xs text-slate-300 leading-relaxed">
+            VigilAMC is pure software. We do NOT provide physical fire AMC services, sell refills, or pitch buildings directly. Your client building list, pricing, and contract expiry dates belong strictly to your agency and are never shared or contacted by us.
           </p>
         </div>
 
@@ -90,6 +102,7 @@ export default function SecurityPage() {
               <li>Validate JWT signatures server-side on every protected API call.</li>
               <li>Employ parameterized queries via Prisma ORM against injection attacks.</li>
               <li>Maintain immutable creation timestamps on all inspection evidence.</li>
+              <li>Allow full 1-click export of your complete asset registers anytime.</li>
             </ul>
           </div>
 
@@ -130,7 +143,7 @@ export default function SecurityPage() {
         <div className="p-6 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-3">
           <h3 className="font-bold text-slate-900 text-sm">Security Inquiries &amp; Vulnerability Reporting</h3>
           <p className="text-slate-600 leading-relaxed">
-            If you have technical questions regarding data handling or wish to report a security inquiry, please contact our engineering team directly at <a href="mailto:vigilamc@gmail.com" className="text-[#0077B6] font-bold underline">vigilamc@gmail.com</a>. We acknowledge and address inquiries promptly.
+            If you have technical questions regarding data handling or wish to report a security inquiry, please contact our engineering team directly at <a href={`mailto:${SITE_CONFIG.SUPPORT_EMAIL}`} className="text-[#0077B6] font-bold underline">{SITE_CONFIG.SUPPORT_EMAIL}</a>. We acknowledge and address inquiries promptly.
           </p>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { sendInvestorNotification } from '@/lib/email';
+import { SITE_CONFIG } from '@/lib/siteConfig';
 
 export const dynamic = 'force-dynamic';
 
@@ -130,7 +131,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error('Error recording investor interest:', error);
     return NextResponse.json(
-      { error: error?.message || 'Failed to submit expression of interest. Please try again or reach out directly at vigilamc@gmail.com.' },
+      { error: error?.message || `Failed to submit expression of interest. Please try again or reach out directly at ${SITE_CONFIG.CONTACT_EMAIL}.` },
       { status: 500 }
     );
   }

@@ -255,11 +255,11 @@ export default function CookiePolicyPage() {
               We may revise this Cookie Policy if we introduce new essential platform capabilities. Any updates will appear on this page with a revised &ldquo;Last updated&rdquo; timestamp.
             </p>
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
-              <p className="font-bold text-slate-900">VigilAMC</p>
-              <p className="text-slate-600">Operated by: Shaizan</p>
-              <p className="text-slate-600">Location: New Delhi, India</p>
+              <p className="font-bold text-slate-900">VigilAMC Technologies</p>
+              <p className="text-slate-600">Founder: Shaizan</p>
+              <p className="text-slate-600">Location: New Delhi 110092, India</p>
               <p className="text-slate-600">
-                Email: <a href="mailto:vigilamc@gmail.com" className="text-[#0077B6] font-semibold hover:underline">vigilamc@gmail.com</a>
+                Email: <a href="mailto:support@vigilamc.com" className="text-[#0077B6] font-semibold hover:underline">support@vigilamc.com</a>
               </p>
               <p className="text-slate-600">
                 Phone / WhatsApp: <a href="tel:+918383890483" className="text-[#0077B6] font-semibold hover:underline">+91 83838 90483</a>

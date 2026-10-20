@@ -87,7 +87,7 @@ export default function TermsPage() {
           <section id="acceptance" className="space-y-3 pt-4 border-t border-slate-100">
             <h2 className="text-lg font-bold text-slate-900">2. Acceptance of Terms &amp; Who May Use the Service</h2>
             <p>
-              By accessing our website (<code>vigilamc.vercel.app</code>), applying for free testing, or creating an account, you agree to these Terms and Conditions.
+              By accessing our website (<code>vigilamc.com</code>), applying for free testing, or creating an account, you agree to these Terms and Conditions.
             </p>
             <p>
               The service is intended solely for commercial fire protection agencies, life-safety service providers, facility management companies, and their authorized technicians or administrative staff. You represent that you have the authority to bind your organization to these terms.
@@ -117,7 +117,7 @@ export default function TermsPage() {
           <section id="accounts" className="space-y-3 pt-4 border-t border-slate-100">
             <h2 className="text-lg font-bold text-slate-900">4. Account Registration &amp; Security</h2>
             <p>
-              When creating an account, you must provide accurate, complete, and current information. You are responsible for safeguarding your login credentials and for all activities carried out by your staff, technicians, or administrators under your agency account. You agree to notify us immediately at <code>vigilamc@gmail.com</code> of any unauthorized access or security breach.
+              When creating an account, you must provide accurate, complete, and current information. You are responsible for safeguarding your login credentials and for all activities carried out by your staff, technicians, or administrators under your agency account. You agree to notify us immediately at <code>support@vigilamc.com</code> of any unauthorized access or security breach.
             </p>
           </section>
 
@@ -228,11 +228,11 @@ export default function TermsPage() {
             <h2 className="text-lg font-bold text-slate-900">16. Contact Details</h2>
             <p>If you have any questions about these Terms and Conditions, please contact us directly:</p>
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
-              <p className="font-bold text-slate-900">VigilAMC</p>
-              <p className="text-slate-600">Operated by: Shaizan</p>
-              <p className="text-slate-600">Location: New Delhi, India</p>
+              <p className="font-bold text-slate-900">VigilAMC Technologies</p>
+              <p className="text-slate-600">Founder: Shaizan</p>
+              <p className="text-slate-600">Location: New Delhi 110092, India</p>
               <p className="text-slate-600">
-                Email: <a href="mailto:vigilamc@gmail.com" className="text-[#0077B6] font-semibold hover:underline">vigilamc@gmail.com</a>
+                Email: <a href="mailto:shaizan@vigilamc.com" className="text-[#0077B6] font-semibold hover:underline">shaizan@vigilamc.com</a>
               </p>
               <p className="text-slate-600">
                 Phone / WhatsApp: <a href="tel:+918383890483" className="text-[#0077B6] font-semibold hover:underline">+91 83838 90483</a>

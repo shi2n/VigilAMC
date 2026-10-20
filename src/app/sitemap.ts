@@ -1,7 +1,8 @@
 import { MetadataRoute } from 'next';
+import { SITE_CONFIG } from '@/lib/siteConfig';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://vigilamc.vercel.app';
+  const baseUrl = SITE_CONFIG.SITE_URL;
   const lastModified = new Date();
 
   return [

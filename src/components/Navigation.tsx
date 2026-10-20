@@ -4,12 +4,11 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  ShieldCheck,
   Building2,
-  Printer,
   Home,
   LogIn
 } from 'lucide-react';
+import { SITE_CONFIG } from '@/lib/siteConfig';
 
 export function Navigation() {
   const pathname = usePathname();
@@ -51,7 +50,7 @@ export function Navigation() {
           {/* Agency License Badge */}
           <div className="hidden lg:flex items-center gap-2 text-xs text-slate-300 bg-slate-900/90 px-3 py-1 rounded-xl border border-slate-800">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>Agency Lic: <strong className="font-mono text-amber-400 font-semibold">DL/FIRE/LIC/2026/042</strong></span>
+            <span>Agency Lic: <strong className="font-mono text-amber-400 font-semibold">{SITE_CONFIG.LICENSE_DEMO}</strong></span>
           </div>
         </div>
 
@@ -82,18 +81,7 @@ export function Navigation() {
           </Link>
 
           <Link
-            href="/invest"
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-              pathname === '/invest'
-                ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30 font-bold'
-                : 'text-slate-300 hover:text-amber-300 hover:bg-slate-800/60'
-            }`}
-          >
-            <span>Invest</span>
-          </Link>
-
-          <Link
-            href="/dashboard"
+            href="/login"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 hover:border-amber-500/40 text-xs font-semibold transition-colors"
           >
             <LogIn className="w-3.5 h-3.5 text-amber-400" />

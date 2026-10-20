@@ -161,9 +161,15 @@ export async function getCurrentUser(req?: Request): Promise<AuthContext | null>
 export function isPlatformOwner(auth: AuthContext | null): boolean {
   if (!auth || !auth.user) return false;
   const email = (auth.user.email || '').toLowerCase().trim();
-  const ownerEmail = (process.env.ADMIN_NOTIFICATION_EMAIL || 'vigilamc@gmail.com').toLowerCase().trim();
+  const ownerEmail = (process.env.ADMIN_NOTIFICATION_EMAIL || 'shaizan@vigilamc.com').toLowerCase().trim();
   const role = (auth.profile?.role || '').toUpperCase();
-  return role === 'SUPER_ADMIN' || role === 'PLATFORM_OWNER' || email === ownerEmail || email === 'vigilamc@gmail.com';
+  return (
+    role === 'SUPER_ADMIN' ||
+    role === 'PLATFORM_OWNER' ||
+    email === ownerEmail ||
+    email === 'shaizan@vigilamc.com' ||
+    email === 'vigilamc@gmail.com'
+  );
 }
 
 export async function requirePlatformOwner(req?: Request): Promise<AuthContext> {
