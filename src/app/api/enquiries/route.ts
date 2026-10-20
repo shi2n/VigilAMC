@@ -40,7 +40,7 @@ export async function POST(request: Request) {
 
     const email = body.email?.trim().toLowerCase();
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return NextResponse.json({ error: 'A valid corporate or work email address is required.' }, { status: 400 });
+      return NextResponse.json({ error: 'A valid email address is required.' }, { status: 400 });
     }
 
     const name = (body.name || body.fullName || '').trim();
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
       },
     });
 
-    // Send email notification to admin (vigilamc@gmail.com)
+    // Send email notification to admin (shaizan@vigilamc.com)
     sendInquiryNotification({
       name,
       company: company ? (locationString ? `${company} (${locationString})` : company) : locationString,
@@ -101,7 +101,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: 'Thank you! Your enquiry has been received. Our compliance advisory team will reach out shortly.',
+      message: 'Thank you! Your request has been received. Our team will reach out shortly.',
       id: enquiry.id,
     });
   } catch (error: any) {

@@ -1,15 +1,19 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, ChevronLeft, ChevronRight, ZoomIn, ShieldCheck, Download, Calendar } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, ShieldCheck, CheckCircle2, MapPin, Gauge, Clock } from 'lucide-react';
 
 export interface LightboxImage {
-  src: string;
+  id?: string;
+  src?: string;
   title: string;
   category: string;
   description: string;
   building: string;
   auditDate: string;
+  specs?: string;
+  checks?: string[];
+  reading?: string;
 }
 
 interface ImageLightboxProps {
@@ -54,7 +58,7 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose }: Ima
 
   if (!isOpen || images.length === 0) return null;
 
-  const currentImage = images[currentIndex];
+  const current = images[currentIndex];
 
   return (
     <div
@@ -63,102 +67,113 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose }: Ima
     >
       {/* Lightbox Container */}
       <div
-        className="relative max-w-5xl w-full bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[90vh]"
+        className="relative max-w-4xl w-full bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-20 p-2 rounded-full bg-slate-900/70 hover:bg-slate-900 text-white transition-colors"
-          aria-label="Close image preview"
+          className="absolute top-4 right-4 z-20 p-2 rounded-full bg-slate-900/70 hover:bg-slate-900 text-white transition-colors cursor-pointer"
+          aria-label="Close preview"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Media Preview Column */}
-        <div className="relative md:w-3/5 bg-slate-950 flex items-center justify-center p-4 min-h-[320px] md:min-h-[500px]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={currentImage.src}
-            alt={currentImage.title}
-            className="max-h-[75vh] w-auto max-w-full object-contain rounded-lg shadow-md"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&w=1200&q=80';
-            }}
-          />
+        <div className="relative md:w-3/5 bg-gradient-to-br from-[#061121] via-[#0A1A33] to-[#040C1A] text-white flex flex-col items-center justify-center p-6 sm:p-8 min-h-[300px]">
+          {/* Visual UI Inspection Stamped Card */}
+          <div className="w-full max-w-sm rounded-2xl bg-slate-900/90 border border-cyan-500/30 p-5 shadow-xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+              <span className="text-[10px] font-mono font-bold text-cyan-300 uppercase tracking-wider">
+                {current.category}
+              </span>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">
+                {current.reading || 'VERIFIED'}
+              </span>
+            </div>
+
+            <div>
+              <h4 className="font-bold text-base text-white">{current.title}</h4>
+              <p className="text-xs text-slate-400 mt-0.5">{current.building}</p>
+            </div>
+
+            {current.specs && (
+              <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-xs font-mono text-cyan-200">
+                {current.specs}
+              </div>
+            )}
+
+            <div className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800/80 space-y-1 text-[11px] font-mono text-slate-300">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Inspection Standard:</span>
+                <span className="text-slate-300">IS 2190 &bull; NBC Part 4</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Verification:</span>
+                <span className="text-emerald-400">GPS &bull; Timestamp &bull; Photo</span>
+              </div>
+            </div>
+          </div>
 
           {/* Navigation Controls */}
           {images.length > 1 && (
             <>
               <button
                 onClick={handlePrev}
-                className="absolute left-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-slate-900/80 hover:bg-[#0077B6] text-white transition-colors shadow-lg"
-                aria-label="Previous image"
+                className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-slate-900/80 hover:bg-[#0077B6] text-white transition-colors shadow-lg cursor-pointer"
+                aria-label="Previous"
               >
-                <ChevronLeft className="w-6 h-6" />
+                <ChevronLeft className="w-5 h-5" />
               </button>
               <button
                 onClick={handleNext}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-slate-900/80 hover:bg-[#0077B6] text-white transition-colors shadow-lg"
-                aria-label="Next image"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-slate-900/80 hover:bg-[#0077B6] text-white transition-colors shadow-lg cursor-pointer"
+                aria-label="Next"
               >
-                <ChevronRight className="w-6 h-6" />
+                <ChevronRight className="w-5 h-5" />
               </button>
             </>
           )}
 
-          {/* Image counter indicator */}
-          <div className="absolute bottom-3 left-3 px-3 py-1 rounded-full bg-slate-900/80 text-white text-xs font-medium">
-            {currentIndex + 1} / {images.length}
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-xs font-mono text-slate-400 bg-slate-900/80 px-2.5 py-1 rounded-full">
+            {currentIndex + 1} of {images.length}
           </div>
         </div>
 
-        {/* Metadata Details Column */}
-        <div className="p-6 md:w-2/5 flex flex-col justify-between bg-white text-slate-800 overflow-y-auto">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-ocean-50 text-[#0077B6] text-xs font-bold border border-ocean-200">
-                {currentImage.category}
+        {/* Details Column */}
+        <div className="md:w-2/5 p-6 sm:p-8 flex flex-col justify-between overflow-y-auto">
+          <div className="space-y-4">
+            <div>
+              <span className="text-xs uppercase font-extrabold text-[#0077B6] tracking-wider">
+                {current.category}
               </span>
-              <span className="inline-flex items-center gap-1 text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 font-medium">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                Verified Audit Log
-              </span>
+              <h3 className="font-display text-xl font-bold text-slate-900 mt-1">
+                {current.title}
+              </h3>
             </div>
 
-            <h3 className="text-xl font-extrabold text-[#023E8A] tracking-tight">
-              {currentImage.title}
-            </h3>
-
-            <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5 text-slate-400" />
-              Audited on: <strong>{currentImage.auditDate}</strong>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              {current.description}
             </p>
 
-            <div className="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
-              <p className="text-slate-600">
-                Facility / Site: <strong className="text-slate-800">{currentImage.building}</strong>
-              </p>
-              <p className="text-slate-600">
-                Compliance Standard: <strong className="text-slate-800">NFPA 10 &amp; NBC 2016 Part 4</strong>
-              </p>
-            </div>
-
-            <div className="mt-4 text-sm text-slate-600 leading-relaxed">
-              {currentImage.description}
+            <div className="pt-2 border-t border-slate-100 space-y-2 text-xs">
+              <div className="flex items-center gap-2 text-slate-600">
+                <MapPin className="w-4 h-4 text-[#0077B6] shrink-0" />
+                <span>{current.building}</span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-600">
+                <Clock className="w-4 h-4 text-[#0077B6] shrink-0" />
+                <span>{current.auditDate}</span>
+              </div>
             </div>
           </div>
 
-          <div className="pt-6 border-t border-slate-200 mt-6 flex items-center justify-between">
-            <span className="text-xs text-slate-400">
-              VigilAMC Digital Verification Engine
-            </span>
+          <div className="pt-6 border-t border-slate-100 mt-6">
             <button
-              onClick={() => window.open(currentImage.src, '_blank')}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0077B6] hover:text-[#023E8A] bg-ocean-50 hover:bg-ocean-100 px-3 py-1.5 rounded-lg transition-colors"
+              onClick={onClose}
+              className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
             >
-              <ZoomIn className="w-3.5 h-3.5" />
-              Full Size
+              Close Details
             </button>
           </div>
         </div>
@@ -166,3 +181,5 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose }: Ima
     </div>
   );
 }
+
+export default ImageLightbox;

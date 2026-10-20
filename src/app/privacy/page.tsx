@@ -86,9 +86,9 @@ export default function PrivacyPolicyPage() {
           <section className="space-y-3">
             <h2 className="text-lg font-bold text-slate-900">6. Contact Information &amp; Entity Notice</h2>
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
-              <p className="font-bold text-slate-900">VigilAMC</p>
+              <p className="font-bold text-slate-900">VigilAMC Technologies</p>
               <p className="text-slate-600">Headquarters / Operational Contact: New Delhi 110092, India</p>
-              <p className="text-slate-600">Direct Contact: +91 83838 90483 &bull; Email: vigilamc@gmail.com</p>
+              <p className="text-slate-600">Direct Contact: +91 83838 90483 &bull; Email: shaizan@vigilamc.com</p>
             </div>
           </section>
         </div>

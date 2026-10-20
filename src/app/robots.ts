@@ -1,4 +1,5 @@
 import { MetadataRoute } from 'next';
+import { SITE_CONFIG } from '@/lib/siteConfig';
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -9,6 +10,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/api/', '/admin/', '/dashboard/'],
       },
     ],
-    sitemap: 'https://vigilamc.vercel.app/sitemap.xml',
+    sitemap: `${SITE_CONFIG.SITE_URL}/sitemap.xml`,
   };
 }

@@ -1,3 +1,5 @@
+import { SITE_CONFIG } from './siteConfig';
+
 /**
  * Resolves the appropriate redirect URL for Supabase Auth flows
  * (specifically password recovery and email confirmation).
@@ -7,8 +9,8 @@
  *    to the local development server: e.g. http://localhost:3000/reset-password
  * 2. When executed on production (or any non-localhost host):
  *    - Prioritizes NEXT_PUBLIC_SITE_URL or NEXT_PUBLIC_APP_URL if configured.
- *    - Falls back to the current browser origin (https://vigilamc.vercel.app/reset-password).
- *    - In SSR/build environments, falls back to 'https://vigilamc.vercel.app/reset-password'.
+ *    - Falls back to the current browser origin.
+ *    - In SSR/build environments, falls back to SITE_CONFIG.SITE_URL.
  */
 export function getResetPasswordRedirectUrl(): string {
   const envUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL;
@@ -35,5 +37,5 @@ export function getResetPasswordRedirectUrl(): string {
     return `${envUrl.replace(/\/$/, '')}/reset-password`;
   }
 
-  return 'https://vigilamc.vercel.app/reset-password';
+  return `${SITE_CONFIG.SITE_URL}/reset-password`;
 }

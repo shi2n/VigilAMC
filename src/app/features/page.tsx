@@ -400,7 +400,7 @@ export default function FeaturesPage() {
               </div>
               <h4 className="text-base font-bold text-slate-900">Multi-Channel Expiry Alerts</h4>
               <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                Automated email digests and reminder notifications warn your team 60, 30, and 7 days before statutory renewal deadlines.
+                Automated 60 / 30 / 7-day Email &amp; Dashboard Renewal Alerts (WhatsApp Alerts in Pilot) notify your team well before statutory deadlines.
               </p>
             </div>
 

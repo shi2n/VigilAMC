@@ -5,13 +5,17 @@ import {
   PlusCircle,
   MapPin,
   Camera,
-  AlertTriangle,
   FileCheck2,
   CheckCircle2,
   ArrowRight,
-  ShieldCheck
+  ShieldCheck,
+  FileSpreadsheet,
+  AlertTriangle,
+  Receipt,
+  Smartphone,
+  Gauge,
+  Clock
 } from 'lucide-react';
-import { StatusBadge } from './StatusBadge';
 
 export function ProductWorkflowSection() {
   const [activeStep, setActiveStep] = useState(1);
@@ -19,47 +23,39 @@ export function ProductWorkflowSection() {
   const steps = [
     {
       step: 1,
-      title: 'Register Assets',
+      title: 'Register Assets (Excel Import or 1-Click Entry)',
       shortTitle: '1. Register Assets',
       category: 'Inventory Setup',
       icon: PlusCircle,
       description:
-        'Register extinguishers, hydrants, hose reels, and alarm panels. Log equipment details (type, capacity, serial number), manufacturer, installation dates, and statutory test intervals.',
-      previewText: 'ASSET REGISTRY: 6kg ABC Dry Powder • Floor 4 North Wing • Serial: VIGIL-DP-4019',
-      status: 'LIVE' as const,
+        'Import your client equipment rosters from Excel or register extinguishers, hydrants, hose reels, and alarm panels manually. Track capacities, serial numbers, locations, and statutory refill & hydro-test due dates.',
     },
     {
       step: 2,
-      title: 'Record on Site (Details, GPS Location, Photo)',
+      title: 'Record on Site (GPS, Offline Checks & Photo)',
       shortTitle: '2. Record on Site',
       category: 'Field Inspection',
       icon: MapPin,
       description:
-        'Technicians record asset details, floor and location notes, GPS position, a photo, and the inspection date and time using a simple mobile form.',
-      previewText: 'INSPECTION: GPS (28.4595° N, 77.0266° E) • Floor 2 Electrical Room • Photo & Time Captured',
-      status: 'BETA' as const,
+        'Technicians record gauge pressure readings, pin/seal integrity, floor notes, GPS position, and timestamped condition photos on mobile phones — even 100% offline in underground basement pump rooms.',
     },
     {
       step: 3,
-      title: 'Flag Defects with Photo Proof',
-      shortTitle: '3. Flag Defects',
-      category: 'Defect Remediation',
+      title: 'Flag Defects & Auto-Generate Client Repair Quotes',
+      shortTitle: '3. Flag Defects & Quote',
+      category: 'Defect Remediation & Revenue',
       icon: Camera,
       description:
-        'Flag depressurized cylinders, missing safety seals, damaged hoses, or leaking valves immediately with attached photographic evidence.',
-      previewText: 'DEFECT LOG: Low Pressure (8.2 Bar) • Photographic Proof Attached • Remediation Ticket Created',
-      status: 'LIVE' as const,
+        'Depressurized cylinders, leaking hydrant valves, or dead alarm batteries are logged with timestamped photo proof. Instantly generates an itemized client refill & repair estimate so facility managers approve without delays.',
     },
     {
       step: 4,
-      title: 'Generate the Form-B Report',
+      title: 'Compile Standardized Form-B Compliance Report',
       shortTitle: '4. Generate Form-B',
       category: 'Statutory Deliverable',
       icon: FileCheck2,
       description:
-        'Compile all verified equipment logs, locations, and photos into a standardized Biannual Form-B compliance certificate ready for licensed contractor sign-off.',
-      previewText: 'DELIVERABLE: Standardized Form-B PDF • Equipment Schedule with Locations & Photos',
-      status: 'LIVE' as const,
+        '1-click compilation of verified equipment logs, locations, and photo evidence into a model Form-B compliance certificate formatted for your licensed agency seal and authorized signatory.',
     },
   ];
 
@@ -70,14 +66,13 @@ export function ProductWorkflowSection() {
       <div className="max-w-6xl mx-auto">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-ocean-50 text-[#0077B6] text-xs font-bold border border-ocean-200 mb-3">
-            <span>End-to-End Operational Lifecycle</span>
-            <StatusBadge status="BETA" size="xs" />
+            <span>End-to-End AMC Lifecycle</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-black text-[#023E8A] tracking-tight">
             How VigilAMC Works in Practice
           </h2>
           <p className="mt-3 text-base text-slate-600 leading-relaxed">
-            From asset registration and GPS-verified inspections to standardized Form-B compliance reports.
+            From client asset registration and GPS field checks to photo-approved defect billing and Form-B compliance certificates.
           </p>
         </div>
 
@@ -89,15 +84,17 @@ export function ProductWorkflowSection() {
               <button
                 key={s.step}
                 onClick={() => setActiveStep(s.step)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                   isSelected
                     ? 'bg-[#0077B6] text-white shadow-md scale-105'
                     : 'bg-white text-slate-600 hover:text-[#0077B6] border border-slate-200 hover:border-[#0077B6]/40'
                 }`}
               >
-                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
-                  isSelected ? 'bg-white text-[#0077B6]' : 'bg-slate-100 text-slate-600'
-                }`}>
+                <span
+                  className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
+                    isSelected ? 'bg-white text-[#0077B6]' : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
                   {s.step}
                 </span>
                 <span>{s.shortTitle}</span>
@@ -107,13 +104,13 @@ export function ProductWorkflowSection() {
         </div>
 
         {/* Active Step Feature Showcase Card */}
-        <div className="corp-card p-8 sm:p-10 bg-white border border-slate-200 shadow-xl rounded-2xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          <div className="lg:col-span-7 space-y-4">
+        <div className="corp-card p-6 sm:p-10 bg-white border border-slate-200 shadow-xl rounded-2xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          {/* Left Column: Description & Controls */}
+          <div className="lg:col-span-6 space-y-4">
             <div className="flex items-center gap-2">
               <span className="text-xs uppercase font-extrabold text-[#0077B6] tracking-wider">
                 Step 0{current.step} of 04 &bull; {current.category}
               </span>
-              <StatusBadge status={current.status} size="xs" />
             </div>
 
             <h3 className="text-2xl sm:text-3xl font-black text-[#023E8A]">
@@ -124,52 +121,223 @@ export function ProductWorkflowSection() {
               {current.description}
             </p>
 
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono text-slate-700 space-y-1">
-              <span className="text-[10px] text-slate-400 uppercase font-sans font-bold block">
-                Platform Action Simulation:
-              </span>
-              <p className="text-slate-800 font-semibold">{current.previewText}</p>
-            </div>
-
-            <div className="flex items-center gap-3 pt-2">
+            <div className="flex items-center gap-3 pt-3">
               <button
                 onClick={() => setActiveStep((prev) => (prev === 4 ? 1 : prev + 1))}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0077B6] hover:bg-[#023E8A] text-white text-xs font-bold transition-all shadow-sm active:scale-[0.98]"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0077B6] hover:bg-[#023E8A] text-white text-xs font-bold transition-all shadow-sm active:scale-[0.98] cursor-pointer"
               >
                 <span>{activeStep === 4 ? 'Start Over (Step 1)' : 'Next Step'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
               <span className="text-xs text-slate-400">
-                Click any step pill above to jump
+                Click any step above to jump
               </span>
             </div>
           </div>
 
-          {/* Right Visual Step Representation */}
-          <div className="lg:col-span-5">
-            <div className="p-6 rounded-2xl bg-gradient-to-br from-slate-900 to-navy-950 text-white shadow-lg space-y-4 border border-slate-800">
-              <div className="flex items-center justify-between text-xs text-cyan-200 pb-2 border-b border-slate-800">
-                <span className="flex items-center gap-2 font-mono font-bold">
-                  <current.icon className="w-4 h-4 text-cyan-400" />
-                  Workflow Execution Node
+          {/* Right Column: Realistic Live Product UI Preview */}
+          <div className="lg:col-span-6">
+            <div className="rounded-2xl bg-gradient-to-br from-[#0B1528] via-[#0F1E36] to-[#0A1628] text-white shadow-2xl p-5 border border-slate-700/80">
+              {/* Window chrome header */}
+              <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-700/60 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                  <span className="ml-2 font-mono text-[11px] text-cyan-300 font-bold">
+                    VigilAMC &bull; Step {activeStep} Live Preview
+                  </span>
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">
+                  {current.category}
                 </span>
-                <span className="text-[10px] text-slate-400">Step {current.step}/4</span>
               </div>
 
-              <div className="py-6 flex flex-col items-center justify-center text-center space-y-3">
-                <div className="w-16 h-16 rounded-2xl bg-[#0077B6]/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300 shadow-inner">
-                  <current.icon className="w-8 h-8 stroke-[2.2]" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-sm text-white">{current.title}</h4>
-                  <p className="text-xs text-slate-400 mt-1 max-w-xs">{current.category}</p>
-                </div>
-              </div>
+              {/* Dynamic UI Previews matching Step 1-4 */}
+              {activeStep === 1 && (
+                <div className="space-y-3 font-sans animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between text-[11px] text-slate-400 pb-1">
+                    <span className="flex items-center gap-1.5 text-cyan-300 font-semibold">
+                      <FileSpreadsheet className="w-3.5 h-3.5" />
+                      Apex Tower B &bull; Asset Master Table
+                    </span>
+                    <span className="text-emerald-400 font-mono">Excel Import Active</span>
+                  </div>
 
-              <div className="p-3 rounded-lg bg-slate-800/80 border border-slate-700/60 text-[11px] text-cyan-100 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>Verified in production codebase</span>
-              </div>
+                  <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2 text-xs">
+                    <div className="flex items-center justify-between font-mono text-cyan-200 font-bold">
+                      <span>VIGIL-DP-4019</span>
+                      <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px]">
+                        REGISTERED
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-300 pt-1">
+                      <div>
+                        <span className="text-slate-500 block">Equipment:</span>
+                        <strong className="text-white">6kg ABC Dry Powder</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block">Location:</span>
+                        <strong className="text-white">Tower A, 4th Floor Lobby</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block">Refill Frequency:</span>
+                        <span className="text-slate-300">Annual (Nov 2026)</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block">Hydro Test (HPT):</span>
+                        <strong className="text-amber-400">Due Nov 2027</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-slate-800/60 text-[11px] text-slate-300">
+                    <span>Batch Import: <strong>48 assets mapped from Excel</strong></span>
+                    <span className="text-emerald-400 font-semibold">0 Errors</span>
+                  </div>
+                </div>
+              )}
+
+              {activeStep === 2 && (
+                <div className="space-y-3 font-sans animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between text-[11px] text-slate-400 pb-1">
+                    <span className="flex items-center gap-1.5 text-cyan-300 font-semibold">
+                      <Smartphone className="w-3.5 h-3.5" />
+                      Technician Mobile Form &bull; Offline Mode
+                    </span>
+                    <span className="text-emerald-400 font-mono text-[10px] bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-700/50">
+                      GPS LOCKED
+                    </span>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Gauge className="w-4 h-4 text-emerald-400" />
+                        <span className="font-semibold text-white">Pressure Reading:</span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono font-bold text-xs">
+                        14.5 Bar [GREEN ZONE]
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-800 text-[11px]">
+                      <span className="text-slate-400">Safety Pin &amp; Tamper Seal:</span>
+                      <span className="text-emerald-400 font-semibold">Intact &bull; Verified</span>
+                    </div>
+
+                    <div className="p-2 rounded bg-slate-950/80 border border-slate-800/80 space-y-1 text-[11px] font-mono text-slate-300">
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">GPS Position:</span>
+                        <span className="text-cyan-300">28.4595° N, 77.0266° E</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Timestamp:</span>
+                        <span className="text-slate-300">Today, 11:42 AM IST</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Photo Proof:</span>
+                        <span className="text-emerald-400">IMG_2026_0102.jpg [Attached]</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-2 rounded-lg bg-blue-950/40 border border-blue-800/40 text-[11px] text-cyan-200 flex items-center gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                    <span>Cached locally in subterranean basement &bull; Syncs on network</span>
+                  </div>
+                </div>
+              )}
+
+              {activeStep === 3 && (
+                <div className="space-y-3 font-sans animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between text-[11px] text-slate-400 pb-1">
+                    <span className="flex items-center gap-1.5 text-amber-300 font-semibold">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      Defect Flagged on Site &bull; Quote Created
+                    </span>
+                    <span className="text-red-400 font-mono text-[10px] bg-red-950/80 px-2 py-0.5 rounded border border-red-700/50">
+                      ACTION REQUIRED
+                    </span>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-slate-900/90 border border-red-900/40 space-y-2 text-xs">
+                    <div className="flex items-center justify-between font-mono">
+                      <span className="text-red-300 font-bold">VIGIL-CO-2041 &bull; 4.5kg CO2</span>
+                      <span className="px-2 py-0.5 rounded bg-red-500/20 text-red-300 text-[10px] font-bold">
+                        UNDERWEIGHT -650g
+                      </span>
+                    </div>
+
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      Gross weight 13.85kg vs Tare 14.5kg marked. Cylinder discharged or leaking. Photo evidence logged.
+                    </p>
+
+                    <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 space-y-1.5 text-[11px]">
+                      <div className="flex items-center justify-between text-slate-400 font-mono">
+                        <span className="flex items-center gap-1.5 text-slate-300">
+                          <Receipt className="w-3.5 h-3.5 text-cyan-400" />
+                          Auto-Generated Client Quote:
+                        </span>
+                        <strong className="text-emerald-400 font-bold text-xs">₹1,450.00</strong>
+                      </div>
+                      <div className="text-[10px] text-slate-500">
+                        Item: 4.5kg CO2 Gas Refill + High-Pressure Discharge Horn Seal Servicing
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-950/40 border border-emerald-800/40 text-[11px] text-emerald-200">
+                    <span>1-Tap Send to Facility Manager via WhatsApp/Email</span>
+                    <strong className="text-white">Fast Quote Approval</strong>
+                  </div>
+                </div>
+              )}
+
+              {activeStep === 4 && (
+                <div className="space-y-3 font-sans animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between text-[11px] text-slate-400 pb-1">
+                    <span className="flex items-center gap-1.5 text-cyan-300 font-semibold">
+                      <FileCheck2 className="w-3.5 h-3.5" />
+                      Model Form-B Certificate Package Ready
+                    </span>
+                    <span className="text-emerald-400 font-mono text-[10px] bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-700/50">
+                      PRINT READY A4
+                    </span>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2 text-xs">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                      <div>
+                        <span className="font-bold text-white block">Apex Business Towers (Tower B)</span>
+                        <span className="text-[10px] text-slate-400">Biannual Statutory Maintenance Filing</span>
+                      </div>
+                      <span className="font-mono text-cyan-300 font-bold text-xs">FORM-B/2026/042</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-300 pt-1">
+                      <div>
+                        <span className="text-slate-500 block">Audited Assets:</span>
+                        <strong className="text-white">48 Units Compiled</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block">Status:</span>
+                        <strong className="text-emerald-400">44 Operational / 4 Quoted</strong>
+                      </div>
+                    </div>
+
+                    <div className="p-2 rounded bg-slate-950 border border-slate-800 flex items-center justify-between text-[11px]">
+                      <span className="text-slate-400">Authorized Agency Seal Block:</span>
+                      <span className="text-cyan-300 font-mono">DL/FIRE/LIC/2026/042</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-slate-800/60 text-[11px] text-slate-300">
+                    <span>Generated in under 60 seconds from field logs</span>
+                    <span className="text-cyan-300 font-semibold">Ready for Signature</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

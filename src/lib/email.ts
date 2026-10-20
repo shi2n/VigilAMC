@@ -1,3 +1,5 @@
+import { SITE_CONFIG } from './siteConfig';
+
 export interface InquiryEmailData {
   name?: string | null;
   company?: string | null;
@@ -14,7 +16,7 @@ export interface InquiryEmailData {
 }
 
 export async function sendInquiryNotification(data: InquiryEmailData): Promise<{ success: boolean; message?: string }> {
-  const recipient = process.env.ADMIN_NOTIFICATION_EMAIL || 'vigilamc@gmail.com';
+  const recipient = process.env.ADMIN_NOTIFICATION_EMAIL || SITE_CONFIG.CONTACT_EMAIL;
   const subject = 'New VigilAMC Website Inquiry';
 
   const formattedDate = new Date(data.submittedAt).toLocaleString('en-IN', {
@@ -114,7 +116,7 @@ export interface InvestorEmailData {
 }
 
 export async function sendInvestorNotification(data: InvestorEmailData): Promise<{ success: boolean; message?: string }> {
-  const recipient = process.env.ADMIN_NOTIFICATION_EMAIL || 'vigilamc@gmail.com';
+  const recipient = process.env.ADMIN_NOTIFICATION_EMAIL || SITE_CONFIG.CONTACT_EMAIL;
   const subject = `🚀 New Investor Interest: ${data.fullName} (${data.investorType})`;
 
   const formattedDate = new Date(data.submittedAt).toLocaleString('en-IN', {

@@ -19,6 +19,7 @@ import {
   MessageSquare,
   Sparkles,
 } from 'lucide-react';
+import { SITE_CONFIG } from '@/lib/siteConfig';
 
 interface FormState {
   fullName: string;
@@ -137,7 +138,7 @@ export function InvestorForm() {
     } catch (err: any) {
       console.error('Submission error:', err);
       setErrorMessage(
-        err.message || 'An error occurred while submitting your interest. Please try again or write directly to vigilamc@gmail.com.'
+        err.message || `An error occurred while submitting your interest. Please try again or write directly to ${SITE_CONFIG.CONTACT_EMAIL}.`
       );
     } finally {
       setLoading(false);
@@ -175,13 +176,13 @@ export function InvestorForm() {
             Have immediate questions or want to review our product architecture directly?
           </p>
           <p className="text-slate-300 font-medium">
-            Contact Shaizan Siddiqui directly at{' '}
-            <a href="mailto:vigilamc@gmail.com" className="text-cyan-300 underline hover:text-white">
-              vigilamc@gmail.com
+            Contact Shaizan directly at{' '}
+            <a href={`mailto:${SITE_CONFIG.CONTACT_EMAIL}`} className="text-cyan-300 underline hover:text-white">
+              {SITE_CONFIG.CONTACT_EMAIL}
             </a>{' '}
             or call{' '}
-            <a href="tel:+918383890483" className="text-cyan-300 underline hover:text-white">
-              +91 83838 90483
+            <a href={SITE_CONFIG.PHONE_TEL} className="text-cyan-300 underline hover:text-white">
+              {SITE_CONFIG.PHONE_DISPLAY}
             </a>.
           </p>
         </div>

@@ -4,24 +4,16 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  ShieldAlert,
-  ShieldCheck,
   Menu,
   X,
   PhoneCall,
-  Clock,
   ArrowRight,
   CheckCircle2,
-  ExternalLink,
-  ChevronDown,
-  Building,
-  Wrench,
-  FileCheck,
-  Award,
   Linkedin,
   Instagram,
   Youtube
 } from 'lucide-react';
+import { SITE_CONFIG } from '@/lib/siteConfig';
 
 interface CorporateHeaderProps {
   onOpenDemoModal?: () => void;
@@ -45,22 +37,23 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
     setMobileMenuOpen(false);
   }, [pathname]);
 
+  // Customer navigation links (Invest is intentionally excluded per B2B positioning)
   const navLinks = [
     { name: 'Home', href: '/' },
     { name: 'How It Works', href: '/how-it-works' },
     { name: 'Features', href: '/features' },
     { name: 'Sample Report', href: '/sample-report' },
     { name: 'About', href: '/about' },
-    { name: 'Invest', href: '/invest' },
     { name: 'Contact', href: '/contact' },
   ];
 
   return (
     <header className="w-full relative z-40">
-      {/* Top Utility Bar (Compliance & Direct Helpline) */}
-      <div className="bg-[#023E8A] text-white text-[11px] sm:text-xs py-1.5 px-4 border-b border-navy-700/50">
+      {/* Top Utility Bar (Clean single-line on <640px screens, full info on desktop) */}
+      <div className="bg-[#023E8A] text-white text-[11px] sm:text-xs py-1.5 px-3 sm:px-4 border-b border-navy-700/50">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5 sm:gap-3 truncate">
+          {/* Desktop Left: Positioning statement */}
+          <div className="hidden sm:flex items-center gap-2.5 sm:gap-3 truncate">
             <span className="inline-flex items-center gap-1.5 font-medium text-cyan-200 shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
               Built for Fire-Safety AMC &amp; Service Teams
@@ -71,11 +64,12 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
             </span>
           </div>
 
-          <div className="flex items-center gap-3 sm:gap-4 shrink-0 text-[11px] sm:text-xs">
+          {/* Right Action/Helpline (Full width on mobile so 390px never clips) */}
+          <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3 sm:gap-4 shrink-0 text-[11px] sm:text-xs">
             <div className="hidden xl:flex items-center gap-2.5 pr-2 border-r border-navy-700/60 text-cyan-200">
               <span className="text-[10px] text-cyan-300 font-semibold">@vigilamc</span>
               <a
-                href="https://www.linkedin.com/company/vigilamc/"
+                href={SITE_CONFIG.SOCIAL.LINKEDIN}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-white transition-colors"
@@ -85,7 +79,7 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
                 <Linkedin className="w-3 h-3" />
               </a>
               <a
-                href="https://www.instagram.com/vigilamc"
+                href={SITE_CONFIG.SOCIAL.INSTAGRAM}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-white transition-colors"
@@ -95,7 +89,7 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
                 <Instagram className="w-3 h-3" />
               </a>
               <a
-                href="https://x.com/vigilamc"
+                href={SITE_CONFIG.SOCIAL.TWITTER}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-white transition-colors"
@@ -107,7 +101,7 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
                 </svg>
               </a>
               <a
-                href="https://www.youtube.com/@vigilamc"
+                href={SITE_CONFIG.SOCIAL.YOUTUBE}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-white transition-colors"
@@ -117,15 +111,18 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
                 <Youtube className="w-3 h-3" />
               </a>
             </div>
+
             <a
-              href="tel:+918383890483"
+              href={SITE_CONFIG.PHONE_TEL}
               className="flex items-center gap-1.5 text-slate-100 hover:text-cyan-200 transition-colors font-medium"
             >
-              <PhoneCall className="w-3 h-3 text-cyan-300" />
+              <PhoneCall className="w-3 h-3 text-cyan-300 shrink-0" />
               <span className="hidden sm:inline">AMC Helpline:</span>
-              <strong className="tracking-wide">+91 83838 90483</strong>
+              <strong className="tracking-wide">{SITE_CONFIG.PHONE_DISPLAY}</strong>
             </a>
-            <span className="text-navy-400 hidden sm:inline">|</span>
+
+            <span className="text-navy-400">|</span>
+
             <Link
               href="/login"
               className="text-white hover:text-cyan-200 font-semibold flex items-center gap-1 transition-colors"
@@ -205,9 +202,9 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
               </Link>
               <button
                 onClick={onOpenDemoModal}
-                className="inline-flex items-center justify-center px-4 py-2 text-xs font-bold rounded-xl text-white bg-gradient-to-r from-[#0077B6] to-[#023E8A] hover:from-[#006494] hover:to-[#011F48] shadow-sm hover:shadow transition-all group active:scale-[0.98]"
+                className="inline-flex items-center justify-center px-4 py-2 text-xs font-bold rounded-xl text-white bg-gradient-to-r from-[#0077B6] to-[#023E8A] hover:from-[#006494] hover:to-[#011F48] shadow-sm hover:shadow transition-all group active:scale-[0.98] cursor-pointer"
               >
-                <span>Workflow Review</span>
+                <span>Book 15-Min Demo</span>
                 <ArrowRight className="w-3.5 h-3.5 ml-1 transition-transform group-hover:translate-x-0.5" />
               </button>
             </div>
@@ -216,9 +213,9 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
             <div className="flex lg:hidden items-center gap-2">
               <button
                 onClick={onOpenDemoModal}
-                className="text-xs font-bold text-white bg-[#0077B6] px-3 py-1.5 rounded-lg active:scale-95"
+                className="text-xs font-bold text-white bg-[#0077B6] px-3 py-1.5 rounded-lg active:scale-95 cursor-pointer"
               >
-                Review
+                Demo
               </button>
               <button
                 type="button"
@@ -267,17 +264,17 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
                   setMobileMenuOpen(false);
                   onOpenDemoModal?.();
                 }}
-                className="w-full text-center py-2.5 text-xs font-bold text-white bg-gradient-to-r from-[#0077B6] to-[#023E8A] rounded-lg shadow active:scale-[0.98]"
+                className="w-full text-center py-2.5 text-xs font-bold text-white bg-gradient-to-r from-[#0077B6] to-[#023E8A] rounded-lg shadow active:scale-[0.98] cursor-pointer"
               >
-                Book 15-Minute Workflow Review
+                Book 15-Minute Agency Demo
               </button>
               <div className="text-center pt-2 text-xs text-slate-500">
-                Helpline: <a href="tel:+918383890483" className="text-[#0077B6] font-bold">+91 83838 90483</a>
+                Helpline: <a href={SITE_CONFIG.PHONE_TEL} className="text-[#0077B6] font-bold">{SITE_CONFIG.PHONE_DISPLAY}</a>
               </div>
               <div className="flex items-center justify-center gap-3 pt-3 border-t border-slate-100">
                 <span className="text-[11px] font-semibold text-slate-500">Follow @vigilamc:</span>
                 <a
-                  href="https://www.linkedin.com/company/vigilamc/"
+                  href={SITE_CONFIG.SOCIAL.LINKEDIN}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-7 h-7 rounded-md bg-slate-100 text-[#0A66C2] flex items-center justify-center hover:bg-[#0A66C2] hover:text-white transition-colors"
@@ -287,7 +284,7 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
                   <Linkedin className="w-3.5 h-3.5" />
                 </a>
                 <a
-                  href="https://www.instagram.com/vigilamc"
+                  href={SITE_CONFIG.SOCIAL.INSTAGRAM}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-7 h-7 rounded-md bg-slate-100 text-pink-600 flex items-center justify-center hover:bg-pink-600 hover:text-white transition-colors"
@@ -297,7 +294,7 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
                   <Instagram className="w-3.5 h-3.5" />
                 </a>
                 <a
-                  href="https://x.com/vigilamc"
+                  href={SITE_CONFIG.SOCIAL.TWITTER}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-7 h-7 rounded-md bg-slate-100 text-slate-800 flex items-center justify-center hover:bg-black hover:text-white transition-colors"
@@ -309,7 +306,7 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
                   </svg>
                 </a>
                 <a
-                  href="https://www.youtube.com/@vigilamc"
+                  href={SITE_CONFIG.SOCIAL.YOUTUBE}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-7 h-7 rounded-md bg-slate-100 text-red-600 flex items-center justify-center hover:bg-red-600 hover:text-white transition-colors"

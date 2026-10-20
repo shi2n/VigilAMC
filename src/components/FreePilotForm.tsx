@@ -1,8 +1,20 @@
 'use client';
 
 import React, { useState } from 'react';
-import { CheckCircle2, User, Building, Phone, Mail, Users, FileSpreadsheet, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
-import { StatusBadge } from './StatusBadge';
+import {
+  CheckCircle2,
+  User,
+  Building,
+  Phone,
+  Mail,
+  Users,
+  FileSpreadsheet,
+  ArrowRight,
+  ShieldCheck,
+  Sparkles,
+  MessageCircle
+} from 'lucide-react';
+import { SITE_CONFIG } from '@/lib/siteConfig';
 
 export function FreePilotForm() {
   const [formData, setFormData] = useState({
@@ -26,11 +38,11 @@ export function FreePilotForm() {
   const validate = () => {
     const errs: Record<string, string> = {};
     if (!formData.name.trim()) errs.name = 'Contact name is required';
-    if (!formData.company.trim()) errs.company = 'Company / Agency name is required';
+    if (!formData.company.trim()) errs.company = 'Agency / Company name is required';
     if (!formData.state.trim()) errs.state = 'Please select your State / UT';
     if (!formData.city.trim()) errs.city = 'City name is required';
     if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errs.email = 'Valid work email is required';
+      errs.email = 'Valid email address is required (e.g. sharmafire@gmail.com)';
     }
     if (!formData.phone.trim() || formData.phone.replace(/[^0-9]/g, '').length < 8) {
       errs.phone = 'Valid phone or WhatsApp number is required';
@@ -89,15 +101,17 @@ export function FreePilotForm() {
       <div className="bg-gradient-to-r from-[#023E8A] to-[#0077B6] p-6 sm:p-8 text-white">
         <div className="flex items-center justify-between gap-3 mb-2">
           <span className="text-xs uppercase font-extrabold tracking-widest text-cyan-200">
-            Testing Phase
+            Testing Phase &bull; Free Founding Access
           </span>
-          <StatusBadge status="BETA" />
+          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-400 text-[#023E8A]">
+            60 Days Free
+          </span>
         </div>
         <h3 className="text-2xl font-black text-white">
-          Join the Free Testing
+          Join the Free Testing Program
         </h3>
         <p className="text-sm text-cyan-100 mt-2 leading-relaxed">
-          VigilAMC is in its testing phase and is free for every agency that joins. Test asset registration, GPS and photo-verified inspections, and Form-B generation with real workflows.
+          VigilAMC is 100% free for founding agencies during testing. Test asset registration, GPS and photo-verified inspections, and Form-B generation with your real building rosters.
         </p>
       </div>
 
@@ -117,11 +131,20 @@ export function FreePilotForm() {
               <p className="font-bold">What happens next:</p>
               <ul className="list-disc pl-4 space-y-0.5 text-slate-600 text-[11px]">
                 <li>We schedule a 15-minute onboarding walkthrough.</li>
-                <li>We help import a sample building equipment roster.</li>
+                <li>We help import your first 3 client building rosters completely free.</li>
                 <li>Your field technicians test the simple mobile form on site.</li>
               </ul>
             </div>
-            <div className="pt-2">
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <a
+                href={SITE_CONFIG.WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#25D366] hover:bg-[#20BA5C] text-white text-xs font-bold rounded-xl transition-colors"
+              >
+                <MessageCircle className="w-4 h-4 fill-current" />
+                <span>Chat on WhatsApp Directly</span>
+              </a>
               <button
                 type="button"
                 onClick={() => {
@@ -139,25 +162,42 @@ export function FreePilotForm() {
                     message: '',
                   });
                 }}
-                className="text-xs text-[#0077B6] font-semibold underline hover:text-[#023E8A]"
+                className="w-full sm:w-auto px-5 py-2.5 bg-[#0077B6] hover:bg-[#023E8A] text-white text-xs font-bold rounded-xl transition-colors"
               >
-                Submit another request
+                Submit Another Facility
               </button>
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4 text-xs" noValidate>
+          <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+            {/* Quick WhatsApp conversion row */}
+            <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-slate-700">
+              <div className="flex items-center gap-2 text-emerald-950 font-medium">
+                <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0 fill-current" />
+                <span>Prefer messaging directly on WhatsApp?</span>
+              </div>
+              <a
+                href={SITE_CONFIG.WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#25D366] hover:bg-[#20BA5C] text-white font-bold text-[11px] whitespace-nowrap shadow-xs"
+              >
+                <span>Message Shaizan</span>
+                <ArrowRight className="w-3 h-3" />
+              </a>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Your Full Name *
+                  Contact Name *
                 </label>
                 <div className="relative">
                   <User className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Rajesh Sharma"
+                    placeholder="e.g. Rajesh Kumar"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className={`w-full pl-9 pr-3 py-2 text-xs rounded-lg border ${
@@ -170,14 +210,14 @@ export function FreePilotForm() {
 
               <div>
                 <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Company / Agency Name *
+                  Agency / Company Name *
                 </label>
                 <div className="relative">
                   <Building className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Apex Fire Engineering"
+                    placeholder="e.g. Apex Fire Protection Services"
                     value={formData.company}
                     onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                     className={`w-full pl-9 pr-3 py-2 text-xs rounded-lg border ${
@@ -204,42 +244,29 @@ export function FreePilotForm() {
                   } focus:outline-none focus:ring-2 focus:ring-[#0077B6] bg-white text-slate-900`}
                 >
                   <option value="">Select State / Union Territory</option>
-                  <option value="Andhra Pradesh">Andhra Pradesh</option>
-                  <option value="Arunachal Pradesh">Arunachal Pradesh</option>
-                  <option value="Assam">Assam</option>
-                  <option value="Bihar">Bihar</option>
-                  <option value="Chhattisgarh">Chhattisgarh</option>
-                  <option value="Goa">Goa</option>
-                  <option value="Gujarat">Gujarat</option>
-                  <option value="Haryana">Haryana</option>
-                  <option value="Himachal Pradesh">Himachal Pradesh</option>
-                  <option value="Jharkhand">Jharkhand</option>
-                  <option value="Karnataka">Karnataka</option>
-                  <option value="Kerala">Kerala</option>
-                  <option value="Madhya Pradesh">Madhya Pradesh</option>
+                  <option value="Delhi">Delhi</option>
                   <option value="Maharashtra">Maharashtra</option>
-                  <option value="Manipur">Manipur</option>
-                  <option value="Meghalaya">Meghalaya</option>
-                  <option value="Mizoram">Mizoram</option>
-                  <option value="Nagaland">Nagaland</option>
-                  <option value="Odisha">Odisha</option>
-                  <option value="Punjab">Punjab</option>
-                  <option value="Rajasthan">Rajasthan</option>
-                  <option value="Sikkim">Sikkim</option>
+                  <option value="Karnataka">Karnataka</option>
+                  <option value="Haryana">Haryana</option>
+                  <option value="Uttar Pradesh">Uttar Pradesh</option>
+                  <option value="Gujarat">Gujarat</option>
                   <option value="Tamil Nadu">Tamil Nadu</option>
                   <option value="Telangana">Telangana</option>
-                  <option value="Tripura">Tripura</option>
-                  <option value="Uttar Pradesh">Uttar Pradesh</option>
-                  <option value="Uttarakhand">Uttarakhand</option>
                   <option value="West Bengal">West Bengal</option>
-                  <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                  <option value="Rajasthan">Rajasthan</option>
+                  <option value="Punjab">Punjab</option>
+                  <option value="Andhra Pradesh">Andhra Pradesh</option>
+                  <option value="Bihar">Bihar</option>
                   <option value="Chandigarh">Chandigarh</option>
-                  <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
-                  <option value="Delhi">Delhi</option>
-                  <option value="Jammu and Kashmir">Jammu and Kashmir</option>
-                  <option value="Ladakh">Ladakh</option>
-                  <option value="Lakshadweep">Lakshadweep</option>
-                  <option value="Puducherry">Puducherry</option>
+                  <option value="Chhattisgarh">Chhattisgarh</option>
+                  <option value="Goa">Goa</option>
+                  <option value="Himachal Pradesh">Himachal Pradesh</option>
+                  <option value="Jharkhand">Jharkhand</option>
+                  <option value="Kerala">Kerala</option>
+                  <option value="Madhya Pradesh">Madhya Pradesh</option>
+                  <option value="Odisha">Odisha</option>
+                  <option value="Uttarakhand">Uttarakhand</option>
+                  <option value="Other">Other State / UT</option>
                 </select>
                 {errors.state && <p className="text-[11px] text-red-600 mt-1">{errors.state}</p>}
               </div>
@@ -251,7 +278,7 @@ export function FreePilotForm() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Mumbai, Bengaluru, Delhi"
+                  placeholder="e.g. Mumbai, Bengaluru, Delhi NCR"
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                   className={`w-full px-3 py-2 text-xs rounded-lg border ${
@@ -285,14 +312,14 @@ export function FreePilotForm() {
 
               <div>
                 <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Work Email *
+                  Email Address *
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                   <input
                     type="email"
                     required
-                    placeholder="rajesh@company.com"
+                    placeholder="e.g. sharmafire@gmail.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className={`w-full pl-9 pr-3 py-2 text-xs rounded-lg border ${
@@ -314,16 +341,16 @@ export function FreePilotForm() {
                   onChange={(e) => setFormData({ ...formData, technicianCount: e.target.value })}
                   className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
                 >
-                  <option value="1-5">1 &ndash; 5 Technicians</option>
-                  <option value="6-15">6 &ndash; 15 Technicians</option>
-                  <option value="16-30">16 &ndash; 30 Technicians</option>
-                  <option value="30+">30+ Technicians</option>
+                  <option value="1-5">1 to 5 Technicians</option>
+                  <option value="6-15">6 to 15 Technicians</option>
+                  <option value="16-30">16 to 30 Technicians</option>
+                  <option value="30+">30+ Field Staff</option>
                 </select>
               </div>
 
               <div>
                 <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Approx. Assets
+                  Total Managed Assets
                 </label>
                 <select
                   value={formData.assetCount}
@@ -331,8 +358,8 @@ export function FreePilotForm() {
                   className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
                 >
                   <option value="Under 100">Under 100 Assets</option>
-                  <option value="100-500">100 &ndash; 500 Assets</option>
-                  <option value="500-2000">500 &ndash; 2,000 Assets</option>
+                  <option value="100-500">100 - 500 Assets</option>
+                  <option value="500-2000">500 - 2,000 Assets</option>
                   <option value="2000+">2,000+ Assets</option>
                 </select>
               </div>
@@ -346,8 +373,8 @@ export function FreePilotForm() {
                   onChange={(e) => setFormData({ ...formData, trackingMethod: e.target.value })}
                   className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
                 >
-                  <option value="Paper & Physical Logbooks">Paper Logbooks</option>
                   <option value="Excel Spreadsheets">Excel Spreadsheets</option>
+                  <option value="Paper Checklists">Paper Checklists / Tags</option>
                   <option value="Generic Form App">Generic Form App</option>
                   <option value="None / Ad-hoc">Ad-hoc</option>
                 </select>
@@ -377,19 +404,19 @@ export function FreePilotForm() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3 px-6 bg-[#0077B6] hover:bg-[#023E8A] disabled:bg-slate-400 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+                className="w-full py-3 px-6 bg-[#0077B6] hover:bg-[#023E8A] disabled:bg-slate-400 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 active:scale-[0.98] cursor-pointer"
               >
                 {isSubmitting ? (
-                   <span>Submitting Application...</span>
+                  <span>Submitting Application...</span>
                 ) : (
                   <>
-                    <span>Join the free testing</span>
+                    <span>Join Free Testing Phase (60 Days Free)</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
               <p className="text-[11px] text-slate-400 text-center mt-2">
-                Free for every agency during testing &bull; Direct access &bull; 100% confidential
+                100% free for founding agencies &bull; Free Excel import for first 3 buildings &bull; Zero lock-in
               </p>
             </div>
           </form>
