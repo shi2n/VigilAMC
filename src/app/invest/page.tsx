@@ -47,14 +47,7 @@ export const metadata: Metadata = {
     description:
       'Digitizing India’s multi-billion rupee AMC & recurring service industry with GPS-verified inspections, photo proof, automated renewal schedules, and client compliance.',
     url: `${SITE_CONFIG.SITE_URL}/invest`,
-    images: [
-      {
-        url: '/brag.jpg',
-        width: 1200,
-        height: 630,
-        alt: 'Invest in VigilAMC',
-      },
-    ],
+
   },
 };
 
@@ -654,3 +647,4 @@ export default function InvestPage() {
     </div>
   );
 }
+

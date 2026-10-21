@@ -23,7 +23,6 @@ import {
   X,
   HelpCircle,
   ExternalLink,
-  Play,
   Send,
   Sliders,
   DollarSign,
@@ -43,6 +42,7 @@ import {
   Layers,
   CheckCircle
 } from 'lucide-react';
+import { HeroProductPreview } from '@/components/HeroProductPreview';
 import { CanvasHero } from '@/components/CanvasHero';
 import { ImageLightbox, LightboxImage } from '@/components/ImageLightbox';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -229,27 +229,26 @@ export default function HomePage() {
               onClick={() => setWorkflowModalOpen(true)}
               className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-[#0077B6] to-[#023E8A] hover:from-[#006494] hover:to-[#011F48] text-white font-bold text-sm sm:text-base shadow-lg shadow-[#0077B6]/25 hover:shadow-xl hover:shadow-[#0077B6]/35 transition-all transform hover:-translate-y-0.5 active:scale-[0.98] flex items-center justify-center gap-2 group cursor-pointer"
             >
-              <span>Book 15-Min Demo</span>
+              <span>Book a 15-Minute Workflow Review &rarr;</span>
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </button>
 
             <Link
               href="/sample-report"
-              className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-white hover:bg-slate-50 text-[#023E8A] font-bold text-sm sm:text-base border border-slate-300 hover:border-[#0077B6] shadow-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-white hover:bg-slate-50 text-[#023E8A] font-bold text-sm sm:text-base border border-slate-300 hover:border-[#0077B6] shadow-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer group"
             >
               <FileCheck2 className="w-4 h-4 text-[#0077B6]" />
-              <span>View Live Sample Form-B Report</span>
+              <span>View Sample Form-B Report &rarr;</span>
             </Link>
           </div>
 
           {/* Compact Trust Link Below Buttons */}
           <div className="mt-5 flex flex-wrap items-center justify-center gap-4 text-xs font-semibold text-slate-500">
             <a
-              href="#launch-demo"
-              className="inline-flex items-center gap-1.5 text-[#0077B6] hover:text-[#023E8A] transition-colors"
+              href="#pilot-section"
+              className="inline-flex items-center gap-1.5 text-[#0077B6] hover:text-[#023E8A] transition-colors font-semibold"
             >
-              <Play className="w-3.5 h-3.5 fill-current" />
-              <span>Watch 20s Product Overview</span>
+              <span>Or join free agency testing &darr;</span>
             </a>
             <span className="text-slate-300">&bull;</span>
             <span className="inline-flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
@@ -309,36 +308,8 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Featured Product Launch Demo */}
-          <div id="launch-demo" className="mt-14 max-w-4xl mx-auto scroll-mt-24">
-            <div className="relative rounded-2xl p-2.5 sm:p-3.5 bg-gradient-to-b from-white/95 via-ocean-50/40 to-slate-100/90 backdrop-blur-md border border-ocean-200/90 shadow-elevated overflow-hidden group">
-              <div className="flex items-center justify-between px-3.5 py-2.5 bg-[#021B3A] text-white rounded-xl mb-2.5 text-xs font-semibold shadow-inner">
-                <div className="flex items-center gap-2.5">
-                  <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="font-display tracking-wider uppercase text-[11px] text-cyan-200 font-bold">
-                    VigilAMC In Action &bull; Product Overview
-                  </span>
-                </div>
-                <div className="hidden sm:flex items-center gap-3 text-[11px] text-cyan-100/80">
-                  <span>Pan-India AMC Compliance Workflow</span>
-                </div>
-              </div>
-
-              {/* Video Player Container */}
-              <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-slate-950 shadow-inner">
-                <video
-                  src="/brag.mp4"
-                  poster="/brag.jpg"
-                  controls
-                  playsInline
-                  preload="metadata"
-                  className="w-full h-full object-cover"
-                >
-                  Your browser does not support the video tag.
-                </video>
-              </div>
-            </div>
-          </div>
+          {/* Interactive SaaS Browser + Mobile Mockup Showcase */}
+          <HeroProductPreview onOpenModal={() => setWorkflowModalOpen(true)} />
         </div>
       </section>
 
