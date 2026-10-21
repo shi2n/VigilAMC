@@ -40,14 +40,6 @@ export const metadata: Metadata = {
     description: "Serving fire safety AMC teams and fire protection agencies across India. Track annual maintenance contracts, log GPS-verified inspections with location details and photos, quote defect repairs, and generate client-ready Form-B reports in minutes.",
     url: SITE_CONFIG.SITE_URL,
     siteName: SITE_CONFIG.COMPANY_NAME,
-    images: [
-      {
-        url: "/brag.jpg",
-        width: 1200,
-        height: 630,
-        alt: "VigilAMC Fire Safety AMC Operations Platform",
-      },
-    ],
     locale: "en_IN",
     type: "website",
   },
@@ -56,7 +48,6 @@ export const metadata: Metadata = {
     title: "VigilAMC — Never Miss a Compliance Deadline Again | Pan-India Fire Safety AMC Software",
     description: "Serving fire safety AMC teams and fire protection agencies across India. Track annual maintenance contracts, log GPS-verified inspections with location details and photos, quote defect repairs, and generate client-ready Form-B reports in minutes.",
     creator: "@vigilamc",
-    images: ["/brag.jpg"],
   },
   robots: {
     index: true,
