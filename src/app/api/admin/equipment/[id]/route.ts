@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { ensureR2PhotoUrl, deleteFromR2 } from '@/lib/r2';
 
 export const dynamic = 'force-dynamic';
 
@@ -96,7 +97,7 @@ export async function PUT(
         serviceIntervalMonths: serviceIntervalMonths !== undefined ? Number(serviceIntervalMonths) : existing.serviceIntervalMonths,
         status: status !== undefined ? status : existing.status,
         buildingId: buildingId !== undefined ? buildingId : existing.buildingId,
-        photoUrl: photoUrl !== undefined ? photoUrl : existing.photoUrl,
+        photoUrl: photoUrl !== undefined ? await ensureR2PhotoUrl({ photoUrl, organizationId: auth.organization.id, folder: 'equipment' }) : existing.photoUrl,
       },
     });
 
@@ -130,6 +131,9 @@ export async function DELETE(
       return NextResponse.json({ error: 'Equipment not found or access denied' }, { status: 404 });
     }
 
+    if (existing.photoUrl && existing.photoUrl.includes('.r2.dev/')) {
+      deleteFromR2(existing.photoUrl).catch(() => {});
+    }
     await (db as any).equipment.delete({ where: { id: params.id } });
 
     return NextResponse.json({ success: true, message: 'Equipment deleted' });

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { ensureR2PhotoUrl } from '@/lib/r2';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,13 +69,47 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Building ID is required' }, { status: 400 });
     }
 
-    const normalizedPhotos = photos
-      ? typeof photos === 'string'
-        ? photos
-        : JSON.stringify(photos)
-      : photoUrl
-      ? JSON.stringify([photoUrl])
-      : null;
+    let resolvedPhotoArray: string[] = [];
+    if (Array.isArray(photos)) {
+      for (const p of photos) {
+        const u = await ensureR2PhotoUrl({
+          photoUrl: p,
+          organizationId: auth.organization.id,
+          folder: 'inspections',
+        });
+        if (u) resolvedPhotoArray.push(u);
+      }
+    } else if (typeof photos === 'string' && photos.trim()) {
+      try {
+        const parsed = JSON.parse(photos);
+        if (Array.isArray(parsed)) {
+          for (const p of parsed) {
+            const u = await ensureR2PhotoUrl({
+              photoUrl: p,
+              organizationId: auth.organization.id,
+              folder: 'inspections',
+            });
+            if (u) resolvedPhotoArray.push(u);
+          }
+        }
+      } catch {
+        const u = await ensureR2PhotoUrl({
+          photoUrl: photos,
+          organizationId: auth.organization.id,
+          folder: 'inspections',
+        });
+        if (u) resolvedPhotoArray.push(u);
+      }
+    } else if (photoUrl) {
+      const u = await ensureR2PhotoUrl({
+        photoUrl,
+        organizationId: auth.organization.id,
+        folder: 'inspections',
+      });
+      if (u) resolvedPhotoArray.push(u);
+    }
+
+    const normalizedPhotos = resolvedPhotoArray.length > 0 ? JSON.stringify(resolvedPhotoArray) : null;
 
     const inspection = await (db as any).inspection.create({
       data: {

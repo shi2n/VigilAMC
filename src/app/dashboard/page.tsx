@@ -29,7 +29,7 @@ import { ClientsView } from '@/components/admin/ClientsView';
 import { BuildingsView } from '@/components/admin/BuildingsView';
 import { FireAssetsView } from '@/components/admin/FireAssetsView';
 import { SettingsView } from '@/components/admin/SettingsView';
-import { compressImageToDataUrl } from '@/lib/compressImage';
+import { compressImageToDataUrl, uploadCompressedPhoto } from '@/lib/compressImage';
 
 const LAST_ORG_CACHE_KEY = 'vigilamc_dash_last_org';
 
@@ -338,7 +338,7 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Client-side WebP photo compression handler for equipment modals
+  // Client-side WebP photo compression + Cloudflare R2 CDN upload handler for equipment modals
   const handlePhotoFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
     mode: 'SINGLE_ADD' | 'EDIT'
@@ -347,19 +347,33 @@ export default function AdminDashboardPage() {
     if (!file) return;
     try {
       setCompressingPhoto(true);
-      const compressedDataUrl = await compressImageToDataUrl(file, {
+      // Show instant local WebP thumbnail preview while uploading to Cloudflare R2
+      const previewDataUrl = await compressImageToDataUrl(file, {
         maxDimension: 1280,
         quality: 0.75,
         mimeType: 'image/webp',
       });
       if (mode === 'SINGLE_ADD') {
-        setSingleEquipForm((prev) => ({ ...prev, photoUrl: compressedDataUrl }));
+        setSingleEquipForm((prev) => ({ ...prev, photoUrl: previewDataUrl }));
       } else {
-        setEditEquipmentModal((prev: any) => (prev ? { ...prev, photoUrl: compressedDataUrl } : prev));
+        setEditEquipmentModal((prev: any) => (prev ? { ...prev, photoUrl: previewDataUrl } : prev));
       }
-    } catch (err) {
-      console.error('Image compression failed:', err);
-      showToast('Could not compress image, please try another photo.');
+
+      const uploaded = await uploadCompressedPhoto(file, 'equipment', {
+        maxDimension: 1280,
+        quality: 0.75,
+        mimeType: 'image/webp',
+      });
+
+      if (mode === 'SINGLE_ADD') {
+        setSingleEquipForm((prev) => ({ ...prev, photoUrl: uploaded.url }));
+      } else {
+        setEditEquipmentModal((prev: any) => (prev ? { ...prev, photoUrl: uploaded.url } : prev));
+      }
+      showToast(`Photo compressed (${Math.round(uploaded.sizeBytes / 1024)} KB WebP) & uploaded to R2 CDN!`);
+    } catch (err: any) {
+      console.error('Photo upload failed:', err);
+      showToast(err?.message || 'Could not upload photo, please try another image.');
     } finally {
       setCompressingPhoto(false);
     }
@@ -952,6 +966,8 @@ export default function AdminDashboardPage() {
                     showToast={showToast}
                     onOpenImport={() => handleOpenImport('INSPECTIONS')}
                     initialInspections={inspectionsList}
+                    buildings={data?.buildings || []}
+                    equipments={equipmentsList}
                     onRefreshDashboard={() => refreshDashboard({ silent: true })}
                   />
                 ) : (
@@ -1359,12 +1375,12 @@ export default function AdminDashboardPage() {
 
               <div>
                 <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">
-                  Equipment Photo (Auto-compressed WebP)
+                  Equipment Photo (Auto-compressed WebP &rarr; Cloudflare R2)
                 </label>
                 <div className="flex items-center gap-3">
                   <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer border border-slate-200 dark:bg-[#111827] dark:border-[#293548] dark:text-slate-300">
                     <Camera className="w-3.5 h-3.5 text-[#2563EB]" />
-                    <span>{compressingPhoto ? 'Compressing...' : 'Select Photo'}</span>
+                    <span>{compressingPhoto ? 'Uploading photo...' : 'Select Photo'}</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -1373,9 +1389,17 @@ export default function AdminDashboardPage() {
                     />
                   </label>
                   {singleEquipForm.photoUrl && (
-                    <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Ready (~90 KB WebP)
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={singleEquipForm.photoUrl}
+                        alt="Equipment preview"
+                        className="w-9 h-9 rounded-lg object-cover border border-slate-300 shadow-xs"
+                      />
+                      <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> {compressingPhoto ? 'Uploading...' : 'R2 CDN Ready'}
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>
@@ -1615,12 +1639,12 @@ export default function AdminDashboardPage() {
               </div>
               <div>
                 <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">
-                  Equipment Photo (Auto-compressed WebP)
+                  Equipment Photo (Auto-compressed WebP &rarr; Cloudflare R2)
                 </label>
                 <div className="flex items-center gap-3">
                   <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer border border-slate-200 dark:bg-[#111827] dark:border-[#293548] dark:text-slate-300">
                     <Camera className="w-3.5 h-3.5 text-[#2563EB]" />
-                    <span>{compressingPhoto ? 'Compressing...' : 'Update Photo'}</span>
+                    <span>{compressingPhoto ? 'Uploading photo...' : 'Update Photo'}</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -1629,9 +1653,17 @@ export default function AdminDashboardPage() {
                     />
                   </label>
                   {editEquipmentModal.photoUrl && (
-                    <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Photo attached
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={editEquipmentModal.photoUrl}
+                        alt="Equipment preview"
+                        className="w-9 h-9 rounded-lg object-cover border border-slate-300 shadow-xs"
+                      />
+                      <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> {compressingPhoto ? 'Uploading...' : 'Photo attached'}
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>

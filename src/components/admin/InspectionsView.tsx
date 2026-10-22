@@ -6,13 +6,19 @@ import {
   RefreshCw,
   ChevronRight,
   ShieldCheck,
+  Plus,
+  Camera,
+  CheckCircle2,
 } from 'lucide-react';
 import Link from 'next/link';
+import { compressImageToDataUrl, uploadCompressedPhoto } from '@/lib/compressImage';
 
 interface InspectionsViewProps {
   showToast: (msg: string) => void;
   onOpenImport?: () => void;
   initialInspections?: any[];
+  buildings?: any[];
+  equipments?: any[];
   onRefreshDashboard?: () => Promise<void> | void;
 }
 
@@ -20,12 +26,27 @@ export function InspectionsView({
   showToast,
   onOpenImport,
   initialInspections,
+  buildings = [],
+  equipments = [],
   onRefreshDashboard,
 }: InspectionsViewProps) {
   const [inspections, setInspections] = useState<any[]>(initialInspections || []);
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PASSED' | 'FAILED' | 'SERVICE_REQUIRED'>('ALL');
   const [search, setSearch] = useState('');
+
+  // Record Inspection Modal state (with Cloudflare R2 WebP photo upload)
+  const [recordModalOpen, setRecordModalOpen] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [submittingInspection, setSubmittingInspection] = useState(false);
+  const [inspectionForm, setInspectionForm] = useState({
+    buildingId: '',
+    equipmentId: '',
+    status: 'PASSED',
+    remarks: '',
+    technicianName: '',
+    photoUrl: '',
+  });
 
   // Keep in sync with parent bootstrap state immediately
   useEffect(() => {
@@ -60,6 +81,86 @@ export function InspectionsView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const handleInspectionPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setUploadingPhoto(true);
+      const previewUrl = await compressImageToDataUrl(file, {
+        maxDimension: 1280,
+        quality: 0.75,
+        mimeType: 'image/webp',
+      });
+      setInspectionForm((prev) => ({ ...prev, photoUrl: previewUrl }));
+
+      const uploaded = await uploadCompressedPhoto(file, 'inspections', {
+        maxDimension: 1280,
+        quality: 0.75,
+        mimeType: 'image/webp',
+      });
+      setInspectionForm((prev) => ({ ...prev, photoUrl: uploaded.url }));
+      showToast(`Inspection photo uploaded to R2 CDN (${Math.round(uploaded.sizeBytes / 1024)} KB WebP)!`);
+    } catch (err: any) {
+      console.error(err);
+      showToast(err?.message || 'Failed to upload inspection photo');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handleCreateInspection = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inspectionForm.buildingId) {
+      showToast('Please select a facility');
+      return;
+    }
+    try {
+      setSubmittingInspection(true);
+      const res = await fetch('/api/inspections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(inspectionForm),
+      });
+      const json = await res.json();
+      if (res.ok) {
+        showToast('Field inspection logged & synced!');
+        setRecordModalOpen(false);
+        setInspectionForm({
+          buildingId: '',
+          equipmentId: '',
+          status: 'PASSED',
+          remarks: '',
+          technicianName: '',
+          photoUrl: '',
+        });
+        await fetchInspections();
+      } else {
+        showToast(json.error || 'Failed to record inspection');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error saving inspection');
+    } finally {
+      setSubmittingInspection(false);
+    }
+  };
+
+  const parseFirstPhotoUrl = (ins: any): string | null => {
+    if (!ins?.photos) return null;
+    if (Array.isArray(ins.photos) && ins.photos.length > 0) return ins.photos[0];
+    if (typeof ins.photos === 'string') {
+      try {
+        const parsed = JSON.parse(ins.photos);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
+      } catch {
+        if (ins.photos.startsWith('http') || ins.photos.startsWith('data:image/')) {
+          return ins.photos;
+        }
+      }
+    }
+    return null;
+  };
+
   const filteredInspections = inspections.filter((ins) => {
     const matchesSearch =
       (ins.building?.name && ins.building.name.toLowerCase().includes(search.toLowerCase())) ||
@@ -70,6 +171,10 @@ export function InspectionsView({
     const matchesStatus = statusFilter === 'ALL' || ins.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const matchingEquipments = inspectionForm.buildingId
+    ? equipments.filter((eq: any) => eq.buildingId === inspectionForm.buildingId)
+    : equipments;
 
   return (
     <div className="space-y-6">
@@ -122,6 +227,14 @@ export function InspectionsView({
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setRecordModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-[#007DB8] hover:bg-[#006494] transition-all shadow-xs"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Record Inspection</span>
+          </button>
+
           {onOpenImport && (
             <button
               onClick={onOpenImport}
@@ -149,7 +262,7 @@ export function InspectionsView({
             <ShieldCheck className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto" />
             <h3 className="text-base font-bold text-slate-900 dark:text-white">No Inspections Recorded</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-              Field inspections logged via the Technician Mobile Form will automatically synchronize here with timestamp, photo evidence, and GPS coordinates.
+              Field inspections logged with photo evidence and GPS coordinates will automatically synchronize here.
             </p>
           </div>
         ) : (
@@ -162,64 +275,223 @@ export function InspectionsView({
                   <th className="py-3.5 px-4">Equipment ID</th>
                   <th className="py-3.5 px-4">Technician</th>
                   <th className="py-3.5 px-4">Status</th>
-                  <th className="py-3.5 px-4">Condition</th>
+                  <th className="py-3.5 px-4">Photo Proof</th>
                   <th className="py-3.5 px-4 text-right">Certificate</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700 dark:divide-slate-800/60 dark:text-slate-300">
-                {filteredInspections.map((ins) => (
-                  <tr key={ins.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
-                    <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 tabular-nums">
-                      {new Date(ins.date || ins.createdAt).toLocaleDateString('en-IN', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
-                    </td>
-                    <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
-                      {ins.building?.name || 'Facility'}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-mono text-[#007DB8] dark:text-cyan-300 font-bold">{ins.equipment?.qrCode || 'Asset'}</span>
-                        <span className="text-[10px] text-slate-400">({ins.equipment?.type || 'Extinguisher'})</span>
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300">
-                      {ins.technicianName || ins.technician?.fullName || 'Field Technician'}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      {ins.status === 'PASSED' ? (
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-bold uppercase dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30">
-                          PASSED
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200 text-[10px] font-bold uppercase dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30">
-                          {ins.status}
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400">
-                      {ins.overallCondition || 'GOOD'}
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      {ins.building?.id && (
-                        <Link
-                          href={`/report/${ins.building.id}`}
-                          className="text-[#007DB8] hover:underline dark:text-amber-400 dark:hover:text-amber-300 font-bold inline-flex items-center gap-1"
-                        >
-                          <span>Form-B</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </Link>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                {filteredInspections.map((ins) => {
+                  const thumb = parseFirstPhotoUrl(ins);
+                  return (
+                    <tr key={ins.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                      <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 tabular-nums">
+                        {new Date(ins.date || ins.createdAt).toLocaleDateString('en-IN', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                        {ins.building?.name || 'Facility'}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono text-[#007DB8] dark:text-cyan-300 font-bold">{ins.equipment?.qrCode || 'Asset'}</span>
+                          <span className="text-[10px] text-slate-400">({ins.equipment?.type || 'Extinguisher'})</span>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300">
+                        {ins.technicianName || ins.technician?.fullName || 'Field Technician'}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {ins.status === 'PASSED' ? (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-bold uppercase dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30">
+                            PASSED
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200 text-[10px] font-bold uppercase dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30">
+                            {ins.status}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {thumb ? (
+                          <a
+                            href={thumb}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-[#007DB8] hover:underline font-semibold"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={thumb}
+                              alt="Inspection evidence"
+                              className="w-7 h-7 rounded object-cover border border-slate-200"
+                            />
+                            <span className="text-[10px]">R2 Proof</span>
+                          </a>
+                        ) : (
+                          <span className="text-slate-400 text-[11px]">{ins.overallCondition || 'GOOD'}</span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        {ins.building?.id && (
+                          <Link
+                            href={`/report/${ins.building.id}`}
+                            className="text-[#007DB8] hover:underline dark:text-amber-400 dark:hover:text-amber-300 font-bold inline-flex items-center gap-1"
+                          >
+                            <span>Form-B</span>
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </Link>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
       </div>
+
+      {/* Record Inspection Modal with R2 WebP Photo Upload */}
+      {recordModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#DCE7F2] text-slate-900 text-xs dark:bg-slate-900 dark:border-slate-800 dark:text-white">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3 dark:border-slate-800">
+              <h3 className="font-bold text-base">Record Field Inspection</h3>
+              <button
+                onClick={() => setRecordModalOpen(false)}
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateInspection} className="space-y-3">
+              <div>
+                <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Facility / Building *</label>
+                <select
+                  required
+                  value={inspectionForm.buildingId}
+                  onChange={(e) =>
+                    setInspectionForm({ ...inspectionForm, buildingId: e.target.value, equipmentId: '' })
+                  }
+                  className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
+                >
+                  <option value="">Select Facility...</option>
+                  {buildings.map((b: any) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Equipment Asset (Optional)</label>
+                <select
+                  value={inspectionForm.equipmentId}
+                  onChange={(e) => setInspectionForm({ ...inspectionForm, equipmentId: e.target.value })}
+                  className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
+                >
+                  <option value="">General Facility Inspection</option>
+                  {matchingEquipments.map((eq: any) => (
+                    <option key={eq.id} value={eq.id}>
+                      {eq.qrCode} — {eq.type} ({eq.location})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Inspection Result</label>
+                  <select
+                    value={inspectionForm.status}
+                    onChange={(e) => setInspectionForm({ ...inspectionForm, status: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
+                  >
+                    <option value="PASSED">PASSED (Compliant)</option>
+                    <option value="SERVICE_REQUIRED">SERVICE REQUIRED</option>
+                    <option value="FAILED">FAILED (Defective)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Technician Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Rakesh Sharma"
+                    value={inspectionForm.technicianName}
+                    onChange={(e) => setInspectionForm({ ...inspectionForm, technicianName: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Remarks / Reading Notes</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Gauge 14.2 Bar green zone, safety pin & seal intact"
+                  value={inspectionForm.remarks}
+                  onChange={(e) => setInspectionForm({ ...inspectionForm, remarks: e.target.value })}
+                  className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">
+                  Photo Evidence (Auto-compressed WebP &rarr; Cloudflare R2)
+                </label>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer border border-slate-200 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-300">
+                    <Camera className="w-3.5 h-3.5 text-[#007DB8]" />
+                    <span>{uploadingPhoto ? 'Uploading photo...' : 'Attach Photo'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleInspectionPhotoChange}
+                      className="hidden"
+                    />
+                  </label>
+                  {inspectionForm.photoUrl && (
+                    <div className="flex items-center gap-2">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={inspectionForm.photoUrl}
+                        alt="Inspection preview"
+                        className="w-9 h-9 rounded-lg object-cover border border-slate-300 shadow-xs"
+                      />
+                      <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> {uploadingPhoto ? 'Uploading...' : 'R2 CDN Ready'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRecordModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={uploadingPhoto || submittingInspection}
+                  className="px-5 py-2 rounded-xl bg-[#007DB8] hover:bg-[#006494] disabled:opacity-50 text-white font-bold shadow-xs transition-all"
+                >
+                  {submittingInspection ? 'Saving...' : 'Save Inspection'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

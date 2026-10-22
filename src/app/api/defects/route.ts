@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { ensureR2PhotoUrl } from '@/lib/r2';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,7 +60,11 @@ export async function POST(request: Request) {
         description: description.trim(),
         severity: severity || 'MEDIUM',
         status: 'OPEN',
-        photoUrl: photoUrl || null,
+        photoUrl: await ensureR2PhotoUrl({
+          photoUrl,
+          organizationId: auth.organization.id,
+          folder: 'defects',
+        }),
       },
     });
 

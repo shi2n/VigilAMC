@@ -92,4 +92,45 @@ export async function compressImageToFile(
   });
 }
 
+/**
+ * Compresses an image on-device to WebP (max 1280px, 0.75 quality) and uploads it
+ * to Cloudflare R2 via POST /api/upload, returning the fast public CDN URL.
+ */
+export async function uploadCompressedPhoto(
+  file: File,
+  folder: 'inspections' | 'equipment' | 'defects' = 'equipment',
+  options?: CompressImageOptions
+): Promise<{ url: string; key?: string; sizeBytes: number; localPreviewUrl: string }> {
+  const localPreviewUrl = await compressImageToDataUrl(file, options);
+  const res = await fetch(localPreviewUrl);
+  const blob = await res.blob();
+  const baseName = (file.name || 'photo').replace(/\.[^/.]+$/, '');
+  const ext = blob.type === 'image/webp' ? 'webp' : 'jpg';
+  const compressedFile = new File([blob], `${baseName}.${ext}`, {
+    type: blob.type || 'image/webp',
+    lastModified: Date.now(),
+  });
+
+  const formData = new FormData();
+  formData.append('file', compressedFile);
+  formData.append('folder', folder);
+
+  const uploadRes = await fetch('/api/upload', {
+    method: 'POST',
+    body: formData,
+  });
+
+  const json = await uploadRes.json().catch(() => ({}));
+  if (!uploadRes.ok || !json.url) {
+    throw new Error(json.error || `Photo upload failed (HTTP ${uploadRes.status})`);
+  }
+
+  return {
+    url: json.url as string,
+    key: json.key as string | undefined,
+    sizeBytes: (json.sizeBytes as number) || compressedFile.size,
+    localPreviewUrl,
+  };
+}
+
 export default compressImageToDataUrl;

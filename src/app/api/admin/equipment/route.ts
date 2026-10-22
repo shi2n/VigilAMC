@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser, logAuditActivity } from '@/lib/auth';
 import { checkPlanLimit } from '@/lib/plans';
+import { ensureR2PhotoUrl } from '@/lib/r2';
 
 export const dynamic = 'force-dynamic';
 
@@ -167,7 +168,7 @@ export async function POST(request: Request) {
           nextDueDate: nextDue,
           serviceIntervalMonths: intervalMos,
           status: 'COMPLIANT',
-          photoUrl: photoUrl || null,
+          photoUrl: await ensureR2PhotoUrl({ photoUrl, organizationId: auth.organization.id, folder: 'equipment' }),
         },
       });
 
