@@ -149,7 +149,7 @@ export function FireAssetsView({
                   <td className="py-3 px-4 text-center">
                     <span
                       className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        eq.status === 'VERIFIED' || eq.liveStatus === 'COMPLIANT'
+                        eq.status === 'VERIFIED' || eq.status === 'COMPLIANT' || eq.liveStatus === 'COMPLIANT'
                           ? 'bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30'
                           : eq.status === 'DUE_SOON' || eq.liveStatus === 'DUE_SOON'
                           ? 'bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30'
@@ -158,7 +158,7 @@ export function FireAssetsView({
                           : 'bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
                       }`}
                     >
-                      {eq.status === 'VERIFIED'
+                      {eq.status === 'VERIFIED' || eq.status === 'COMPLIANT' || eq.liveStatus === 'COMPLIANT'
                         ? 'Verified'
                         : eq.status === 'DUE_SOON' || eq.liveStatus === 'DUE_SOON'
                         ? 'Due Soon'

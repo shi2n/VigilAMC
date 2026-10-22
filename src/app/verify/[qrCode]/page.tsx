@@ -86,7 +86,7 @@ export default function PublicVerifyPassportPage() {
 
   const eqInfo = EQUIPMENT_TYPES[asset.type] || EQUIPMENT_TYPES.ABC_DRY_POWDER;
   const refill = getAssetRefillStatus(asset.nextRefillDueDate);
-  const isOperational = asset.status === 'OPERATIONAL' && refill.status === 'OK';
+  const isOperational = ['OPERATIONAL', 'COMPLIANT', 'VERIFIED'].includes(String(asset.status || '').toUpperCase()) && refill.status !== 'OVERDUE';
 
   return (
     <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col justify-between py-6 px-4">
@@ -279,7 +279,7 @@ export default function PublicVerifyPassportPage() {
             Agency License No: <span className="font-mono text-slate-200 font-semibold">{asset.building?.company?.licenseNumber || 'DL/FIRE/LIC/2022/A-412'}</span>
           </div>
           <div className="text-[11px] text-slate-400">
-            Chief Signatory: {asset.building?.company?.signatoryName || 'Er. Rajesh Kumar Sharma'}
+            Chief Signatory: {asset.building?.company?.signatoryName || 'Authorized Inspecting Officer'}
           </div>
         </div>
 
