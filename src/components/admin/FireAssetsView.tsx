@@ -118,85 +118,128 @@ export function FireAssetsView({
                 <th className="py-3 px-4">Building</th>
                 <th className="py-3 px-4">Type &amp; Capacity</th>
                 <th className="py-3 px-4">Location</th>
+                <th className="py-3 px-4">Last Serviced</th>
                 <th className="py-3 px-4">Next Due Date</th>
                 <th className="py-3 px-4 text-center">Live Status</th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-              {equipmentsList.map((eq) => (
-                <tr key={eq.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-850/40 transition-colors">
-                  <td className="py-3 px-4 font-mono font-bold">
-                    <Link
-                      href={`/verify/${eq.qrCode}`} target="_blank" rel="noopener noreferrer"
-                      className="text-[#2563EB] hover:underline bg-[#EFF6FF] px-2 py-0.5 rounded border border-[#2563EB]/30 dark:text-[#60A5FA] dark:bg-blue-500/10 dark:border-blue-500/20"
-                    >
-                      {eq.qrCode}
-                    </Link>
-                  </td>
-                  <td className="py-3 px-4 font-medium text-slate-600 dark:text-slate-300">{eq.building?.name || '—'}</td>
-                  <td className="py-3 px-4 text-slate-900 font-semibold dark:text-white">
-                    {eq.capacity} ({eq.type})
-                  </td>
-                  <td className="py-3 px-4 text-slate-500 dark:text-slate-400">{eq.location}</td>
-                  <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">
-                    {new Date(eq.nextDueDate).toLocaleDateString('en-IN', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                    })}
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        eq.status === 'VERIFIED' || eq.status === 'COMPLIANT' || eq.liveStatus === 'COMPLIANT'
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30'
-                          : eq.status === 'DUE_SOON' || eq.liveStatus === 'DUE_SOON'
-                          ? 'bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30'
-                          : eq.status === 'OVERDUE' || eq.liveStatus === 'OVERDUE'
-                          ? 'bg-rose-100 text-rose-800 border border-rose-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/30'
-                          : 'bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
-                      }`}
-                    >
-                      {eq.status === 'VERIFIED' || eq.status === 'COMPLIANT' || eq.liveStatus === 'COMPLIANT'
-                        ? 'Verified'
-                        : eq.status === 'DUE_SOON' || eq.liveStatus === 'DUE_SOON'
-                        ? 'Due Soon'
-                        : eq.status === 'OVERDUE' || eq.liveStatus === 'OVERDUE'
-                        ? 'Overdue'
-                        : 'Not Inspected'}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-right space-x-2 whitespace-nowrap">
-                    <Link
-                      href={`/verify/${eq.qrCode}`} target="_blank" rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold shadow-xs transition-all"
-                      title="View Field Visit History & Proof"
-                    >
-                      <MapPin className="w-3 h-3 stroke-[2.5]" />
-                      <span>Visit History</span>
-                    </Link>
-                    <button
-                      onClick={() => onEditEquipment(eq)}
-                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 dark:hover:text-white"
-                      title="Edit Equipment Details"
-                    >
-                      <Edit className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (confirm(`Are you sure you want to delete equipment '${eq.qrCode}'?`)) {
-                          onDeleteEquipment(eq.id, eq.qrCode);
-                        }
-                      }}
-                      className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors dark:bg-red-950/40 dark:hover:bg-red-900/60 dark:text-red-400 dark:border-red-500/30"
-                      title="Delete Equipment"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {equipmentsList.map((eq) => {
+                const diffDays = eq.nextDueDate
+                  ? Math.ceil((new Date(eq.nextDueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+                  : 0;
+                const isOverdue = diffDays < 0 || eq.status === 'OVERDUE' || eq.liveStatus === 'OVERDUE';
+                const isDueSoon = !isOverdue && (diffDays <= 30 || eq.status === 'DUE_SOON' || eq.liveStatus === 'DUE_SOON');
+                const isVerified =
+                  !isOverdue &&
+                  !isDueSoon &&
+                  (eq.status === 'VERIFIED' || eq.status === 'COMPLIANT' || eq.liveStatus === 'COMPLIANT' || eq.liveStatus === 'VERIFIED');
+
+                return (
+                  <tr key={eq.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-850/40 transition-colors">
+                    <td className="py-3 px-4 font-mono font-bold">
+                      <Link
+                        href={`/verify/${eq.qrCode}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#2563EB] hover:underline bg-[#EFF6FF] px-2 py-0.5 rounded border border-[#2563EB]/30 dark:text-[#60A5FA] dark:bg-blue-500/10 dark:border-blue-500/20"
+                      >
+                        {eq.qrCode}
+                      </Link>
+                    </td>
+                    <td className="py-3 px-4 font-medium text-slate-600 dark:text-slate-300">{eq.building?.name || '—'}</td>
+                    <td className="py-3 px-4 text-slate-900 font-semibold dark:text-white">
+                      {eq.capacity} ({eq.type})
+                    </td>
+                    <td className="py-3 px-4 text-slate-500 dark:text-slate-400">{eq.location}</td>
+                    <td className="py-3 px-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                      {eq.lastServiceDate
+                        ? new Date(eq.lastServiceDate).toLocaleDateString('en-IN', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          })
+                        : '—'}
+                    </td>
+                    <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                      {eq.nextDueDate
+                        ? new Date(eq.nextDueDate).toLocaleDateString('en-IN', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          })
+                        : '—'}
+                      <span
+                        className={`block text-[10px] font-normal ${
+                          isOverdue
+                            ? 'text-rose-600 dark:text-red-400 font-bold'
+                            : isDueSoon
+                            ? 'text-amber-600 dark:text-amber-400 font-bold'
+                            : 'text-slate-500 dark:text-slate-400'
+                        }`}
+                      >
+                        {isOverdue
+                          ? `Overdue by ${Math.abs(diffDays)}d`
+                          : isDueSoon
+                          ? `Due in ${diffDays}d`
+                          : `${Math.max(1, Math.round(diffDays / 30))} mos left`}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-center whitespace-nowrap">
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          isOverdue
+                            ? 'bg-rose-100 text-rose-800 border border-rose-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/30'
+                            : isDueSoon
+                            ? 'bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30'
+                            : isVerified
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30'
+                            : 'bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+                        }`}
+                      >
+                        {isOverdue
+                          ? 'OVERDUE'
+                          : isDueSoon
+                          ? 'DUE SOON (<30d)'
+                          : isVerified
+                          ? 'Verified'
+                          : 'Not Inspected'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-right space-x-2 whitespace-nowrap">
+                      <Link
+                        href={`/verify/${eq.qrCode}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold shadow-xs transition-all"
+                        title="View Field Visit History & Proof"
+                      >
+                        <MapPin className="w-3 h-3 stroke-[2.5]" />
+                        <span>Visit History</span>
+                      </Link>
+                      <button
+                        onClick={() => onEditEquipment(eq)}
+                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 dark:hover:text-white"
+                        title="Edit Equipment Details"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm(`Are you sure you want to delete equipment '${eq.qrCode}'?`)) {
+                            onDeleteEquipment(eq.id, eq.qrCode);
+                          }
+                        }}
+                        className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors dark:bg-red-950/40 dark:hover:bg-red-900/60 dark:text-red-400 dark:border-red-500/30"
+                        title="Delete Equipment"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

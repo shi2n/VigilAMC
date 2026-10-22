@@ -17,15 +17,51 @@ export function evaluateEquipmentStatus(eq: any, now: Date = new Date()): Equipm
   const diffDays = nextDue ? Math.ceil((nextDue.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 0;
 
   const latestInspection = eq.inspections?.[0] || eq.serviceLogs?.[0] || null;
-  const hasInspection = !!latestInspection;
+  const hasInspection = Boolean(latestInspection || eq.lastServiceDate || eq.status);
   const isImported = Boolean(latestInspection?.isImported || eq.isImported);
   const hasGPS = Boolean(latestInspection?.latitude && latestInspection?.longitude);
   const hasPhoto = Boolean(
+    eq.photoUrl ||
     latestInspection?.photos ||
     (latestInspection?.inspectionPhotos && latestInspection.inspectionPhotos.length > 0)
   );
+  const verifiedDate = latestInspection
+    ? new Date(latestInspection.date || latestInspection.servicedAt)
+    : eq.lastServiceDate
+    ? new Date(eq.lastServiceDate)
+    : null;
 
-  // 1. Not inspected yet (grey)
+  // 1. Overdue (red) - always takes priority when nextDueDate has passed
+  if (diffDays < 0 || eq.status === 'OVERDUE') {
+    return {
+      status: 'OVERDUE',
+      label: 'Overdue',
+      color: 'rose',
+      badgeClass: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800/50',
+      diffDays,
+      lastVerifiedDate: verifiedDate,
+      hasGPS,
+      hasPhoto,
+      isImported,
+    };
+  }
+
+  // 2. Due soon (amber, due within 30 days)
+  if (diffDays <= 30 || eq.status === 'DUE_SOON') {
+    return {
+      status: 'DUE_SOON',
+      label: 'Due soon (<30d)',
+      color: 'amber',
+      badgeClass: 'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/50',
+      diffDays,
+      lastVerifiedDate: verifiedDate,
+      hasGPS,
+      hasPhoto,
+      isImported,
+    };
+  }
+
+  // 3. Not inspected yet (grey)
   if (!hasInspection) {
     return {
       status: 'NOT_INSPECTED',
@@ -40,36 +76,6 @@ export function evaluateEquipmentStatus(eq: any, now: Date = new Date()): Equipm
     };
   }
 
-  // 2. Overdue (red)
-  if (diffDays < 0) {
-    return {
-      status: 'OVERDUE',
-      label: 'Overdue',
-      color: 'rose',
-      badgeClass: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800/50',
-      diffDays,
-      lastVerifiedDate: latestInspection ? new Date(latestInspection.date || latestInspection.servicedAt) : null,
-      hasGPS,
-      hasPhoto,
-      isImported,
-    };
-  }
-
-  // 3. Due soon (amber, due within 30 days)
-  if (diffDays <= 30) {
-    return {
-      status: 'DUE_SOON',
-      label: 'Due soon',
-      color: 'amber',
-      badgeClass: 'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/50',
-      diffDays,
-      lastVerifiedDate: latestInspection ? new Date(latestInspection.date || latestInspection.servicedAt) : null,
-      hasGPS,
-      hasPhoto,
-      isImported,
-    };
-  }
-
   // 4. Verified (green)
   return {
     status: 'VERIFIED',
@@ -79,7 +85,7 @@ export function evaluateEquipmentStatus(eq: any, now: Date = new Date()): Equipm
       ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/50'
       : 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/50',
     diffDays,
-    lastVerifiedDate: new Date(latestInspection.date || latestInspection.servicedAt),
+    lastVerifiedDate: verifiedDate,
     hasGPS,
     hasPhoto,
     isImported,

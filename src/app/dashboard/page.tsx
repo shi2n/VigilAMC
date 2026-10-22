@@ -33,6 +33,30 @@ import { compressImageToDataUrl, uploadCompressedPhoto } from '@/lib/compressIma
 
 const LAST_ORG_CACHE_KEY = 'vigilamc_dash_last_org';
 
+function toDateInputString(d?: Date | string | null): string {
+  const dt = d ? new Date(d) : new Date();
+  if (isNaN(dt.getTime())) {
+    return new Date().toISOString().split('T')[0];
+  }
+  const yyyy = dt.getFullYear();
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function addMonthsToDateString(dateStr: string, months: number): string {
+  const base = dateStr ? new Date(dateStr) : new Date();
+  const dt = isNaN(base.getTime()) ? new Date() : new Date(base.getTime());
+  dt.setMonth(dt.getMonth() + (Number(months) || 12));
+  return toDateInputString(dt);
+}
+
+function addDaysToTodayString(days: number): string {
+  const dt = new Date();
+  dt.setDate(dt.getDate() + days);
+  return toDateInputString(dt);
+}
+
 export default function AdminDashboardPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -146,6 +170,8 @@ export default function AdminDashboardPage() {
     count: 10,
     locationBase: 'Floor Landing Corridor',
     serviceIntervalMonths: 12,
+    lastServiceDate: toDateInputString(new Date()),
+    nextDueDate: addMonthsToDateString(toDateInputString(new Date()), 12),
   });
 
   // Single add equipment form state
@@ -155,6 +181,8 @@ export default function AdminDashboardPage() {
     capacity: 'ABC Dry Powder 6kg',
     location: '',
     serviceIntervalMonths: 12,
+    lastServiceDate: toDateInputString(new Date()),
+    nextDueDate: addMonthsToDateString(toDateInputString(new Date()), 12),
     photoUrl: '',
   });
 
@@ -481,9 +509,11 @@ export default function AdminDashboardPage() {
           capacity: 'ABC Dry Powder 6kg',
           location: '',
           serviceIntervalMonths: 12,
+          lastServiceDate: toDateInputString(new Date()),
+          nextDueDate: addMonthsToDateString(toDateInputString(new Date()), 12),
           photoUrl: '',
         });
-        refreshDashboard({ silent: true });
+        await refreshDashboard({ silent: true });
       } else {
         alert(resData.error || 'Failed to add equipment');
       }
@@ -612,6 +642,34 @@ export default function AdminDashboardPage() {
   const agencyName = company?.name || 'VigilAMC Operating System';
   const licenseNo = company?.licenseNumber || 'DL/FIRE/LIC/2026';
 
+  // Live reactive KPI computations so any mutation updates Overview & Sidebar in 0ms
+  const liveEquipmentMetrics = useMemo(() => {
+    const now = new Date();
+    let overdue = 0;
+    let dueSoon = 0;
+    for (const eq of equipmentsList) {
+      const diffDays = eq.nextDueDate
+        ? Math.ceil((new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+        : 0;
+      if (diffDays < 0 || eq.status === 'OVERDUE' || eq.liveStatus === 'OVERDUE') overdue++;
+      else if (diffDays <= 30 || eq.status === 'DUE_SOON' || eq.liveStatus === 'DUE_SOON') dueSoon++;
+    }
+    return { overdue, dueSoon, total: equipmentsList.length };
+  }, [equipmentsList]);
+
+  const liveOpenRepairsCount = useMemo(() => {
+    if (workOrdersList.length > 0) {
+      return workOrdersList.filter((w) => ['OPEN', 'ASSIGNED', 'IN_PROGRESS'].includes(w.status)).length;
+    }
+    return kpis.openWorkOrders || 0;
+  }, [workOrdersList, kpis.openWorkOrders]);
+
+  const liveInspectionsThisWeek = useMemo(() => {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const count = inspectionsList.filter((ins) => new Date(ins.date || ins.createdAt) >= sevenDaysAgo).length;
+    return count > 0 ? count : (kpis as any).inspectionsThisWeek ?? inspectionsList.length ?? 0;
+  }, [inspectionsList, kpis]);
+
   const exportDataMap: Record<string, any[]> = {
     CLIENTS: clientsList,
     BUILDINGS: buildings || [],
@@ -645,7 +703,7 @@ export default function AdminDashboardPage() {
         userEmail={data?.user?.email}
         userProfile={data?.profile}
         onLogout={handleLogout}
-        openRepairsCount={kpis.openWorkOrders}
+        openRepairsCount={liveOpenRepairsCount}
         isDarkMode={theme === 'dark'}
         onToggleDarkMode={toggleTheme}
       />
@@ -755,13 +813,24 @@ export default function AdminDashboardPage() {
             {(activeTab === 'OVERVIEW' || activeTab === 'HOME') && (
               <DashboardOverview
                 kpis={{
-                  overdueCount: summary?.overdueEquipments || summary?.overdueBuildings || 0,
-                  dueSoonCount: summary?.dueSoonEquipments || summary?.dueSoonBuildings || 0,
-                  openRepairsCount: kpis.openWorkOrders,
-                  inspectionsThisWeek: kpis.dueInspections,
-                  totalEquipments: summary?.totalEquipments || kpis.totalEquipments,
-                  totalBuildings: summary?.totalBuildings || kpis.totalBuildings,
-                  activeTechnicians: kpis.activeTechnicians,
+                  totalClients: clientsList.length || kpis.totalClients || 0,
+                  overdueCount:
+                    equipmentsList.length > 0
+                      ? liveEquipmentMetrics.overdue
+                      : summary?.overdueEquipments ?? kpis.overdueInspections ?? 0,
+                  dueSoonCount:
+                    equipmentsList.length > 0
+                      ? liveEquipmentMetrics.dueSoon
+                      : summary?.dueSoonEquipments ?? kpis.dueInspections ?? 0,
+                  openRepairsCount: liveOpenRepairsCount,
+                  inspectionsThisWeek: liveInspectionsThisWeek,
+                  totalInspections: inspectionsList.length || (kpis as any).totalInspections || 0,
+                  totalEquipments:
+                    equipmentsList.length > 0
+                      ? liveEquipmentMetrics.total
+                      : summary?.totalEquipments || kpis.totalEquipments,
+                  totalBuildings: buildings.length || summary?.totalBuildings || kpis.totalBuildings,
+                  activeTechnicians: techniciansList.length || kpis.activeTechnicians,
                 }}
                 company={company}
                 buildings={buildings}
@@ -865,6 +934,13 @@ export default function AdminDashboardPage() {
                     onSingleAdd={(b) => setSingleAddEquipModalOpen(b)}
                     onOpenExport={() => handleOpenExport('BUILDINGS')}
                     onOpenImport={() => handleOpenImport('BUILDINGS')}
+                    onEditEquipment={(eq) =>
+                      setEditEquipmentModal({
+                        ...eq,
+                        lastServiceDate: toDateInputString(eq.lastServiceDate),
+                        nextDueDate: toDateInputString(eq.nextDueDate),
+                      })
+                    }
                   />
                 ) : (
                   <ClientsView
@@ -903,7 +979,13 @@ export default function AdminDashboardPage() {
                   setEquipFilterBuilding={setEquipFilterBuilding}
                   equipSearch={equipSearch}
                   setEquipSearch={setEquipSearch}
-                  onEditEquipment={(eq) => setEditEquipmentModal(eq)}
+                  onEditEquipment={(eq) =>
+                    setEditEquipmentModal({
+                      ...eq,
+                      lastServiceDate: toDateInputString(eq.lastServiceDate),
+                      nextDueDate: toDateInputString(eq.nextDueDate),
+                    })
+                  }
                   onDeleteEquipment={handleDeleteEquipment}
                   onOpenExport={() => handleOpenExport('FIRE_ASSETS')}
                   onOpenImport={() => handleOpenImport('FIRE_ASSETS')}
@@ -937,9 +1019,9 @@ export default function AdminDashboardPage() {
                       }`}
                     >
                       <span>Repairs &amp; Work Orders</span>
-                      {kpis.openWorkOrders > 0 && (
+                      {liveOpenRepairsCount > 0 && (
                         <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-rose-500 text-white font-bold">
-                          {kpis.openWorkOrders}
+                          {liveOpenRepairsCount}
                         </span>
                       )}
                     </button>
@@ -1279,13 +1361,92 @@ export default function AdminDashboardPage() {
                 <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Refill / Service Interval</label>
                 <select
                   value={equipmentForm.serviceIntervalMonths}
-                  onChange={(e) => setEquipmentForm({ ...equipmentForm, serviceIntervalMonths: Number(e.target.value) })}
+                  onChange={(e) => {
+                    const mos = Number(e.target.value);
+                    setEquipmentForm({
+                      ...equipmentForm,
+                      serviceIntervalMonths: mos,
+                      nextDueDate: addMonthsToDateString(equipmentForm.lastServiceDate, mos),
+                    });
+                  }}
                   className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
                 >
                   <option value={12}>12 Months (Annual Extinguisher Refill - IS 2190)</option>
                   <option value={6}>6 Months (Half-Yearly Hydrant &amp; Pump Check)</option>
                   <option value={3}>3 Months (Quarterly Fire Alarm &amp; Smoke Check)</option>
                 </select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-[#E2E8F0] dark:bg-[#0B1220] dark:border-[#293548]">
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">
+                    Last Service / Refill Date
+                  </label>
+                  <input
+                    type="date"
+                    value={equipmentForm.lastServiceDate}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setEquipmentForm({
+                        ...equipmentForm,
+                        lastServiceDate: val,
+                        nextDueDate: addMonthsToDateString(val, equipmentForm.serviceIntervalMonths),
+                      });
+                    }}
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">
+                    Next Service Due Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={equipmentForm.nextDueDate}
+                    onChange={(e) => setEquipmentForm({ ...equipmentForm, nextDueDate: e.target.value })}
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                  />
+                </div>
+                <div className="sm:col-span-2 flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[10px] font-bold uppercase text-slate-400 mr-1">Quick Presets:</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEquipmentForm({
+                        ...equipmentForm,
+                        nextDueDate: addMonthsToDateString(equipmentForm.lastServiceDate, 12),
+                      })
+                    }
+                    className="px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                  >
+                    +1 Year (Standard)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEquipmentForm({
+                        ...equipmentForm,
+                        nextDueDate: addDaysToTodayString(15),
+                      })
+                    }
+                    className="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
+                  >
+                    Due in 15 Days
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEquipmentForm({
+                        ...equipmentForm,
+                        nextDueDate: addDaysToTodayString(-5),
+                      })
+                    }
+                    className="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
+                  >
+                    Overdue (-5 Days)
+                  </button>
+                </div>
               </div>
 
               <div className="pt-2 flex justify-end gap-2">
@@ -1371,6 +1532,78 @@ export default function AdminDashboardPage() {
                   onChange={(e) => setSingleEquipForm({ ...singleEquipForm, location: e.target.value })}
                   className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
                 />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 bg-slate-50 rounded-xl border border-[#E2E8F0] dark:bg-[#0B1220] dark:border-[#293548]">
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">
+                    Last Service / Refill Date
+                  </label>
+                  <input
+                    type="date"
+                    value={singleEquipForm.lastServiceDate}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSingleEquipForm({
+                        ...singleEquipForm,
+                        lastServiceDate: val,
+                        nextDueDate: addMonthsToDateString(val, singleEquipForm.serviceIntervalMonths),
+                      });
+                    }}
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">
+                    Next Service Due Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={singleEquipForm.nextDueDate}
+                    onChange={(e) => setSingleEquipForm({ ...singleEquipForm, nextDueDate: e.target.value })}
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                  />
+                </div>
+                <div className="sm:col-span-2 flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[10px] font-bold uppercase text-slate-400 mr-1">Quick Presets:</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSingleEquipForm({
+                        ...singleEquipForm,
+                        nextDueDate: addMonthsToDateString(singleEquipForm.lastServiceDate, 12),
+                      })
+                    }
+                    className="px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                  >
+                    +1 Year (Standard)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSingleEquipForm({
+                        ...singleEquipForm,
+                        nextDueDate: addDaysToTodayString(15),
+                      })
+                    }
+                    className="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
+                  >
+                    Due in 15 Days
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSingleEquipForm({
+                        ...singleEquipForm,
+                        nextDueDate: addDaysToTodayString(-5),
+                      })
+                    }
+                    className="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
+                  >
+                    Overdue (-5 Days)
+                  </button>
+                </div>
               </div>
 
               <div>
@@ -1633,9 +1866,96 @@ export default function AdminDashboardPage() {
                 <input
                   type="number"
                   value={editEquipmentModal.serviceIntervalMonths}
-                  onChange={(e) => setEditEquipmentModal({ ...editEquipmentModal, serviceIntervalMonths: Number(e.target.value) })}
+                  onChange={(e) => {
+                    const mos = Number(e.target.value);
+                    setEditEquipmentModal({
+                      ...editEquipmentModal,
+                      serviceIntervalMonths: mos,
+                      nextDueDate: addMonthsToDateString(
+                        editEquipmentModal.lastServiceDate || toDateInputString(new Date()),
+                        mos
+                      ),
+                    });
+                  }}
                   className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
                 />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 bg-slate-50 rounded-xl border border-[#E2E8F0] dark:bg-[#0B1220] dark:border-[#293548]">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">
+                    Last Service / Refill Date
+                  </label>
+                  <input
+                    type="date"
+                    value={editEquipmentModal.lastServiceDate || toDateInputString(new Date())}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setEditEquipmentModal({
+                        ...editEquipmentModal,
+                        lastServiceDate: val,
+                        nextDueDate: addMonthsToDateString(val, editEquipmentModal.serviceIntervalMonths || 12),
+                      });
+                    }}
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">
+                    Next Service Due Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={editEquipmentModal.nextDueDate || toDateInputString(new Date())}
+                    onChange={(e) =>
+                      setEditEquipmentModal({ ...editEquipmentModal, nextDueDate: e.target.value })
+                    }
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                  />
+                </div>
+                <div className="sm:col-span-2 flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[10px] font-bold uppercase text-slate-400 mr-1">Quick Presets:</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditEquipmentModal({
+                        ...editEquipmentModal,
+                        nextDueDate: addMonthsToDateString(
+                          editEquipmentModal.lastServiceDate || toDateInputString(new Date()),
+                          12
+                        ),
+                      })
+                    }
+                    className="px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                  >
+                    +1 Year (Standard)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditEquipmentModal({
+                        ...editEquipmentModal,
+                        nextDueDate: addDaysToTodayString(15),
+                      })
+                    }
+                    className="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
+                  >
+                    Due in 15 Days
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditEquipmentModal({
+                        ...editEquipmentModal,
+                        nextDueDate: addDaysToTodayString(-5),
+                      })
+                    }
+                    className="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
+                  >
+                    Overdue (-5 Days)
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">

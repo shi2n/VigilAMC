@@ -32,7 +32,7 @@ interface BuildingsViewProps {
   onBulkAdd: (b: any) => void;
   onSingleAdd: (b: any) => void;
   onOpenExport: () => void;
-  onOpenImport?: () => void;
+  onOpenImport?: () => void; onEditEquipment?: (eq: any) => void;
 }
 
 export function BuildingsView({
@@ -46,7 +46,7 @@ export function BuildingsView({
   onBulkAdd,
   onSingleAdd,
   onOpenExport,
-  onOpenImport,
+  onOpenImport, onEditEquipment,
 }: BuildingsViewProps) {
   return (
     <div className="space-y-6">
@@ -254,7 +254,7 @@ export function BuildingsView({
                     <div className="flex items-center gap-2 self-end md:self-auto flex-wrap">
                       <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-medium dark:bg-slate-950 dark:border-slate-800">
                         <span className="text-slate-900 dark:text-white font-bold">{b.totalEquipments} Units:</span>
-                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{b.compliantCount} Fit</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{b.verifiedCount ?? b.compliantCount ?? 0} Fit</span>
                         {b.dueCount > 0 && <span className="text-amber-600 dark:text-amber-400 font-semibold">• {b.dueCount} Due</span>}
                         {b.overdueCount > 0 && <span className="text-rose-600 dark:text-red-400 font-bold">• {b.overdueCount} Overdue</span>}
                       </div>
@@ -338,7 +338,7 @@ export function BuildingsView({
                                 const diffDays = Math.ceil(
                                   (new Date(eq.nextDueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
                                 );
-                                const status = eq.status || (diffDays < 0 ? 'OVERDUE' : diffDays <= 30 ? 'DUE_SOON' : 'NOT_INSPECTED');
+                                const status = diffDays < 0 ? 'OVERDUE' : diffDays <= 30 ? 'DUE_SOON' : (eq.complianceStatus || eq.status || 'VERIFIED');
 
                                 return (
                                   <tr key={eq.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
@@ -395,7 +395,7 @@ export function BuildingsView({
                                             : 'bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
                                         }`}
                                       >
-                                        {status === 'VERIFIED' || status === 'COMPLIANT' ? 'Verified' : status === 'DUE_SOON' ? 'Due Soon' : status === 'OVERDUE' ? 'Overdue' : 'Not Inspected'}
+                                        {status === 'VERIFIED' || status === 'COMPLIANT' ? 'Verified' : status === 'DUE_SOON' ? 'DUE SOON (<30d)' : status === 'OVERDUE' ? 'OVERDUE' : 'Not Inspected'}
                                       </span>
                                     </td>
                                     <td className="py-3 px-4 text-right">
@@ -404,7 +404,7 @@ export function BuildingsView({
                                         className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold shadow-xs transition-all hover:scale-105"
                                       >
                                         <MapPin className="w-3 h-3 stroke-[2.5]" />
-                                        <span>Visit History</span>
+                                        <span>Visit History</span></Link>{onEditEquipment && (<button onClick={() => onEditEquipment(eq)} className="ml-1.5 p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 dark:hover:text-white inline-flex items-center" title="Edit Equipment & Due Date"><Edit className="w-3.5 h-3.5" /></button>)}<Link className="hidden" href="#"><span>Visit History</span>
                                       </Link>
                                     </td>
                                   </tr>

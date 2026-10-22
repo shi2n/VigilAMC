@@ -137,7 +137,7 @@ export function WorkOrdersView({
         dueDate: '',
       });
       showToast('Work order created and assigned successfully');
-      fetchWorkOrders();
+      await fetchWorkOrders();
     } catch (err: any) {
       showToast(err.message || 'Error creating work order');
     } finally {
@@ -158,7 +158,7 @@ export function WorkOrdersView({
       });
       if (res.ok) {
         showToast(`Work order status updated to ${newStatus}`);
-        fetchWorkOrders();
+        await fetchWorkOrders();
       }
     } catch (e) {
       console.error(e);

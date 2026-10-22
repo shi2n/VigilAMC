@@ -6,6 +6,14 @@ import { ensureR2PhotoUrl } from '@/lib/r2';
 
 export const dynamic = 'force-dynamic';
 
+function deriveEquipmentDbStatus(nextDueDate: Date): string {
+  const now = new Date();
+  const diffDays = Math.ceil((nextDueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays < 0) return 'OVERDUE';
+  if (diffDays <= 30) return 'DUE_SOON';
+  return 'COMPLIANT';
+}
+
 export async function GET(request: Request) {
   try {
     const auth = await getCurrentUser(request);
@@ -111,6 +119,7 @@ export async function POST(request: Request) {
       locationBase,
       serviceIntervalMonths,
       lastServiceDate,
+      nextDueDate,
       photoUrl,
     } = body;
 
@@ -127,8 +136,11 @@ export async function POST(request: Request) {
     }
 
     const intervalMos = Number(serviceIntervalMonths) || 12;
-    const now = lastServiceDate ? new Date(lastServiceDate) : new Date();
-    const nextDue = new Date(now.getTime() + intervalMos * 30 * 24 * 60 * 60 * 1000);
+    const serviceDateObj = lastServiceDate ? new Date(lastServiceDate) : new Date();
+    const nextDueObj = nextDueDate
+      ? new Date(nextDueDate)
+      : new Date(serviceDateObj.getTime() + intervalMos * 30 * 24 * 60 * 60 * 1000);
+    const derivedStatus = deriveEquipmentDbStatus(nextDueObj);
 
     // Single Equipment Creation
     if (isSingle) {
@@ -164,10 +176,10 @@ export async function POST(request: Request) {
           type: type || 'Fire Extinguisher',
           capacity: capacity || 'ABC Dry Powder 6kg',
           location: location || 'Ground Floor Landing',
-          lastServiceDate: now,
-          nextDueDate: nextDue,
+          lastServiceDate: serviceDateObj,
+          nextDueDate: nextDueObj,
           serviceIntervalMonths: intervalMos,
-          status: 'COMPLIANT',
+          status: derivedStatus,
           photoUrl: await ensureR2PhotoUrl({ photoUrl, organizationId: auth.organization.id, folder: 'equipment' }),
         },
       });
@@ -175,9 +187,9 @@ export async function POST(request: Request) {
       await (db as any).serviceLog.create({
         data: {
           equipmentId: eq.id,
-          technicianName: auth.profile?.fullName || 'Agency Admin',
-          servicedAt: now,
-          nextDueDate: nextDue,
+          technicianName: auth.profile?.fullName || 'Shaizan',
+          servicedAt: serviceDateObj,
+          nextDueDate: nextDueObj,
           actionType: 'Equipment Commissioning & Registration',
           notes: 'Asset registered in database.',
         },
@@ -236,19 +248,19 @@ export async function POST(request: Request) {
           type: type || 'Fire Extinguisher',
           capacity: capacity || 'ABC Dry Powder 6kg',
           location: loc,
-          lastServiceDate: now,
-          nextDueDate: nextDue,
+          lastServiceDate: serviceDateObj,
+          nextDueDate: nextDueObj,
           serviceIntervalMonths: intervalMos,
-          status: 'COMPLIANT',
+          status: derivedStatus,
         },
       });
 
       await (db as any).serviceLog.create({
         data: {
           equipmentId: eq.id,
-          technicianName: auth.profile?.fullName || 'Agency Admin Bulk Import',
-          servicedAt: now,
-          nextDueDate: nextDue,
+          technicianName: auth.profile?.fullName || 'Shaizan',
+          servicedAt: serviceDateObj,
+          nextDueDate: nextDueObj,
           actionType: 'Initial Commissioning & Registration',
           notes: 'Unit registered with auto-generated Asset ID.',
         },

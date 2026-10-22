@@ -147,6 +147,10 @@ export async function GET(request: Request) {
                   isImported: true,
                 },
               },
+              serviceLogs: {
+                orderBy: { servicedAt: 'desc' },
+                take: 1,
+              },
             },
             orderBy: { location: 'asc' },
           },
@@ -484,6 +488,11 @@ export async function GET(request: Request) {
         ? Math.round((kpiCompliantCount / evaluatedEquipments.length) * 100)
         : 100;
 
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const inspectionsThisWeek = inspectionsRaw.filter(
+      (ins: any) => new Date(ins.date || ins.createdAt) >= sevenDaysAgo
+    ).length;
+
     const kpis = {
       totalClients: clients.length,
       totalBuildings: evaluatedBuildings.length,
@@ -492,6 +501,8 @@ export async function GET(request: Request) {
       openWorkOrders,
       dueInspections: kpiDueCount,
       overdueInspections: kpiOverdueCount,
+      inspectionsThisWeek,
+      totalInspections: inspectionsRaw.length,
       complianceRate,
     };
 
