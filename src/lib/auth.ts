@@ -1,5 +1,5 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { cookies, headers } from 'next/headers';
+import { headers } from 'next/headers';
 import { db } from '@/lib/db';
 import { getOrCreateAgencySubscription } from '@/lib/plans';
 import { isFounderOwner } from '@/lib/founderAuth';
@@ -14,60 +14,12 @@ export interface AuthContext {
   subscription: any;
 }
 
-function tryDecodeJwtPayload(token: string) {
-  try {
-    const parts = token.split('.');
-    if (parts.length === 3) {
-      const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf8'));
-      if (payload.sub && (!payload.exp || payload.exp * 1000 > Date.now())) {
-        return {
-          id: payload.sub as string,
-          email: (payload.email as string) || '',
-          user_metadata: payload.user_metadata || {},
-        };
-      }
-    }
-  } catch {}
-  return null;
-}
-
-function tryReadUserFromSupabaseCookies(): any {
-  try {
-    const cookieStore = cookies();
-    const allCookies = cookieStore.getAll();
-    const authCookies = allCookies.filter((c) => c.name.includes('-auth-token'));
-    if (authCookies.length === 0) return null;
-
-    // Sort chunks if chunked (e.g., .0, .1)
-    authCookies.sort((a, b) => a.name.localeCompare(b.name));
-    let combined = authCookies.map((c) => c.value).join('');
-
-    if (combined.startsWith('base64-')) {
-      combined = Buffer.from(combined.slice(7), 'base64').toString('utf8');
-    } else {
-      try {
-        combined = decodeURIComponent(combined);
-      } catch {}
-    }
-
-    const parsed = JSON.parse(combined);
-    const accessToken = Array.isArray(parsed) ? parsed[0] : parsed?.access_token;
-    if (typeof accessToken === 'string') {
-      const decoded = tryDecodeJwtPayload(accessToken);
-      if (decoded) return decoded;
-    }
-    if (parsed?.user?.id) {
-      return parsed.user;
-    }
-  } catch {}
-  return null;
-}
-
 export async function getCurrentUser(
   req?: Request,
   options?: { skipSubscription?: boolean }
 ): Promise<AuthContext | null> {
   try {
+    const supabase = createServerSupabaseClient();
     let authUser: any = null;
 
     // 1. Check direct request headers if provided
@@ -83,37 +35,29 @@ export async function getCurrentUser(
       }
     }
 
+    // 3. Strictly verify Bearer token cryptographically via Supabase Auth server
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.substring(7).trim();
-      authUser = tryDecodeJwtPayload(token);
-
-      if (!authUser) {
-        try {
-          const supabase = createServerSupabaseClient();
-          const {
-            data: { user },
-          } = await supabase.auth.getUser(token);
-          if (user) authUser = user;
-        } catch {}
+      if (token) {
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser(token);
+        if (!error && user) {
+          authUser = user;
+        }
       }
     }
 
-    // 3. Fast local cookie decode before network round-trip
+    // 4. Strictly verify session cookie cryptographically via Supabase Auth server (never use unverified getSession or manual cookie decode)
     if (!authUser) {
-      authUser = tryReadUserFromSupabaseCookies();
-    }
-
-    // 4. Fallback: check session from cookie via Supabase SSR client
-    if (!authUser) {
-      try {
-        const supabase = createServerSupabaseClient();
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        if (session?.user) {
-          authUser = session.user;
-        }
-      } catch {}
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+      if (!error && user) {
+        authUser = user;
+      }
     }
 
     if (!authUser) {
