@@ -14,20 +14,60 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'No associated agency organization found' }, { status: 403 });
     }
 
-    // 1. Get technician's assigned buildings
-    const assignments = await (db as any).technicianBuildingAssignment.findMany({
-      where: { technicianId: userId },
-      include: {
-        building: {
-          include: {
-            client: true,
-            equipments: {
-              select: { id: true, status: true, nextDueDate: true },
+    // Fetch assignments, jobs, workOrders, and recentLogs in parallel
+    const [assignments, jobs, workOrders, recentLogs] = await Promise.all([
+      (db as any).technicianBuildingAssignment.findMany({
+        where: { technicianId: userId },
+        include: {
+          building: {
+            include: {
+              client: true,
+              equipments: {
+                select: { id: true, status: true, nextDueDate: true },
+              },
             },
           },
         },
-      },
-    });
+      }),
+      (db as any).job.findMany({
+        where: {
+          organizationId,
+          technicianId: userId,
+        },
+        include: {
+          building: { select: { id: true, name: true, address: true } },
+          client: { select: { name: true } },
+        },
+        orderBy: { scheduledDate: 'asc' },
+        take: 20,
+      }),
+      (db as any).workOrder.findMany({
+        where: {
+          organizationId,
+          assignedToId: userId,
+        },
+        include: {
+          building: { select: { id: true, name: true, address: true } },
+          equipment: { select: { id: true, qrCode: true, type: true } },
+        },
+        orderBy: { dueDate: 'asc' },
+        take: 20,
+      }),
+      (db as any).serviceLog.findMany({
+        where: {
+          technicianName: auth.profile?.fullName || auth.user.email,
+        },
+        include: {
+          equipment: {
+            include: {
+              building: { select: { id: true, name: true } },
+            },
+          },
+        },
+        orderBy: { servicedAt: 'desc' },
+        take: 15,
+      }),
+    ]);
 
     let assignedBuildings = assignments.map((a: any) => a.building);
 
@@ -71,48 +111,6 @@ export async function GET(request: Request) {
         compliantCount: compliant,
       };
     });
-
-    // 2. Get assigned work orders / jobs
-    const [jobs, workOrders, recentLogs] = await Promise.all([
-      (db as any).job.findMany({
-        where: {
-          organizationId,
-          technicianId: userId,
-        },
-        include: {
-          building: { select: { id: true, name: true, address: true } },
-          client: { select: { name: true } },
-        },
-        orderBy: { scheduledDate: 'asc' },
-        take: 20,
-      }),
-      (db as any).workOrder.findMany({
-        where: {
-          organizationId,
-          assignedToId: userId,
-        },
-        include: {
-          building: { select: { id: true, name: true, address: true } },
-          equipment: { select: { id: true, qrCode: true, type: true } },
-        },
-        orderBy: { dueDate: 'asc' },
-        take: 20,
-      }),
-      (db as any).serviceLog.findMany({
-        where: {
-          technicianName: auth.profile?.fullName || auth.user.email,
-        },
-        include: {
-          equipment: {
-            include: {
-              building: { select: { id: true, name: true } },
-            },
-          },
-        },
-        orderBy: { servicedAt: 'desc' },
-        take: 15,
-      }),
-    ]);
 
     const stats = {
       assignedBuildingsCount: evaluatedBuildings.length,

@@ -62,6 +62,7 @@ export async function PUT(
       serviceIntervalMonths,
       status,
       buildingId,
+      photoUrl,
     } = body;
 
     const existing = await (db as any).equipment.findFirst({
@@ -95,6 +96,7 @@ export async function PUT(
         serviceIntervalMonths: serviceIntervalMonths !== undefined ? Number(serviceIntervalMonths) : existing.serviceIntervalMonths,
         status: status !== undefined ? status : existing.status,
         buildingId: buildingId !== undefined ? buildingId : existing.buildingId,
+        photoUrl: photoUrl !== undefined ? photoUrl : existing.photoUrl,
       },
     });
 

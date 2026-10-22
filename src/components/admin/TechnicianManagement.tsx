@@ -35,18 +35,28 @@ interface TechnicianManagementProps {
   onNavigateToSubscription?: () => void;
   showToast: (msg: string) => void;
   onOpenImport?: () => void;
+  initialTechnicians?: any[];
+  initialBuildings?: any[];
+  initialSeatUsage?: SeatUsage;
+  initialPlan?: any;
+  onRefreshDashboard?: () => Promise<void> | void;
 }
 
 export function TechnicianManagement({
   onNavigateToSubscription,
   showToast,
   onOpenImport,
+  initialTechnicians,
+  initialBuildings,
+  initialSeatUsage,
+  initialPlan,
+  onRefreshDashboard,
 }: TechnicianManagementProps) {
-  const [technicians, setTechnicians] = useState<any[]>([]);
-  const [buildings, setBuildings] = useState<any[]>([]);
-  const [seatUsage, setSeatUsage] = useState<SeatUsage | undefined>(undefined);
-  const [plan, setPlan] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [technicians, setTechnicians] = useState<any[]>(initialTechnicians || []);
+  const [buildings, setBuildings] = useState<any[]>(initialBuildings || []);
+  const [seatUsage, setSeatUsage] = useState<SeatUsage | undefined>(initialSeatUsage);
+  const [plan, setPlan] = useState<any>(initialPlan || null);
+  const [loading, setLoading] = useState(false);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -87,6 +97,23 @@ export function TechnicianManagement({
   const [resetSubmitting, setResetSubmitting] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
 
+  // Keep in sync with parent bootstrap cache
+  useEffect(() => {
+    if (Array.isArray(initialTechnicians)) setTechnicians(initialTechnicians);
+  }, [initialTechnicians]);
+
+  useEffect(() => {
+    if (Array.isArray(initialBuildings)) setBuildings(initialBuildings);
+  }, [initialBuildings]);
+
+  useEffect(() => {
+    if (initialSeatUsage) setSeatUsage(initialSeatUsage);
+  }, [initialSeatUsage]);
+
+  useEffect(() => {
+    if (initialPlan) setPlan(initialPlan);
+  }, [initialPlan]);
+
   const fetchTechnicians = async () => {
     try {
       setLoading(true);
@@ -98,6 +125,7 @@ export function TechnicianManagement({
       setSeatUsage(json.seatUsage);
       setPlan(json.plan);
       setBuildings(json.buildings || []);
+      if (onRefreshDashboard) onRefreshDashboard();
     } catch (err: any) {
       console.error('Error loading technicians:', err);
       showToast(err.message || 'Error loading technicians');
@@ -107,7 +135,10 @@ export function TechnicianManagement({
   };
 
   useEffect(() => {
-    fetchTechnicians();
+    if (!initialTechnicians) {
+      fetchTechnicians();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Handle Add Technician

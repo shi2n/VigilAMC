@@ -51,11 +51,30 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { buildingId, equipmentId, status, checklist, remarks, technicianName } = body;
+    const {
+      buildingId,
+      equipmentId,
+      status,
+      checklist,
+      remarks,
+      technicianName,
+      photoUrl,
+      photos,
+      latitude,
+      longitude,
+    } = body;
 
     if (!buildingId) {
       return NextResponse.json({ error: 'Building ID is required' }, { status: 400 });
     }
+
+    const normalizedPhotos = photos
+      ? typeof photos === 'string'
+        ? photos
+        : JSON.stringify(photos)
+      : photoUrl
+      ? JSON.stringify([photoUrl])
+      : null;
 
     const inspection = await (db as any).inspection.create({
       data: {
@@ -67,6 +86,9 @@ export async function POST(request: Request) {
         status: status || 'PASSED',
         checklist: typeof checklist === 'string' ? checklist : JSON.stringify(checklist || {}),
         remarks: remarks || '',
+        photos: normalizedPhotos,
+        latitude: latitude !== undefined ? Number(latitude) : null,
+        longitude: longitude !== undefined ? Number(longitude) : null,
       },
     });
 

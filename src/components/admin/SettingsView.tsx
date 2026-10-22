@@ -33,6 +33,11 @@ interface SettingsViewProps {
   userProfile?: any;
   company?: any;
   showToast: (msg: string) => void;
+  initialTechnicians?: any[];
+  initialBuildings?: any[];
+  initialSeatUsage?: any;
+  initialPlan?: any;
+  onRefreshDashboard?: () => Promise<void> | void;
 }
 
 export function SettingsView({
@@ -47,6 +52,11 @@ export function SettingsView({
   userProfile,
   company,
   showToast,
+  initialTechnicians,
+  initialBuildings,
+  initialSeatUsage,
+  initialPlan,
+  onRefreshDashboard,
 }: SettingsViewProps) {
   const [internalSubTab, setInternalSubTab] = useState<SettingsSubTab>('AGENCY');
   const activeSubTab = externalSubTab || internalSubTab;
@@ -209,7 +219,15 @@ export function SettingsView({
           TAB: TEAM & TECHNICIANS
       ========================================================================= */}
       {activeSubTab === 'TEAM' && (
-        <TechnicianManagement showToast={showToast} onOpenImport={() => onOpenImport?.('TECHNICIANS')} />
+        <TechnicianManagement
+          showToast={showToast}
+          onOpenImport={() => onOpenImport?.('TECHNICIANS')}
+          initialTechnicians={initialTechnicians}
+          initialBuildings={initialBuildings}
+          initialSeatUsage={initialSeatUsage}
+          initialPlan={initialPlan}
+          onRefreshDashboard={onRefreshDashboard}
+        />
       )}
 
       {/* =========================================================================

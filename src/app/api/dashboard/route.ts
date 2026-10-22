@@ -27,45 +27,55 @@ export async function GET(request: Request) {
 
     const organizationId = auth.organization.id;
 
-    // Real database counts
-    const [totalClients, totalBuildings, totalEquipments, activeTechnicians, openWorkOrders] = await Promise.all([
+    // Parallelize all queries in a single batch
+    const [
+      totalClients,
+      totalBuildings,
+      totalEquipments,
+      activeTechnicians,
+      openWorkOrders,
+      buildings,
+      equipments,
+    ] = await Promise.all([
       (db as any).client.count({ where: { organizationId } }).catch(() => 0),
       (db as any).building.count({ where: { organizationId } }).catch(() => 0),
       (db as any).equipment.count({ where: { organizationId } }).catch(() => 0),
-      (db as any).userProfile.count({
-        where: {
-          organizationId,
-          role: 'TECHNICIAN',
-          status: 'ACTIVE',
+      (db as any).userProfile
+        .count({
+          where: {
+            organizationId,
+            role: 'TECHNICIAN',
+            status: 'ACTIVE',
+          },
+        })
+        .catch(() => 0),
+      (db as any).workOrder
+        .count({
+          where: {
+            organizationId,
+            status: { in: ['OPEN', 'ASSIGNED', 'IN_PROGRESS'] },
+          },
+        })
+        .catch(() => 0),
+      (db as any).building.findMany({
+        where: { organizationId },
+        include: {
+          client: true,
+          equipments: true,
+          reports: true,
         },
-      }).catch(() => 0),
-      (db as any).workOrder.count({
-        where: {
-          organizationId,
-          status: { in: ['OPEN', 'ASSIGNED', 'IN_PROGRESS'] },
+        orderBy: { createdAt: 'desc' },
+      }),
+      (db as any).equipment.findMany({
+        where: { organizationId },
+        include: {
+          building: {
+            select: { name: true, address: true },
+          },
         },
-      }).catch(() => 0),
+        orderBy: { nextDueDate: 'asc' },
+      }),
     ]);
-
-    const buildings = await (db as any).building.findMany({
-      where: { organizationId },
-      include: {
-        client: true,
-        equipments: true,
-        reports: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    const equipments = await (db as any).equipment.findMany({
-      where: { organizationId },
-      include: {
-        building: {
-          select: { name: true, address: true },
-        },
-      },
-      orderBy: { nextDueDate: 'asc' },
-    });
 
     const now = new Date();
     let compliantCount = 0;
@@ -73,7 +83,9 @@ export async function GET(request: Request) {
     let overdueCount = 0;
 
     equipments.forEach((eq: any) => {
-      const diffDays = Math.ceil((new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      const diffDays = Math.ceil(
+        (new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+      );
       if (diffDays < 0) {
         overdueCount++;
       } else if (diffDays <= 30) {
@@ -83,7 +95,8 @@ export async function GET(request: Request) {
       }
     });
 
-    const complianceRate = equipments.length > 0 ? Math.round((compliantCount / equipments.length) * 100) : 100;
+    const complianceRate =
+      equipments.length > 0 ? Math.round((compliantCount / equipments.length) * 100) : 100;
 
     return NextResponse.json({
       authenticated: true,

@@ -2,38 +2,49 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  FileText,
   Search,
   RefreshCw,
-  Building2,
-  Calendar,
-  CheckCircle2,
-  Clock,
-  AlertTriangle,
-  User,
+  ChevronRight,
   ShieldCheck,
-  ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
 
 interface InspectionsViewProps {
   showToast: (msg: string) => void;
   onOpenImport?: () => void;
+  initialInspections?: any[];
+  onRefreshDashboard?: () => Promise<void> | void;
 }
 
-export function InspectionsView({ showToast, onOpenImport }: InspectionsViewProps) {
-  const [inspections, setInspections] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+export function InspectionsView({
+  showToast,
+  onOpenImport,
+  initialInspections,
+  onRefreshDashboard,
+}: InspectionsViewProps) {
+  const [inspections, setInspections] = useState<any[]>(initialInspections || []);
+  const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PASSED' | 'FAILED' | 'SERVICE_REQUIRED'>('ALL');
   const [search, setSearch] = useState('');
+
+  // Keep in sync with parent bootstrap state immediately
+  useEffect(() => {
+    if (Array.isArray(initialInspections)) {
+      setInspections(initialInspections);
+    }
+  }, [initialInspections]);
 
   const fetchInspections = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/inspections');
-      const json = await res.json();
-      if (res.ok) {
-        setInspections(json.inspections || []);
+      if (onRefreshDashboard) {
+        await onRefreshDashboard();
+      } else {
+        const res = await fetch('/api/inspections');
+        const json = await res.json();
+        if (res.ok) {
+          setInspections(json.inspections || []);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -43,7 +54,10 @@ export function InspectionsView({ showToast, onOpenImport }: InspectionsViewProp
   };
 
   useEffect(() => {
-    fetchInspections();
+    if (!initialInspections) {
+      fetchInspections();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filteredInspections = inspections.filter((ins) => {
@@ -130,12 +144,7 @@ export function InspectionsView({ showToast, onOpenImport }: InspectionsViewProp
 
       {/* Inspections Table / List */}
       <div className="bg-white border border-[#DCE7F2] rounded-2xl overflow-hidden shadow-sm dark:bg-slate-900/80 dark:border-slate-800 dark:shadow-xl">
-        {loading && inspections.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 space-y-3 dark:text-slate-400">
-            <RefreshCw className="w-8 h-8 animate-spin text-[#007DB8] mx-auto" />
-            <p className="text-sm font-semibold">Loading inspection audit trail...</p>
-          </div>
-        ) : filteredInspections.length === 0 ? (
+        {filteredInspections.length === 0 ? (
           <div className="p-12 text-center space-y-3">
             <ShieldCheck className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto" />
             <h3 className="text-base font-bold text-slate-900 dark:text-white">No Inspections Recorded</h3>

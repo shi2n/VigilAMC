@@ -14,7 +14,59 @@ export interface AuthContext {
   subscription: any;
 }
 
-export async function getCurrentUser(req?: Request): Promise<AuthContext | null> {
+function tryDecodeJwtPayload(token: string) {
+  try {
+    const parts = token.split('.');
+    if (parts.length === 3) {
+      const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf8'));
+      if (payload.sub && (!payload.exp || payload.exp * 1000 > Date.now())) {
+        return {
+          id: payload.sub as string,
+          email: (payload.email as string) || '',
+          user_metadata: payload.user_metadata || {},
+        };
+      }
+    }
+  } catch {}
+  return null;
+}
+
+function tryReadUserFromSupabaseCookies(): any {
+  try {
+    const cookieStore = cookies();
+    const allCookies = cookieStore.getAll();
+    const authCookies = allCookies.filter((c) => c.name.includes('-auth-token'));
+    if (authCookies.length === 0) return null;
+
+    // Sort chunks if chunked (e.g., .0, .1)
+    authCookies.sort((a, b) => a.name.localeCompare(b.name));
+    let combined = authCookies.map((c) => c.value).join('');
+
+    if (combined.startsWith('base64-')) {
+      combined = Buffer.from(combined.slice(7), 'base64').toString('utf8');
+    } else {
+      try {
+        combined = decodeURIComponent(combined);
+      } catch {}
+    }
+
+    const parsed = JSON.parse(combined);
+    const accessToken = Array.isArray(parsed) ? parsed[0] : parsed?.access_token;
+    if (typeof accessToken === 'string') {
+      const decoded = tryDecodeJwtPayload(accessToken);
+      if (decoded) return decoded;
+    }
+    if (parsed?.user?.id) {
+      return parsed.user;
+    }
+  } catch {}
+  return null;
+}
+
+export async function getCurrentUser(
+  req?: Request,
+  options?: { skipSubscription?: boolean }
+): Promise<AuthContext | null> {
   try {
     let authUser: any = null;
 
@@ -26,47 +78,42 @@ export async function getCurrentUser(req?: Request): Promise<AuthContext | null>
       try {
         const headerStore = headers();
         authHeader = headerStore.get('authorization') || headerStore.get('Authorization');
-      } catch (e) {
+      } catch {
         // Ignored in non-server action contexts
       }
     }
 
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.substring(7).trim();
-      try {
-        const parts = token.split('.');
-        if (parts.length === 3) {
-          const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
-          if (payload.sub && (!payload.exp || payload.exp * 1000 > Date.now())) {
-            authUser = {
-              id: payload.sub,
-              email: payload.email || '',
-              user_metadata: payload.user_metadata || {},
-            };
-          }
-        }
-      } catch (err) {
-        // Fallback to Supabase client
-      }
+      authUser = tryDecodeJwtPayload(token);
 
       if (!authUser) {
         try {
           const supabase = createServerSupabaseClient();
-          const { data: { user } } = await supabase.auth.getUser(token);
+          const {
+            data: { user },
+          } = await supabase.auth.getUser(token);
           if (user) authUser = user;
-        } catch (e) {}
+        } catch {}
       }
     }
 
-    // 3. Fallback: check session from cookie
+    // 3. Fast local cookie decode before network round-trip
+    if (!authUser) {
+      authUser = tryReadUserFromSupabaseCookies();
+    }
+
+    // 4. Fallback: check session from cookie via Supabase SSR client
     if (!authUser) {
       try {
         const supabase = createServerSupabaseClient();
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (session?.user) {
           authUser = session.user;
         }
-      } catch (e) {}
+      } catch {}
     }
 
     if (!authUser) {
@@ -76,7 +123,11 @@ export async function getCurrentUser(req?: Request): Promise<AuthContext | null>
     let profile = await (db as any).userProfile.findUnique({
       where: { id: authUser.id },
       include: {
-        organization: true,
+        organization: {
+          include: {
+            subscription: true,
+          },
+        },
         assignedBuildings: {
           include: {
             building: true,
@@ -125,7 +176,11 @@ export async function getCurrentUser(req?: Request): Promise<AuthContext | null>
           lastLoginAt: new Date(),
         },
         include: {
-          organization: true,
+          organization: {
+            include: {
+              subscription: true,
+            },
+          },
           assignedBuildings: {
             include: {
               building: true,
@@ -148,7 +203,7 @@ export async function getCurrentUser(req?: Request): Promise<AuthContext | null>
           .catch((e: any) => console.error('Failed to sanitize fullName:', e));
       }
 
-      // Update lastLoginAt if older than 10 minutes
+      // Update lastLoginAt asynchronously if older than 10 minutes
       const lastLogin = profile.lastLoginAt ? new Date(profile.lastLoginAt).getTime() : 0;
       if (Date.now() - lastLogin > 10 * 60 * 1000) {
         (db as any).userProfile
@@ -160,9 +215,9 @@ export async function getCurrentUser(req?: Request): Promise<AuthContext | null>
       }
     }
 
-    // Attach active subscription if organization exists
-    let subscription = null;
-    if (profile?.organizationId) {
+    // Reuse already-included organization subscription to avoid a 2nd DB round-trip!
+    let subscription = profile?.organization?.subscription || null;
+    if (!subscription && profile?.organizationId && !options?.skipSubscription) {
       subscription = await getOrCreateAgencySubscription(profile.organizationId);
     }
 

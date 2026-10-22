@@ -110,6 +110,7 @@ export async function POST(request: Request) {
       locationBase,
       serviceIntervalMonths,
       lastServiceDate,
+      photoUrl,
     } = body;
 
     const building = await (db as any).building.findFirst({
@@ -166,6 +167,7 @@ export async function POST(request: Request) {
           nextDueDate: nextDue,
           serviceIntervalMonths: intervalMos,
           status: 'COMPLIANT',
+          photoUrl: photoUrl || null,
         },
       });
 
