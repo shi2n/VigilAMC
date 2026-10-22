@@ -12,7 +12,6 @@ import {
   Sun,
   X,
   Flame,
-  ChevronDown,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -38,10 +37,8 @@ interface AdminSidebarProps {
   company?: any;
   userEmail?: string;
   userProfile?: any;
-  isPlatformOwner?: boolean;
   onLogout: () => void;
   openRepairsCount?: number;
-  unreadLeadsCount?: number;
   isDarkMode?: boolean;
   onToggleDarkMode?: () => void;
 }
@@ -55,10 +52,8 @@ export function AdminSidebar({
   company,
   userEmail,
   userProfile,
-  isPlatformOwner = false,
   onLogout,
   openRepairsCount = 0,
-  unreadLeadsCount = 0,
   isDarkMode = false,
   onToggleDarkMode,
 }: AdminSidebarProps) {
@@ -96,14 +91,19 @@ export function AdminSidebar({
       id: 'SETTINGS',
       label: 'Settings',
       icon: Settings,
-      badge: isPlatformOwner && unreadLeadsCount > 0 ? unreadLeadsCount : undefined,
-      badgeColor: 'bg-blue-600 text-white',
     },
   ];
 
-  // User display metadata
-  const displayName = userProfile?.fullName?.trim() || userEmail?.split('@')[0] || 'Agency Admin';
-  const roleName = isPlatformOwner ? 'Platform Owner' : userProfile?.role === 'SUPER_ADMIN' ? 'Owner' : 'Agency Admin';
+  // User display metadata — clean fallback from profile.fullName -> email prefix
+  const rawFullName = userProfile?.fullName?.trim();
+  const cleanFullName =
+    rawFullName && rawFullName.toLowerCase() !== 'jordan michael' ? rawFullName : '';
+  const emailPrefix = userEmail?.split('@')[0] || '';
+  const formattedEmailPrefix = emailPrefix
+    ? emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1)
+    : 'Agency Admin';
+  const displayName = cleanFullName || formattedEmailPrefix;
+  const roleName = userProfile?.role === 'TECHNICIAN' ? 'Technician' : 'Agency Admin';
   const userInitials =
     displayName
       .split(' ')

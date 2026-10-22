@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getCurrentUser, requirePlatformOwner } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth';
+import { isFounderOwner } from '@/lib/founderAuth';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +32,10 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    await requirePlatformOwner(request);
+    const auth = await getCurrentUser(request);
+    if (!auth?.user?.email || !isFounderOwner(auth.user.email)) {
+      return NextResponse.json({ error: 'Forbidden: Founder privileges required' }, { status: 403 });
+    }
     const feedbackList = await (db as any).feedback.findMany({
       orderBy: { createdAt: 'desc' },
       take: 100,
@@ -39,7 +43,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: true, feedback: feedbackList });
   } catch (error: any) {
     console.error('Error fetching feedback:', error);
-    const status = error.message?.startsWith('UNAUTHORIZED') ? 401 : error.message?.startsWith('FORBIDDEN') ? 403 : 500;
-    return NextResponse.json({ error: error.message }, { status });
+    return NextResponse.json({ error: error.message || 'Forbidden' }, { status: 403 });
   }
 }

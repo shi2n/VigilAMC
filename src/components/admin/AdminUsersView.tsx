@@ -3,23 +3,30 @@
 import React, { useState } from 'react';
 import {
   ShieldCheck,
-  UserCheck,
   Lock,
   Check,
   X,
   Mail,
   Building2,
-  KeyRound,
-  Sparkles
 } from 'lucide-react';
 
 interface AdminUsersViewProps {
   currentUser?: any;
+  userProfile?: any;
   company?: any;
 }
 
-export function AdminUsersView({ currentUser, company }: AdminUsersViewProps) {
+export function AdminUsersView({ currentUser, userProfile, company }: AdminUsersViewProps) {
   const [activeTab, setActiveTab] = useState<'USERS' | 'PERMISSIONS'>('USERS');
+
+  const rawFullName = userProfile?.fullName?.trim() || currentUser?.user_metadata?.full_name?.trim();
+  const cleanFullName =
+    rawFullName && rawFullName.toLowerCase() !== 'jordan michael' ? rawFullName : '';
+  const emailPrefix = (userProfile?.email || currentUser?.email || '')?.split('@')[0] || '';
+  const formattedFallback = emailPrefix
+    ? emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1)
+    : 'Agency Admin';
+  const adminDisplayName = cleanFullName || formattedFallback;
 
   const permissionsMatrix = [
     { module: 'Subscription & Billing Management', admin: true, tech: false },
@@ -79,7 +86,7 @@ export function AdminUsersView({ currentUser, company }: AdminUsersViewProps) {
               </p>
             </div>
             <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-[#EAF6FF] text-[#007DB8] border border-[#007DB8]/30 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30">
-              Agency Master Account
+              Agency Admin
             </span>
           </div>
 
@@ -92,15 +99,15 @@ export function AdminUsersView({ currentUser, company }: AdminUsersViewProps) {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-slate-900 dark:text-white text-sm">
-                      {currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'Agency Admin'}
+                      {adminDisplayName}
                     </span>
                     <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-[#007DB8] text-white dark:bg-amber-500 dark:text-slate-950">
-                      PRIMARY ADMIN
+                      AGENCY ADMIN
                     </span>
                   </div>
                   <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-2">
                     <Mail className="w-3.5 h-3.5 text-slate-400" />
-                    <span>{currentUser?.email || 'admin@agency.com'}</span>
+                    <span>{currentUser?.email || userProfile?.email || 'admin@agency.com'}</span>
                     <span>•</span>
                     <Building2 className="w-3.5 h-3.5 text-slate-400" />
                     <span>{company?.name || 'Vigil Fire Solutions'}</span>

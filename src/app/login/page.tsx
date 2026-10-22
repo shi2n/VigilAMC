@@ -96,10 +96,19 @@ export default function LoginPage() {
           throw new Error(regData.error || 'Failed to authenticate profile.');
         }
 
+        const redirectParam =
+          typeof window !== 'undefined'
+            ? new URLSearchParams(window.location.search).get('redirect')
+            : null;
+        const safeRedirect =
+          redirectParam && redirectParam.startsWith('/') && !redirectParam.startsWith('//')
+            ? redirectParam
+            : null;
+
         if (regData.profile?.role === 'TECHNICIAN') {
           router.push('/technician');
         } else {
-          router.push('/dashboard');
+          router.push(safeRedirect || '/dashboard');
         }
       }
     } catch (err: any) {

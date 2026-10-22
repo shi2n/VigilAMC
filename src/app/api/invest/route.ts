@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { sendInvestorNotification } from '@/lib/email';
 import { SITE_CONFIG } from '@/lib/siteConfig';
+import { getCurrentUser } from '@/lib/auth';
+import { isFounderOwner } from '@/lib/founderAuth';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +22,44 @@ function isRateLimited(ip: string): boolean {
   }
   entry.count++;
   return false;
+}
+
+export async function GET(request: Request) {
+  const auth = await getCurrentUser(request);
+  if (!auth?.user?.email || !isFounderOwner(auth.user.email)) {
+    return NextResponse.json({ error: 'Forbidden: Founder privileges required' }, { status: 403 });
+  }
+  const investors = await (db as any).investorInterest.findMany({
+    orderBy: { createdAt: 'desc' },
+    take: 100,
+  });
+  return NextResponse.json({ success: true, investors });
+}
+
+export async function PATCH(request: Request) {
+  const auth = await getCurrentUser(request);
+  if (!auth?.user?.email || !isFounderOwner(auth.user.email)) {
+    return NextResponse.json({ error: 'Forbidden: Founder privileges required' }, { status: 403 });
+  }
+  return NextResponse.json({ error: 'Use /api/admin/investors/[id]' }, { status: 400 });
+}
+
+export async function PUT(request: Request) {
+  return PATCH(request);
+}
+
+export async function DELETE(request: Request) {
+  const auth = await getCurrentUser(request);
+  if (!auth?.user?.email || !isFounderOwner(auth.user.email)) {
+    return NextResponse.json({ error: 'Forbidden: Founder privileges required' }, { status: 403 });
+  }
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+  if (!id) {
+    return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+  }
+  await (db as any).investorInterest.delete({ where: { id } });
+  return NextResponse.json({ success: true, deletedId: id });
 }
 
 export async function POST(request: Request) {

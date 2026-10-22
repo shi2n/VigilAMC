@@ -2,6 +2,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { cookies, headers } from 'next/headers';
 import { db } from '@/lib/db';
 import { getOrCreateAgencySubscription } from '@/lib/plans';
+import { isFounderOwner } from '@/lib/founderAuth';
 
 export interface AuthContext {
   user: {
@@ -91,10 +92,16 @@ export async function getCurrentUser(req?: Request): Promise<AuthContext | null>
 
       let orgId = explicitOrgId;
 
+      const rawMetaName = (authUser.user_metadata?.full_name as string)?.trim();
+      const safeFullName =
+        rawMetaName && rawMetaName.toLowerCase() !== 'jordan michael'
+          ? rawMetaName
+          : authUser.email?.split('@')[0] || 'User';
+
       if (!orgId && explicitRole === 'ORG_ADMIN') {
-        const agencyName = (authUser.user_metadata?.agency_name as string) || 
-          `${authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'My'} Fire Agency`;
-        
+        const agencyName =
+          (authUser.user_metadata?.agency_name as string) || `${safeFullName} Fire Agency`;
+
         const org = await (db as any).organization.create({
           data: {
             name: agencyName,
@@ -109,7 +116,7 @@ export async function getCurrentUser(req?: Request): Promise<AuthContext | null>
         data: {
           id: authUser.id,
           email: authUser.email || '',
-          fullName: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'User',
+          fullName: safeFullName,
           role: explicitRole,
           status: 'ACTIVE',
           phone: authUser.user_metadata?.phone || '',
@@ -127,13 +134,29 @@ export async function getCurrentUser(req?: Request): Promise<AuthContext | null>
         },
       });
     } else {
+      if (profile.fullName?.trim().toLowerCase() === 'jordan michael') {
+        const replacementName =
+          authUser.email?.toLowerCase().trim() === 'vigilamc@gmail.com'
+            ? 'Shaizan'
+            : authUser.email?.split('@')[0] || 'Agency Admin';
+        profile.fullName = replacementName;
+        (db as any).userProfile
+          .update({
+            where: { id: profile.id },
+            data: { fullName: replacementName },
+          })
+          .catch((e: any) => console.error('Failed to sanitize fullName:', e));
+      }
+
       // Update lastLoginAt if older than 10 minutes
       const lastLogin = profile.lastLoginAt ? new Date(profile.lastLoginAt).getTime() : 0;
       if (Date.now() - lastLogin > 10 * 60 * 1000) {
-        (db as any).userProfile.update({
-          where: { id: profile.id },
-          data: { lastLoginAt: new Date() },
-        }).catch((e: any) => console.error('Failed to update lastLoginAt:', e));
+        (db as any).userProfile
+          .update({
+            where: { id: profile.id },
+            data: { lastLoginAt: new Date() },
+          })
+          .catch((e: any) => console.error('Failed to update lastLoginAt:', e));
       }
     }
 
@@ -160,25 +183,16 @@ export async function getCurrentUser(req?: Request): Promise<AuthContext | null>
 
 export function isPlatformOwner(auth: AuthContext | null): boolean {
   if (!auth || !auth.user) return false;
-  const email = (auth.user.email || '').toLowerCase().trim();
-  const ownerEmail = (process.env.ADMIN_NOTIFICATION_EMAIL || 'shaizan@vigilamc.com').toLowerCase().trim();
-  const role = (auth.profile?.role || '').toUpperCase();
-  return (
-    role === 'SUPER_ADMIN' ||
-    role === 'PLATFORM_OWNER' ||
-    email === ownerEmail ||
-    email === 'shaizan@vigilamc.com' ||
-    email === 'vigilamc@gmail.com'
-  );
+  return isFounderOwner(auth.user.email);
 }
 
 export async function requirePlatformOwner(req?: Request): Promise<AuthContext> {
   const auth = await getCurrentUser(req);
   if (!auth || !auth.user) {
-    throw new Error('UNAUTHORIZED: Authentication required');
+    throw new Error('FORBIDDEN: Founder authentication required');
   }
-  if (!isPlatformOwner(auth)) {
-    throw new Error('FORBIDDEN: Platform Owner privileges required');
+  if (!isFounderOwner(auth.user.email)) {
+    throw new Error('FORBIDDEN: Founder privileges required');
   }
   return auth;
 }
@@ -197,7 +211,7 @@ export async function requireAdmin(req?: Request): Promise<AuthContext> {
   }
 
   const role = auth.profile?.role;
-  if (role !== 'ORG_ADMIN' && role !== 'SUPER_ADMIN' && role !== 'PLATFORM_OWNER') {
+  if (role !== 'ORG_ADMIN' && role !== 'SUPER_ADMIN') {
     throw new Error('FORBIDDEN: Agency Administrator privileges required');
   }
 

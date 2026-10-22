@@ -1,49 +1,18 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import {
   Building2,
   Plus,
-  FileText,
-  Printer,
-  ChevronDown,
-  ChevronRight,
-  ShieldCheck,
-  AlertTriangle,
-  Clock,
-  Scan,
   CheckCircle2,
   RefreshCw,
-  ExternalLink,
-  Layers,
-  Sparkles,
-  Phone,
   LogOut,
-  Calendar,
-  Check,
-  Flame,
-  ArrowRight,
-  Database,
-  Trash2,
-  Edit,
-  Settings,
-  UserCheck,
-  Search,
-  Sliders,
-  MapPin,
-  Mail,
-  Wrench,
-  Users,
-  CreditCard,
-  Zap,
-  LayoutDashboard,
   Menu,
   FileSpreadsheet,
   Sun,
   Moon,
-  MessageSquare
+  MessageSquare,
 } from 'lucide-react';
 import { AdminSidebar, AdminNavTab } from '@/components/admin/AdminSidebar';
 import { DashboardOverview } from '@/components/admin/DashboardOverview';
@@ -52,11 +21,6 @@ import { ImportModal } from '@/components/admin/ImportModal';
 import { FeedbackModal } from '@/components/admin/FeedbackModal';
 import { ImportType } from '@/lib/excelImport';
 import { INDIAN_STATES_AND_UTS, REPORTING_CYCLES } from '@/lib/constants/india';
-import { TechnicianManagement } from '@/components/admin/TechnicianManagement';
-import { TechnicianAssignments } from '@/components/admin/TechnicianAssignments';
-import { TechnicianActivityLog } from '@/components/admin/TechnicianActivityLog';
-import { SubscriptionManager } from '@/components/admin/SubscriptionManager';
-import { AdminUsersView } from '@/components/admin/AdminUsersView';
 import { WorkOrdersView } from '@/components/admin/WorkOrdersView';
 import { InspectionsView } from '@/components/admin/InspectionsView';
 import { ReportsView } from '@/components/admin/ReportsView';
@@ -99,12 +63,9 @@ export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<AdminNavTab>('OVERVIEW');
   const [clientsSitesSubTab, setClientsSitesSubTab] = useState<'BUILDINGS' | 'CLIENTS'>('BUILDINGS');
   const [inspectionsWorkSubTab, setInspectionsWorkSubTab] = useState<'INSPECTIONS' | 'REPAIRS'>('INSPECTIONS');
-  const [sitesSubTab, setSitesSubTab] = useState<'EQUIPMENT' | 'BUILDINGS' | 'CLIENTS'>('BUILDINGS');
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [techSubTab, setTechSubTab] = useState<'ROSTER' | 'ASSIGNMENTS' | 'AUDIT_LOG'>('ROSTER');
-  const [settingsSubTab, setSettingsSubTab] = useState<'LEADS' | 'TOOLS' | 'AGENCY' | 'INVESTORS'>('LEADS');
-  const [subscriptionData, setSubscriptionData] = useState<any>(null);
+  const [, setSubscriptionData] = useState<any>(null);
 
   // Export Modal Dialog State
   const [exportModalOpen, setExportModalOpen] = useState(false);
@@ -135,7 +96,6 @@ export default function AdminDashboardPage() {
   const [techniciansList, setTechniciansList] = useState<any[]>([]);
   const [workOrdersList, setWorkOrdersList] = useState<any[]>([]);
   const [inspectionsList, setInspectionsList] = useState<any[]>([]);
-  const [dataSubTab, setDataSubTab] = useState<'COMPANY' | 'CLIENTS' | 'BUILDINGS' | 'EQUIPMENT' | 'RESET'>('COMPANY');
 
   // Modals
   const [addBuildingModalOpen, setAddBuildingModalOpen] = useState(false);
@@ -190,22 +150,18 @@ export default function AdminDashboardPage() {
   // Company profile form state
   const [companyForm, setCompanyForm] = useState({
     name: '',
+    fullName: '',
     licenseNumber: '',
     phone: '',
     email: '',
     address: '',
   });
 
-  // Clients state for data manage tab
+  // Clients & equipment state
   const [clientsList, setClientsList] = useState<any[]>([]);
   const [equipmentsList, setEquipmentsList] = useState<any[]>([]);
   const [equipSearch, setEquipSearch] = useState('');
   const [equipFilterBuilding, setEquipFilterBuilding] = useState('ALL');
-
-  // Enquiries & Leads state
-  const [enquiriesList, setEnquiriesList] = useState<any[]>([]);
-  const [enquiryStatusFilter, setEnquiryStatusFilter] = useState('ALL');
-  const [loadingEnquiries, setLoadingEnquiries] = useState(false);
 
   const fetchSubscription = async () => {
     try {
@@ -240,9 +196,19 @@ export default function AdminDashboardPage() {
       }
 
       setData(json);
+      const rawName = json.profile?.fullName?.trim();
+      const emailPrefix = json.user?.email?.split('@')[0] || '';
+      const cleanName =
+        rawName && rawName.toLowerCase() !== 'jordan michael'
+          ? rawName
+          : emailPrefix
+          ? emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1)
+          : '';
+
       if (json.company) {
         setCompanyForm({
           name: json.company.name || '',
+          fullName: cleanName,
           licenseNumber: json.company.licenseNumber || '',
           phone: json.company.phone || '',
           email: json.company.email || '',
@@ -259,7 +225,6 @@ export default function AdminDashboardPage() {
       fetchTechnicians();
       fetchWorkOrders();
       fetchInspections();
-      fetchEnquiries();
     } catch (e) {
       console.error(e);
     } finally {
@@ -336,23 +301,6 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const fetchEnquiries = async () => {
-    try {
-      setLoadingEnquiries(true);
-      const query = new URLSearchParams();
-      if (enquiryStatusFilter !== 'ALL') query.set('status', enquiryStatusFilter);
-      const res = await fetch(`/api/enquiries?${query.toString()}`);
-      const json = await res.json();
-      if (json.enquiries) {
-        setEnquiriesList(json.enquiries);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoadingEnquiries(false);
-    }
-  };
-
   const handleOpenExport = (key?: string) => {
     if (key) {
       setExportConfigKey(key);
@@ -372,23 +320,6 @@ export default function AdminDashboardPage() {
       setExportConfigKey(tabMap[activeTab] || 'FIRE_ASSETS');
     }
     setExportModalOpen(true);
-  };
-
-  const handleUpdateEnquiryStatus = async (id: string, newStatus: string) => {
-    try {
-      const res = await fetch('/api/enquiries', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status: newStatus }),
-      });
-      const json = await res.json();
-      if (json.success) {
-        showToast(`Lead status updated to ${newStatus}`);
-        fetchEnquiries();
-      }
-    } catch (e) {
-      console.error(e);
-    }
   };
 
   const handleLogout = async () => {
@@ -419,10 +350,9 @@ export default function AdminDashboardPage() {
     } else if (activeTab === 'REPORTS') {
       fetchData();
     } else if (activeTab === 'SETTINGS') {
-      fetchEnquiries();
       fetchTechnicians();
     }
-  }, [activeTab, equipFilterBuilding, equipSearch, enquiryStatusFilter]);
+  }, [activeTab, equipFilterBuilding, equipSearch]);
 
   // Company Profile Update
   const handleSaveCompany = async (e: React.FormEvent) => {
@@ -652,60 +582,6 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Data Manage: Wipe All Demo Data
-  const handleWipeAllDemo = async () => {
-    const confirmation = prompt('DANGER: This will permanently delete all demo companies, clients, buildings, and equipment. Type DELETE to confirm:');
-    if (confirmation !== 'DELETE') {
-      alert('Wipe cancelled. Confirmation word did not match "DELETE".');
-      return;
-    }
-    try {
-      setLoading(true);
-      const res = await fetch('/api/admin/data-manage', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'WIPE_ALL_DEMO', confirmation: 'DELETE' }),
-      });
-      const json = await res.json();
-      if (json.success) {
-        showToast(json.message);
-        fetchData();
-        fetchClients();
-        fetchEquipments();
-      } else {
-        alert(json.error || 'Failed to wipe data');
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Data Manage: Seed Clean Template
-  const handleSeedCleanData = async () => {
-    if (!confirm('This will load clean, non-trademarked operational sample data (Cyber Park IT & Emerald Heights) for testing. Continue?')) return;
-    try {
-      setLoading(true);
-      const res = await fetch('/api/admin/data-manage', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'SEED_CLEAN' }),
-      });
-      const json = await res.json();
-      if (json.success) {
-        showToast(json.message);
-        fetchData();
-        fetchClients();
-        fetchEquipments();
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (loading || !data) {
     return (
       <div className="flex-1 p-8 flex items-center justify-center min-h-screen bg-[#F8FAFC] dark:bg-[#080d1a]">
@@ -718,7 +594,6 @@ export default function AdminDashboardPage() {
   }
 
   const { summary, buildings, company } = data;
-  const userFirstName = data?.profile?.fullName?.trim() ? data.profile.fullName.split(' ')[0] : (data?.user?.email ? data.user.email.split('@')[0] : 'Admin');
   const agencyName = company?.name || 'VigilAMC Operating System';
   const licenseNo = company?.licenseNumber || 'DL/FIRE/LIC/2026';
 
@@ -754,10 +629,8 @@ export default function AdminDashboardPage() {
         company={company}
         userEmail={data?.user?.email}
         userProfile={data?.profile}
-        isPlatformOwner={data?.isPlatformOwner}
         onLogout={handleLogout}
         openRepairsCount={kpis.openWorkOrders}
-        unreadLeadsCount={enquiriesList.filter((e) => e.status === 'NEW').length}
         isDarkMode={theme === 'dark'}
         onToggleDarkMode={toggleTheme}
       />
@@ -1081,20 +954,12 @@ export default function AdminDashboardPage() {
             companyForm={companyForm}
             setCompanyForm={setCompanyForm}
             handleSaveCompany={handleSaveCompany}
-            isPlatformOwner={data?.isPlatformOwner}
             currentUser={data?.user}
+            userProfile={data?.profile}
             company={company}
             showToast={showToast}
             onOpenImport={(type) => handleOpenImport(type || 'CLIENTS')}
             onOpenExport={(type) => handleOpenExport(type || 'CLIENTS')}
-            enquiriesList={enquiriesList}
-            enquiryStatusFilter={enquiryStatusFilter}
-            setEnquiryStatusFilter={setEnquiryStatusFilter}
-            loadingEnquiries={loadingEnquiries}
-            onRefreshEnquiries={fetchEnquiries}
-            onUpdateEnquiryStatus={handleUpdateEnquiryStatus}
-            onWipeAllDemo={handleWipeAllDemo}
-            onSeedCleanData={handleSeedCleanData}
           />
         )}
 

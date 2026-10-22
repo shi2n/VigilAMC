@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { requirePlatformOwner } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth';
+import { isFounderOwner } from '@/lib/founderAuth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
-    // Ensure caller is the Platform Owner (founder)
-    await requirePlatformOwner(request);
+    const auth = await getCurrentUser(request);
+    if (!auth?.user?.email || !isFounderOwner(auth.user.email)) {
+      return NextResponse.json({ error: 'Forbidden: Founder privileges required' }, { status: 403 });
+    }
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
@@ -43,11 +46,31 @@ export async function GET(request: Request) {
     });
   } catch (error: any) {
     console.error('Error fetching investor leads:', error);
-    const status = error.message?.startsWith('UNAUTHORIZED')
-      ? 401
-      : error.message?.startsWith('FORBIDDEN')
-      ? 403
-      : 500;
-    return NextResponse.json({ error: error.message || 'Failed to fetch investor records' }, { status });
+    return NextResponse.json({ error: error.message || 'Forbidden' }, { status: 403 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const auth = await getCurrentUser(request);
+    if (!auth?.user?.email || !isFounderOwner(auth.user.email)) {
+      return NextResponse.json({ error: 'Forbidden: Founder privileges required' }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    let id = searchParams.get('id');
+    if (!id) {
+      const body = await request.json().catch(() => ({}));
+      id = body?.id;
+    }
+    if (!id) {
+      return NextResponse.json({ error: 'Investor ID is required' }, { status: 400 });
+    }
+
+    await (db as any).investorInterest.delete({ where: { id } });
+    return NextResponse.json({ success: true, deletedId: id });
+  } catch (error: any) {
+    console.error('Error deleting investor lead:', error);
+    return NextResponse.json({ error: error.message || 'Failed to delete investor lead' }, { status: 500 });
   }
 }
