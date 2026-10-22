@@ -128,7 +128,7 @@ export function FireAssetsView({
                 <tr key={eq.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-850/40 transition-colors">
                   <td className="py-3 px-4 font-mono font-bold">
                     <Link
-                      href={`/verify/${eq.qrCode}`}
+                      href={`/verify/${eq.qrCode}`} target="_blank" rel="noopener noreferrer"
                       className="text-[#2563EB] hover:underline bg-[#EFF6FF] px-2 py-0.5 rounded border border-[#2563EB]/30 dark:text-[#60A5FA] dark:bg-blue-500/10 dark:border-blue-500/20"
                     >
                       {eq.qrCode}
@@ -169,7 +169,7 @@ export function FireAssetsView({
                   </td>
                   <td className="py-3 px-4 text-right space-x-2 whitespace-nowrap">
                     <Link
-                      href={`/verify/${eq.qrCode}`}
+                      href={`/verify/${eq.qrCode}`} target="_blank" rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold shadow-xs transition-all"
                       title="View Field Visit History & Proof"
                     >

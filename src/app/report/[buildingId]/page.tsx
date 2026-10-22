@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import QRCode from 'qrcode';
 import {
   Printer,
@@ -15,8 +15,9 @@ import {
   Mail,
   Copy,
   Check,
-  Camera,
   SlidersHorizontal,
+  FileText,
+  Clock,
 } from 'lucide-react';
 
 function formatSafeDate(dateVal: any): string {
@@ -40,6 +41,7 @@ function normalizeWhatsAppPhone(rawPhone: string): string {
 
 export default function ComplianceReportPage() {
   const params = useParams();
+  const router = useRouter();
   const buildingId = (params?.buildingId as string) || '';
 
   const [data, setData] = useState<any>(null);
@@ -79,6 +81,11 @@ export default function ComplianceReportPage() {
       setClientPhone(json.building?.client?.phone || '');
       setClientEmail(json.building?.client?.email || '');
 
+      if (typeof document !== 'undefined' && json.building?.name) {
+        const refNum = json.report?.reportNumber || `FORM-B-${new Date().getFullYear()}`;
+        document.title = `${json.building.name} - Form-B Certificate (${refNum})`;
+      }
+
       const origin = typeof window !== 'undefined' ? window.location.origin : 'https://vigilamc.vercel.app';
       const qr = await QRCode.toDataURL(`${origin}/report/${buildingId}`, {
         width: 130,
@@ -99,7 +106,24 @@ export default function ComplianceReportPage() {
     fetchReport();
   }, [fetchReport]);
 
+  const handleCloseOrBack = () => {
+    if (typeof window !== 'undefined') {
+      if (window.history.length <= 1) {
+        window.close();
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 150);
+        return;
+      }
+    }
+    router.push('/dashboard');
+  };
+
   const handlePrint = () => {
+    if (typeof document !== 'undefined' && data?.building?.name) {
+      const refNum = data?.report?.reportNumber || `FORM-B-${new Date().getFullYear()}`;
+      document.title = `${data.building.name} - Form-B Certificate (${refNum})`;
+    }
     window.print();
   };
 
@@ -128,12 +152,18 @@ export default function ComplianceReportPage() {
     const compCount = data?.summary?.compliant ?? 0;
     const totalCount = data?.summary?.total ?? 0;
     const isOk =
-      data?.summary?.overallStatus === 'COMPLIANT' || data?.summary?.overallStatus === 'VERIFIED';
+      totalCount > 0 &&
+      (data?.summary?.overallStatus === 'COMPLIANT' || data?.summary?.overallStatus === 'VERIFIED');
+
+    const statusLine =
+      totalCount === 0
+        ? 'Pending Equipment Registration (0 Assets Logged)'
+        : `${isOk ? 'FULLY COMPLIANT' : 'ACTION REQUIRED'} (${compCount}/${totalCount} Assets Operational)`;
 
     const message = [
       `*Form-B Fire Safety Compliance Report — ${bldgName}*`,
       ``,
-      `• *Audit Status:* ${isOk ? 'FULLY COMPLIANT' : 'ACTION REQUIRED'} (${compCount}/${totalCount} Assets Operational)`,
+      `• *Audit Status:* ${statusLine}`,
       `• *Inspecting Agency:* ${agencyName} (Lic: ${licenseNo})`,
       `• *Report Ref:* ${data?.report?.reportNumber || 'FORM-B'}`,
       ``,
@@ -158,11 +188,17 @@ export default function ComplianceReportPage() {
     const compCount = data?.summary?.compliant ?? 0;
     const totalCount = data?.summary?.total ?? 0;
     const isOk =
-      data?.summary?.overallStatus === 'COMPLIANT' || data?.summary?.overallStatus === 'VERIFIED';
+      totalCount > 0 &&
+      (data?.summary?.overallStatus === 'COMPLIANT' || data?.summary?.overallStatus === 'VERIFIED');
 
     try {
       await navigator.clipboard.writeText(url);
     } catch {}
+
+    const statusLine =
+      totalCount === 0
+        ? 'Pending Equipment Registration (0 Assets Logged)'
+        : `${isOk ? 'Fully Compliant' : 'Action Needed'} (${compCount} / ${totalCount} Operational)`;
 
     const subject = `Form-B Fire Safety Compliance Certificate — ${bldgName} (${data?.report?.reportNumber || 'Official Audit'})`;
     const body = [
@@ -172,7 +208,7 @@ export default function ComplianceReportPage() {
       ``,
       `Summary:`,
       `- Facility: ${bldgName} (${data?.building?.address || ''})`,
-      `- Audit Status: ${isOk ? 'Fully Compliant' : 'Action Needed'} (${compCount} / ${totalCount} Operational)`,
+      `- Audit Status: ${statusLine}`,
       `- Certified By: ${agencyName} (License No: ${licenseNo})`,
       `- Report Reference: ${data?.report?.reportNumber || 'FORM-B'}`,
       ``,
@@ -191,10 +227,10 @@ export default function ComplianceReportPage() {
 
   if (loading) {
     return (
-      <div className="flex-1 p-8 flex items-center justify-center min-h-[70vh] bg-[#080d1a]">
-        <div className="flex flex-col items-center gap-3 text-slate-300">
-          <RefreshCw className="w-8 h-8 animate-spin text-amber-500" />
-          <p className="text-sm font-bold">Generating client-ready Form-B compliance report...</p>
+      <div className="bg-slate-100 min-h-screen py-10 px-4 flex items-center justify-center">
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-lg p-8 max-w-md w-full flex flex-col items-center gap-3 text-slate-700 text-center">
+          <RefreshCw className="w-8 h-8 animate-spin text-[#0077B6]" />
+          <p className="text-sm font-bold text-slate-900">Generating Official Form-B Certificate...</p>
           <p className="text-xs text-slate-500">Compiling verified equipment schedule &amp; agency seal</p>
         </div>
       </div>
@@ -203,26 +239,26 @@ export default function ComplianceReportPage() {
 
   if (error || !data || !data.building || !data.summary) {
     return (
-      <div className="min-h-[75vh] bg-[#080d1a] flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center space-y-4 shadow-xl text-white">
-          <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto text-red-400">
+      <div className="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white border border-slate-200 rounded-2xl p-6 text-center space-y-4 shadow-xl text-slate-900">
+          <div className="w-12 h-12 rounded-2xl bg-red-50 border border-red-200 flex items-center justify-center mx-auto text-red-600">
             <AlertTriangle className="w-6 h-6" />
           </div>
-          <h2 className="text-lg font-extrabold">Unable to Load Compliance Report</h2>
-          <p className="text-xs text-slate-400 leading-relaxed">
+          <h2 className="text-lg font-extrabold text-slate-900">Unable to Load Compliance Report</h2>
+          <p className="text-xs text-slate-600 leading-relaxed">
             {error || 'This building report could not be found or generated right now.'}
           </p>
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2.5">
             <button
               onClick={fetchReport}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-all"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#0077B6] hover:bg-[#023E8A] text-white font-bold text-xs transition-all cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               <span>Retry</span>
             </button>
             <Link
               href="/dashboard"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition-all"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-all"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to Dashboard</span>
@@ -238,69 +274,101 @@ export default function ComplianceReportPage() {
   const report = data?.report || {};
   const summary = data?.summary || {};
   const equipments = Array.isArray(building?.equipments) ? building.equipments : [];
+  const totalCount = summary?.total ?? equipments.length;
+  const hasZeroEquipment = totalCount === 0 || equipments.length === 0;
   const signatoryName =
     data?.signatoryName || company?.signatoryName || company?.contactPerson || 'Authorized Inspecting Officer';
 
   const isCompliant =
-    summary?.overallStatus === 'COMPLIANT' || summary?.overallStatus === 'VERIFIED';
+    !hasZeroEquipment &&
+    (summary?.overallStatus === 'COMPLIANT' || summary?.overallStatus === 'VERIFIED');
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 space-y-5 text-slate-100">
+    <div className="bg-slate-100 min-h-screen py-6 sm:py-10 px-3 sm:px-6 print:bg-white print:p-0 text-slate-900">
+      {/* Dedicated @page A4 Portrait Print Rules */}
+      <style jsx global>{`
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin: 12mm;
+          }
+          html,
+          body {
+            background: #ffffff !important;
+            color: #000000 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          .no-print {
+            display: none !important;
+          }
+        }
+      `}</style>
+
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="no-print fixed bottom-5 right-5 z-50 bg-slate-900 border border-emerald-500/40 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs font-semibold">
+        <div className="no-print print:hidden fixed bottom-5 right-5 z-50 bg-slate-900 border border-emerald-500/40 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs font-semibold">
           <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Top Controls & Direct Client Delivery Bar (Hidden in Print) */}
-      <div className="no-print bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-lg">
+      {/* Sticky Top Document Action Bar (Hidden Completely on Print/PDF) */}
+      <div className="no-print print:hidden max-w-[210mm] mx-auto mb-5 sticky top-3 z-40 bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-xl p-3 sm:px-4 shadow-lg space-y-3">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-xs text-slate-300 hover:text-amber-400 font-semibold transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Compliance Dashboard</span>
-          </Link>
+          {/* Left: Close / Back to Dashboard + Document Badge */}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <button
+              type="button"
+              onClick={handleCloseOrBack}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 text-xs font-bold transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Close / Back to Dashboard</span>
+            </button>
 
-          {/* Direct Client Share & Print Actions */}
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 text-[#023E8A] border border-blue-200/80 text-[11px] font-bold tracking-tight">
+              <FileText className="w-3.5 h-3.5 text-[#0077B6]" />
+              <span>Official Form-B Certificate Preview</span>
+            </span>
+          </div>
+
+          {/* Right: Direct Client Share & Print Actions */}
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={handleSendWhatsApp}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
               title="Send Form-B Report directly to Client on WhatsApp"
             >
               <MessageCircle className="w-3.5 h-3.5" />
-              <span>Send via WhatsApp</span>
+              <span>Send on WhatsApp</span>
             </button>
 
             <button
               type="button"
               onClick={handleSendEmail}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
               title="Email Form-B Report link to Client"
             >
               <Mail className="w-3.5 h-3.5" />
-              <span>Send via Email</span>
+              <span>Email to Client</span>
             </button>
 
             <button
               type="button"
               onClick={handleCopyClientLink}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-xs transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-semibold text-xs transition-all cursor-pointer"
               title="Copy 1-click public report link for client"
             >
-              {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedLink ? 'Link Copied!' : 'Copy Client Link'}</span>
+              {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copiedLink ? 'Link Copied ✓' : 'Copy Client Link'}</span>
             </button>
 
             <button
               type="button"
               onClick={() => setShowContactEditor((prev) => !prev)}
-              className="inline-flex items-center gap-1 px-2.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[11px] font-medium transition-all cursor-pointer"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-300 text-[11px] font-medium transition-all cursor-pointer"
               title="Customize recipient WhatsApp number or email"
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
@@ -310,19 +378,19 @@ export default function ComplianceReportPage() {
             <button
               type="button"
               onClick={handlePrint}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-orange-500 text-slate-950 font-black text-xs shadow-md shadow-amber-500/20 transition-all hover:scale-[1.01] active:scale-[0.98] cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-gradient-to-r from-[#023E8A] to-[#0077B6] hover:from-[#03045E] hover:to-[#023E8A] text-white font-extrabold text-xs shadow-md transition-all cursor-pointer"
             >
-              <Printer className="w-4 h-4 stroke-[2.5]" />
-              <span>Print / Save Form-B PDF</span>
+              <Printer className="w-3.5 h-3.5 stroke-[2.2]" />
+              <span>Download / Print A4 PDF</span>
             </button>
           </div>
         </div>
 
         {/* Inline Recipient Phone / Email Editor */}
         {showContactEditor && (
-          <div className="pt-3 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div className="pt-3 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div>
-              <label className="block text-[11px] text-slate-400 font-semibold mb-1">
+              <label className="block text-[11px] text-slate-600 font-semibold mb-1">
                 Client WhatsApp / Mobile Number
               </label>
               <input
@@ -330,11 +398,11 @@ export default function ComplianceReportPage() {
                 value={clientPhone}
                 onChange={(e) => setClientPhone(e.target.value)}
                 placeholder="e.g. +91 98200 45678"
-                className="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:border-emerald-500"
+                className="w-full px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-emerald-600"
               />
             </div>
             <div>
-              <label className="block text-[11px] text-slate-400 font-semibold mb-1">
+              <label className="block text-[11px] text-slate-600 font-semibold mb-1">
                 Client Email Address
               </label>
               <input
@@ -342,15 +410,15 @@ export default function ComplianceReportPage() {
                 value={clientEmail}
                 onChange={(e) => setClientEmail(e.target.value)}
                 placeholder="e.g. facility.manager@client.com"
-                className="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:border-blue-500"
+                className="w-full px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600"
               />
             </div>
           </div>
         )}
       </div>
 
-      {/* Official Printable Compliance Document Layout */}
-      <div className="bg-white border border-slate-300 rounded-2xl shadow-xl p-6 sm:p-10 lg:p-12 text-slate-900 print:border-none print:shadow-none print:p-0 print:m-0">
+      {/* Standalone White A4 Sheet */}
+      <div className="max-w-[210mm] mx-auto bg-white shadow-2xl border border-slate-200/90 rounded-sm sm:p-12 p-6 text-slate-900 print:shadow-none print:border-none print:max-w-none print:p-0">
         {/* AMC Company Letterhead Header */}
         <div className="border-b-2 border-slate-900 pb-6 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -416,10 +484,12 @@ export default function ComplianceReportPage() {
           </div>
         </div>
 
-        {/* COMPLIANCE STATUS SUMMARY STAMP */}
+        {/* COMPLIANCE STATUS SUMMARY STAMP (Handles 0 Equipment, Compliant, and Action Needed) */}
         <div
           className={`p-4 rounded-xl border mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 ${
-            isCompliant
+            hasZeroEquipment
+              ? 'bg-amber-50 border-amber-300 text-amber-950'
+              : isCompliant
               ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
               : 'bg-red-50 border-red-300 text-red-950'
           }`}
@@ -427,17 +497,29 @@ export default function ComplianceReportPage() {
           <div className="flex items-center gap-3">
             <div
               className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-white shrink-0 ${
-                isCompliant ? 'bg-emerald-600' : 'bg-red-600'
+                hasZeroEquipment ? 'bg-amber-600' : isCompliant ? 'bg-emerald-600' : 'bg-red-600'
               }`}
             >
-              {isCompliant ? <ShieldCheck className="w-7 h-7" /> : <AlertTriangle className="w-7 h-7" />}
+              {hasZeroEquipment ? (
+                <Clock className="w-7 h-7" />
+              ) : isCompliant ? (
+                <ShieldCheck className="w-7 h-7" />
+              ) : (
+                <AlertTriangle className="w-7 h-7" />
+              )}
             </div>
             <div>
               <div className="text-base font-black uppercase tracking-wide">
-                {isCompliant ? 'Status: Fully Compliant' : 'Status: Action Needed'}
+                {hasZeroEquipment
+                  ? 'Pending Equipment Registration (0 Assets Logged)'
+                  : isCompliant
+                  ? 'Status: Fully Compliant'
+                  : 'Status: Action Needed'}
               </div>
               <p className="text-xs text-slate-700 mt-0.5">
-                {isCompliant
+                {hasZeroEquipment
+                  ? 'No fire safety equipment units have been added to this building schedule yet. Add extinguishers, hydrants, or panels from the Dashboard to complete this Form-B schedule.'
+                  : isCompliant
                   ? 'All fire prevention and life safety equipment in this building has been serviced and is in proper working condition.'
                   : `${summary?.overdue ?? 0} equipment item(s) require mandatory refill/overhaul or initial inspection verification.`}
               </p>
@@ -447,7 +529,7 @@ export default function ComplianceReportPage() {
           <div className="text-right shrink-0">
             <div className="text-xs font-bold uppercase text-slate-600">Audited Inventory</div>
             <div className="text-sm font-black text-slate-900">
-              {summary?.compliant ?? 0} / {summary?.total ?? equipments.length} Operational
+              {summary?.compliant ?? 0} / {totalCount} Operational
             </div>
           </div>
         </div>
@@ -478,8 +560,14 @@ export default function ComplianceReportPage() {
               <tbody className="divide-y divide-slate-200">
                 {equipments.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-6 text-center text-slate-500">
-                      No fire safety equipment registered for this building yet.
+                    <td colSpan={8} className="py-8 px-4 text-center text-slate-500 bg-slate-50/60">
+                      <p className="font-bold text-slate-700 text-xs mb-1">
+                        Pending Equipment Registration (0 Assets Logged)
+                      </p>
+                      <p className="text-[11px] text-slate-500 max-w-lg mx-auto">
+                        No fire safety equipment units have been added to this building schedule yet. Add extinguishers,
+                        hydrants, or panels from the Dashboard to complete this Form-B schedule.
+                      </p>
                     </td>
                   </tr>
                 ) : (
@@ -574,7 +662,7 @@ export default function ComplianceReportPage() {
               <span className="font-bold text-slate-800 uppercase block">
                 Equipment Schedule with Locations &amp; Photos
               </span>
-              <p>Verified service records on VigilAMC compliance platform.</p>
+              <p>Verified service records on {company?.name || 'Agency'} compliance portal.</p>
               <p className="font-mono font-semibold text-slate-600">{report?.reportNumber || 'FORM-B'}</p>
             </div>
           </div>

@@ -49,11 +49,13 @@ export function CookieConsentBanner() {
     updatedAt: '',
   });
 
-  // Automatically suppress on authenticated app routes
+  // Automatically suppress on authenticated app routes and standalone white-label viewer routes
   const isSuppressedRoute =
     pathname?.startsWith('/dashboard') ||
     pathname?.startsWith('/founder') ||
-    pathname?.startsWith('/technician');
+    pathname?.startsWith('/technician') ||
+    pathname?.startsWith('/report') ||
+    pathname?.startsWith('/verify');
 
   const persistConsent = useCallback((nextState: Omit<CookieConsentState, 'necessary' | 'updatedAt'>) => {
     const finalConsent: CookieConsentState = {

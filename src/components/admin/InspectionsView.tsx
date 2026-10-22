@@ -337,7 +337,7 @@ export function InspectionsView({
                       <td className="py-3.5 px-4 text-right">
                         {ins.building?.id && (
                           <Link
-                            href={`/report/${ins.building.id}`}
+                            href={`/report/${ins.building.id}`} target="_blank" rel="noopener noreferrer"
                             className="text-[#007DB8] hover:underline dark:text-amber-400 dark:hover:text-amber-300 font-bold inline-flex items-center gap-1"
                           >
                             <span>Form-B</span>

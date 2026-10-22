@@ -274,7 +274,7 @@ export function BuildingsView({
                       </button>
 
                       <Link
-                        href={`/report/${b.id}`}
+                        href={`/report/${b.id}`} target="_blank" rel="noopener noreferrer"
                         className="flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-[#EAF6FF] hover:bg-[#D5EEFF] text-[#007DB8] border border-[#007DB8]/30 text-xs font-bold transition-all hover:scale-[1.02] shadow-sm dark:bg-amber-500/15 dark:hover:bg-amber-500/25 dark:text-amber-400 dark:border-amber-500/30"
                       >
                         <FileText className="w-3.5 h-3.5" />
@@ -344,7 +344,7 @@ export function BuildingsView({
                                   <tr key={eq.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
                                     <td className="py-3 px-4 font-mono font-bold">
                                       <Link
-                                        href={`/verify/${eq.qrCode}`}
+                                        href={`/verify/${eq.qrCode}`} target="_blank" rel="noopener noreferrer"
                                         className="text-[#2563EB] hover:underline bg-[#EFF6FF] px-2 py-0.5 rounded border border-[#2563EB]/30 dark:text-[#60A5FA] dark:bg-blue-500/10 dark:border-blue-500/20"
                                       >
                                         {eq.qrCode}
@@ -400,7 +400,7 @@ export function BuildingsView({
                                     </td>
                                     <td className="py-3 px-4 text-right">
                                       <Link
-                                        href={`/verify/${eq.qrCode}`}
+                                        href={`/verify/${eq.qrCode}`} target="_blank" rel="noopener noreferrer"
                                         className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold shadow-xs transition-all hover:scale-105"
                                       >
                                         <MapPin className="w-3 h-3 stroke-[2.5]" />
