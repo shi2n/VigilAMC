@@ -41,7 +41,7 @@ export function FounderSection() {
                 {SITE_CONFIG.FOUNDER_NAME} &bull; {SITE_CONFIG.FOUNDER_TITLE}
               </h3>
               <p className="text-xs text-slate-500">
-                {SITE_CONFIG.FOUNDER_CITY} &bull; <a href={`mailto:${SITE_CONFIG.CONTACT_EMAIL}`} className="text-[#0077B6] hover:underline">{SITE_CONFIG.CONTACT_EMAIL}</a> &bull; <a href={SITE_CONFIG.PHONE_TEL} className="text-[#0077B6] hover:underline">{SITE_CONFIG.PHONE_DISPLAY}</a>
+                {SITE_CONFIG.FOUNDER_CITY} &bull; <a href={SITE_CONFIG.PHONE_TEL} className="text-[#0077B6] font-semibold hover:underline">{SITE_CONFIG.PHONE_DISPLAY}</a> &bull; <a href={SITE_CONFIG.WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="text-emerald-700 font-semibold hover:underline">Direct WhatsApp</a> &bull; <a href={`mailto:${SITE_CONFIG.CONTACT_EMAIL}`} className="text-[#0077B6] hover:underline">{SITE_CONFIG.CONTACT_EMAIL}</a>
               </p>
             </div>
 

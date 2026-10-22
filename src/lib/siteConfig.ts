@@ -5,9 +5,9 @@
 
 export const SITE_CONFIG = {
   SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || 'https://vigilamc.com',
-  CONTACT_EMAIL: 'vigilamc@gmail.com',
-  SUPPORT_EMAIL: 'vigilamc@gmail.com',
-  FOUNDER_EMAIL: 'vigilamc@gmail.com',
+  CONTACT_EMAIL: process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'vigilamc@gmail.com',
+  SUPPORT_EMAIL: process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'vigilamc@gmail.com',
+  FOUNDER_EMAIL: process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'vigilamc@gmail.com',
   FOUNDER_NAME: 'Shaizan',
   FOUNDER_TITLE: 'Founder, VigilAMC',
   FOUNDER_CITY: 'New Delhi, India',

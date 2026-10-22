@@ -294,7 +294,7 @@ export function HeroProductPreview({ onOpenModal }: HeroProductPreviewProps) {
                         <span className="text-xs font-bold text-slate-900">4.5kg CO2 Extinguisher (CO2-0042)</span>
                       </div>
                       <div className="text-xs text-slate-600">
-                        Server Room • 2nd Floor — <strong className="text-rose-700">Underweight by 0.7kg</strong> (Tare: 8.2kg | Gross: 12.0kg)
+                        Server Room • 2nd Floor — <strong className="text-rose-700">Loss: -0.70kg / -15.5% (&gt;10% IS 2190)</strong> (Tare: 10.20kg | Full Gross: 14.70kg | Measured Gross: 14.00kg • Net Gas: 3.80kg vs 4.50kg)
                       </div>
                       <div className="text-[11px] text-slate-500 flex items-center gap-2">
                         <span className="text-cyan-700 font-medium flex items-center gap-1">
