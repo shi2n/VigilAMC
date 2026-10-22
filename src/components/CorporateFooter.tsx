@@ -17,6 +17,7 @@ import {
   MessageCircle
 } from 'lucide-react';
 import { SITE_CONFIG } from '@/lib/siteConfig';
+import { openCookiePreferences } from './CookieConsentBanner';
 
 export function CorporateFooter() {
   const [emailInput, setEmailInput] = useState('');
@@ -319,6 +320,14 @@ export function CorporateFooter() {
             <Link href="/cookies" className="hover:text-slate-200 transition-colors">
               Cookie Policy
             </Link>
+            <span>&bull;</span>
+            <button
+              type="button"
+              onClick={openCookiePreferences}
+              className="hover:text-cyan-300 transition-colors cursor-pointer"
+            >
+              Cookie Preferences
+            </button>
             <span>&bull;</span>
             <Link href="/security" className="hover:text-slate-200 transition-colors">
               Security &amp; Data Lock

@@ -9,6 +9,7 @@ import { StickyCTA } from './StickyCTA';
 import { DemoModal } from './DemoModal';
 import { ScrollObserver } from './ScrollObserver';
 import { FloatingWhatsApp } from './FloatingWhatsApp';
+import { CookieConsentBanner } from './CookieConsentBanner';
 
 interface SiteLayoutProps {
   children: React.ReactNode;
@@ -18,9 +19,12 @@ export function SiteLayout({ children }: SiteLayoutProps) {
   const [demoModalOpen, setDemoModalOpen] = useState(false);
   const pathname = usePathname();
 
-  // If user is inside the authenticated Admin OS (/dashboard) or Technician portal (/technician),
+  // If user is inside the authenticated Admin OS (/dashboard), Founder portal (/founder), or Technician portal (/technician),
   // completely separate the UI: do NOT display the public marketing header, footer, or CTA.
-  const isAuthApp = pathname?.startsWith('/dashboard') || pathname?.startsWith('/technician');
+  const isAuthApp =
+    pathname?.startsWith('/dashboard') ||
+    pathname?.startsWith('/founder') ||
+    pathname?.startsWith('/technician');
 
   if (isAuthApp) {
     return (
@@ -43,6 +47,7 @@ export function SiteLayout({ children }: SiteLayoutProps) {
       <BackToTop />
       <FloatingWhatsApp />
       <StickyCTA onOpenDemo={() => setDemoModalOpen(true)} />
+      <CookieConsentBanner />
       <DemoModal isOpen={demoModalOpen} onClose={() => setDemoModalOpen(false)} />
     </div>
   );

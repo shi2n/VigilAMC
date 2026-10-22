@@ -2,6 +2,7 @@ import React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, Cookie, ShieldCheck, CheckCircle2, AlertCircle, Info, Lock } from 'lucide-react';
+import { OpenCookieModalButton } from './OpenCookieModalButton';
 
 export const metadata: Metadata = {
   title: 'Cookie Policy | VigilAMC — Fire Safety AMC Software',
@@ -37,13 +38,18 @@ export default function CookiePolicyPage() {
         </div>
 
         {/* Direct Transparency Summary */}
-        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs flex items-start gap-3 leading-relaxed">
-          <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-          <div>
-            <strong className="font-bold">No Third-Party Advertising or Tracking Cookies:</strong>
-            <p className="mt-0.5 text-emerald-900">
-              VigilAMC does <strong>not</strong> use advertising cookies, marketing pixels (such as Meta Pixel), cross-site tracking scripts, or profiling analytics. We only use strictly necessary session cookies required for authenticated agency access, and basic browser local storage for user preferences. Because we do not set non-essential cookies, no intrusive tracking banner is required on our public website.
-            </p>
+        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 leading-relaxed">
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+            <div>
+              <strong className="font-bold">No Third-Party Advertising or Tracking Cookies:</strong>
+              <p className="mt-0.5 text-emerald-900">
+                VigilAMC does <strong>not</strong> use advertising cookies, marketing pixels (such as Meta Pixel), cross-site tracking scripts, or profiling analytics. We only use strictly necessary session cookies required for authenticated agency access, and browser local storage for user preferences. You can review or adjust your granular cookie preferences at any time.
+              </p>
+            </div>
+          </div>
+          <div className="shrink-0">
+            <OpenCookieModalButton />
           </div>
         </div>
 
@@ -186,6 +192,23 @@ export default function CookiePolicyPage() {
                     </td>
                     <td className="py-2.5 px-3 text-slate-600">
                       Up to 12 months
+                    </td>
+                  </tr>
+                  <tr className="hover:bg-slate-50">
+                    <td className="py-2.5 px-3 font-mono font-bold text-slate-900 border-r border-slate-200">
+                      vigilamc_cookie_consent_v1 / vigilamc_consent
+                    </td>
+                    <td className="py-2.5 px-3 text-emerald-700 font-semibold border-r border-slate-200">
+                      Strictly Necessary
+                    </td>
+                    <td className="py-2.5 px-3 text-slate-600 border-r border-slate-200">
+                      VigilAMC (First-party)
+                    </td>
+                    <td className="py-2.5 px-3 text-slate-600 border-r border-slate-200">
+                      Persists your granular cookie consent selections across sessions in LocalStorage and a lightweight first-party browser cookie.
+                    </td>
+                    <td className="py-2.5 px-3 text-slate-600">
+                      365 days
                     </td>
                   </tr>
                 </tbody>
