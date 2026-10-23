@@ -140,7 +140,7 @@ export function ReportsView({ buildings = [], summary, company }: ReportsViewPro
                     ) : (
                       <Link
                         href={`/report/${selectedBuilding.id}`}
-                        target="_blank"
+                        target="_blank" rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold bg-gradient-to-r from-[#007DB8] to-[#073F8F] hover:from-[#006494] hover:to-[#011F48] text-white text-xs transition-colors shadow-md active:scale-95"
                       >
                         <FileText className="w-4 h-4" />

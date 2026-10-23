@@ -18,6 +18,7 @@ export async function GET(request: Request) {
         building: {
           include: {
             client: true,
+            organization: true,
           },
         },
         serviceLogs: {
@@ -31,8 +32,36 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Equipment not found for this QR Code' }, { status: 404 });
     }
 
+    const org = equipment.building?.organization;
+    let signatoryName = 'Shaizan';
+    if (equipment.organizationId) {
+      const adminProfile = await (db as any).userProfile
+        .findFirst({
+          where: { organizationId: equipment.organizationId, role: 'ORG_ADMIN' },
+          orderBy: { createdAt: 'asc' },
+        })
+        .catch(() => null);
+      if (adminProfile?.fullName && adminProfile.fullName.trim().toLowerCase() !== 'jordan michael') {
+        signatoryName = adminProfile.fullName.trim();
+      }
+    }
+
+    const companyInfo = {
+      name: org?.name || 'Vigil Fire & Safety Solutions',
+      licenseNumber: org?.licenseNumber || 'DL/FIRE/LIC/2026/042',
+      phone: org?.phone || '+91 83838 90483',
+      email: org?.email || 'vigilamc@gmail.com',
+      signatoryName,
+    };
+
     const asset = {
       ...equipment,
+      building: equipment.building
+        ? {
+            ...equipment.building,
+            company: companyInfo,
+          }
+        : null,
       serialNumber: equipment.qrCode,
       locationFloor: equipment.location,
       locationWing: '',

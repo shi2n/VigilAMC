@@ -1,49 +1,19 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import {
   Building2,
   Plus,
-  FileText,
-  Printer,
-  ChevronDown,
-  ChevronRight,
-  ShieldCheck,
-  AlertTriangle,
-  Clock,
-  Scan,
   CheckCircle2,
   RefreshCw,
-  ExternalLink,
-  Layers,
-  Sparkles,
-  Phone,
   LogOut,
-  Calendar,
-  Check,
-  Flame,
-  ArrowRight,
-  Database,
-  Trash2,
-  Edit,
-  Settings,
-  UserCheck,
-  Search,
-  Sliders,
-  MapPin,
-  Mail,
-  Wrench,
-  Users,
-  CreditCard,
-  Zap,
-  LayoutDashboard,
   Menu,
   FileSpreadsheet,
   Sun,
   Moon,
-  MessageSquare
+  MessageSquare,
+  Camera,
 } from 'lucide-react';
 import { AdminSidebar, AdminNavTab } from '@/components/admin/AdminSidebar';
 import { DashboardOverview } from '@/components/admin/DashboardOverview';
@@ -52,11 +22,6 @@ import { ImportModal } from '@/components/admin/ImportModal';
 import { FeedbackModal } from '@/components/admin/FeedbackModal';
 import { ImportType } from '@/lib/excelImport';
 import { INDIAN_STATES_AND_UTS, REPORTING_CYCLES } from '@/lib/constants/india';
-import { TechnicianManagement } from '@/components/admin/TechnicianManagement';
-import { TechnicianAssignments } from '@/components/admin/TechnicianAssignments';
-import { TechnicianActivityLog } from '@/components/admin/TechnicianActivityLog';
-import { SubscriptionManager } from '@/components/admin/SubscriptionManager';
-import { AdminUsersView } from '@/components/admin/AdminUsersView';
 import { WorkOrdersView } from '@/components/admin/WorkOrdersView';
 import { InspectionsView } from '@/components/admin/InspectionsView';
 import { ReportsView } from '@/components/admin/ReportsView';
@@ -64,10 +29,39 @@ import { ClientsView } from '@/components/admin/ClientsView';
 import { BuildingsView } from '@/components/admin/BuildingsView';
 import { FireAssetsView } from '@/components/admin/FireAssetsView';
 import { SettingsView } from '@/components/admin/SettingsView';
+import { TechnicianManagement } from '@/components/admin/TechnicianManagement';
+import { compressImageToDataUrl, uploadCompressedPhoto } from '@/lib/compressImage';
+
+const LAST_ORG_CACHE_KEY = 'vigilamc_dash_last_org';
+
+function toDateInputString(d?: Date | string | null): string {
+  const dt = d ? new Date(d) : new Date();
+  if (isNaN(dt.getTime())) {
+    return new Date().toISOString().split('T')[0];
+  }
+  const yyyy = dt.getFullYear();
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function addMonthsToDateString(dateStr: string, months: number): string {
+  const base = dateStr ? new Date(dateStr) : new Date();
+  const dt = isNaN(base.getTime()) ? new Date() : new Date(base.getTime());
+  dt.setMonth(dt.getMonth() + (Number(months) || 12));
+  return toDateInputString(dt);
+}
+
+function addDaysToTodayString(days: number): string {
+  const dt = new Date();
+  dt.setDate(dt.getDate() + days);
+  return toDateInputString(dt);
+}
 
 export default function AdminDashboardPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isRevalidating, setIsRevalidating] = useState(false);
   const [expandedBuildingId, setExpandedBuildingId] = useState<string | null>(null);
 
   // Theme Mode: Light theme by default, persistent in localStorage
@@ -99,11 +93,8 @@ export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<AdminNavTab>('OVERVIEW');
   const [clientsSitesSubTab, setClientsSitesSubTab] = useState<'BUILDINGS' | 'CLIENTS'>('BUILDINGS');
   const [inspectionsWorkSubTab, setInspectionsWorkSubTab] = useState<'INSPECTIONS' | 'REPAIRS'>('INSPECTIONS');
-  const [sitesSubTab, setSitesSubTab] = useState<'EQUIPMENT' | 'BUILDINGS' | 'CLIENTS'>('BUILDINGS');
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [techSubTab, setTechSubTab] = useState<'ROSTER' | 'ASSIGNMENTS' | 'AUDIT_LOG'>('ROSTER');
-  const [settingsSubTab, setSettingsSubTab] = useState<'LEADS' | 'TOOLS' | 'AGENCY' | 'INVESTORS'>('LEADS');
   const [subscriptionData, setSubscriptionData] = useState<any>(null);
 
   // Export Modal Dialog State
@@ -131,11 +122,14 @@ export default function AdminDashboardPage() {
     complianceRate: 100,
   });
 
-  // Cached collections for Excel export
+  // In-memory collections hydrated by /api/dashboard/bootstrap
   const [techniciansList, setTechniciansList] = useState<any[]>([]);
   const [workOrdersList, setWorkOrdersList] = useState<any[]>([]);
   const [inspectionsList, setInspectionsList] = useState<any[]>([]);
-  const [dataSubTab, setDataSubTab] = useState<'COMPANY' | 'CLIENTS' | 'BUILDINGS' | 'EQUIPMENT' | 'RESET'>('COMPANY');
+  const [clientsList, setClientsList] = useState<any[]>([]);
+  const [equipmentsList, setEquipmentsList] = useState<any[]>([]);
+  const [equipSearch, setEquipSearch] = useState('');
+  const [equipFilterBuilding, setEquipFilterBuilding] = useState('ALL');
 
   // Modals
   const [addBuildingModalOpen, setAddBuildingModalOpen] = useState(false);
@@ -144,6 +138,7 @@ export default function AdminDashboardPage() {
   const [editClientModal, setEditClientModal] = useState<any>(null);
   const [editBuildingModal, setEditBuildingModal] = useState<any>(null);
   const [editEquipmentModal, setEditEquipmentModal] = useState<any>(null);
+  const [compressingPhoto, setCompressingPhoto] = useState(false);
 
   // Notification / Toast message
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -176,6 +171,8 @@ export default function AdminDashboardPage() {
     count: 10,
     locationBase: 'Floor Landing Corridor',
     serviceIntervalMonths: 12,
+    lastServiceDate: toDateInputString(new Date()),
+    nextDueDate: addMonthsToDateString(toDateInputString(new Date()), 12),
   });
 
   // Single add equipment form state
@@ -185,173 +182,157 @@ export default function AdminDashboardPage() {
     capacity: 'ABC Dry Powder 6kg',
     location: '',
     serviceIntervalMonths: 12,
+    lastServiceDate: toDateInputString(new Date()),
+    nextDueDate: addMonthsToDateString(toDateInputString(new Date()), 12),
+    photoUrl: '',
   });
 
   // Company profile form state
   const [companyForm, setCompanyForm] = useState({
     name: '',
+    fullName: '',
     licenseNumber: '',
     phone: '',
     email: '',
     address: '',
   });
 
-  // Clients state for data manage tab
-  const [clientsList, setClientsList] = useState<any[]>([]);
-  const [equipmentsList, setEquipmentsList] = useState<any[]>([]);
-  const [equipSearch, setEquipSearch] = useState('');
-  const [equipFilterBuilding, setEquipFilterBuilding] = useState('ALL');
-
-  // Enquiries & Leads state
-  const [enquiriesList, setEnquiriesList] = useState<any[]>([]);
-  const [enquiryStatusFilter, setEnquiryStatusFilter] = useState('ALL');
-  const [loadingEnquiries, setLoadingEnquiries] = useState(false);
-
-  const fetchSubscription = async () => {
-    try {
-      const res = await fetch('/api/admin/subscription');
-      const json = await res.json();
-      if (res.ok) {
-        setSubscriptionData(json);
-      }
-    } catch (e) {
-      console.error('Failed to fetch subscription:', e);
-    }
-  };
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch('/api/admin/buildings');
-      if (res.status === 401) {
-        window.location.href = '/login?redirect=/dashboard';
-        return;
-      }
-      const json = await res.json();
-      if (json.authenticated === false) {
-        window.location.href = '/login?redirect=/dashboard';
-        return;
-      }
-
-      // If user is a TECHNICIAN, redirect to dedicated technician portal
-      if (json.profile?.role === 'TECHNICIAN') {
-        window.location.href = '/technician';
-        return;
-      }
-
+  const applyBootstrapPayload = useCallback(
+    (json: any) => {
       setData(json);
+      if (json.kpis) setKpis(json.kpis);
+      if (Array.isArray(json.clients)) setClientsList(json.clients);
+      if (Array.isArray(json.equipments)) setEquipmentsList(json.equipments);
+      if (Array.isArray(json.inspections)) setInspectionsList(json.inspections);
+      if (Array.isArray(json.workOrders)) setWorkOrdersList(json.workOrders);
+      if (Array.isArray(json.technicians)) setTechniciansList(json.technicians);
+      if (json.subscription) setSubscriptionData(json.subscription);
+
+      const rawName = json.profile?.fullName?.trim();
+      const emailPrefix = json.user?.email?.split('@')[0] || '';
+      const cleanName =
+        rawName && rawName.toLowerCase() !== 'jordan michael'
+          ? rawName
+          : emailPrefix
+          ? emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1)
+          : '';
+
       if (json.company) {
         setCompanyForm({
           name: json.company.name || '',
+          fullName: cleanName,
           licenseNumber: json.company.licenseNumber || '',
           phone: json.company.phone || '',
           email: json.company.email || '',
           address: json.company.address || '',
         });
       }
-      if (!expandedBuildingId && json.buildings?.length > 0) {
-        setExpandedBuildingId(json.buildings[0].id);
+
+      setExpandedBuildingId((prev) => {
+        if (!prev && json.buildings?.length > 0) {
+          return json.buildings[0].id;
+        }
+        return prev;
+      });
+    },
+    []
+  );
+
+  // Unified stale-while-revalidate dashboard refresh helper
+  const refreshDashboard = useCallback(
+    async (options?: { silent?: boolean }) => {
+      const isSilent = options?.silent ?? Boolean(data);
+      try {
+        if (isSilent) {
+          setIsRevalidating(true);
+        } else {
+          setLoading(true);
+        }
+
+        const res = await fetch('/api/dashboard/bootstrap', {
+          cache: 'no-store',
+        });
+
+        if (res.status === 401) {
+          window.location.href = '/login?redirect=/dashboard';
+          return;
+        }
+
+        const json = await res.json();
+        if (json.authenticated === false) {
+          window.location.href = '/login?redirect=/dashboard';
+          return;
+        }
+
+        // If user is a TECHNICIAN, redirect to dedicated technician portal
+        if (json.profile?.role === 'TECHNICIAN') {
+          window.location.href = '/technician';
+          return;
+        }
+
+        applyBootstrapPayload(json);
+
+        // Cache snapshot in sessionStorage keyed by organization/user ID
+        try {
+          const orgKey = json.company?.id || json.user?.id || 'default';
+          sessionStorage.setItem(LAST_ORG_CACHE_KEY, orgKey);
+          sessionStorage.setItem(`vigilamc_dash_cache_${orgKey}`, JSON.stringify(json));
+        } catch {
+          // Ignore sessionStorage quota issues
+        }
+      } catch (e) {
+        console.error('Failed to refresh dashboard bootstrap:', e);
+      } finally {
+        setLoading(false);
+        setIsRevalidating(false);
       }
-      fetchClients();
-      fetchSubscription();
-      fetchKpis();
-      fetchEquipments();
-      fetchTechnicians();
-      fetchWorkOrders();
-      fetchInspections();
-      fetchEnquiries();
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [applyBootstrapPayload, data]
+  );
 
-  const fetchKpis = async () => {
+  // Initial mount: paint immediately from sessionStorage if available (<50ms), then revalidate silently
+  useEffect(() => {
+    let hydratedFromCache = false;
     try {
-      const res = await fetch('/api/dashboard');
-      const json = await res.json();
-      if (json.kpis) {
-        setKpis(json.kpis);
+      const lastOrg = sessionStorage.getItem(LAST_ORG_CACHE_KEY);
+      if (lastOrg) {
+        const cachedRaw = sessionStorage.getItem(`vigilamc_dash_cache_${lastOrg}`);
+        if (cachedRaw) {
+          const cachedJson = JSON.parse(cachedRaw);
+          if (cachedJson && cachedJson.authenticated) {
+            applyBootstrapPayload(cachedJson);
+            setLoading(false);
+            hydratedFromCache = true;
+          }
+        }
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
+      // Ignore cache read error
     }
-  };
 
-  const fetchTechnicians = async () => {
-    try {
-      const res = await fetch('/api/admin/technicians');
-      const json = await res.json();
-      if (json.technicians) setTechniciansList(json.technicians);
-    } catch (e) {
-      console.error(e);
-    }
-  };
+    refreshDashboard({ silent: hydratedFromCache });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const fetchWorkOrders = async () => {
-    try {
-      const res = await fetch('/api/work-orders');
-      const json = await res.json();
-      if (json.workOrders) setWorkOrdersList(json.workOrders);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const fetchInspections = async () => {
-    try {
-      const res = await fetch('/api/inspections');
-      const json = await res.json();
-      if (json.inspections) setInspectionsList(json.inspections);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const fetchClients = async () => {
-    try {
-      const res = await fetch('/api/admin/clients');
-      const json = await res.json();
-      if (json.clients) {
-        setClientsList(json.clients);
+  // Instant 0ms in-memory equipment filtering for FireAssetsView
+  const filteredEquipmentsList = useMemo(() => {
+    return equipmentsList.filter((eq) => {
+      if (equipFilterBuilding !== 'ALL' && eq.buildingId !== equipFilterBuilding) {
+        return false;
       }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const fetchEquipments = async () => {
-    try {
-      const query = new URLSearchParams();
-      if (equipFilterBuilding !== 'ALL') query.set('buildingId', equipFilterBuilding);
-      if (equipSearch.trim()) query.set('search', equipSearch.trim());
-      const res = await fetch(`/api/admin/equipment?${query.toString()}`);
-      const json = await res.json();
-      if (json.equipments) {
-        setEquipmentsList(json.equipments);
+      if (equipSearch.trim()) {
+        const q = equipSearch.trim().toLowerCase();
+        const matchesQr = eq.qrCode?.toLowerCase().includes(q);
+        const matchesLoc = eq.location?.toLowerCase().includes(q);
+        const matchesCap = eq.capacity?.toLowerCase().includes(q);
+        const matchesType = eq.type?.toLowerCase().includes(q);
+        if (!matchesQr && !matchesLoc && !matchesCap && !matchesType) {
+          return false;
+        }
       }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const fetchEnquiries = async () => {
-    try {
-      setLoadingEnquiries(true);
-      const query = new URLSearchParams();
-      if (enquiryStatusFilter !== 'ALL') query.set('status', enquiryStatusFilter);
-      const res = await fetch(`/api/enquiries?${query.toString()}`);
-      const json = await res.json();
-      if (json.enquiries) {
-        setEnquiriesList(json.enquiries);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoadingEnquiries(false);
-    }
-  };
+      return true;
+    });
+  }, [equipmentsList, equipFilterBuilding, equipSearch]);
 
   const handleOpenExport = (key?: string) => {
     if (key) {
@@ -366,6 +347,7 @@ export default function AdminDashboardPage() {
         INSPECTIONS_WORK: inspectionsWorkSubTab === 'INSPECTIONS' ? 'INSPECTIONS' : 'WORK_ORDERS',
         INSPECTIONS: 'INSPECTIONS',
         REPAIRS: 'WORK_ORDERS',
+        FIELD_TEAM: 'TECHNICIANS',
         REPORTS: 'FIRE_ASSETS',
         SETTINGS: 'CLIENTS',
       };
@@ -374,25 +356,9 @@ export default function AdminDashboardPage() {
     setExportModalOpen(true);
   };
 
-  const handleUpdateEnquiryStatus = async (id: string, newStatus: string) => {
-    try {
-      const res = await fetch('/api/enquiries', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status: newStatus }),
-      });
-      const json = await res.json();
-      if (json.success) {
-        showToast(`Lead status updated to ${newStatus}`);
-        fetchEnquiries();
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
   const handleLogout = async () => {
     try {
+      sessionStorage.removeItem(LAST_ORG_CACHE_KEY);
       const supabase = createClient();
       await supabase.auth.signOut();
       window.location.href = '/login';
@@ -402,27 +368,46 @@ export default function AdminDashboardPage() {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // Client-side WebP photo compression + Cloudflare R2 CDN upload handler for equipment modals
+  const handlePhotoFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    mode: 'SINGLE_ADD' | 'EDIT'
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setCompressingPhoto(true);
+      // Show instant local WebP thumbnail preview while uploading to Cloudflare R2
+      const previewDataUrl = await compressImageToDataUrl(file, {
+        maxDimension: 1280,
+        quality: 0.75,
+        mimeType: 'image/webp',
+      });
+      if (mode === 'SINGLE_ADD') {
+        setSingleEquipForm((prev) => ({ ...prev, photoUrl: previewDataUrl }));
+      } else {
+        setEditEquipmentModal((prev: any) => (prev ? { ...prev, photoUrl: previewDataUrl } : prev));
+      }
 
-  useEffect(() => {
-    if (activeTab === 'OVERVIEW' || activeTab === 'HOME') {
-      fetchKpis();
-    } else if (activeTab === 'CLIENTS_SITES' || activeTab === 'SITES') {
-      fetchClients();
-    } else if (activeTab === 'FIRE_EQUIPMENT') {
-      fetchEquipments();
-    } else if (activeTab === 'INSPECTIONS_WORK' || activeTab === 'INSPECTIONS' || activeTab === 'REPAIRS') {
-      fetchInspections();
-      fetchWorkOrders();
-    } else if (activeTab === 'REPORTS') {
-      fetchData();
-    } else if (activeTab === 'SETTINGS') {
-      fetchEnquiries();
-      fetchTechnicians();
+      const uploaded = await uploadCompressedPhoto(file, 'equipment', {
+        maxDimension: 1280,
+        quality: 0.75,
+        mimeType: 'image/webp',
+      });
+
+      if (mode === 'SINGLE_ADD') {
+        setSingleEquipForm((prev) => ({ ...prev, photoUrl: uploaded.url }));
+      } else {
+        setEditEquipmentModal((prev: any) => (prev ? { ...prev, photoUrl: uploaded.url } : prev));
+      }
+      showToast(`Photo compressed (${Math.round(uploaded.sizeBytes / 1024)} KB WebP) & uploaded to R2 CDN!`);
+    } catch (err: any) {
+      console.error('Photo upload failed:', err);
+      showToast(err?.message || 'Could not upload photo, please try another image.');
+    } finally {
+      setCompressingPhoto(false);
     }
-  }, [activeTab, equipFilterBuilding, equipSearch, enquiryStatusFilter]);
+  };
 
   // Company Profile Update
   const handleSaveCompany = async (e: React.FormEvent) => {
@@ -436,7 +421,7 @@ export default function AdminDashboardPage() {
       const resData = await res.json();
       if (resData.success) {
         showToast('AMC Company Profile saved successfully!');
-        fetchData();
+        refreshDashboard({ silent: true });
       } else {
         alert(resData.error || 'Failed to update company');
       }
@@ -471,7 +456,7 @@ export default function AdminDashboardPage() {
           complianceCycle: 'Quarterly',
           cycleIntervalMos: 3,
         });
-        fetchData();
+        refreshDashboard({ silent: true });
       }
     } catch (e) {
       console.error(e);
@@ -495,8 +480,7 @@ export default function AdminDashboardPage() {
       if (resData.success) {
         setBulkAddModalOpen(null);
         showToast(`Added ${resData.count} fire equipment items for ${bulkAddModalOpen.name}`);
-        fetchData();
-        fetchEquipments();
+        refreshDashboard({ silent: true });
       }
     } catch (e) {
       console.error(e);
@@ -527,9 +511,11 @@ export default function AdminDashboardPage() {
           capacity: 'ABC Dry Powder 6kg',
           location: '',
           serviceIntervalMonths: 12,
+          lastServiceDate: toDateInputString(new Date()),
+          nextDueDate: addMonthsToDateString(toDateInputString(new Date()), 12),
+          photoUrl: '',
         });
-        fetchData();
-        fetchEquipments();
+        await refreshDashboard({ silent: true });
       } else {
         alert(resData.error || 'Failed to add equipment');
       }
@@ -552,8 +538,7 @@ export default function AdminDashboardPage() {
       if (json.success) {
         setEditClientModal(null);
         showToast('Client details updated');
-        fetchClients();
-        fetchData();
+        refreshDashboard({ silent: true });
       }
     } catch (e) {
       console.error(e);
@@ -563,13 +548,14 @@ export default function AdminDashboardPage() {
   // Delete Client
   const handleDeleteClient = async (id: string, name: string) => {
     if (!confirm(`Are you sure you want to delete client '${name}'? This will also delete their buildings and equipment.`)) return;
+    // Optimistic removal
+    setClientsList((prev) => prev.filter((c) => c.id !== id));
     try {
       const res = await fetch(`/api/admin/clients/${id}`, { method: 'DELETE' });
       const json = await res.json();
       if (json.success) {
         showToast(`Deleted client '${name}'`);
-        fetchClients();
-        fetchData();
+        refreshDashboard({ silent: true });
       }
     } catch (e) {
       console.error(e);
@@ -590,7 +576,7 @@ export default function AdminDashboardPage() {
       if (json.success) {
         setEditBuildingModal(null);
         showToast('Building updated successfully');
-        fetchData();
+        refreshDashboard({ silent: true });
       }
     } catch (e) {
       console.error(e);
@@ -605,7 +591,7 @@ export default function AdminDashboardPage() {
       const json = await res.json();
       if (json.success) {
         showToast(`Deleted building '${name}'`);
-        fetchData();
+        refreshDashboard({ silent: true });
       }
     } catch (e) {
       console.error(e);
@@ -626,8 +612,7 @@ export default function AdminDashboardPage() {
       if (json.success) {
         setEditEquipmentModal(null);
         showToast(`Updated equipment ${editEquipmentModal.qrCode}`);
-        fetchEquipments();
-        fetchData();
+        refreshDashboard({ silent: true });
       } else {
         alert(json.error || 'Failed to update equipment');
       }
@@ -639,88 +624,53 @@ export default function AdminDashboardPage() {
   // Delete Equipment
   const handleDeleteEquipment = async (id: string, qrCode: string) => {
     if (!confirm(`Are you sure you want to delete equipment '${qrCode}'?`)) return;
+    // Optimistic removal
+    setEquipmentsList((prev) => prev.filter((eq) => eq.id !== id));
     try {
       const res = await fetch(`/api/admin/equipment/${id}`, { method: 'DELETE' });
       const json = await res.json();
       if (json.success) {
         showToast(`Deleted equipment '${qrCode}'`);
-        fetchEquipments();
-        fetchData();
+        refreshDashboard({ silent: true });
       }
     } catch (e) {
       console.error(e);
     }
   };
 
-  // Data Manage: Wipe All Demo Data
-  const handleWipeAllDemo = async () => {
-    const confirmation = prompt('DANGER: This will permanently delete all demo companies, clients, buildings, and equipment. Type DELETE to confirm:');
-    if (confirmation !== 'DELETE') {
-      alert('Wipe cancelled. Confirmation word did not match "DELETE".');
-      return;
-    }
-    try {
-      setLoading(true);
-      const res = await fetch('/api/admin/data-manage', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'WIPE_ALL_DEMO', confirmation: 'DELETE' }),
-      });
-      const json = await res.json();
-      if (json.success) {
-        showToast(json.message);
-        fetchData();
-        fetchClients();
-        fetchEquipments();
-      } else {
-        alert(json.error || 'Failed to wipe data');
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Data Manage: Seed Clean Template
-  const handleSeedCleanData = async () => {
-    if (!confirm('This will load clean, non-trademarked operational sample data (Cyber Park IT & Emerald Heights) for testing. Continue?')) return;
-    try {
-      setLoading(true);
-      const res = await fetch('/api/admin/data-manage', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'SEED_CLEAN' }),
-      });
-      const json = await res.json();
-      if (json.success) {
-        showToast(json.message);
-        fetchData();
-        fetchClients();
-        fetchEquipments();
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading || !data) {
-    return (
-      <div className="flex-1 p-8 flex items-center justify-center min-h-screen bg-[#F8FAFC] dark:bg-[#080d1a]">
-        <div className="flex flex-col items-center gap-3 text-slate-500 dark:text-slate-400">
-          <RefreshCw className="w-8 h-8 animate-spin text-[#007DB8] dark:text-amber-500" />
-          <p className="text-sm font-semibold tracking-wide text-slate-700 dark:text-slate-300">Loading building compliance matrix...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const { summary, buildings, company } = data;
-  const userFirstName = data?.profile?.fullName?.trim() ? data.profile.fullName.split(' ')[0] : (data?.user?.email ? data.user.email.split('@')[0] : 'Admin');
+  const summary = data?.summary;
+  const buildings = data?.buildings || [];
+  const company = data?.company;
   const agencyName = company?.name || 'VigilAMC Operating System';
   const licenseNo = company?.licenseNumber || 'DL/FIRE/LIC/2026';
+
+  // Live reactive KPI computations so any mutation updates Overview & Sidebar in 0ms
+  const liveEquipmentMetrics = useMemo(() => {
+    const now = new Date();
+    let overdue = 0;
+    let dueSoon = 0;
+    for (const eq of equipmentsList) {
+      const diffDays = eq.nextDueDate
+        ? Math.ceil((new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+        : 0;
+      if (diffDays < 0 || eq.status === 'OVERDUE' || eq.liveStatus === 'OVERDUE') overdue++;
+      else if (diffDays <= 30 || eq.status === 'DUE_SOON' || eq.liveStatus === 'DUE_SOON') dueSoon++;
+    }
+    return { overdue, dueSoon, total: equipmentsList.length };
+  }, [equipmentsList]);
+
+  const liveOpenRepairsCount = useMemo(() => {
+    if (workOrdersList.length > 0) {
+      return workOrdersList.filter((w) => ['OPEN', 'ASSIGNED', 'IN_PROGRESS'].includes(w.status)).length;
+    }
+    return kpis.openWorkOrders || 0;
+  }, [workOrdersList, kpis.openWorkOrders]);
+
+  const liveInspectionsThisWeek = useMemo(() => {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const count = inspectionsList.filter((ins) => new Date(ins.date || ins.createdAt) >= sevenDaysAgo).length;
+    return count > 0 ? count : (kpis as any).inspectionsThisWeek ?? inspectionsList.length ?? 0;
+  }, [inspectionsList, kpis]);
 
   const exportDataMap: Record<string, any[]> = {
     CLIENTS: clientsList,
@@ -742,7 +692,7 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar permanently mounted */}
       <AdminSidebar
         activeTab={activeTab}
         onSelectTab={(tab) => {
@@ -754,10 +704,8 @@ export default function AdminDashboardPage() {
         company={company}
         userEmail={data?.user?.email}
         userProfile={data?.profile}
-        isPlatformOwner={data?.isPlatformOwner}
         onLogout={handleLogout}
-        openRepairsCount={kpis.openWorkOrders}
-        unreadLeadsCount={enquiriesList.filter((e) => e.status === 'NEW').length}
+        openRepairsCount={liveOpenRepairsCount}
         isDarkMode={theme === 'dark'}
         onToggleDarkMode={toggleTheme}
       />
@@ -765,7 +713,7 @@ export default function AdminDashboardPage() {
       {/* Main Content Area */}
       <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-6 overflow-y-auto">
         
-        {/* Top Header Bar */}
+        {/* Top Header Bar permanently mounted */}
         <div className="rounded-2xl bg-white border border-[#E2E8F0] p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-[#111827] dark:border-[#293548]">
           <div className="flex items-center gap-3">
             <button
@@ -785,9 +733,15 @@ export default function AdminDashboardPage() {
                   {(activeTab === 'CLIENTS_SITES' || activeTab === 'SITES') && 'Clients & Sites'}
                   {activeTab === 'FIRE_EQUIPMENT' && 'Fire Equipment'}
                   {(activeTab === 'INSPECTIONS_WORK' || activeTab === 'INSPECTIONS' || activeTab === 'REPAIRS') && 'Inspections & Work'}
+                  {activeTab === 'FIELD_TEAM' && 'Field Team & Technicians'}
                   {activeTab === 'REPORTS' && 'Compliance Reports'}
                   {activeTab === 'SETTINGS' && 'Agency Settings'}
                 </h1>
+                {isRevalidating && (
+                  <span title="Syncing latest data..." className="inline-flex items-center ml-1">
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-slate-400" />
+                  </span>
+                )}
               </div>
               <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-0.5">
                 Managing operations for <strong className="text-slate-800 dark:text-slate-200 font-semibold">{agencyName}</strong>
@@ -798,6 +752,15 @@ export default function AdminDashboardPage() {
 
           {/* Quick Actions, Theme Switcher & Feedback */}
           <div className="flex items-center gap-2.5 flex-wrap self-end md:self-auto">
+            <button
+              onClick={() => refreshDashboard({ silent: true })}
+              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 dark:bg-[#172033] dark:hover:bg-slate-700 dark:text-slate-200 dark:border-[#293548] transition-all shadow-xs"
+              title="Sync latest records"
+              aria-label="Sync latest records"
+            >
+              <RefreshCw className={`w-4 h-4 ${isRevalidating ? 'animate-spin text-[#2563EB]' : ''}`} />
+            </button>
+
             <button
               onClick={() => setFeedbackModalOpen(true)}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#EFF6FF] hover:bg-blue-100 text-[#2563EB] border border-[#2563EB]/20 text-xs font-bold transition-all shadow-xs dark:bg-blue-500/10 dark:hover:bg-blue-500/20 dark:text-[#60A5FA] dark:border-blue-500/30"
@@ -828,274 +791,341 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* =========================================================================
-            GROUP 1: OVERVIEW SCREEN
-        ========================================================================= */}
-        {(activeTab === 'OVERVIEW' || activeTab === 'HOME') && (
-          <DashboardOverview
-            kpis={{
-              overdueCount: summary?.overdueEquipments || summary?.overdueBuildings || 0,
-              dueSoonCount: summary?.dueSoonEquipments || summary?.dueSoonBuildings || 0,
-              openRepairsCount: kpis.openWorkOrders,
-              inspectionsThisWeek: kpis.dueInspections,
-              totalEquipments: summary?.totalEquipments || kpis.totalEquipments,
-              totalBuildings: summary?.totalBuildings || kpis.totalBuildings,
-              activeTechnicians: kpis.activeTechnicians,
-            }}
-            company={company}
-            buildings={buildings}
-            onNavigateTab={(tab: any) => {
-              if (tab === 'OVERVIEW' || tab === 'HOME') setActiveTab('OVERVIEW');
-              else if (tab === 'CLIENTS_SITES' || tab === 'SITES') setActiveTab('CLIENTS_SITES');
-              else if (tab === 'FIRE_EQUIPMENT') setActiveTab('FIRE_EQUIPMENT');
-              else if (tab === 'INSPECTIONS_WORK' || tab === 'INSPECTIONS') {
-                setActiveTab('INSPECTIONS_WORK');
-                setInspectionsWorkSubTab('INSPECTIONS');
-              } else if (tab === 'REPAIRS') {
-                setActiveTab('INSPECTIONS_WORK');
-                setInspectionsWorkSubTab('REPAIRS');
-              } else if (tab === 'REPORTS') setActiveTab('REPORTS');
-              else if (tab === 'SETTINGS') setActiveTab('SETTINGS');
-            }}
-            onAddEquipment={() => {
-              if (buildings.length > 0) {
-                setSingleAddEquipModalOpen(buildings[0]);
-              } else {
-                setAddBuildingModalOpen(true);
-              }
-            }}
-            onCreateRepairJob={() => {
-              setActiveTab('INSPECTIONS_WORK');
-              setInspectionsWorkSubTab('REPAIRS');
-            }}
-            onOpenFeedback={() => setFeedbackModalOpen(true)}
-            onOpenImport={() => handleOpenImport('FIRE_ASSETS')}
-          />
-        )}
-
-        {/* =========================================================================
-            GROUP 2: CLIENTS & SITES
-        ========================================================================= */}
-        {(activeTab === 'CLIENTS_SITES' || activeTab === 'SITES') && (
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-xs dark:bg-[#111827] dark:border-[#293548]">
-              <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs dark:bg-[#0B1220] dark:border-[#293548]">
-                <button
-                  onClick={() => setClientsSitesSubTab('BUILDINGS')}
-                  className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
-                    clientsSitesSubTab === 'BUILDINGS'
-                      ? 'bg-[#2563EB] text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-                  }`}
+        {/* Skeleton placeholders ONLY on the very first cold visit when data === null */}
+        {loading && !data ? (
+          <div className="space-y-6 animate-pulse">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[1, 2, 3, 4].map((n) => (
+                <div
+                  key={n}
+                  className="h-28 rounded-2xl bg-white border border-[#E2E8F0] p-5 dark:bg-[#111827] dark:border-[#293548]"
                 >
-                  Buildings &amp; Towers ({buildings.length})
-                </button>
-                <button
-                  onClick={() => setClientsSitesSubTab('CLIENTS')}
-                  className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
-                    clientsSitesSubTab === 'CLIENTS'
-                      ? 'bg-[#2563EB] text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-                  }`}
-                >
-                  Client Societies ({clientsList.length})
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  onClick={() => handleOpenImport(clientsSitesSubTab === 'BUILDINGS' ? 'BUILDINGS' : 'CLIENTS')}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#EFF6FF] hover:bg-blue-100 text-[#2563EB] border border-[#2563EB]/20 text-xs font-bold transition-all shadow-xs dark:bg-blue-500/10 dark:hover:bg-blue-500/20 dark:text-[#60A5FA] dark:border-blue-500/30"
-                  title="Import from Excel (.xlsx)"
-                >
-                  <FileSpreadsheet className="w-4 h-4" />
-                  <span>Import Excel</span>
-                </button>
-
-                <button
-                  onClick={() => handleOpenExport(clientsSitesSubTab === 'BUILDINGS' ? 'BUILDINGS' : 'CLIENTS')}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-xs dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:text-emerald-300 dark:border-emerald-800"
-                  title="Export to Excel (.xlsx)"
-                >
-                  <FileSpreadsheet className="w-4 h-4" />
-                  <span>Export Excel</span>
-                </button>
-
-                <button
-                  onClick={() => setAddBuildingModalOpen(true)}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold shadow-xs transition-all"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>{clientsSitesSubTab === 'BUILDINGS' ? 'Add Building' : 'Add Client'}</span>
-                </button>
-              </div>
+                  <div className="h-3 w-24 bg-slate-200 dark:bg-slate-800 rounded mb-3" />
+                  <div className="h-7 w-16 bg-slate-200 dark:bg-slate-800 rounded mb-2" />
+                  <div className="h-2.5 w-32 bg-slate-100 dark:bg-slate-800/60 rounded" />
+                </div>
+              ))}
             </div>
-
-            {clientsSitesSubTab === 'BUILDINGS' ? (
-              <BuildingsView
-                buildings={buildings}
-                summary={summary}
-                expandedBuildingId={expandedBuildingId}
-                setExpandedBuildingId={setExpandedBuildingId}
-                onAddBuilding={() => setAddBuildingModalOpen(true)}
-                onEditBuilding={(b) => setEditBuildingModal(b)}
-                onDeleteBuilding={handleDeleteBuilding}
-                onBulkAdd={(b) => setBulkAddModalOpen(b)}
-                onSingleAdd={(b) => setSingleAddEquipModalOpen(b)}
-                onOpenExport={() => handleOpenExport('BUILDINGS')}
-                onOpenImport={() => handleOpenImport('BUILDINGS')}
-              />
-            ) : (
-              <ClientsView
-                clientsList={clientsList}
-                onAddClient={() => setAddBuildingModalOpen(true)}
-                onEditClient={(c) => setEditClientModal(c)}
-                onDeleteClient={handleDeleteClient}
-                onOpenExport={() => handleOpenExport('CLIENTS')}
-                onOpenImport={() => handleOpenImport('CLIENTS')}
-              />
-            )}
+            <div className="h-96 rounded-2xl bg-white border border-[#E2E8F0] p-6 dark:bg-[#111827] dark:border-[#293548]" />
           </div>
-        )}
-
-        {/* =========================================================================
-            GROUP 3: FIRE EQUIPMENT
-        ========================================================================= */}
-        {activeTab === 'FIRE_EQUIPMENT' && (
-          <div className="space-y-6">
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => {
-                  if (buildings.length > 0) setSingleAddEquipModalOpen(buildings[0]);
-                  else setAddBuildingModalOpen(true);
+        ) : (
+          <>
+            {/* =========================================================================
+                GROUP 1: OVERVIEW SCREEN
+            ========================================================================= */}
+            {(activeTab === 'OVERVIEW' || activeTab === 'HOME') && (
+              <DashboardOverview
+                kpis={{
+                  totalClients: clientsList.length || kpis.totalClients || 0,
+                  overdueCount:
+                    equipmentsList.length > 0
+                      ? liveEquipmentMetrics.overdue
+                      : summary?.overdueEquipments ?? kpis.overdueInspections ?? 0,
+                  dueSoonCount:
+                    equipmentsList.length > 0
+                      ? liveEquipmentMetrics.dueSoon
+                      : summary?.dueSoonEquipments ?? kpis.dueInspections ?? 0,
+                  openRepairsCount: liveOpenRepairsCount,
+                  inspectionsThisWeek: liveInspectionsThisWeek,
+                  totalInspections: inspectionsList.length || (kpis as any).totalInspections || 0,
+                  totalEquipments:
+                    equipmentsList.length > 0
+                      ? liveEquipmentMetrics.total
+                      : summary?.totalEquipments || kpis.totalEquipments,
+                  totalBuildings: buildings.length || summary?.totalBuildings || kpis.totalBuildings,
+                  activeTechnicians: techniciansList.length || kpis.activeTechnicians,
                 }}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold shadow-xs transition-all"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add Fire Equipment</span>
-              </button>
-            </div>
-            <FireAssetsView
-              equipmentsList={equipmentsList}
-              buildings={buildings}
-              equipFilterBuilding={equipFilterBuilding}
-              setEquipFilterBuilding={setEquipFilterBuilding}
-              equipSearch={equipSearch}
-              setEquipSearch={setEquipSearch}
-              onEditEquipment={(eq) => setEditEquipmentModal(eq)}
-              onDeleteEquipment={handleDeleteEquipment}
-              onOpenExport={() => handleOpenExport('FIRE_ASSETS')}
-              onOpenImport={() => handleOpenImport('FIRE_ASSETS')}
-            />
-          </div>
-        )}
-
-        {/* =========================================================================
-            GROUP 4: INSPECTIONS & WORK
-        ========================================================================= */}
-        {(activeTab === 'INSPECTIONS_WORK' || activeTab === 'INSPECTIONS' || activeTab === 'REPAIRS') && (
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-xs dark:bg-[#111827] dark:border-[#293548]">
-              <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs dark:bg-[#0B1220] dark:border-[#293548]">
-                <button
-                  onClick={() => setInspectionsWorkSubTab('INSPECTIONS')}
-                  className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
-                    inspectionsWorkSubTab === 'INSPECTIONS'
-                      ? 'bg-[#2563EB] text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-                  }`}
-                >
-                  Field Inspections ({inspectionsList.length})
-                </button>
-                <button
-                  onClick={() => setInspectionsWorkSubTab('REPAIRS')}
-                  className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
-                    inspectionsWorkSubTab === 'REPAIRS'
-                      ? 'bg-[#2563EB] text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-                  }`}
-                >
-                  <span>Repairs &amp; Work Orders</span>
-                  {kpis.openWorkOrders > 0 && (
-                    <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-rose-500 text-white font-bold">
-                      {kpis.openWorkOrders}
-                    </span>
-                  )}
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() =>
-                    handleOpenExport(
-                      inspectionsWorkSubTab === 'INSPECTIONS' ? 'INSPECTIONS' : 'WORK_ORDERS'
-                    )
+                company={company}
+                buildings={buildings}
+                onNavigateTab={(tab: any) => {
+                  if (tab === 'OVERVIEW' || tab === 'HOME') setActiveTab('OVERVIEW');
+                  else if (tab === 'CLIENTS_SITES' || tab === 'SITES') setActiveTab('CLIENTS_SITES');
+                  else if (tab === 'FIRE_EQUIPMENT') setActiveTab('FIRE_EQUIPMENT');
+                  else if (tab === 'INSPECTIONS_WORK' || tab === 'INSPECTIONS') {
+                    setActiveTab('INSPECTIONS_WORK');
+                    setInspectionsWorkSubTab('INSPECTIONS');
+                  } else if (tab === 'REPAIRS') {
+                    setActiveTab('INSPECTIONS_WORK');
+                    setInspectionsWorkSubTab('REPAIRS');
+                  } else if (tab === 'FIELD_TEAM') setActiveTab('FIELD_TEAM');
+                  else if (tab === 'REPORTS') setActiveTab('REPORTS');
+                  else if (tab === 'SETTINGS') setActiveTab('SETTINGS');
+                }}
+                onAddEquipment={() => {
+                  if (buildings.length > 0) {
+                    setSingleAddEquipModalOpen(buildings[0]);
+                  } else {
+                    setAddBuildingModalOpen(true);
                   }
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-xs dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:text-emerald-300 dark:border-emerald-800"
-                  title="Export to Excel (.xlsx)"
-                >
-                  <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  <span>Export Excel</span>
-                </button>
-              </div>
-            </div>
-
-            {inspectionsWorkSubTab === 'INSPECTIONS' ? (
-              <InspectionsView
-                showToast={showToast}
-                onOpenImport={() => handleOpenImport('INSPECTIONS')}
-              />
-            ) : (
-              <WorkOrdersView
-                showToast={showToast}
-                onOpenImport={() => handleOpenImport('WORK_ORDERS')}
+                }}
+                onCreateRepairJob={() => {
+                  setActiveTab('INSPECTIONS_WORK');
+                  setInspectionsWorkSubTab('REPAIRS');
+                }}
+                onOpenFeedback={() => setFeedbackModalOpen(true)}
+                onOpenImport={() => handleOpenImport('FIRE_ASSETS')}
               />
             )}
-          </div>
-        )}
 
-        {/* =========================================================================
-            GROUP 5: COMPLIANCE REPORTS
-        ========================================================================= */}
-        {activeTab === 'REPORTS' && (
-          <div className="space-y-4">
-            <div className="flex justify-end">
-              <button
-                onClick={() => handleOpenExport('REPORTS')}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-xs dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:text-emerald-300 dark:border-emerald-800"
-                title="Export Report Data to Excel (.xlsx)"
-              >
-                <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span>Export Excel</span>
-              </button>
-            </div>
-            <ReportsView buildings={buildings} summary={summary} company={company} />
-          </div>
-        )}
+            {/* =========================================================================
+                GROUP 2: CLIENTS & SITES
+            ========================================================================= */}
+            {(activeTab === 'CLIENTS_SITES' || activeTab === 'SITES') && (
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-xs dark:bg-[#111827] dark:border-[#293548]">
+                  <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs dark:bg-[#0B1220] dark:border-[#293548]">
+                    <button
+                      onClick={() => setClientsSitesSubTab('BUILDINGS')}
+                      className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                        clientsSitesSubTab === 'BUILDINGS'
+                          ? 'bg-[#2563EB] text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                      }`}
+                    >
+                      Buildings &amp; Towers ({buildings.length})
+                    </button>
+                    <button
+                      onClick={() => setClientsSitesSubTab('CLIENTS')}
+                      className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                        clientsSitesSubTab === 'CLIENTS'
+                          ? 'bg-[#2563EB] text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                      }`}
+                    >
+                      Client Societies ({clientsList.length})
+                    </button>
+                  </div>
 
-        {/* =========================================================================
-            GROUP 6: SETTINGS
-        ========================================================================= */}
-        {activeTab === 'SETTINGS' && (
-          <SettingsView
-            companyForm={companyForm}
-            setCompanyForm={setCompanyForm}
-            handleSaveCompany={handleSaveCompany}
-            isPlatformOwner={data?.isPlatformOwner}
-            currentUser={data?.user}
-            company={company}
-            showToast={showToast}
-            onOpenImport={(type) => handleOpenImport(type || 'CLIENTS')}
-            onOpenExport={(type) => handleOpenExport(type || 'CLIENTS')}
-            enquiriesList={enquiriesList}
-            enquiryStatusFilter={enquiryStatusFilter}
-            setEnquiryStatusFilter={setEnquiryStatusFilter}
-            loadingEnquiries={loadingEnquiries}
-            onRefreshEnquiries={fetchEnquiries}
-            onUpdateEnquiryStatus={handleUpdateEnquiryStatus}
-            onWipeAllDemo={handleWipeAllDemo}
-            onSeedCleanData={handleSeedCleanData}
-          />
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      onClick={() => handleOpenImport(clientsSitesSubTab === 'BUILDINGS' ? 'BUILDINGS' : 'CLIENTS')}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#EFF6FF] hover:bg-blue-100 text-[#2563EB] border border-[#2563EB]/20 text-xs font-bold transition-all shadow-xs dark:bg-blue-500/10 dark:hover:bg-blue-500/20 dark:text-[#60A5FA] dark:border-blue-500/30"
+                      title="Import from Excel (.xlsx)"
+                    >
+                      <FileSpreadsheet className="w-4 h-4" />
+                      <span>Import Excel</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleOpenExport(clientsSitesSubTab === 'BUILDINGS' ? 'BUILDINGS' : 'CLIENTS')}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-xs dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:text-emerald-300 dark:border-emerald-800"
+                      title="Export to Excel (.xlsx)"
+                    >
+                      <FileSpreadsheet className="w-4 h-4" />
+                      <span>Export Excel</span>
+                    </button>
+
+                    <button
+                      onClick={() => setAddBuildingModalOpen(true)}
+                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold shadow-xs transition-all"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>{clientsSitesSubTab === 'BUILDINGS' ? 'Add Building' : 'Add Client'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {clientsSitesSubTab === 'BUILDINGS' ? (
+                  <BuildingsView
+                    buildings={buildings}
+                    summary={summary}
+                    expandedBuildingId={expandedBuildingId}
+                    setExpandedBuildingId={setExpandedBuildingId}
+                    onAddBuilding={() => setAddBuildingModalOpen(true)}
+                    onEditBuilding={(b) => setEditBuildingModal(b)}
+                    onDeleteBuilding={handleDeleteBuilding}
+                    onBulkAdd={(b) => setBulkAddModalOpen(b)}
+                    onSingleAdd={(b) => setSingleAddEquipModalOpen(b)}
+                    onOpenExport={() => handleOpenExport('BUILDINGS')}
+                    onOpenImport={() => handleOpenImport('BUILDINGS')}
+                    onEditEquipment={(eq) =>
+                      setEditEquipmentModal({
+                        ...eq,
+                        lastServiceDate: toDateInputString(eq.lastServiceDate),
+                        nextDueDate: toDateInputString(eq.nextDueDate),
+                      })
+                    }
+                  />
+                ) : (
+                  <ClientsView
+                    clientsList={clientsList}
+                    onAddClient={() => setAddBuildingModalOpen(true)}
+                    onEditClient={(c) => setEditClientModal(c)}
+                    onDeleteClient={handleDeleteClient}
+                    onOpenExport={() => handleOpenExport('CLIENTS')}
+                    onOpenImport={() => handleOpenImport('CLIENTS')}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* =========================================================================
+                GROUP 3: FIRE EQUIPMENT
+            ========================================================================= */}
+            {activeTab === 'FIRE_EQUIPMENT' && (
+              <div className="space-y-6">
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => {
+                      if (buildings.length > 0) setSingleAddEquipModalOpen(buildings[0]);
+                      else setAddBuildingModalOpen(true);
+                    }}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold shadow-xs transition-all"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add Fire Equipment</span>
+                  </button>
+                </div>
+                <FireAssetsView
+                  equipmentsList={filteredEquipmentsList}
+                  buildings={buildings}
+                  equipFilterBuilding={equipFilterBuilding}
+                  setEquipFilterBuilding={setEquipFilterBuilding}
+                  equipSearch={equipSearch}
+                  setEquipSearch={setEquipSearch}
+                  onEditEquipment={(eq) =>
+                    setEditEquipmentModal({
+                      ...eq,
+                      lastServiceDate: toDateInputString(eq.lastServiceDate),
+                      nextDueDate: toDateInputString(eq.nextDueDate),
+                    })
+                  }
+                  onDeleteEquipment={handleDeleteEquipment}
+                  onOpenExport={() => handleOpenExport('FIRE_ASSETS')}
+                  onOpenImport={() => handleOpenImport('FIRE_ASSETS')}
+                />
+              </div>
+            )}
+
+            {/* =========================================================================
+                GROUP 4: INSPECTIONS & WORK
+            ========================================================================= */}
+            {(activeTab === 'INSPECTIONS_WORK' || activeTab === 'INSPECTIONS' || activeTab === 'REPAIRS') && (
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-xs dark:bg-[#111827] dark:border-[#293548]">
+                  <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs dark:bg-[#0B1220] dark:border-[#293548]">
+                    <button
+                      onClick={() => setInspectionsWorkSubTab('INSPECTIONS')}
+                      className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                        inspectionsWorkSubTab === 'INSPECTIONS'
+                          ? 'bg-[#2563EB] text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                      }`}
+                    >
+                      Field Inspections ({inspectionsList.length})
+                    </button>
+                    <button
+                      onClick={() => setInspectionsWorkSubTab('REPAIRS')}
+                      className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
+                        inspectionsWorkSubTab === 'REPAIRS'
+                          ? 'bg-[#2563EB] text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                      }`}
+                    >
+                      <span>Repairs &amp; Work Orders</span>
+                      {liveOpenRepairsCount > 0 && (
+                        <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-rose-500 text-white font-bold">
+                          {liveOpenRepairsCount}
+                        </span>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() =>
+                        handleOpenExport(
+                          inspectionsWorkSubTab === 'INSPECTIONS' ? 'INSPECTIONS' : 'WORK_ORDERS'
+                        )
+                      }
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-xs dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:text-emerald-300 dark:border-emerald-800"
+                      title="Export to Excel (.xlsx)"
+                    >
+                      <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      <span>Export Excel</span>
+                    </button>
+                  </div>
+                </div>
+
+                {inspectionsWorkSubTab === 'INSPECTIONS' ? (
+                  <InspectionsView
+                    showToast={showToast}
+                    onOpenImport={() => handleOpenImport('INSPECTIONS')}
+                    initialInspections={inspectionsList}
+                    buildings={data?.buildings || []}
+                    equipments={equipmentsList}
+                    onRefreshDashboard={() => refreshDashboard({ silent: true })}
+                  />
+                ) : (
+                  <WorkOrdersView
+                    showToast={showToast}
+                    onOpenImport={() => handleOpenImport('WORK_ORDERS')}
+                    initialWorkOrders={workOrdersList}
+                    initialTechnicians={techniciansList}
+                    initialBuildings={buildings}
+                    onRefreshDashboard={() => refreshDashboard({ silent: true })}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* =========================================================================
+                GROUP 4B: FIELD TEAM & TECHNICIAN MANAGEMENT
+            ========================================================================= */}
+            {activeTab === 'FIELD_TEAM' && (
+              <TechnicianManagement
+                showToast={showToast}
+                onOpenImport={() => handleOpenImport('TECHNICIANS')}
+                initialTechnicians={techniciansList}
+                initialBuildings={buildings}
+                initialSeatUsage={subscriptionData?.usage?.technicians}
+                initialPlan={subscriptionData?.plan}
+                agencyName={company?.name}
+                onRefreshDashboard={() => refreshDashboard({ silent: true })}
+              />
+            )}
+
+            {/* =========================================================================
+                GROUP 5: COMPLIANCE REPORTS
+            ========================================================================= */}
+            {activeTab === 'REPORTS' && (
+              <div className="space-y-4">
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => handleOpenExport('REPORTS')}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-xs dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:text-emerald-300 dark:border-emerald-800"
+                    title="Export Report Data to Excel (.xlsx)"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <span>Export Excel</span>
+                  </button>
+                </div>
+                <ReportsView buildings={buildings} summary={summary} company={company} />
+              </div>
+            )}
+
+            {/* =========================================================================
+                GROUP 6: SETTINGS
+            ========================================================================= */}
+            {activeTab === 'SETTINGS' && (
+              <SettingsView
+                companyForm={companyForm}
+                setCompanyForm={setCompanyForm}
+                handleSaveCompany={handleSaveCompany}
+                currentUser={data?.user}
+                userProfile={data?.profile}
+                company={company}
+                showToast={showToast}
+                onOpenImport={(type) => handleOpenImport(type || 'CLIENTS')}
+                onOpenExport={(type) => handleOpenExport(type || 'CLIENTS')}
+                initialTechnicians={techniciansList}
+                initialBuildings={buildings}
+                initialSeatUsage={subscriptionData?.usage?.technicians}
+                initialPlan={subscriptionData?.plan}
+                onRefreshDashboard={() => refreshDashboard({ silent: true })}
+              />
+            )}
+          </>
         )}
 
         {/* Excel Export Dialog */}
@@ -1113,8 +1143,7 @@ export default function AdminDashboardPage() {
           initialType={importDataType}
           onClose={() => setImportModalOpen(false)}
           onSuccess={() => {
-            fetchData();
-            fetchSubscription();
+            refreshDashboard({ silent: true });
           }}
         />
 
@@ -1352,13 +1381,92 @@ export default function AdminDashboardPage() {
                 <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Refill / Service Interval</label>
                 <select
                   value={equipmentForm.serviceIntervalMonths}
-                  onChange={(e) => setEquipmentForm({ ...equipmentForm, serviceIntervalMonths: Number(e.target.value) })}
+                  onChange={(e) => {
+                    const mos = Number(e.target.value);
+                    setEquipmentForm({
+                      ...equipmentForm,
+                      serviceIntervalMonths: mos,
+                      nextDueDate: addMonthsToDateString(equipmentForm.lastServiceDate, mos),
+                    });
+                  }}
                   className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
                 >
                   <option value={12}>12 Months (Annual Extinguisher Refill - IS 2190)</option>
                   <option value={6}>6 Months (Half-Yearly Hydrant &amp; Pump Check)</option>
                   <option value={3}>3 Months (Quarterly Fire Alarm &amp; Smoke Check)</option>
                 </select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-[#E2E8F0] dark:bg-[#0B1220] dark:border-[#293548]">
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">
+                    Last Service / Refill Date
+                  </label>
+                  <input
+                    type="date"
+                    value={equipmentForm.lastServiceDate}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setEquipmentForm({
+                        ...equipmentForm,
+                        lastServiceDate: val,
+                        nextDueDate: addMonthsToDateString(val, equipmentForm.serviceIntervalMonths),
+                      });
+                    }}
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">
+                    Next Service Due Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={equipmentForm.nextDueDate}
+                    onChange={(e) => setEquipmentForm({ ...equipmentForm, nextDueDate: e.target.value })}
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                  />
+                </div>
+                <div className="sm:col-span-2 flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[10px] font-bold uppercase text-slate-400 mr-1">Quick Presets:</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEquipmentForm({
+                        ...equipmentForm,
+                        nextDueDate: addMonthsToDateString(equipmentForm.lastServiceDate, 12),
+                      })
+                    }
+                    className="px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                  >
+                    +1 Year (Standard)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEquipmentForm({
+                        ...equipmentForm,
+                        nextDueDate: addDaysToTodayString(15),
+                      })
+                    }
+                    className="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
+                  >
+                    Due in 15 Days
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEquipmentForm({
+                        ...equipmentForm,
+                        nextDueDate: addDaysToTodayString(-5),
+                      })
+                    }
+                    className="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
+                  >
+                    Overdue (-5 Days)
+                  </button>
+                </div>
               </div>
 
               <div className="pt-2 flex justify-end gap-2">
@@ -1382,7 +1490,7 @@ export default function AdminDashboardPage() {
       )}
 
       {/* =========================================================================
-          MODAL 3: SINGLE ADD EQUIPMENT
+          MODAL 3: SINGLE ADD EQUIPMENT (WITH AUTOMATIC WEBP PHOTO COMPRESSION)
       ========================================================================= */}
       {singleAddEquipModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -1446,6 +1554,109 @@ export default function AdminDashboardPage() {
                 />
               </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 bg-slate-50 rounded-xl border border-[#E2E8F0] dark:bg-[#0B1220] dark:border-[#293548]">
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">
+                    Last Service / Refill Date
+                  </label>
+                  <input
+                    type="date"
+                    value={singleEquipForm.lastServiceDate}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSingleEquipForm({
+                        ...singleEquipForm,
+                        lastServiceDate: val,
+                        nextDueDate: addMonthsToDateString(val, singleEquipForm.serviceIntervalMonths),
+                      });
+                    }}
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">
+                    Next Service Due Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={singleEquipForm.nextDueDate}
+                    onChange={(e) => setSingleEquipForm({ ...singleEquipForm, nextDueDate: e.target.value })}
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                  />
+                </div>
+                <div className="sm:col-span-2 flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[10px] font-bold uppercase text-slate-400 mr-1">Quick Presets:</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSingleEquipForm({
+                        ...singleEquipForm,
+                        nextDueDate: addMonthsToDateString(singleEquipForm.lastServiceDate, 12),
+                      })
+                    }
+                    className="px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                  >
+                    +1 Year (Standard)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSingleEquipForm({
+                        ...singleEquipForm,
+                        nextDueDate: addDaysToTodayString(15),
+                      })
+                    }
+                    className="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
+                  >
+                    Due in 15 Days
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSingleEquipForm({
+                        ...singleEquipForm,
+                        nextDueDate: addDaysToTodayString(-5),
+                      })
+                    }
+                    className="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
+                  >
+                    Overdue (-5 Days)
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">
+                  Equipment Photo (Auto-compressed WebP &rarr; Cloudflare R2)
+                </label>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer border border-slate-200 dark:bg-[#111827] dark:border-[#293548] dark:text-slate-300">
+                    <Camera className="w-3.5 h-3.5 text-[#2563EB]" />
+                    <span>{compressingPhoto ? 'Uploading photo...' : 'Select Photo'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handlePhotoFileChange(e, 'SINGLE_ADD')}
+                      className="hidden"
+                    />
+                  </label>
+                  {singleEquipForm.photoUrl && (
+                    <div className="flex items-center gap-2">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={singleEquipForm.photoUrl}
+                        alt="Equipment preview"
+                        className="w-9 h-9 rounded-lg object-cover border border-slate-300 shadow-xs"
+                      />
+                      <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> {compressingPhoto ? 'Uploading...' : 'R2 CDN Ready'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="pt-2 flex justify-end gap-2">
                 <button
                   type="button"
@@ -1456,7 +1667,8 @@ export default function AdminDashboardPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold shadow-xs transition-all"
+                  disabled={compressingPhoto}
+                  className="px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 text-white font-bold shadow-xs transition-all"
                 >
                   Add Equipment
                 </button>
@@ -1628,7 +1840,7 @@ export default function AdminDashboardPage() {
       )}
 
       {/* =========================================================================
-          MODAL 6: EDIT EQUIPMENT
+          MODAL 6: EDIT EQUIPMENT (WITH AUTOMATIC WEBP PHOTO COMPRESSION)
       ========================================================================= */}
       {editEquipmentModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -1674,9 +1886,126 @@ export default function AdminDashboardPage() {
                 <input
                   type="number"
                   value={editEquipmentModal.serviceIntervalMonths}
-                  onChange={(e) => setEditEquipmentModal({ ...editEquipmentModal, serviceIntervalMonths: Number(e.target.value) })}
+                  onChange={(e) => {
+                    const mos = Number(e.target.value);
+                    setEditEquipmentModal({
+                      ...editEquipmentModal,
+                      serviceIntervalMonths: mos,
+                      nextDueDate: addMonthsToDateString(
+                        editEquipmentModal.lastServiceDate || toDateInputString(new Date()),
+                        mos
+                      ),
+                    });
+                  }}
                   className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
                 />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 bg-slate-50 rounded-xl border border-[#E2E8F0] dark:bg-[#0B1220] dark:border-[#293548]">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">
+                    Last Service / Refill Date
+                  </label>
+                  <input
+                    type="date"
+                    value={editEquipmentModal.lastServiceDate || toDateInputString(new Date())}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setEditEquipmentModal({
+                        ...editEquipmentModal,
+                        lastServiceDate: val,
+                        nextDueDate: addMonthsToDateString(val, editEquipmentModal.serviceIntervalMonths || 12),
+                      });
+                    }}
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">
+                    Next Service Due Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={editEquipmentModal.nextDueDate || toDateInputString(new Date())}
+                    onChange={(e) =>
+                      setEditEquipmentModal({ ...editEquipmentModal, nextDueDate: e.target.value })
+                    }
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                  />
+                </div>
+                <div className="sm:col-span-2 flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[10px] font-bold uppercase text-slate-400 mr-1">Quick Presets:</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditEquipmentModal({
+                        ...editEquipmentModal,
+                        nextDueDate: addMonthsToDateString(
+                          editEquipmentModal.lastServiceDate || toDateInputString(new Date()),
+                          12
+                        ),
+                      })
+                    }
+                    className="px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                  >
+                    +1 Year (Standard)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditEquipmentModal({
+                        ...editEquipmentModal,
+                        nextDueDate: addDaysToTodayString(15),
+                      })
+                    }
+                    className="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
+                  >
+                    Due in 15 Days
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditEquipmentModal({
+                        ...editEquipmentModal,
+                        nextDueDate: addDaysToTodayString(-5),
+                      })
+                    }
+                    className="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
+                  >
+                    Overdue (-5 Days)
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">
+                  Equipment Photo (Auto-compressed WebP &rarr; Cloudflare R2)
+                </label>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer border border-slate-200 dark:bg-[#111827] dark:border-[#293548] dark:text-slate-300">
+                    <Camera className="w-3.5 h-3.5 text-[#2563EB]" />
+                    <span>{compressingPhoto ? 'Uploading photo...' : 'Update Photo'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handlePhotoFileChange(e, 'EDIT')}
+                      className="hidden"
+                    />
+                  </label>
+                  {editEquipmentModal.photoUrl && (
+                    <div className="flex items-center gap-2">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={editEquipmentModal.photoUrl}
+                        alt="Equipment preview"
+                        className="w-9 h-9 rounded-lg object-cover border border-slate-300 shadow-xs"
+                      />
+                      <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> {compressingPhoto ? 'Uploading...' : 'Photo attached'}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="pt-2 flex justify-end gap-2">
@@ -1689,7 +2018,8 @@ export default function AdminDashboardPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold shadow-xs transition-all"
+                  disabled={compressingPhoto}
+                  className="px-5 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 text-white font-bold shadow-xs transition-all"
                 >
                   Save Equipment
                 </button>

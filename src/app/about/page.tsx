@@ -25,6 +25,7 @@ import {
   Compass
 } from 'lucide-react';
 import { StatusBadge } from '@/components/StatusBadge';
+import { SITE_CONFIG } from '@/lib/siteConfig';
 
 export default function AboutUsPage() {
   const roadmapStages = [
@@ -96,8 +97,17 @@ export default function AboutUsPage() {
                 S
               </div>
               <div>
-                <p className="font-bold text-slate-900">Shaizan</p>
-                <p className="text-[11px] text-slate-500">Founder &amp; Product Architect &bull; New Delhi</p>
+                <p className="font-bold text-slate-900">{SITE_CONFIG.FOUNDER_NAME}</p>
+                <p className="text-[11px] text-slate-500">
+                  Founder &amp; Product Architect &bull; {SITE_CONFIG.FOUNDER_CITY} &bull;{' '}
+                  <a href={SITE_CONFIG.PHONE_TEL} className="text-[#0077B6] font-semibold hover:underline">
+                    {SITE_CONFIG.PHONE_DISPLAY}
+                  </a>{' '}
+                  &bull;{' '}
+                  <a href={`mailto:${SITE_CONFIG.CONTACT_EMAIL}`} className="text-[#0077B6] hover:underline">
+                    {SITE_CONFIG.CONTACT_EMAIL}
+                  </a>
+                </p>
               </div>
             </div>
           </div>

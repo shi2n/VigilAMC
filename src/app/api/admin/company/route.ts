@@ -11,7 +11,7 @@ export async function GET() {
       return NextResponse.json({ company: null });
     }
 
-    return NextResponse.json({ company: auth.organization });
+    return NextResponse.json({ company: auth.organization, profile: auth.profile });
   } catch (error: any) {
     console.error('Error fetching company:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -20,13 +20,13 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    const auth = await getCurrentUser();
+    const auth = await getCurrentUser(request);
     if (!auth || !auth.organization) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
-    const { name, licenseNumber, phone, email, address, city, state, gstin } = body;
+    const { name, licenseNumber, phone, email, address, city, state, gstin, fullName } = body;
 
     const company = await (db as any).organization.update({
       where: { id: auth.organization.id },
@@ -39,10 +39,19 @@ export async function PUT(request: Request) {
         city: city !== undefined ? city.trim() : auth.organization.city,
         state: state !== undefined ? state.trim() : auth.organization.state,
         gstin: gstin !== undefined ? gstin.trim() : auth.organization.gstin,
+        ...(fullName !== undefined && fullName.trim() ? { contactPerson: fullName.trim() } : {}),
       },
     });
 
-    return NextResponse.json({ success: true, company });
+    let updatedProfile = auth.profile;
+    if (fullName !== undefined && fullName.trim() && auth.user?.id) {
+      updatedProfile = await (db as any).userProfile.update({
+        where: { id: auth.user.id },
+        data: { fullName: fullName.trim() },
+      });
+    }
+
+    return NextResponse.json({ success: true, company, profile: updatedProfile });
   } catch (error: any) {
     console.error('Error updating company:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

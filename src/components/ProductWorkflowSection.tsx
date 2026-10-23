@@ -263,14 +263,14 @@ export function ProductWorkflowSection() {
 
                   <div className="p-3.5 rounded-xl bg-slate-900/90 border border-red-900/40 space-y-2 text-xs">
                     <div className="flex items-center justify-between font-mono">
-                      <span className="text-red-300 font-bold">VIGIL-CO-2041 &bull; 4.5kg CO2</span>
+                      <span className="text-red-300 font-bold">VIGIL-CO-0102 &bull; 4.5kg CO2</span>
                       <span className="px-2 py-0.5 rounded bg-red-500/20 text-red-300 text-[10px] font-bold">
-                        UNDERWEIGHT -650g
+                        UNDERWEIGHT -0.70KG (-15.5%)
                       </span>
                     </div>
 
                     <p className="text-[11px] text-slate-300 leading-relaxed">
-                      Gross weight 13.85kg vs Tare 14.5kg marked. Cylinder discharged or leaking. Photo evidence logged.
+                      Tare 10.20kg &bull; Full Gross 14.70kg &bull; Measured Gross 14.00kg (Net Gas: 3.80kg vs 4.50kg &bull; Loss: -0.70kg / -15.5% &gt; 10% IS 2190 threshold &mdash; Immediate Refill Required). Photo evidence logged.
                     </p>
 
                     <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 space-y-1.5 text-[11px]">

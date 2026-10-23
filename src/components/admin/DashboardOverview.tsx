@@ -26,7 +26,7 @@ interface DashboardOverviewProps {
     overdueCount: number;
     dueSoonCount: number;
     openRepairsCount: number;
-    inspectionsThisWeek: number;
+    inspectionsThisWeek: number; totalInspections?: number;
     activeTechnicians?: number;
   };
   company?: any;
@@ -57,7 +57,7 @@ export function DashboardOverview({
   const hasClientAndBuilding = (kpis.totalBuildings || buildings.length) > 0;
   const hasEquipment = (kpis.totalEquipments || 0) > 0;
   const hasTechnician = (kpis.activeTechnicians || 0) > 0;
-  const hasInspection = (kpis.inspectionsThisWeek || 0) > 0;
+  const hasInspection = (kpis.totalInspections || kpis.inspectionsThisWeek || 0) > 0;
 
   const checklistItems = [
     {

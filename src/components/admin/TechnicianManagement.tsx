@@ -5,29 +5,24 @@ import {
   Users,
   Plus,
   Search,
-  Filter,
   RefreshCw,
-  MoreVertical,
   CheckCircle2,
   AlertTriangle,
-  Lock,
   KeyRound,
   Trash2,
   Edit,
   Eye,
-  Building2,
   Phone,
   Mail,
-  Calendar,
-  Clock,
   ShieldCheck,
   UserCheck,
   UserX,
   X,
   Check,
   Sparkles,
-  ExternalLink,
-  ChevronDown
+  Copy,
+  MessageCircle,
+  Smartphone,
 } from 'lucide-react';
 import { SeatCounter, SeatUsage } from './SeatCounter';
 
@@ -35,18 +30,61 @@ interface TechnicianManagementProps {
   onNavigateToSubscription?: () => void;
   showToast: (msg: string) => void;
   onOpenImport?: () => void;
+  initialTechnicians?: any[];
+  initialBuildings?: any[];
+  initialSeatUsage?: SeatUsage;
+  initialPlan?: any;
+  agencyName?: string;
+  onRefreshDashboard?: () => Promise<void> | void;
+}
+
+function normalizeWhatsAppPhone(rawPhone: string): string {
+  const digits = (rawPhone || '').replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.length === 10) return `91${digits}`;
+  if (digits.length === 11 && digits.startsWith('0')) return `91${digits.slice(1)}`;
+  return digits;
 }
 
 export function TechnicianManagement({
-  onNavigateToSubscription,
   showToast,
   onOpenImport,
+  initialTechnicians,
+  initialBuildings,
+  initialSeatUsage,
+  initialPlan,
+  agencyName = 'Fire Safety AMC Agency',
+  onRefreshDashboard,
 }: TechnicianManagementProps) {
-  const [technicians, setTechnicians] = useState<any[]>([]);
-  const [buildings, setBuildings] = useState<any[]>([]);
-  const [seatUsage, setSeatUsage] = useState<SeatUsage | undefined>(undefined);
-  const [plan, setPlan] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [technicians, setTechnicians] = useState<any[]>(initialTechnicians || []);
+  const [buildings, setBuildings] = useState<any[]>(initialBuildings || []);
+  const [seatUsage, setSeatUsage] = useState<SeatUsage | undefined>(initialSeatUsage);
+  const [plan, setPlan] = useState<any>(initialPlan || null);
+  const [loading, setLoading] = useState(false);
+
+  // Store recently created or reset PINs in localStorage so WhatsApp & Copy buttons always know the PIN
+  const [pinMap, setPinMap] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    try {
+      const savedPins = localStorage.getItem('vigilamc_tech_pins');
+      if (savedPins) setPinMap(JSON.parse(savedPins));
+    } catch {
+      // Ignore storage error
+    }
+  }, []);
+
+  const saveTechPin = (techId: string, pin: string) => {
+    setPinMap((prev) => {
+      const next = { ...prev, [techId]: pin };
+      try {
+        localStorage.setItem('vigilamc_tech_pins', JSON.stringify(next));
+      } catch {
+        // Ignore storage error
+      }
+      return next;
+    });
+  };
 
   // Filters
   const [search, setSearch] = useState('');
@@ -87,6 +125,111 @@ export function TechnicianManagement({
   const [resetSubmitting, setResetSubmitting] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
 
+  // Keep in sync with parent bootstrap cache
+  useEffect(() => {
+    if (Array.isArray(initialTechnicians)) setTechnicians(initialTechnicians);
+  }, [initialTechnicians]);
+
+  useEffect(() => {
+    if (Array.isArray(initialBuildings)) setBuildings(initialBuildings);
+  }, [initialBuildings]);
+
+  useEffect(() => {
+    if (initialSeatUsage) setSeatUsage(initialSeatUsage);
+  }, [initialSeatUsage]);
+
+  useEffect(() => {
+    if (initialPlan) setPlan(initialPlan);
+  }, [initialPlan]);
+
+  const computeNextTechId = () => {
+    let maxNum = 100;
+    for (const t of technicians) {
+      const match = String(t.employeeId || '').match(/(\d+)/);
+      if (match) {
+        const n = parseInt(match[1], 10);
+        if (!isNaN(n) && n >= 100 && n < 99999 && n > maxNum) {
+          maxNum = n;
+        }
+      }
+    }
+    return `TECH-${maxNum + 1}`;
+  };
+
+  const generateSixDigitPin = () => {
+    return String(Math.floor(100000 + Math.random() * 900000));
+  };
+
+  const handleOpenAddModal = () => {
+    setFormError(null);
+    setAddForm({
+      fullName: '',
+      email: '',
+      phone: '',
+      employeeId: computeNextTechId(),
+      password: generateSixDigitPin(),
+      assignedBuildingIds: [],
+      status: 'ACTIVE',
+    });
+    setAddModalOpen(true);
+  };
+
+  const handleGeneratePinAndId = () => {
+    const pin = generateSixDigitPin();
+    const empId = addForm.employeeId.trim() || computeNextTechId();
+    setAddForm((prev) => ({
+      ...prev,
+      password: pin,
+      employeeId: empId,
+    }));
+  };
+
+  const buildCredentialsText = (tech: any, customPin?: string) => {
+    const appUrl =
+      typeof window !== 'undefined'
+        ? `${window.location.origin}/technician`
+        : 'https://vigilamc.vercel.app/technician';
+    const pin = customPin || tech.tempPassword || pinMap[tech.id] || '(Use your assigned 6-digit PIN)';
+    const cleanMobile = tech.phone && tech.phone !== '—' ? tech.phone : '—';
+    const staffId = tech.employeeId && tech.employeeId !== '—' ? tech.employeeId : '—';
+
+    return [
+      `🔥 *${agencyName} — Field Technician App Login*`,
+      ``,
+      `Namaste *${tech.fullName}*, your VigilAMC Field App account is active!`,
+      ``,
+      `📲 *1. Open & Install Mobile App:*`,
+      `${appUrl}`,
+      ``,
+      `🔑 *2. Your Login Details:*`,
+      `• *Mobile Number:* ${cleanMobile}`,
+      `• *Staff ID:* ${staffId}`,
+      `• *Login PIN / Password:* ${pin}`,
+      ``,
+      `📍 Tap the link above on your phone, tap *"Install App"*, and sign in with your Mobile Number or Staff ID + PIN.`,
+    ].join('\n');
+  };
+
+  const handleSendWhatsAppCredentials = (tech: any, customPin?: string) => {
+    const message = buildCredentialsText(tech, customPin);
+    const cleanPhone = normalizeWhatsAppPhone(tech.phone !== '—' ? tech.phone : '');
+    const waUrl = cleanPhone
+      ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`
+      : `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(waUrl, '_blank', 'noopener,noreferrer');
+    showToast(`Opening WhatsApp with login details for ${tech.fullName}...`);
+  };
+
+  const handleCopyCredentials = async (tech: any, customPin?: string) => {
+    const text = buildCredentialsText(tech, customPin);
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast(`Login credentials copied for ${tech.fullName}!`);
+    } catch {
+      showToast('Could not copy automatically.');
+    }
+  };
+
   const fetchTechnicians = async () => {
     try {
       setLoading(true);
@@ -98,6 +241,7 @@ export function TechnicianManagement({
       setSeatUsage(json.seatUsage);
       setPlan(json.plan);
       setBuildings(json.buildings || []);
+      if (onRefreshDashboard) onRefreshDashboard();
     } catch (err: any) {
       console.error('Error loading technicians:', err);
       showToast(err.message || 'Error loading technicians');
@@ -107,7 +251,10 @@ export function TechnicianManagement({
   };
 
   useEffect(() => {
-    fetchTechnicians();
+    if (!initialTechnicians) {
+      fetchTechnicians();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Handle Add Technician
@@ -131,6 +278,10 @@ export function TechnicianManagement({
           return;
         }
         throw new Error(json.error || 'Failed to create technician account');
+      }
+
+      if (json.technician?.id && addForm.password) {
+        saveTechPin(json.technician.id, addForm.password);
       }
 
       setAddModalOpen(false);
@@ -216,7 +367,7 @@ export function TechnicianManagement({
       showToast(
         nextStatus === 'ACTIVE'
           ? `Technician ${tech.fullName} activated.`
-          : `Technician ${tech.fullName} deactivated. Seat is now available.`
+          : `Technician ${tech.fullName} blocked / deactivated. Seat is now free.`
       );
       fetchTechnicians();
     } catch (err: any) {
@@ -241,9 +392,10 @@ export function TechnicianManagement({
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Failed to reset password');
 
+      saveTechPin(resetPasswordTech.id, newPassword);
       setResetPasswordTech(null);
       setNewPassword('');
-      showToast(`Password updated for ${resetPasswordTech.fullName}`);
+      showToast(`PIN / Password updated for ${resetPasswordTech.fullName}`);
     } catch (err: any) {
       setResetError(err.message);
     } finally {
@@ -291,11 +443,13 @@ export function TechnicianManagement({
       tech.phone.includes(search) ||
       tech.employeeId.toLowerCase().includes(search.toLowerCase());
 
-    const matchesStatus =
-      statusFilter === 'ALL' || tech.status === statusFilter;
+    const matchesStatus = statusFilter === 'ALL' || tech.status === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
+
+  const isInternalTechEmail = (emailStr?: string) =>
+    Boolean(emailStr && emailStr.endsWith('@tech.vigilamc.app'));
 
   return (
     <div className="space-y-6">
@@ -311,7 +465,7 @@ export function TechnicianManagement({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name, email, phone, ID..."
+              placeholder="Search by name, mobile number, Staff ID..."
               className="w-full pl-9 pr-3 py-2 bg-white border border-[#DCE7F2] rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#007DB8] shadow-sm dark:bg-slate-950 dark:border-slate-800 dark:text-white dark:placeholder-slate-500"
             />
           </div>
@@ -345,12 +499,12 @@ export function TechnicianManagement({
                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
-              Inactive ({technicians.filter((t) => t.status === 'INACTIVE').length})
+              Blocked ({technicians.filter((t) => t.status === 'INACTIVE').length})
             </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
           {onOpenImport && (
             <button
               onClick={onOpenImport}
@@ -370,14 +524,11 @@ export function TechnicianManagement({
           </button>
 
           <button
-            onClick={() => {
-              setFormError(null);
-              setAddModalOpen(true);
-            }}
+            onClick={handleOpenAddModal}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#007DB8] to-[#073F8F] hover:from-[#006494] hover:to-[#011F48] shadow-md transition-all active:scale-[0.98]"
           >
             <Plus className="w-4 h-4" />
-            <span>Add Technician</span>
+            <span>Add Field Technician</span>
           </button>
         </div>
       </div>
@@ -399,12 +550,12 @@ export function TechnicianManagement({
               <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
                 {search || statusFilter !== 'ALL'
                   ? 'No technicians match your search filters.'
-                  : 'Create your first field technician account to assign inspections, work orders, and facilities.'}
+                  : 'Create your first field technician account with a 10-digit Mobile Number & 6-digit PIN and share it in 1 click on WhatsApp.'}
               </p>
             </div>
             {!search && statusFilter === 'ALL' && (
               <button
-                onClick={() => setAddModalOpen(true)}
+                onClick={handleOpenAddModal}
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#007DB8] to-[#073F8F] hover:from-[#006494] hover:to-[#011F48] transition-all shadow-md"
               >
                 <Plus className="w-4 h-4" />
@@ -417,56 +568,81 @@ export function TechnicianManagement({
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-[#DCE7F2] bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] font-bold dark:border-slate-800 dark:bg-slate-950/70 dark:text-slate-400">
-                  <th className="py-3.5 px-4">Technician</th>
-                  <th className="py-3.5 px-4">Contact</th>
-                  <th className="py-3.5 px-4">Status</th>
+                  <th className="py-3.5 px-4">Technician &amp; Staff ID</th>
+                  <th className="py-3.5 px-4">Mobile / Login ID</th>
+                  <th className="py-3.5 px-4">Access Status</th>
                   <th className="py-3.5 px-4">Assigned Buildings</th>
-                  <th className="py-3.5 px-4">Completed Jobs</th>
-                  <th className="py-3.5 px-4">Last Login</th>
-                  <th className="py-3.5 px-4 text-right">Actions</th>
+                  <th className="py-3.5 px-4">Completed</th>
+                  <th className="py-3.5 px-4 text-right">WhatsApp Onboarding &amp; Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700 dark:divide-slate-800/60 dark:text-slate-300">
                 {filteredTechnicians.map((tech) => (
-                  <tr key={tech.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors group">
+                  <tr
+                    key={tech.id}
+                    className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors group"
+                  >
                     {/* Name & ID */}
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#007DB8]/20 to-[#023E8A]/30 text-[#007DB8] border border-[#007DB8]/30 flex items-center justify-center font-bold text-xs shrink-0 dark:from-[#0077B6]/30 dark:to-[#023E8A]/40 dark:text-cyan-300 dark:border-cyan-500/20">
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#007DB8]/20 to-[#023E8A]/30 text-[#007DB8] border border-[#007DB8]/30 flex items-center justify-center font-bold text-xs shrink-0 dark:from-[#0077B6]/30 dark:to-[#023E8A]/40 dark:text-cyan-300 dark:border-cyan-500/20">
                           {tech.fullName.charAt(0).toUpperCase()}
                         </div>
                         <div>
                           <div className="font-bold text-slate-900 group-hover:text-[#007DB8] transition-colors dark:text-white dark:group-hover:text-amber-400">
                             {tech.fullName}
                           </div>
-                          <div className="text-[11px] text-slate-500">
-                            {tech.employeeId !== '—' ? `ID: ${tech.employeeId}` : tech.email}
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="px-1.5 py-0.5 rounded bg-blue-50 text-[#023E8A] border border-blue-200 font-mono text-[10px] font-bold dark:bg-blue-950/50 dark:text-cyan-300 dark:border-cyan-800">
+                              {tech.employeeId !== '—' ? tech.employeeId : 'TECH'}
+                            </span>
+                            {pinMap[tech.id] && (
+                              <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 font-mono text-[10px] font-bold dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
+                                PIN: {pinMap[tech.id]}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
                     </td>
 
-                    {/* Contact */}
+                    {/* Mobile / Login ID */}
                     <td className="py-3.5 px-4">
                       <div className="space-y-0.5">
-                        <div className="text-slate-700 dark:text-slate-300 font-medium">{tech.email}</div>
-                        <div className="text-[11px] text-slate-500">{tech.phone}</div>
+                        <div className="text-slate-900 dark:text-white font-bold flex items-center gap-1">
+                          <Phone className="w-3 h-3 text-emerald-600 shrink-0" />
+                          <span>{tech.phone !== '—' ? tech.phone : 'No Mobile Set'}</span>
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          {isInternalTechEmail(tech.email)
+                            ? 'Logs in via Mobile / Staff ID'
+                            : tech.email}
+                        </div>
                       </div>
                     </td>
 
-                    {/* Status */}
+                    {/* Status & Instant Active / Block Toggle */}
                     <td className="py-3.5 px-4">
-                      {tech.status === 'ACTIVE' ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-bold uppercase tracking-wider dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                          Active
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-bold uppercase tracking-wider dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                          Inactive
-                        </span>
-                      )}
+                      <button
+                        onClick={() => handleToggleStatus(tech)}
+                        title={
+                          tech.status === 'ACTIVE'
+                            ? 'Click to Block / Revoke Access'
+                            : 'Click to Activate Staff Account'
+                        }
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-all cursor-pointer ${
+                          tech.status === 'ACTIVE'
+                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30'
+                            : 'bg-rose-100 text-rose-800 border-rose-300 hover:bg-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800'
+                        }`}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            tech.status === 'ACTIVE' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'
+                          }`}
+                        />
+                        <span>{tech.status === 'ACTIVE' ? 'Active (Tap to Block)' : 'Blocked (Tap to Unblock)'}</span>
+                      </button>
                     </td>
 
                     {/* Assigned Buildings */}
@@ -498,18 +674,26 @@ export function TechnicianManagement({
                       {tech.completedJobs}
                     </td>
 
-                    {/* Last Login */}
-                    <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 text-[11px]">
-                      {tech.lastLoginAt ? (
-                        <span>{new Date(tech.lastLoginAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                      ) : (
-                        <span className="text-slate-400">Never</span>
-                      )}
-                    </td>
-
                     {/* Actions */}
                     <td className="py-3.5 px-4 text-right">
-                      <div className="inline-flex items-center gap-1.5 justify-end">
+                      <div className="inline-flex items-center gap-1.5 justify-end flex-wrap">
+                        <button
+                          onClick={() => handleSendWhatsAppCredentials(tech)}
+                          title="Send App Link & Login ID on WhatsApp"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] shadow-xs transition-all"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          <span>📲 Send on WhatsApp</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleCopyCredentials(tech)}
+                          title="Copy Login Details"
+                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+
                         <button
                           onClick={() => handleOpenDetails(tech)}
                           title="View Profile & Activity"
@@ -529,25 +713,13 @@ export function TechnicianManagement({
                         <button
                           onClick={() => {
                             setResetPasswordTech(tech);
-                            setNewPassword('');
+                            setNewPassword(generateSixDigitPin());
                             setResetError(null);
                           }}
-                          title="Reset Password"
+                          title="Reset PIN / Password"
                           className="p-1.5 rounded-lg bg-[#EAF6FF] hover:bg-[#D5EEFF] text-[#007DB8] transition-colors dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-amber-400 dark:hover:text-amber-300"
                         >
                           <KeyRound className="w-3.5 h-3.5" />
-                        </button>
-
-                        <button
-                          onClick={() => handleToggleStatus(tech)}
-                          title={tech.status === 'ACTIVE' ? 'Deactivate Technician' : 'Activate Technician'}
-                          className={`p-1.5 rounded-lg transition-colors ${
-                            tech.status === 'ACTIVE'
-                              ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 dark:text-amber-400'
-                              : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:text-emerald-400'
-                          }`}
-                        >
-                          {tech.status === 'ACTIVE' ? <UserX className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
                         </button>
 
                         <button
@@ -568,20 +740,20 @@ export function TechnicianManagement({
       </div>
 
       {/* =========================================================================
-          MODAL: ADD TECHNICIAN
+          MODAL: ADD TECHNICIAN (INDIAN MOBILE + 1-CLICK PIN + OPTIONAL EMAIL)
       ========================================================================= */}
       {addModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 my-8">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
-                  <Plus className="w-4 h-4" />
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                  <Smartphone className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white">Add New Technician</h3>
+                  <h3 className="text-base font-bold text-white">Add New Field Technician</h3>
                   <p className="text-xs text-slate-400">
-                    Field technician account with mobile portal access
+                    Create Mobile / Staff ID login &amp; share instantly via WhatsApp
                   </p>
                 </div>
               </div>
@@ -603,70 +775,77 @@ export function TechnicianManagement({
             <form onSubmit={handleAddSubmit} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="space-y-1">
-                  <label className="text-slate-300 font-bold">Full Name *</label>
+                  <label className="text-slate-300 font-bold">Technician Full Name *</label>
                   <input
                     type="text"
                     required
                     value={addForm.fullName}
                     onChange={(e) => setAddForm({ ...addForm, fullName: e.target.value })}
-                    placeholder="e.g. Rahul Sharma"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    placeholder="e.g. Ramesh Kumar"
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-slate-300 font-bold">Employee ID (Optional)</label>
+                  <label className="text-slate-300 font-bold">Mobile Number (WhatsApp) *</label>
                   <input
-                    type="text"
-                    value={addForm.employeeId}
-                    onChange={(e) => setAddForm({ ...addForm, employeeId: e.target.value })}
-                    placeholder="e.g. TECH-104"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    type="tel"
+                    required={!addForm.email}
+                    value={addForm.phone}
+                    onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })}
+                    placeholder="+91 98765 43210"
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="space-y-1">
-                  <label className="text-slate-300 font-bold">Login Email *</label>
+                  <label className="text-slate-300 font-bold">Staff / Employee ID</label>
                   <input
-                    type="email"
-                    required
-                    value={addForm.email}
-                    onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
-                    placeholder="rahul@agency.com"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    type="text"
+                    value={addForm.employeeId}
+                    onChange={(e) => setAddForm({ ...addForm, employeeId: e.target.value.toUpperCase() })}
+                    placeholder="Auto: TECH-101"
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-cyan-300 font-mono placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 uppercase"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-slate-300 font-bold">Mobile Phone</label>
-                  <input
-                    type="tel"
-                    value={addForm.phone}
-                    onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })}
-                    placeholder="+91 98765 43210"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-slate-300 font-bold">Temporary Password *</label>
-                <div className="relative">
+                  <div className="flex items-center justify-between">
+                    <label className="text-slate-300 font-bold">6-Digit Login PIN / Password *</label>
+                    <button
+                      type="button"
+                      onClick={handleGeneratePinAndId}
+                      className="text-[11px] font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>Generate PIN</span>
+                    </button>
+                  </div>
                   <input
                     type="text"
                     required
                     minLength={6}
                     value={addForm.password}
                     onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
-                    placeholder="Min 6 characters (e.g. FieldPass@2026)"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    placeholder="e.g. 482915"
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-amber-400 font-mono font-bold tracking-wider placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500"
                   />
                 </div>
-                <p className="text-[11px] text-slate-500">
-                  Technician can use this password to sign into the Technician App at /login.
-                </p>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-slate-400 font-semibold">
+                  Login Email <span className="text-slate-500 font-normal">(Optional — leave blank to log in with Mobile No / Staff ID)</span>
+                </label>
+                <input
+                  type="email"
+                  value={addForm.email}
+                  onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+                  placeholder="Optional — leave blank for field staff without email"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
               </div>
 
               {/* Assigned Buildings Checklist */}
@@ -674,7 +853,9 @@ export function TechnicianManagement({
                 <label className="text-slate-300 font-bold flex items-center justify-between">
                   <span>Assigned Facilities / Buildings</span>
                   <span className="text-[11px] text-slate-500 font-normal">
-                    {addForm.assignedBuildingIds.length} selected
+                    {addForm.assignedBuildingIds.length === 0
+                      ? 'All agency buildings (default)'
+                      : `${addForm.assignedBuildingIds.length} selected`}
                   </span>
                 </label>
                 <div className="max-h-36 overflow-y-auto p-2 bg-slate-950 border border-slate-800 rounded-xl space-y-1">
@@ -702,7 +883,7 @@ export function TechnicianManagement({
                               });
                             }
                           }}
-                          className="rounded text-amber-500 focus:ring-amber-500 border-slate-700 bg-slate-900"
+                          className="rounded text-emerald-500 focus:ring-emerald-500 border-slate-700 bg-slate-900"
                         />
                         <span className="font-medium truncate">{b.name}</span>
                         {b.city && <span className="text-[10px] text-slate-500">({b.city})</span>}
@@ -723,10 +904,10 @@ export function TechnicianManagement({
                 <button
                   type="submit"
                   disabled={formSubmitting}
-                  className="px-5 py-2.5 rounded-xl font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
                 >
                   {formSubmitting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
-                  <span>Create Technician</span>
+                  <span>Create Technician &amp; Get WhatsApp Link</span>
                 </button>
               </div>
             </form>
@@ -735,7 +916,7 @@ export function TechnicianManagement({
       )}
 
       {/* =========================================================================
-          MODAL: CREATED SUCCESS SCREEN
+          MODAL: CREATED SUCCESS SCREEN (WITH 1-CLICK WHATSAPP ONBOARDING)
       ========================================================================= */}
       {createdSuccessTech && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -746,44 +927,74 @@ export function TechnicianManagement({
 
             <div className="space-y-1">
               <span className="text-xs uppercase font-extrabold tracking-widest text-emerald-400">
-                Setup Complete
+                Ready for Field Dispatch
               </span>
               <h3 className="text-xl font-black text-white">Technician Created Successfully</h3>
               <p className="text-xs text-slate-400">
-                The account is active and ready to log into the VigilAMC Technician App.
+                Send the installable mobile app link and login PIN directly to their WhatsApp in 1 click.
               </p>
             </div>
 
             {/* Credentials Card */}
-            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-left text-xs space-y-2">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Name:</span>
-                <strong className="text-white">{createdSuccessTech.fullName}</strong>
+            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-left text-xs space-y-2.5">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Technician Name:</span>
+                <strong className="text-white text-sm">{createdSuccessTech.fullName}</strong>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Login Email:</span>
-                <strong className="text-cyan-300 font-mono">{createdSuccessTech.email}</strong>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Mobile Login No:</span>
+                <strong className="text-emerald-400 font-mono text-sm">
+                  {createdSuccessTech.phone || '—'}
+                </strong>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Staff ID:</span>
+                <strong className="text-cyan-300 font-mono text-sm">
+                  {createdSuccessTech.employeeId || '—'}
+                </strong>
               </div>
               {createdSuccessTech.tempPassword && (
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Password:</span>
-                  <strong className="text-amber-400 font-mono">{createdSuccessTech.tempPassword}</strong>
+                <div className="flex justify-between items-center pt-1 border-t border-slate-800">
+                  <span className="text-slate-400">6-Digit Login PIN:</span>
+                  <strong className="text-amber-400 font-mono text-base tracking-widest">
+                    {createdSuccessTech.tempPassword}
+                  </strong>
                 </div>
               )}
-              <div className="flex justify-between">
-                <span className="text-slate-400">Assigned Sites:</span>
-                <span className="text-slate-300">
-                  {createdSuccessTech.assignedBuildings?.length || 0} Facilities
-                </span>
-              </div>
             </div>
 
-            <button
-              onClick={() => setCreatedSuccessTech(null)}
-              className="w-full py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md transition-colors"
-            >
-              Done & Return to List
-            </button>
+            <div className="space-y-2.5">
+              <button
+                type="button"
+                onClick={() =>
+                  handleSendWhatsAppCredentials(createdSuccessTech, createdSuccessTech.tempPassword)
+                }
+                className="w-full py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs shadow-lg transition-all flex items-center justify-center gap-2"
+              >
+                <MessageCircle className="w-4 h-4 fill-slate-950" />
+                <span>📲 Send App &amp; Login ID on WhatsApp</span>
+              </button>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleCopyCredentials(createdSuccessTech, createdSuccessTech.tempPassword)
+                  }
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Copy Login Details</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCreatedSuccessTech(null)}
+                  className="py-2.5 px-4 rounded-xl border border-slate-700 hover:bg-slate-800 text-slate-300 font-bold text-xs transition-colors"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -801,7 +1012,7 @@ export function TechnicianManagement({
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-white">Edit Technician Details</h3>
-                  <p className="text-xs text-slate-400">{editModalTech.email}</p>
+                  <p className="text-xs text-slate-400">{editModalTech.employeeId || editModalTech.phone}</p>
                 </div>
               </div>
               <button
@@ -832,12 +1043,12 @@ export function TechnicianManagement({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-slate-300 font-bold">Employee ID</label>
+                  <label className="text-slate-300 font-bold">Staff / Employee ID</label>
                   <input
                     type="text"
                     value={editForm.employeeId}
-                    onChange={(e) => setEditForm({ ...editForm, employeeId: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    onChange={(e) => setEditForm({ ...editForm, employeeId: e.target.value.toUpperCase() })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono uppercase focus:outline-none focus:ring-1 focus:ring-amber-500"
                   />
                 </div>
               </div>
@@ -854,14 +1065,14 @@ export function TechnicianManagement({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-slate-300 font-bold">Account Status</label>
+                  <label className="text-slate-300 font-bold">Account Access</label>
                   <select
                     value={editForm.status}
                     onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
                   >
-                    <option value="ACTIVE">Active</option>
-                    <option value="INACTIVE">Inactive</option>
+                    <option value="ACTIVE">Active (Can Sign In)</option>
+                    <option value="INACTIVE">Blocked / Inactive (Access Revoked)</option>
                   </select>
                 </div>
               </div>
@@ -928,7 +1139,7 @@ export function TechnicianManagement({
       )}
 
       {/* =========================================================================
-          MODAL: RESET PASSWORD
+          MODAL: RESET PASSWORD / PIN
       ========================================================================= */}
       {resetPasswordTech && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -936,7 +1147,7 @@ export function TechnicianManagement({
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-2">
                 <KeyRound className="w-5 h-5 text-amber-400" />
-                <h3 className="text-base font-bold text-white">Reset Password</h3>
+                <h3 className="text-base font-bold text-white">Reset 6-Digit PIN / Password</h3>
               </div>
               <button
                 onClick={() => setResetPasswordTech(null)}
@@ -947,7 +1158,8 @@ export function TechnicianManagement({
             </div>
 
             <p className="text-xs text-slate-400">
-              Set a new login password for <strong className="text-white">{resetPasswordTech.fullName}</strong> ({resetPasswordTech.email}).
+              Set a new login PIN for <strong className="text-white">{resetPasswordTech.fullName}</strong> (
+              {resetPasswordTech.employeeId !== '—' ? resetPasswordTech.employeeId : resetPasswordTech.phone}).
             </p>
 
             {resetError && (
@@ -958,7 +1170,17 @@ export function TechnicianManagement({
 
             <form onSubmit={handleResetPassword} className="space-y-4 text-xs">
               <div className="space-y-1">
-                <label className="text-slate-300 font-bold">New Password</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-slate-300 font-bold">New 6-Digit PIN / Password</label>
+                  <button
+                    type="button"
+                    onClick={() => setNewPassword(generateSixDigitPin())}
+                    className="text-[11px] font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>Generate PIN</span>
+                  </button>
+                </div>
                 <input
                   type="text"
                   required
@@ -966,7 +1188,7 @@ export function TechnicianManagement({
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Min 6 characters"
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-amber-400 font-mono font-bold tracking-wider placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500"
                 />
               </div>
 
@@ -983,7 +1205,7 @@ export function TechnicianManagement({
                   disabled={resetSubmitting}
                   className="px-4 py-2 rounded-xl font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition-all disabled:opacity-50"
                 >
-                  {resetSubmitting ? 'Updating...' : 'Update Password'}
+                  {resetSubmitting ? 'Updating...' : 'Save New PIN'}
                 </button>
               </div>
             </form>
@@ -1004,7 +1226,9 @@ export function TechnicianManagement({
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-white">{viewDetailTech.fullName}</h3>
-                  <p className="text-xs text-slate-400">{viewDetailTech.email}</p>
+                  <p className="text-xs text-slate-400">
+                    {viewDetailTech.employeeId !== '—' ? `Staff ID: ${viewDetailTech.employeeId}` : viewDetailTech.email}
+                  </p>
                 </div>
               </div>
               <button
@@ -1019,17 +1243,17 @@ export function TechnicianManagement({
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-slate-950 p-4 rounded-xl border border-slate-800">
               <div>
                 <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold block">Status</span>
-                <span className={viewDetailTech.status === 'ACTIVE' ? 'text-emerald-400 font-bold' : 'text-slate-400'}>
+                <span className={viewDetailTech.status === 'ACTIVE' ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
                   {viewDetailTech.status}
                 </span>
               </div>
               <div>
-                <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold block">Phone</span>
-                <span className="text-slate-200">{viewDetailTech.phone || '—'}</span>
+                <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold block">Mobile No</span>
+                <span className="text-slate-200 font-mono">{viewDetailTech.phone || '—'}</span>
               </div>
               <div>
-                <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold block">Employee ID</span>
-                <span className="text-slate-200">{viewDetailTech.employeeId || '—'}</span>
+                <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold block">Staff ID</span>
+                <span className="text-cyan-300 font-mono font-bold">{viewDetailTech.employeeId || '—'}</span>
               </div>
               <div>
                 <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold block">Last Login</span>
@@ -1047,7 +1271,10 @@ export function TechnicianManagement({
               <div className="flex flex-wrap gap-2">
                 {viewDetailTech.assignedBuildings?.length > 0 ? (
                   viewDetailTech.assignedBuildings.map((b: any) => (
-                    <span key={b.id} className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 text-xs font-medium border border-slate-700">
+                    <span
+                      key={b.id}
+                      className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 text-xs font-medium border border-slate-700"
+                    >
                       {b.name}
                     </span>
                   ))
@@ -1063,7 +1290,10 @@ export function TechnicianManagement({
               <div className="max-h-48 overflow-y-auto bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2 text-xs">
                 {viewDetailTech.activity?.length > 0 ? (
                   viewDetailTech.activity.map((act: any) => (
-                    <div key={act.id} className="flex items-start justify-between text-slate-300 pb-1.5 border-b border-slate-900/80">
+                    <div
+                      key={act.id}
+                      className="flex items-start justify-between text-slate-300 pb-1.5 border-b border-slate-900/80"
+                    >
                       <div>
                         <span className="font-semibold text-amber-400">{act.action}</span>
                         <p className="text-[11px] text-slate-400">{act.details}</p>
@@ -1079,7 +1309,15 @@ export function TechnicianManagement({
               </div>
             </div>
 
-            <div className="pt-2 flex justify-end">
+            <div className="pt-2 flex justify-between items-center">
+              <button
+                type="button"
+                onClick={() => handleSendWhatsAppCredentials(viewDetailTech)}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>📲 Send App &amp; Login ID on WhatsApp</span>
+              </button>
               <button
                 onClick={() => setViewDetailTech(null)}
                 className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-colors"

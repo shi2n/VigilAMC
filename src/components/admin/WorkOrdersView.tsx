@@ -5,13 +5,9 @@ import {
   Wrench,
   Plus,
   Search,
-  Filter,
   RefreshCw,
   Building2,
   Calendar,
-  CheckCircle2,
-  Clock,
-  AlertTriangle,
   User,
   X
 } from 'lucide-react';
@@ -19,13 +15,24 @@ import {
 interface WorkOrdersViewProps {
   showToast: (msg: string) => void;
   onOpenImport?: () => void;
+  initialWorkOrders?: any[];
+  initialTechnicians?: any[];
+  initialBuildings?: any[];
+  onRefreshDashboard?: () => Promise<void> | void;
 }
 
-export function WorkOrdersView({ showToast, onOpenImport }: WorkOrdersViewProps) {
-  const [workOrders, setWorkOrders] = useState<any[]>([]);
-  const [technicians, setTechnicians] = useState<any[]>([]);
-  const [buildings, setBuildings] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+export function WorkOrdersView({
+  showToast,
+  onOpenImport,
+  initialWorkOrders,
+  initialTechnicians,
+  initialBuildings,
+  onRefreshDashboard,
+}: WorkOrdersViewProps) {
+  const [workOrders, setWorkOrders] = useState<any[]>(initialWorkOrders || []);
+  const [technicians, setTechnicians] = useState<any[]>(initialTechnicians || []);
+  const [buildings, setBuildings] = useState<any[]>(initialBuildings || []);
+  const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'OPEN' | 'IN_PROGRESS' | 'COMPLETED'>('ALL');
   const [search, setSearch] = useState('');
 
@@ -41,22 +48,39 @@ export function WorkOrdersView({ showToast, onOpenImport }: WorkOrdersViewProps)
   });
   const [submitting, setSubmitting] = useState(false);
 
+  // Sync instantly from parent bootstrap cache
+  useEffect(() => {
+    if (Array.isArray(initialWorkOrders)) setWorkOrders(initialWorkOrders);
+  }, [initialWorkOrders]);
+
+  useEffect(() => {
+    if (Array.isArray(initialTechnicians)) setTechnicians(initialTechnicians);
+  }, [initialTechnicians]);
+
+  useEffect(() => {
+    if (Array.isArray(initialBuildings)) setBuildings(initialBuildings);
+  }, [initialBuildings]);
+
   const fetchWorkOrders = async () => {
     try {
       setLoading(true);
-      const [woRes, techRes, bldRes] = await Promise.all([
-        fetch('/api/work-orders'),
-        fetch('/api/admin/technicians'),
-        fetch('/api/admin/buildings'),
-      ]);
+      if (onRefreshDashboard) {
+        await onRefreshDashboard();
+      } else {
+        const [woRes, techRes, bldRes] = await Promise.all([
+          fetch('/api/work-orders'),
+          fetch('/api/admin/technicians'),
+          fetch('/api/admin/buildings'),
+        ]);
 
-      const woJson = await woRes.json();
-      const techJson = await techRes.json();
-      const bldJson = await bldRes.json();
+        const woJson = await woRes.json();
+        const techJson = await techRes.json();
+        const bldJson = await bldRes.json();
 
-      setWorkOrders(woJson.workOrders || []);
-      setTechnicians(techJson.technicians || []);
-      setBuildings(bldJson.buildings || []);
+        setWorkOrders(woJson.workOrders || []);
+        setTechnicians(techJson.technicians || []);
+        setBuildings(bldJson.buildings || []);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -65,7 +89,10 @@ export function WorkOrdersView({ showToast, onOpenImport }: WorkOrdersViewProps)
   };
 
   useEffect(() => {
-    fetchWorkOrders();
+    if (!initialWorkOrders) {
+      fetchWorkOrders();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleCreateWorkOrder = async (e: React.FormEvent) => {
@@ -86,6 +113,20 @@ export function WorkOrdersView({ showToast, onOpenImport }: WorkOrdersViewProps)
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Failed to create work order');
 
+      // Optimistic local insert
+      if (json.workOrder) {
+        const matchedBuilding = buildings.find((b) => b.id === form.buildingId);
+        const matchedTech = technicians.find((t) => t.id === form.assignedToId);
+        setWorkOrders((prev) => [
+          {
+            ...json.workOrder,
+            building: matchedBuilding ? { id: matchedBuilding.id, name: matchedBuilding.name } : undefined,
+            assignedTo: matchedTech ? { id: matchedTech.id, fullName: matchedTech.fullName } : undefined,
+          },
+          ...prev,
+        ]);
+      }
+
       setCreateModalOpen(false);
       setForm({
         title: '',
@@ -96,7 +137,7 @@ export function WorkOrdersView({ showToast, onOpenImport }: WorkOrdersViewProps)
         dueDate: '',
       });
       showToast('Work order created and assigned successfully');
-      fetchWorkOrders();
+      await fetchWorkOrders();
     } catch (err: any) {
       showToast(err.message || 'Error creating work order');
     } finally {
@@ -105,6 +146,10 @@ export function WorkOrdersView({ showToast, onOpenImport }: WorkOrdersViewProps)
   };
 
   const handleUpdateStatus = async (id: string, newStatus: string) => {
+    // Optimistic update
+    setWorkOrders((prev) =>
+      prev.map((wo) => (wo.id === id ? { ...wo, status: newStatus } : wo))
+    );
     try {
       const res = await fetch(`/api/work-orders`, {
         method: 'PATCH',
@@ -113,7 +158,7 @@ export function WorkOrdersView({ showToast, onOpenImport }: WorkOrdersViewProps)
       });
       if (res.ok) {
         showToast(`Work order status updated to ${newStatus}`);
-        fetchWorkOrders();
+        await fetchWorkOrders();
       }
     } catch (e) {
       console.error(e);
@@ -122,8 +167,8 @@ export function WorkOrdersView({ showToast, onOpenImport }: WorkOrdersViewProps)
 
   const filteredOrders = workOrders.filter((wo) => {
     const matchesSearch =
-      wo.title.toLowerCase().includes(search.toLowerCase()) ||
-      wo.description.toLowerCase().includes(search.toLowerCase()) ||
+      (wo.title || '').toLowerCase().includes(search.toLowerCase()) ||
+      (wo.description || '').toLowerCase().includes(search.toLowerCase()) ||
       (wo.building?.name && wo.building.name.toLowerCase().includes(search.toLowerCase()));
 
     const matchesStatus = statusFilter === 'ALL' || wo.status === statusFilter;
@@ -221,12 +266,7 @@ export function WorkOrdersView({ showToast, onOpenImport }: WorkOrdersViewProps)
 
       {/* Orders List */}
       <div className="bg-white border border-[#DCE7F2] rounded-2xl overflow-hidden shadow-sm dark:bg-slate-900/80 dark:border-slate-800 dark:shadow-xl">
-        {loading && workOrders.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 space-y-3 dark:text-slate-400">
-            <RefreshCw className="w-8 h-8 animate-spin text-[#007DB8] mx-auto" />
-            <p className="text-sm font-semibold">Loading work orders...</p>
-          </div>
-        ) : filteredOrders.length === 0 ? (
+        {filteredOrders.length === 0 ? (
           <div className="p-12 text-center space-y-3">
             <Wrench className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto" />
             <h3 className="text-base font-bold text-slate-900 dark:text-white">No Work Orders</h3>
@@ -294,21 +334,21 @@ export function WorkOrdersView({ showToast, onOpenImport }: WorkOrdersViewProps)
                     </div>
                   </div>
 
-                <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                  <select
-                    value={wo.status}
-                    onChange={(e) => handleUpdateStatus(wo.id, e.target.value)}
-                    className="px-2.5 py-1.5 rounded-lg bg-white border border-[#DCE7F2] text-xs font-bold text-slate-700 shadow-sm focus:outline-none focus:border-[#007DB8] dark:bg-slate-950 dark:border-slate-800 dark:text-slate-300"
-                  >
-                    <option value="OPEN">OPEN</option>
-                    <option value="IN_PROGRESS">IN_PROGRESS</option>
-                    <option value="COMPLETED">COMPLETED</option>
-                    <option value="CANCELLED">CANCELLED</option>
-                  </select>
+                  <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                    <select
+                      value={wo.status}
+                      onChange={(e) => handleUpdateStatus(wo.id, e.target.value)}
+                      className="px-2.5 py-1.5 rounded-lg bg-white border border-[#DCE7F2] text-xs font-bold text-slate-700 shadow-sm focus:outline-none focus:border-[#007DB8] dark:bg-slate-950 dark:border-slate-800 dark:text-slate-300"
+                    >
+                      <option value="OPEN">OPEN</option>
+                      <option value="IN_PROGRESS">IN_PROGRESS</option>
+                      <option value="COMPLETED">COMPLETED</option>
+                      <option value="CANCELLED">CANCELLED</option>
+                    </select>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
           </div>
         )}
       </div>

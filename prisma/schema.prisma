@@ -25,6 +25,9 @@ model Enquiry {
   status        String   @default("NEW") // NEW, CONTACTED, CONVERTED, ARCHIVED
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
 }
 
 model InvestorInterest {
@@ -46,28 +49,35 @@ model InvestorInterest {
   status               String   @default("NEW") // NEW, CONTACTED, IN_DISCUSSION, QUALIFIED, CLOSED, NOT_SUITABLE
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
 }
 
 model UserProfile {
-  id                String                           @id // matches Supabase auth.users id (UUID)
-  email             String                           @unique
+  id                String                         @id // matches Supabase auth.users id (UUID)
+  email             String                         @unique
   fullName          String?
-  role              String                           @default("ORG_ADMIN") // ORG_ADMIN, TECHNICIAN, CLIENT, SUPER_ADMIN
-  status            String                           @default("ACTIVE") // ACTIVE, INACTIVE
+  role              String                         @default("ORG_ADMIN") // ORG_ADMIN, TECHNICIAN, CLIENT, SUPER_ADMIN
+  status            String                         @default("ACTIVE") // ACTIVE, INACTIVE
   lastLoginAt       DateTime?
   phone             String?
-  employeeId        String?                          @unique
+  employeeId        String?                        @unique
   assignedRegion    String?
   avatarUrl         String?
   organizationId    String?
-  organization      Organization?                    @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  organization      Organization?                  @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   inspections       Inspection[]
   workOrders        WorkOrder[]
-  assignedJobs      Job[]                            @relation("TechnicianJobs")
+  assignedJobs      Job[]                          @relation("TechnicianJobs")
   assignedBuildings TechnicianBuildingAssignment[]
   syncQueueItems    SyncQueue[]
-  createdAt         DateTime                         @default(now())
-  updatedAt         DateTime                         @updatedAt
+  createdAt         DateTime                       @default(now())
+  updatedAt         DateTime                       @updatedAt
+
+  @@index([organizationId])
+  @@index([organizationId, role, status])
+  @@index([status])
 }
 
 model Organization {
@@ -121,32 +131,39 @@ model Client {
   buildings      Building[]
   jobs           Job[]
   createdAt      DateTime      @default(now())
+
+  @@index([organizationId])
+  @@index([organizationId, createdAt])
 }
 
 model Building {
-  id                String             @id @default(cuid())
-  clientId          String?
-  client            Client?            @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  organizationId    String?
-  organization      Organization?      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  name              String
-  address           String
-  city              String?
-  state             String?
-  complianceCycle   String             @default("Half-Yearly")
-  reportingCycle    String?            @default("Half-Yearly") // Monthly, Quarterly, Half-Yearly, Yearly
-  complianceRuleName String?
-  cycleIntervalMos  Int                @default(6)
-  nextFilingDueDate DateTime?
-  equipments        Equipment[]
-  jobs              Job[]
-  inspections       Inspection[]
-  defects           Defect[]
-  workOrders        WorkOrder[]
-  reports           ComplianceReport[]
+  id                    String                         @id @default(cuid())
+  clientId              String?
+  client                Client?                        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  organizationId        String?
+  organization          Organization?                  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name                  String
+  address               String
+  city                  String?
+  state                 String?
+  complianceCycle       String                         @default("Half-Yearly")
+  reportingCycle        String?                        @default("Half-Yearly") // Monthly, Quarterly, Half-Yearly, Yearly
+  complianceRuleName    String?
+  cycleIntervalMos      Int                            @default(6)
+  nextFilingDueDate     DateTime?
+  equipments            Equipment[]
+  jobs                  Job[]
+  inspections           Inspection[]
+  defects               Defect[]
+  workOrders            WorkOrder[]
+  reports               ComplianceReport[]
   technicianAssignments TechnicianBuildingAssignment[]
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  createdAt             DateTime                       @default(now())
+  updatedAt             DateTime                       @updatedAt
+
+  @@index([organizationId])
+  @@index([clientId])
+  @@index([organizationId, createdAt])
 }
 
 model Equipment {
@@ -183,30 +200,43 @@ model Equipment {
   inspectionParts       InspectionPart[]
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
+
+  @@index([organizationId])
+  @@index([buildingId])
+  @@index([nextDueDate])
+  @@index([status])
+  @@index([organizationId, buildingId])
+  @@index([organizationId, nextDueDate])
+  @@index([organizationId, status])
 }
 
 model Job {
-  id             String        @id @default(cuid())
-  jobNumber      String        @unique // e.g. "JOB-2026-001"
+  id             String      @id @default(cuid())
+  jobNumber      String      @unique // e.g. "JOB-2026-001"
   organizationId String
-  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   clientId       String
-  client         Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client         Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
   buildingId     String
-  building       Building      @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  building       Building    @relation(fields: [buildingId], references: [id], onDelete: Cascade)
   technicianId   String
-  technician     UserProfile   @relation("TechnicianJobs", fields: [technicianId], references: [id], onDelete: Cascade)
+  technician     UserProfile @relation("TechnicianJobs", fields: [technicianId], references: [id], onDelete: Cascade)
   title          String?
-  serviceType    String        @default("Fire Extinguisher Inspection") // Fire Extinguisher Inspection, AMC Quarterly Audit, Annual Overhaul
+  serviceType    String      @default("Fire Extinguisher Inspection") // Fire Extinguisher Inspection, AMC Quarterly Audit, Annual Overhaul
   scheduledDate  DateTime
-  priority       String        @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
-  status         String        @default("ASSIGNED") // ASSIGNED, IN_PROGRESS, COMPLETED, OVERDUE, CANCELLED
+  priority       String      @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  status         String      @default("ASSIGNED") // ASSIGNED, IN_PROGRESS, COMPLETED, OVERDUE, CANCELLED
   notes          String?
   completedAt    DateTime?
   jobAssets      JobAsset[]
   inspections    Inspection[]
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([organizationId])
+  @@index([buildingId])
+  @@index([technicianId])
+  @@index([status])
 }
 
 model JobAsset {
@@ -221,6 +251,8 @@ model JobAsset {
   createdAt   DateTime  @default(now())
 
   @@unique([jobId, equipmentId])
+  @@index([equipmentId])
+  @@index([status])
 }
 
 model ServiceLog {
@@ -232,6 +264,10 @@ model ServiceLog {
   nextDueDate    DateTime
   actionType     String    @default("Routine Refill & Pressure Check")
   notes          String?
+
+  @@index([equipmentId])
+  @@index([nextDueDate])
+  @@index([servicedAt])
 }
 
 model Inspection {
@@ -260,12 +296,20 @@ model Inspection {
   photos              String?           // Legacy JSON array of URLs
   latitude            Float?
   longitude           Float?
+  gpsAccuracy         Float?
   isImported          Boolean           @default(false)
   inspectionPhotos    InspectionPhoto[]
   issues              InspectionIssue[]
   partsUsed           InspectionPart[]
   defects             Defect[]
   createdAt           DateTime          @default(now())
+
+  @@index([organizationId])
+  @@index([buildingId])
+  @@index([equipmentId])
+  @@index([technicianId])
+  @@index([status])
+  @@index([organizationId, date])
 }
 
 model InspectionPhoto {
@@ -278,6 +322,9 @@ model InspectionPhoto {
   photoUrl     String      // Base64 data URL or remote URL
   caption      String?
   createdAt    DateTime    @default(now())
+
+  @@index([inspectionId])
+  @@index([equipmentId])
 }
 
 model InspectionIssue {
@@ -291,6 +338,10 @@ model InspectionIssue {
   severity     String      @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
   status       String      @default("OPEN")   // OPEN, RESOLVED
   createdAt    DateTime    @default(now())
+
+  @@index([inspectionId])
+  @@index([equipmentId])
+  @@index([status])
 }
 
 model InspectionPart {
@@ -304,6 +355,9 @@ model InspectionPart {
   serialNumber String?
   remarks      String?
   createdAt    DateTime    @default(now())
+
+  @@index([inspectionId])
+  @@index([equipmentId])
 }
 
 model Defect {
@@ -323,6 +377,11 @@ model Defect {
   reportedAt     DateTime      @default(now())
   resolvedAt     DateTime?
   workOrders     WorkOrder[]
+
+  @@index([organizationId])
+  @@index([buildingId])
+  @@index([equipmentId])
+  @@index([status])
 }
 
 model WorkOrder {
@@ -346,6 +405,13 @@ model WorkOrder {
   notes          String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+
+  @@index([organizationId])
+  @@index([buildingId])
+  @@index([equipmentId])
+  @@index([assignedToId])
+  @@index([status])
+  @@index([organizationId, status])
 }
 
 model ComplianceReport {
@@ -362,6 +428,10 @@ model ComplianceReport {
   dueCount       Int
   overdueCount   Int
   status         String        @default("COMPLIANT") // COMPLIANT, ACTION_NEEDED
+
+  @@index([organizationId])
+  @@index([buildingId])
+  @@index([status])
 }
 
 model Notification {
@@ -375,6 +445,8 @@ model Notification {
   link           String?
   read           Boolean       @default(false)
   createdAt      DateTime      @default(now())
+
+  @@index([organizationId])
 }
 
 model SyncQueue {
@@ -388,6 +460,9 @@ model SyncQueue {
   errorMessage   String?
   createdAt      DateTime     @default(now())
   syncedAt       DateTime?
+
+  @@index([technicianId])
+  @@index([status])
 }
 
 model ActivityLog {
@@ -401,6 +476,9 @@ model ActivityLog {
   entityId       String?
   details        String?
   createdAt      DateTime      @default(now())
+
+  @@index([organizationId])
+  @@index([organizationId, createdAt])
 }
 
 model Subscription {
@@ -420,6 +498,9 @@ model Subscription {
   customAssets      Int?         // Override asset limit for enterprise/custom deals
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@index([status])
 }
 
 model TechnicianBuildingAssignment {
@@ -432,6 +513,8 @@ model TechnicianBuildingAssignment {
   assignedById String?
 
   @@unique([technicianId, buildingId])
+  @@index([technicianId])
+  @@index([buildingId])
 }
 
 model Feedback {
@@ -444,4 +527,6 @@ model Feedback {
   fairPrice       String?
   rating          Int?
   createdAt       DateTime @default(now())
+
+  @@index([organizationId])
 }

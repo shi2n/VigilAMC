@@ -12,7 +12,8 @@ import {
   Sun,
   X,
   Flame,
-  ChevronDown,
+  Users,
+  Smartphone,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -21,6 +22,7 @@ export type AdminNavTab =
   | 'CLIENTS_SITES'
   | 'FIRE_EQUIPMENT'
   | 'INSPECTIONS_WORK'
+  | 'FIELD_TEAM'
   | 'REPORTS'
   | 'SETTINGS'
   // Backward compatibility aliases
@@ -38,10 +40,8 @@ interface AdminSidebarProps {
   company?: any;
   userEmail?: string;
   userProfile?: any;
-  isPlatformOwner?: boolean;
   onLogout: () => void;
   openRepairsCount?: number;
-  unreadLeadsCount?: number;
   isDarkMode?: boolean;
   onToggleDarkMode?: () => void;
 }
@@ -55,10 +55,8 @@ export function AdminSidebar({
   company,
   userEmail,
   userProfile,
-  isPlatformOwner = false,
   onLogout,
   openRepairsCount = 0,
-  unreadLeadsCount = 0,
   isDarkMode = false,
   onToggleDarkMode,
 }: AdminSidebarProps) {
@@ -91,19 +89,25 @@ export function AdminSidebar({
       badge: openRepairsCount > 0 ? openRepairsCount : undefined,
       badgeColor: 'bg-rose-500 text-white',
     },
+    { id: 'FIELD_TEAM', label: 'Field Team', icon: Users },
     { id: 'REPORTS', label: 'Reports', icon: FileText },
     {
       id: 'SETTINGS',
       label: 'Settings',
       icon: Settings,
-      badge: isPlatformOwner && unreadLeadsCount > 0 ? unreadLeadsCount : undefined,
-      badgeColor: 'bg-blue-600 text-white',
     },
   ];
 
-  // User display metadata
-  const displayName = userProfile?.fullName?.trim() || userEmail?.split('@')[0] || 'Agency Admin';
-  const roleName = isPlatformOwner ? 'Platform Owner' : userProfile?.role === 'SUPER_ADMIN' ? 'Owner' : 'Agency Admin';
+  // User display metadata — clean fallback from profile.fullName -> email prefix
+  const rawFullName = userProfile?.fullName?.trim();
+  const cleanFullName =
+    rawFullName && rawFullName.toLowerCase() !== 'jordan michael' ? rawFullName : '';
+  const emailPrefix = userEmail?.split('@')[0] || '';
+  const formattedEmailPrefix = emailPrefix
+    ? emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1)
+    : 'Agency Admin';
+  const displayName = cleanFullName || formattedEmailPrefix;
+  const roleName = userProfile?.role === 'TECHNICIAN' ? 'Technician' : 'Agency Admin';
   const userInitials =
     displayName
       .split(' ')
@@ -194,6 +198,19 @@ export function AdminSidebar({
             </button>
           );
         })}
+
+        {/* Launch Mobile Field App Button */}
+        <div className="pt-2 mt-2 border-t border-slate-100 dark:border-[#293548]/60">
+          <Link
+            href="/technician"
+            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-[#023E8A] to-[#0077B6] hover:from-[#03045E] hover:to-[#023E8A] text-white shadow-sm transition-all"
+          >
+            <div className="flex items-center gap-2 truncate">
+              <Smartphone className="w-4 h-4 shrink-0 text-cyan-300" />
+              <span className="truncate">📱 Open Mobile Field App</span>
+            </div>
+          </Link>
+        </div>
       </div>
 
       {/* Admin User Profile & Sign Out Footer */}

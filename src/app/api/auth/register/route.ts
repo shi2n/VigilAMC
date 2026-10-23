@@ -25,6 +25,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email address is required' }, { status: 400 });
     }
 
+    const rawName = (fullName || '').trim();
+    const cleanFullName =
+      rawName && rawName.toLowerCase() !== 'jordan michael'
+        ? rawName
+        : normalizedEmail === 'vigilamc@gmail.com'
+        ? 'Shaizan'
+        : normalizedEmail.split('@')[0];
+
     let resolvedUserId = explicitUserId;
 
     // If password provided and no userId yet, create/confirm user via Supabase Admin API
@@ -35,7 +43,7 @@ export async function POST(request: Request) {
         password,
         email_confirm: true,
         user_metadata: {
-          full_name: fullName || '',
+          full_name: cleanFullName,
           agency_name: agencyName || companyName || '',
           phone: phone || '',
         },
@@ -76,11 +84,18 @@ export async function POST(request: Request) {
           { status: 403 }
         );
       }
+      if (profile.fullName?.trim().toLowerCase() === 'jordan michael') {
+        profile = await (db as any).userProfile.update({
+          where: { id: profile.id },
+          data: { fullName: cleanFullName },
+          include: { organization: true },
+        });
+      }
       return NextResponse.json({ success: true, profile, organization: profile.organization });
     }
 
     // 1. Create a dedicated Organization for this user / agency
-    const orgName = (agencyName || companyName || `${fullName || 'My'}'s Fire Safety AMC`).trim();
+    const orgName = (agencyName || companyName || `${cleanFullName || 'My'}'s Fire Safety AMC`).trim();
     const org = await (db as any).organization.create({
       data: {
         name: orgName,
@@ -97,7 +112,7 @@ export async function POST(request: Request) {
       data: {
         id: resolvedUserId,
         email: normalizedEmail,
-        fullName: fullName || normalizedEmail.split('@')[0],
+        fullName: cleanFullName,
         phone: phone || '',
         role: 'ORG_ADMIN',
         organizationId: org.id,

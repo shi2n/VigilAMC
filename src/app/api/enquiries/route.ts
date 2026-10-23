@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { sendInquiryNotification } from '@/lib/email';
+import { getCurrentUser } from '@/lib/auth';
+import { isFounderOwner } from '@/lib/founderAuth';
 
 export const dynamic = 'force-dynamic';
 
@@ -115,8 +117,10 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    const { requirePlatformOwner } = await import('@/lib/auth');
-    await requirePlatformOwner(request);
+    const auth = await getCurrentUser(request);
+    if (!auth?.user?.email || !isFounderOwner(auth.user.email)) {
+      return NextResponse.json({ error: 'Forbidden: Founder privileges required' }, { status: 403 });
+    }
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
@@ -135,15 +139,16 @@ export async function GET(request: Request) {
     return NextResponse.json({ enquiries });
   } catch (error: any) {
     console.error('Error fetching enquiries:', error);
-    const status = error.message?.startsWith('UNAUTHORIZED') ? 401 : error.message?.startsWith('FORBIDDEN') ? 403 : 500;
-    return NextResponse.json({ error: error.message }, { status });
+    return NextResponse.json({ error: error.message || 'Forbidden' }, { status: 403 });
   }
 }
 
 export async function PATCH(request: Request) {
   try {
-    const { requirePlatformOwner } = await import('@/lib/auth');
-    await requirePlatformOwner(request);
+    const auth = await getCurrentUser(request);
+    if (!auth?.user?.email || !isFounderOwner(auth.user.email)) {
+      return NextResponse.json({ error: 'Forbidden: Founder privileges required' }, { status: 403 });
+    }
 
     const body = await request.json();
     const { id, status } = body;
@@ -160,7 +165,40 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ success: true, enquiry: updated });
   } catch (error: any) {
     console.error('Error updating enquiry status:', error);
-    const status = error.message?.startsWith('UNAUTHORIZED') ? 401 : error.message?.startsWith('FORBIDDEN') ? 403 : 500;
-    return NextResponse.json({ error: error.message }, { status });
+    return NextResponse.json({ error: error.message || 'Forbidden' }, { status: 403 });
+  }
+}
+
+export async function PUT(request: Request) {
+  return PATCH(request);
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const auth = await getCurrentUser(request);
+    if (!auth?.user?.email || !isFounderOwner(auth.user.email)) {
+      return NextResponse.json({ error: 'Forbidden: Founder privileges required' }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    let id = searchParams.get('id');
+
+    if (!id) {
+      const body = await request.json().catch(() => ({}));
+      id = body?.id;
+    }
+
+    if (!id) {
+      return NextResponse.json({ error: 'Enquiry ID is required' }, { status: 400 });
+    }
+
+    await (db as any).enquiry.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ success: true, deletedId: id });
+  } catch (error: any) {
+    console.error('Error deleting enquiry:', error);
+    return NextResponse.json({ error: error.message || 'Failed to delete enquiry' }, { status: 500 });
   }
 }

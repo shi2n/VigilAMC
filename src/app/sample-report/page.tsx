@@ -63,8 +63,8 @@ export default function SampleReportPage() {
       nextDueDate: 'IMMEDIATE',
       hydroDueDate: 'Dec 2027',
       result: 'DEFECT',
-      pressureBar: 'Gross 13.80kg / Tare 14.50kg',
-      defectNote: 'Underweight by 0.70kg (-15.5%). Depressurized. Refill & valve servicing required.',
+      pressureBar: 'Tare 10.20kg / Full Gross 14.70kg / Measured Gross 14.00kg',
+      defectNote: 'Net Gas: 3.80kg vs 4.50kg • Loss: -0.70kg / -15.5% > 10% IS 2190 threshold — Immediate Refill Required',
     },
     {
       id: 'eq-3',
@@ -452,8 +452,8 @@ export default function SampleReportPage() {
               <div className="h-28 rounded-lg bg-slate-900 text-white flex flex-col items-center justify-center p-2 text-center border border-slate-800 relative overflow-hidden">
                 <Gauge className="w-6 h-6 text-red-400 mb-1" />
                 <span className="text-[10px] font-mono text-cyan-200">DIGITAL SCALE VERIFICATION</span>
-                <span className="text-sm font-bold font-mono text-red-400 mt-0.5">13.80 KG GROSS</span>
-                <span className="text-[9px] text-slate-400">Tare: 14.50kg &bull; Deficit: -0.70kg</span>
+                <span className="text-sm font-bold font-mono text-red-400 mt-0.5">14.00 KG GROSS</span>
+                <span className="text-[9px] text-slate-400">Tare: 10.20kg &bull; Full: 14.70kg &bull; Net: 3.80kg (-0.70kg / -15.5%)</span>
                 <div className="absolute bottom-1 right-2 text-[8px] font-mono text-slate-400">
                   15/01/26 10:28 AM
                 </div>
@@ -461,7 +461,7 @@ export default function SampleReportPage() {
               <div className="text-[10px] text-slate-700 space-y-0.5">
                 <p><strong>Location:</strong> Server Room (GF)</p>
                 <p className="font-mono text-[9px] text-slate-500">GPS: 28.4594° N, 77.0268° E</p>
-                <p className="text-red-700 font-semibold text-[10px]">Depressurized &bull; Quoted for Refill</p>
+                <p className="text-red-700 font-semibold text-[10px]">Loss -15.5% (&gt;10% IS 2190) &bull; Immediate Refill Required</p>
               </div>
             </div>
 
