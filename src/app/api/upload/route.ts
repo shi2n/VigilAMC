@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { getCurrentUser } from '@/lib/auth';
+import { getAuthenticatedActor } from '@/lib/techSession';
 import { uploadToR2 } from '@/lib/r2';
 
 export const dynamic = 'force-dynamic';
@@ -17,7 +17,7 @@ const MAX_SIZE_BYTES = 4 * 1024 * 1024; // 4 MB
 
 export async function POST(request: Request) {
   try {
-    const auth = await getCurrentUser(request);
+    const auth = await getAuthenticatedActor(request);
     const organizationId = auth?.profile?.organizationId || auth?.organization?.id;
 
     if (!auth || !auth.user || !organizationId) {

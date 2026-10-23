@@ -3,6 +3,9 @@ import { headers } from 'next/headers';
 import { db } from '@/lib/db';
 import { getOrCreateAgencySubscription } from '@/lib/plans';
 import { isFounderOwner } from '@/lib/founderAuth';
+import { extractCookie, TECH_SESSION_COOKIE, verifyTechSessionToken, getAuthenticatedActor } from '@/lib/techSession';
+
+export { getAuthenticatedActor };
 
 export interface AuthContext {
   user: {

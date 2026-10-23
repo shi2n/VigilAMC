@@ -30,6 +30,8 @@ import {
   Lock,
   User,
   Sparkles,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -78,6 +80,7 @@ export default function TechnicianPWA() {
   // In-App Login Form State
   const [loginIdentifier, setLoginIdentifier] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
@@ -264,7 +267,7 @@ export default function TechnicianPWA() {
     loadDashboardData();
   }, [loadDashboardData]);
 
-  // 4. In-App Mobile / Staff ID Login
+  // 4. In-App Mobile / Staff ID Login with Dual Auth
   const handleInAppLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
@@ -272,39 +275,52 @@ export default function TechnicianPWA() {
 
     try {
       const rawIdent = loginIdentifier.trim();
-      let resolvedEmail = rawIdent.toLowerCase();
+      const rawPass = loginPassword.trim();
 
-      // Resolve Mobile / Staff ID to internal email if needed
+      // Step A: First try POST /api/technician/login (instant dual auth with cookie)
+      try {
+        const techRes = await fetch('/api/technician/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier: rawIdent, password: rawPass }),
+        });
+        const techData = await techRes.json().catch(() => ({}));
+
+        if (techRes.ok && techData.success) {
+          triggerToast('✅ Signed in successfully!');
+          await loadDashboardData();
+          return;
+        } else if (techRes.status === 403) {
+          throw new Error(techData.error || 'This staff account has been deactivated by your agency admin.');
+        }
+      } catch (techErr: any) {
+        if (techErr.message?.includes('deactivated')) {
+          throw techErr;
+        }
+      }
+
+      // Step B: If not authenticated via local PIN, resolve identifier and try Supabase Auth
+      let resolvedEmail = rawIdent.toLowerCase();
       if (!rawIdent.includes('@')) {
         const resolveRes = await fetch('/api/auth/resolve-identifier', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ identifier: rawIdent }),
         });
-        const resolveData = await resolveRes.json();
+        const resolveData = await resolveRes.json().catch(() => ({}));
         if (!resolveRes.ok || !resolveData.email) {
           throw new Error(resolveData.error || 'Account not found. Please check with your supervisor.');
         }
         resolvedEmail = resolveData.email.trim().toLowerCase();
-      } else {
-        const resolveRes = await fetch('/api/auth/resolve-identifier', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ identifier: resolvedEmail }),
-        });
-        if (resolveRes.status === 403) {
-          const resolveData = await resolveRes.json();
-          throw new Error(resolveData.error || 'This staff account has been deactivated.');
-        }
       }
 
       const { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
         email: resolvedEmail,
-        password: loginPassword,
+        password: rawPass,
       });
 
       if (authErr) {
-        throw new Error(authErr.message || 'Invalid credentials or PIN');
+        throw new Error(authErr.message || 'Invalid credentials or PIN.');
       }
 
       if (authData.session) {
@@ -319,11 +335,16 @@ export default function TechnicianPWA() {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    setUserProfile(null);
-    setDashboardData(null);
-    setSelectedBuilding(null);
-    setActiveAssetInspection(null);
+    try {
+      await fetch('/api/technician/logout', { method: 'POST' }).catch(() => {});
+      await supabase.auth.signOut().catch(() => {});
+    } finally {
+      setUserProfile(null);
+      setDashboardData(null);
+      setSelectedBuilding(null);
+      setActiveAssetInspection(null);
+      triggerToast('Signed out');
+    }
   };
 
   const handleInstallApp = async () => {
@@ -400,7 +421,6 @@ export default function TechnicianPWA() {
     try {
       setIsProcessingPhoto(true);
 
-      // Create Image and Canvas
       const img = new Image();
       const objectUrl = URL.createObjectURL(file);
 
@@ -410,7 +430,6 @@ export default function TechnicianPWA() {
         img.src = objectUrl;
       });
 
-      // Compress to max 1280px dimension
       const maxDim = 1280;
       let width = img.naturalWidth || img.width;
       let height = img.naturalHeight || img.height;
@@ -432,7 +451,6 @@ export default function TechnicianPWA() {
 
       if (!ctx) throw new Error('Canvas not supported');
 
-      // Draw photo
       ctx.drawImage(img, 0, 0, width, height);
 
       // Burn-in Dark Semi-Transparent Footer Badge
@@ -440,7 +458,6 @@ export default function TechnicianPWA() {
       ctx.fillStyle = 'rgba(7, 25, 46, 0.88)';
       ctx.fillRect(0, height - barHeight, width, barHeight);
 
-      // Watermark Text: VigilAMC Verified • Building • Asset • Lat,Lng • Date Time IST
       const bldgName = selectedBuilding?.name || 'Site Inspection';
       const assetCode = activeAssetInspection?.qrCode || 'Fire Unit';
       const gpsString = gpsLocation
@@ -448,6 +465,7 @@ export default function TechnicianPWA() {
             gpsLocation.isBasementCached ? ' [B1 Cached]' : ''
           }`
         : 'GPS Locked';
+
       const dateString = new Date().toLocaleString('en-IN', {
         day: 'numeric',
         month: 'short',
@@ -550,7 +568,6 @@ export default function TechnicianPWA() {
     };
 
     if (!navigator.onLine) {
-      // Store in Offline Basement Queue
       const updatedQueue = [...offlineQueue, inspectionPayload];
       setOfflineQueue(updatedQueue);
       try {
@@ -564,7 +581,6 @@ export default function TechnicianPWA() {
 
     try {
       let finalPhotoUrl = capturedPhotoUrl;
-      // If photo captured, upload to R2
       if (capturedPhotoUrl) {
         const uploadRes = await fetch('/api/upload', {
           method: 'POST',
@@ -653,7 +669,7 @@ export default function TechnicianPWA() {
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
     ctx.lineWidth = 3;
     ctx.lineCap = 'round';
-    ctx.strokeStyle = '#0284C7';
+    ctx.strokeStyle = '#023E8A'; // VigilAMC Deep Brand Blue
     ctx.lineTo(clientX - rect.left, clientY - rect.top);
     ctx.stroke();
   };
@@ -705,10 +721,16 @@ export default function TechnicianPWA() {
   // ----------------------------------------------------------------------------------
   if (authChecking) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4">
-        <div className="text-center space-y-3">
-          <RefreshCw className="w-8 h-8 animate-spin text-[#0077B6] mx-auto" />
-          <p className="text-sm font-bold text-slate-300">Initializing VigilAMC Field App...</p>
+      <div className="min-h-screen bg-[#F4F8FB] text-slate-900 flex items-center justify-center p-4">
+        <div className="text-center space-y-3 bg-white p-6 rounded-2xl border border-[#DCE7F2] shadow-sm max-w-xs w-full">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo.jpg"
+            alt="VigilAMC Logo"
+            className="h-10 w-auto mx-auto rounded-lg shadow-sm border border-[#DCE7F2]"
+          />
+          <RefreshCw className="w-6 h-6 animate-spin text-[#0077B6] mx-auto" />
+          <p className="text-xs font-bold text-slate-700">Initializing VigilAMC Field App...</p>
         </div>
       </div>
     );
@@ -716,91 +738,101 @@ export default function TechnicianPWA() {
 
   if (!userProfile) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-center px-4 py-8">
+      <div className="min-h-screen bg-[#F4F8FB] text-slate-900 flex flex-col justify-center px-4 py-8">
         <div className="max-w-md w-full mx-auto space-y-6">
           {/* Header Brand */}
           <div className="text-center space-y-2">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#023E8A] to-[#0077B6] border border-cyan-400/40 flex items-center justify-center mx-auto shadow-xl">
-              <ShieldCheck className="w-9 h-9 text-cyan-300" />
-            </div>
-            <h1 className="text-2xl font-black tracking-tight text-white">VigilAMC Field Operations</h1>
-            <p className="text-xs text-slate-400">
-              Pan-India Mobile App for Fire Safety Field Technicians
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.jpg"
+              alt="VigilAMC"
+              className="h-12 w-auto mx-auto rounded-xl shadow-md border border-[#DCE7F2]"
+            />
+            <h1 className="text-2xl font-black tracking-tight text-slate-900">VigilAMC Field Operations</h1>
+            <p className="text-xs text-slate-500 font-medium">
+              Pan-India Mobile App for Fire Safety Field Technicians &amp; Facility Managers
             </p>
           </div>
 
           {/* Quick Install Banner if available */}
           {deferredInstallPrompt && !isAppInstalled && (
-            <div className="bg-[#023E8A]/40 border border-cyan-400/30 rounded-2xl p-3 flex items-center justify-between gap-3">
+            <div className="bg-[#F0F7FF] border border-[#DCE7F2] rounded-2xl p-3.5 flex items-center justify-between gap-3 shadow-sm">
               <div className="text-left text-xs">
-                <span className="font-bold text-cyan-200">Install as App?</span>
-                <p className="text-[11px] text-slate-300">Fast 1-tap launch directly from your home screen</p>
+                <span className="font-bold text-[#0077B6] block">Install as Mobile App?</span>
+                <p className="text-[11px] text-slate-500">Fast 1-tap launch directly from your home screen</p>
               </div>
               <button
                 type="button"
                 onClick={handleInstallApp}
-                className="px-3 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shrink-0 shadow-sm"
+                className="px-3.5 py-1.5 rounded-xl bg-[#0077B6] hover:bg-[#023E8A] text-white font-bold text-xs shrink-0 shadow-sm transition-all"
               >
                 Install App
               </button>
             </div>
           )}
 
-          {/* Login Card */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-5">
-            <div className="border-b border-slate-800 pb-3">
-              <h2 className="text-base font-bold text-white">Staff / Mobile Login</h2>
-              <p className="text-xs text-slate-400">
-                Enter your 10-digit Mobile Number or Staff ID + PIN
+          {/* Login Card in Brand Light Enterprise Theme */}
+          <div className="bg-white border border-[#DCE7F2] rounded-3xl p-6 sm:p-8 shadow-xl space-y-5">
+            <div className="border-b border-[#DCE7F2] pb-3">
+              <h2 className="text-base font-bold text-slate-900">Mobile / Staff ID Sign In</h2>
+              <p className="text-xs text-slate-500">
+                Enter your 10-digit Mobile Number, Staff ID, or Admin Email + PIN
               </p>
             </div>
 
             {loginError && (
-              <div className="p-3 rounded-xl bg-red-950/60 border border-red-500/50 text-red-200 text-xs flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
-                <span>{loginError}</span>
+              <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                <span className="font-semibold">{loginError}</span>
               </div>
             )}
 
             <form onSubmit={handleInAppLogin} className="space-y-4 text-xs">
               <div>
-                <label className="block text-slate-300 font-bold uppercase tracking-wider mb-1.5">
-                  Mobile Number / Staff ID *
+                <label className="block text-slate-700 font-bold uppercase tracking-wider mb-1.5 text-[11px]">
+                  Mobile Number, Staff ID, or Admin Email *
                 </label>
                 <div className="relative">
-                  <Phone className="w-4 h-4 text-slate-500 absolute left-3 top-3.5" />
+                  <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                   <input
                     type="text"
                     required
                     value={loginIdentifier}
                     onChange={(e) => setLoginIdentifier(e.target.value)}
-                    placeholder="e.g. 9876543210 or TECH-101"
-                    className="w-full pl-9 pr-3 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm placeholder-slate-600 focus:outline-none focus:border-cyan-400 font-mono"
+                    placeholder="e.g. 9876543210, TECH-101, or admin@agency.in"
+                    className="w-full pl-10 pr-3 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-[#0077B6] font-mono shadow-sm"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-300 font-bold uppercase tracking-wider mb-1.5">
+                <label className="block text-slate-700 font-bold uppercase tracking-wider mb-1.5 text-[11px]">
                   6-Digit Login PIN / Password *
                 </label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-3.5" />
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     required
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     placeholder="••••••"
-                    className="w-full pl-9 pr-3 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm placeholder-slate-600 focus:outline-none focus:border-cyan-400 font-mono tracking-widest"
+                    className="w-full pl-10 pr-10 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-[#0077B6] font-mono tracking-widest shadow-sm"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 p-1"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 
               <button
                 type="submit"
                 disabled={loginLoading}
-                className="w-full py-3.5 bg-gradient-to-r from-[#0077B6] to-[#023E8A] hover:from-[#0096C7] hover:to-[#0077B6] text-white font-extrabold text-sm rounded-2xl shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                className="w-full py-3.5 bg-gradient-to-r from-[#0077B6] to-[#023E8A] hover:from-[#0096C7] hover:to-[#0077B6] text-white font-black text-sm rounded-2xl shadow-md shadow-[#0077B6]/25 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {loginLoading ? (
                   <>
@@ -809,7 +841,7 @@ export default function TechnicianPWA() {
                   </>
                 ) : (
                   <>
-                    <span>Enter Mobile App</span>
+                    <span>Enter Mobile Field App</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -818,7 +850,7 @@ export default function TechnicianPWA() {
 
             <div className="text-center pt-2">
               <p className="text-[11px] text-slate-500">
-                Credentials sent via WhatsApp by your agency admin. For help, contact your supervisor.
+                Staff login PIN is provided via WhatsApp by your agency admin.
               </p>
             </div>
           </div>
@@ -828,12 +860,11 @@ export default function TechnicianPWA() {
   }
 
   // ----------------------------------------------------------------------------------
-  // RENDER SCREEN 2: STANDALONE MOBILE APP SHELL (`max-w-md mx-auto bg-slate-950`)
+  // RENDER SCREEN 2: STANDALONE MOBILE APP SHELL (`max-w-md mx-auto bg-[#F4F8FB]`)
   // ----------------------------------------------------------------------------------
   const assignedBuildings = dashboardData?.assignedBuildings || [];
   const selectedBldgEquipments = selectedBuilding?.equipments || [];
 
-  // Extract distinct floors/zones for horizontal filter pills
   const availableFloors = Array.from(
     new Set(selectedBldgEquipments.map((eq: any) => eq.floorZone).filter(Boolean))
   ) as string[];
@@ -844,10 +875,10 @@ export default function TechnicianPWA() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-between selection:bg-[#0077B6] selection:text-white">
+    <div className="min-h-screen bg-[#F4F8FB] text-slate-900 flex flex-col justify-between selection:bg-[#0077B6]/20">
       {/* Toast Notification */}
       {toastMsg && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-slate-900 border border-cyan-400/50 text-white px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-top-4">
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-top-4">
           <span>{toastMsg}</span>
         </div>
       )}
@@ -855,28 +886,31 @@ export default function TechnicianPWA() {
       {/* Main Container constrained to mobile max-w-md */}
       <div className="max-w-md w-full mx-auto flex-1 flex flex-col pb-16">
         {/* Top App Header & Live GPS Status Bar */}
-        <header className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-md border-b border-slate-800 p-3 space-y-2">
+        <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#DCE7F2] p-3 space-y-2 shadow-sm">
           {/* Top Bar: Admin Return Pill & Profile */}
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               {selectedBuilding ? (
                 <button
                   type="button"
                   onClick={() => setSelectedBuilding(null)}
-                  className="p-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white"
+                  className="p-1.5 rounded-xl bg-slate-100 border border-[#DCE7F2] text-slate-700 hover:text-slate-900"
                 >
                   <ArrowLeft className="w-4 h-4" />
                 </button>
               ) : (
-                <div className="w-8 h-8 rounded-xl bg-[#0077B6] flex items-center justify-center font-black text-xs text-white">
-                  V
-                </div>
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src="/logo.jpg"
+                  alt="VigilAMC"
+                  className="h-8 w-auto rounded-lg border border-[#DCE7F2] shadow-xs"
+                />
               )}
               <div className="truncate">
-                <span className="font-extrabold text-sm text-white block truncate leading-tight">
-                  {selectedBuilding ? selectedBuilding.name : 'VigilAMC Mobile'}
+                <span className="font-extrabold text-sm text-slate-900 block truncate leading-tight">
+                  {selectedBuilding ? selectedBuilding.name : 'VigilAMC Field App'}
                 </span>
-                <span className="text-[10px] text-cyan-300 truncate block">
+                <span className="text-[11px] text-[#0077B6] font-semibold truncate block">
                   {userProfile?.fullName || 'Technician'} ({userProfile?.employeeId || 'STAFF'})
                 </span>
               </div>
@@ -886,9 +920,9 @@ export default function TechnicianPWA() {
               {isAdminTester && (
                 <Link
                   href="/dashboard"
-                  className="px-2.5 py-1 rounded-full bg-blue-500/20 text-cyan-300 border border-cyan-400/30 text-[10px] font-bold"
+                  className="px-2.5 py-1 rounded-full bg-[#F0F7FF] text-[#0077B6] border border-[#DCE7F2] text-[10px] font-bold hover:bg-[#E1EFFF] transition-all"
                 >
-                  ← Admin OS
+                  ← Admin Dashboard
                 </Link>
               )}
 
@@ -896,7 +930,7 @@ export default function TechnicianPWA() {
                 <button
                   type="button"
                   onClick={handleInstallApp}
-                  className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 text-[10px] font-bold flex items-center gap-1"
+                  className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold flex items-center gap-1 hover:bg-emerald-100"
                 >
                   <Download className="w-3 h-3" />
                   <span>Install</span>
@@ -906,7 +940,7 @@ export default function TechnicianPWA() {
               <button
                 type="button"
                 onClick={handleSignOut}
-                className="p-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-rose-400"
+                className="p-1.5 rounded-xl bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 border border-[#DCE7F2]"
                 title="Sign Out"
               >
                 <LogOut className="w-4 h-4" />
@@ -915,37 +949,45 @@ export default function TechnicianPWA() {
           </div>
 
           {/* Persistent Continuous GPS Status Pill */}
-          <div className="flex items-center justify-between px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-[11px] font-mono">
+          <div
+            className={`flex items-center justify-between px-3 py-1.5 rounded-xl border text-[11px] font-mono ${
+              gpsStatus === 'LOCKED'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                : gpsStatus === 'BASEMENT_CACHED'
+                ? 'bg-amber-50 border-amber-200 text-amber-800'
+                : 'bg-sky-50 border-sky-200 text-[#0077B6]'
+            }`}
+          >
             <div className="flex items-center gap-2 truncate">
               {gpsStatus === 'LOCKED' ? (
                 <>
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                  <span className="text-emerald-300 font-bold truncate">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                  <span className="font-bold truncate">
                     GPS Locked: {gpsLocation?.latitude.toFixed(4)}° N, {gpsLocation?.longitude.toFixed(4)}° E (±{gpsLocation?.accuracy}m)
                   </span>
                 </>
               ) : gpsStatus === 'BASEMENT_CACHED' ? (
                 <>
-                  <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
-                  <span className="text-amber-300 font-bold truncate">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                  <span className="font-bold truncate">
                     Basement Mode (Gate Cached ±{gpsLocation?.accuracy}m)
                   </span>
                 </>
               ) : (
                 <>
-                  <span className="w-2 h-2 rounded-full bg-cyan-400 animate-spin shrink-0" />
-                  <span className="text-slate-400 truncate">Locking Satellite GPS...</span>
+                  <span className="w-2 h-2 rounded-full bg-[#0077B6] animate-spin shrink-0" />
+                  <span className="font-semibold truncate">Locking Satellite GPS...</span>
                 </>
               )}
             </div>
 
             <div className="flex items-center gap-1 shrink-0 text-[10px] font-sans">
               {isOnline ? (
-                <span className="text-emerald-400 font-bold flex items-center gap-0.5">
+                <span className="text-emerald-700 font-bold flex items-center gap-0.5">
                   <Wifi className="w-3 h-3" /> Live
                 </span>
               ) : (
-                <span className="text-amber-400 font-bold flex items-center gap-0.5">
+                <span className="text-amber-700 font-bold flex items-center gap-0.5">
                   <WifiOff className="w-3 h-3" /> Offline ({offlineQueue.length})
                 </span>
               )}
@@ -958,18 +1000,18 @@ export default function TechnicianPWA() {
           <div className="p-4 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-base font-black text-white">Assigned Facilities</h2>
-                <p className="text-xs text-slate-400">Tap a site to start continuous inspection</p>
+                <h2 className="text-base font-black text-slate-900">Assigned Facilities</h2>
+                <p className="text-xs text-slate-500">Tap a site to start continuous inspection</p>
               </div>
-              <span className="px-2.5 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-xs font-bold text-cyan-300">
+              <span className="px-2.5 py-0.5 rounded-full bg-[#F0F7FF] border border-[#DCE7F2] text-xs font-bold text-[#0077B6]">
                 {assignedBuildings.length} Sites
               </span>
             </div>
 
             {assignedBuildings.length === 0 ? (
-              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center space-y-3">
-                <Building2 className="w-10 h-10 text-slate-600 mx-auto" />
-                <h3 className="text-sm font-bold text-slate-300">No Facilities Assigned Yet</h3>
+              <div className="bg-white border border-[#DCE7F2] rounded-3xl p-8 text-center space-y-3 shadow-sm">
+                <Building2 className="w-10 h-10 text-slate-400 mx-auto" />
+                <h3 className="text-sm font-bold text-slate-800">No Facilities Assigned Yet</h3>
                 <p className="text-xs text-slate-500">
                   Your administrator has not assigned specific buildings yet.
                 </p>
@@ -985,30 +1027,30 @@ export default function TechnicianPWA() {
                   return (
                     <div
                       key={bldg.id}
-                      className="bg-slate-900 border border-slate-800 rounded-3xl p-4 shadow-md space-y-3.5 hover:border-slate-700 transition-all"
+                      className="bg-white border border-[#DCE7F2] rounded-3xl p-4 shadow-sm space-y-3.5 hover:border-[#0077B6] transition-all"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="space-y-0.5">
-                          <h3 className="text-base font-extrabold text-white">{bldg.name}</h3>
-                          <p className="text-xs text-slate-400 flex items-center gap-1">
-                            <MapPin className="w-3 h-3 text-cyan-400 shrink-0" />
+                          <h3 className="text-base font-extrabold text-slate-900">{bldg.name}</h3>
+                          <p className="text-xs text-slate-500 flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5 text-[#0077B6] shrink-0" />
                             <span className="truncate">{bldg.address}</span>
                           </p>
                         </div>
-                        <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                        <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-[#F0F7FF] text-[#0077B6] border border-[#DCE7F2]">
                           {bldg.totalAssets} Units
                         </span>
                       </div>
 
                       {/* Progress Bar */}
                       <div className="space-y-1">
-                        <div className="flex justify-between text-[11px] text-slate-400 font-bold">
+                        <div className="flex justify-between text-[11px] text-slate-500 font-bold">
                           <span>Progress: {bldg.checkedCount} / {bldg.totalAssets} Checked</span>
-                          <span className="text-cyan-300">{percentChecked}%</span>
+                          <span className="text-[#0077B6]">{percentChecked}%</span>
                         </div>
-                        <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                        <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
                           <div
-                            className="h-full bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-full transition-all duration-300"
+                            className="h-full bg-gradient-to-r from-[#0077B6] to-emerald-500 rounded-full transition-all duration-300"
                             style={{ width: `${percentChecked}%` }}
                           />
                         </div>
@@ -1021,9 +1063,9 @@ export default function TechnicianPWA() {
                           setSelectedBuilding(bldg);
                           setActiveFloorFilter('ALL');
                         }}
-                        className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#0077B6] to-[#023E8A] hover:from-[#0096C7] hover:to-[#0077B6] text-white font-extrabold text-sm shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                        className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#0077B6] to-[#023E8A] hover:from-[#0096C7] hover:to-[#0077B6] text-white font-extrabold text-sm shadow-md shadow-[#0077B6]/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                       >
-                        <MapPin className="w-4 h-4 text-cyan-300" />
+                        <MapPin className="w-4 h-4 text-white" />
                         <span>📍 Start Site Inspection</span>
                       </button>
                     </div>
@@ -1038,10 +1080,12 @@ export default function TechnicianPWA() {
         {selectedBuilding && (
           <div className="p-4 space-y-4">
             {/* Building Info Card + Supervisor Signoff Action */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex items-center justify-between gap-3">
+            <div className="bg-white border border-[#DCE7F2] rounded-2xl p-3 flex items-center justify-between gap-3 shadow-sm">
               <div>
-                <span className="text-[10px] uppercase font-bold text-cyan-300 block">Inspecting Premise</span>
-                <h2 className="text-sm font-extrabold text-white truncate max-w-[200px]">{selectedBuilding.name}</h2>
+                <span className="text-[10px] uppercase font-bold text-[#0077B6] block">Inspecting Premise</span>
+                <h2 className="text-sm font-extrabold text-slate-900 truncate max-w-[200px]">
+                  {selectedBuilding.name}
+                </h2>
               </div>
               <button
                 type="button"
@@ -1058,10 +1102,10 @@ export default function TechnicianPWA() {
               <button
                 type="button"
                 onClick={() => setActiveFloorFilter('ALL')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                   activeFloorFilter === 'ALL'
-                    ? 'bg-cyan-500 text-slate-950 font-black shadow-sm'
-                    : 'bg-slate-900 border border-slate-800 text-slate-300 hover:text-white'
+                    ? 'bg-[#0077B6] text-white font-black shadow-sm'
+                    : 'bg-white border border-[#DCE7F2] text-slate-700 hover:bg-slate-50'
                 }`}
               >
                 All Units ({selectedBldgEquipments.length})
@@ -1071,10 +1115,10 @@ export default function TechnicianPWA() {
                   key={fl}
                   type="button"
                   onClick={() => setActiveFloorFilter(fl)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                     activeFloorFilter === fl
-                      ? 'bg-cyan-500 text-slate-950 font-black shadow-sm'
-                      : 'bg-slate-900 border border-slate-800 text-slate-300 hover:text-white'
+                      ? 'bg-[#0077B6] text-white font-black shadow-sm'
+                      : 'bg-white border border-[#DCE7F2] text-slate-700 hover:bg-slate-50'
                   }`}
                 >
                   {fl}
@@ -1090,26 +1134,26 @@ export default function TechnicianPWA() {
                 return (
                   <div
                     key={asset.id}
-                    className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-md"
+                    className="bg-white border border-[#DCE7F2] rounded-2xl p-4 space-y-3 shadow-sm hover:border-[#0077B6] transition-all"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="space-y-0.5">
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-base font-black text-white">{asset.qrCode}</span>
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300">
+                          <span className="font-mono text-base font-black text-slate-900">{asset.qrCode}</span>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#F0F7FF] text-[#0077B6] border border-[#DCE7F2]">
                             {asset.capacity || asset.type}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-400">{asset.location || 'Location not specified'}</p>
+                        <p className="text-xs text-slate-500">{asset.location || 'Location not specified'}</p>
                       </div>
 
                       {isChecked ? (
-                        <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-extrabold flex items-center gap-1">
+                        <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-extrabold flex items-center gap-1">
                           <Check className="w-3 h-3" />
                           <span>DONE</span>
                         </span>
                       ) : (
-                        <span className="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-extrabold">
+                        <span className="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-extrabold">
                           PENDING
                         </span>
                       )}
@@ -1126,10 +1170,10 @@ export default function TechnicianPWA() {
                         setRemarks('');
                         setCapturedPhotoUrl(null);
                       }}
-                      className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-between px-4 transition-all"
+                      className="w-full py-3 rounded-xl bg-[#F0F7FF] hover:bg-[#E1EFFF] text-[#0077B6] border border-[#DCE7F2] font-bold text-xs flex items-center justify-between px-4 transition-all"
                     >
                       <span>⚡ Open 6-Sec Inspection Form</span>
-                      <ChevronRight className="w-4 h-4 text-cyan-400" />
+                      <ChevronRight className="w-4 h-4 text-[#0077B6]" />
                     </button>
                   </div>
                 );
@@ -1143,20 +1187,20 @@ export default function TechnicianPWA() {
           MODAL: 6-SECOND VISUAL CHECK SHEET (GIANT BUTTONS + DEFECT CHIPS + CAMERA)
       ========================================================================= */}
       {activeAssetInspection && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex flex-col justify-end sm:justify-center p-0 sm:p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-3xl max-w-md w-full mx-auto p-5 space-y-4 max-h-[92vh] overflow-y-auto shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex flex-col justify-end sm:justify-center p-0 sm:p-4 overflow-y-auto">
+          <div className="bg-white border border-[#DCE7F2] rounded-t-3xl sm:rounded-3xl max-w-md w-full mx-auto p-5 space-y-4 max-h-[92vh] overflow-y-auto shadow-2xl">
             {/* Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div className="flex items-center justify-between pb-3 border-b border-[#DCE7F2]">
               <div>
-                <span className="text-[10px] font-bold uppercase text-cyan-400 block font-mono">
+                <span className="text-[10px] font-bold uppercase text-[#0077B6] block font-mono">
                   {activeAssetInspection.qrCode} • {activeAssetInspection.capacity}
                 </span>
-                <h3 className="text-base font-black text-white">{activeAssetInspection.location}</h3>
+                <h3 className="text-base font-black text-slate-900">{activeAssetInspection.location}</h3>
               </div>
               <button
                 type="button"
                 onClick={closeInspectionModal}
-                className="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white"
+                className="p-1.5 rounded-xl bg-slate-100 text-slate-500 hover:text-slate-800"
               >
                 ✕
               </button>
@@ -1172,8 +1216,8 @@ export default function TechnicianPWA() {
                 }}
                 className={`py-4 px-3 rounded-2xl font-black text-sm flex flex-col items-center justify-center gap-1.5 transition-all border-2 ${
                   inspStatus === 'PASSED'
-                    ? 'bg-emerald-600 text-white border-emerald-400 shadow-lg scale-[1.02]'
-                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700'
+                    ? 'bg-emerald-600 text-white border-emerald-500 shadow-lg scale-[1.02]'
+                    : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-slate-300'
                 }`}
               >
                 <CheckCircle2 className="w-6 h-6" />
@@ -1185,8 +1229,8 @@ export default function TechnicianPWA() {
                 onClick={() => setInspStatus('FAILED')}
                 className={`py-4 px-3 rounded-2xl font-black text-sm flex flex-col items-center justify-center gap-1.5 transition-all border-2 ${
                   inspStatus === 'FAILED'
-                    ? 'bg-rose-600 text-white border-rose-400 shadow-lg scale-[1.02]'
-                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700'
+                    ? 'bg-red-600 text-white border-red-500 shadow-lg scale-[1.02]'
+                    : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-slate-300'
                 }`}
               >
                 <AlertTriangle className="w-6 h-6" />
@@ -1196,8 +1240,8 @@ export default function TechnicianPWA() {
 
             {/* Visual Defect Chips (Shown when DEFECT is chosen) */}
             {inspStatus === 'FAILED' && (
-              <div className="space-y-2 p-3 bg-slate-950 rounded-2xl border border-rose-900/40">
-                <span className="text-[11px] font-bold text-rose-300 uppercase tracking-wide block">
+              <div className="space-y-2 p-3 bg-red-50/60 rounded-2xl border border-red-200">
+                <span className="text-[11px] font-bold text-red-800 uppercase tracking-wide block">
                   Select Visual Defect Reason:
                 </span>
                 <div className="grid grid-cols-2 gap-2 text-xs">
@@ -1216,8 +1260,8 @@ export default function TechnicianPWA() {
                         }}
                         className={`p-2.5 rounded-xl border text-left font-bold flex items-center gap-2 transition-all ${
                           isSel
-                            ? 'bg-rose-600/30 text-rose-200 border-rose-500'
-                            : 'bg-slate-900 text-slate-300 border-slate-800'
+                            ? 'bg-red-600 text-white border-red-600 shadow-xs'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                         }`}
                       >
                         <span className="text-base">{chip.icon}</span>
@@ -1231,18 +1275,18 @@ export default function TechnicianPWA() {
 
             {/* Camera Photo with Stamped GPS & Watermark */}
             <div className="space-y-2">
-              <span className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
+              <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
                 Evidence Photo (Rear Camera Stamped)
               </span>
 
               {capturedPhotoUrl ? (
-                <div className="relative rounded-2xl overflow-hidden border border-slate-700">
+                <div className="relative rounded-2xl overflow-hidden border border-slate-300 shadow-xs">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={capturedPhotoUrl} alt="Inspection Watermarked" className="w-full h-44 object-cover" />
                   <button
                     type="button"
                     onClick={() => setCapturedPhotoUrl(null)}
-                    className="absolute top-2 right-2 px-2.5 py-1 bg-black/70 text-white rounded-lg text-xs font-bold"
+                    className="absolute top-2 right-2 px-2.5 py-1 bg-black/75 text-white rounded-lg text-xs font-bold"
                   >
                     Retake
                   </button>
@@ -1261,9 +1305,9 @@ export default function TechnicianPWA() {
                     type="button"
                     disabled={isProcessingPhoto}
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full py-4 rounded-2xl bg-slate-950 border-2 border-dashed border-slate-700 hover:border-cyan-400 text-slate-300 font-bold text-xs flex items-center justify-center gap-2"
+                    className="w-full py-4 rounded-2xl bg-[#F4F8FB] border-2 border-dashed border-[#DCE7F2] hover:border-[#0077B6] text-slate-700 font-bold text-xs flex items-center justify-center gap-2 transition-all"
                   >
-                    <Camera className="w-5 h-5 text-cyan-400" />
+                    <Camera className="w-5 h-5 text-[#0077B6]" />
                     <span>{isProcessingPhoto ? 'Burning Watermark...' : '📸 Open Camera & Stamp GPS'}</span>
                   </button>
                 </div>
@@ -1273,12 +1317,12 @@ export default function TechnicianPWA() {
             {/* Optional Voice Notes / Remarks */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-400">Notes / Audio Speech Note</span>
+                <span className="text-xs font-bold text-slate-600">Notes / Audio Speech Note</span>
                 <button
                   type="button"
                   onClick={toggleSpeechRecognition}
                   className={`text-[11px] font-bold px-2 py-0.5 rounded-lg flex items-center gap-1 ${
-                    isListeningMic ? 'bg-rose-500 text-white animate-pulse' : 'bg-slate-800 text-cyan-300'
+                    isListeningMic ? 'bg-red-500 text-white animate-pulse' : 'bg-[#F0F7FF] text-[#0077B6] border border-[#DCE7F2]'
                   }`}
                 >
                   {isListeningMic ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
@@ -1290,7 +1334,7 @@ export default function TechnicianPWA() {
                 value={remarks}
                 onChange={(e) => setRemarks(e.target.value)}
                 placeholder="Optional observation (or speak using mic above)..."
-                className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder-slate-600 focus:outline-none focus:border-cyan-400"
+                className="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-[#0077B6]"
               />
             </div>
 
@@ -1321,17 +1365,17 @@ export default function TechnicianPWA() {
           MODAL: GUARD / SUPERVISOR FINGER SIGNATURE PAD
       ========================================================================= */}
       {showSignatureModal && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-[#DCE7F2] rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#DCE7F2] pb-3">
               <div>
-                <h3 className="text-base font-black text-white">Facility Guard Sign-Off</h3>
-                <p className="text-xs text-slate-400">Site Facility Manager / Security Guard signs on glass</p>
+                <h3 className="text-base font-black text-slate-900">Facility Guard Sign-Off</h3>
+                <p className="text-xs text-slate-500">Site Facility Manager / Security Guard signs on glass</p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowSignatureModal(false)}
-                className="p-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
+                className="p-1 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-800"
               >
                 ✕
               </button>
@@ -1339,29 +1383,29 @@ export default function TechnicianPWA() {
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="block text-slate-300 font-bold mb-1">Guard / Supervisor Name</label>
+                <label className="block text-slate-700 font-bold mb-1">Guard / Supervisor Name</label>
                 <input
                   type="text"
                   value={guardName}
                   onChange={(e) => setGuardName(e.target.value)}
                   placeholder="e.g. Surender Singh (Security Head)"
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-cyan-400"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:border-[#0077B6]"
                 />
               </div>
 
               {/* Touch Canvas Pad */}
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <label className="text-slate-300 font-bold">Finger Touch Signature *</label>
+                  <label className="text-slate-700 font-bold">Finger Touch Signature *</label>
                   <button
                     type="button"
                     onClick={clearSignature}
-                    className="text-[11px] text-cyan-400 font-bold hover:underline"
+                    className="text-[11px] text-[#0077B6] font-bold hover:underline"
                   >
                     Clear Signature
                   </button>
                 </div>
-                <div className="bg-slate-950 border-2 border-dashed border-slate-700 rounded-2xl overflow-hidden touch-none">
+                <div className="bg-[#F8FAFC] border-2 border-dashed border-[#DCE7F2] rounded-2xl overflow-hidden touch-none">
                   <canvas
                     ref={sigCanvasRef}
                     width={360}
@@ -1372,7 +1416,7 @@ export default function TechnicianPWA() {
                     onTouchStart={startDrawingSig}
                     onTouchMove={drawSig}
                     onTouchEnd={stopDrawingSig}
-                    className="w-full h-40 cursor-crosshair"
+                    className="w-full h-40 cursor-crosshair bg-white"
                   />
                 </div>
               </div>

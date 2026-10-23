@@ -744,14 +744,14 @@ export function TechnicianManagement({
       ========================================================================= */}
       {addModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 my-8">
+          <div className="bg-white dark:bg-slate-900 border border-[#DCE7F2] dark:border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 my-8 text-slate-900 dark:text-white">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
                   <Smartphone className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white">Add New Field Technician</h3>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Add New Field Technician</h3>
                   <p className="text-xs text-slate-400">
                     Create Mobile / Staff ID login &amp; share instantly via WhatsApp
                   </p>
@@ -775,33 +775,33 @@ export function TechnicianManagement({
             <form onSubmit={handleAddSubmit} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="space-y-1">
-                  <label className="text-slate-300 font-bold">Technician Full Name *</label>
+                  <label className="text-slate-700 dark:text-slate-300 font-bold">Technician Full Name *</label>
                   <input
                     type="text"
                     required
                     value={addForm.fullName}
                     onChange={(e) => setAddForm({ ...addForm, fullName: e.target.value })}
                     placeholder="e.g. Ramesh Kumar"
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-slate-300 font-bold">Mobile Number (WhatsApp) *</label>
+                  <label className="text-slate-700 dark:text-slate-300 font-bold">Mobile Number (WhatsApp) *</label>
                   <input
                     type="tel"
                     required={!addForm.email}
                     value={addForm.phone}
                     onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })}
                     placeholder="+91 98765 43210"
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
+                    className="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0077B6] font-mono"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="space-y-1">
-                  <label className="text-slate-300 font-bold">Staff / Employee ID</label>
+                  <label className="text-slate-700 dark:text-slate-300 font-bold">Staff / Employee ID</label>
                   <input
                     type="text"
                     value={addForm.employeeId}
@@ -813,7 +813,7 @@ export function TechnicianManagement({
 
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <label className="text-slate-300 font-bold">6-Digit Login PIN / Password *</label>
+                    <label className="text-slate-700 dark:text-slate-300 font-bold">6-Digit Login PIN / Password *</label>
                     <button
                       type="button"
                       onClick={handleGeneratePinAndId}
@@ -830,7 +830,7 @@ export function TechnicianManagement({
                     value={addForm.password}
                     onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
                     placeholder="e.g. 482915"
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-amber-400 font-mono font-bold tracking-wider placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-amber-700 dark:text-amber-400 font-mono font-bold tracking-wider placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
               </div>
@@ -850,7 +850,7 @@ export function TechnicianManagement({
 
               {/* Assigned Buildings Checklist */}
               <div className="space-y-1.5 pt-1">
-                <label className="text-slate-300 font-bold flex items-center justify-between">
+                <label className="text-slate-700 dark:text-slate-300 font-bold flex items-center justify-between">
                   <span>Assigned Facilities / Buildings</span>
                   <span className="text-[11px] text-slate-500 font-normal">
                     {addForm.assignedBuildingIds.length === 0
@@ -858,14 +858,14 @@ export function TechnicianManagement({
                       : `${addForm.assignedBuildingIds.length} selected`}
                   </span>
                 </label>
-                <div className="max-h-36 overflow-y-auto p-2 bg-slate-950 border border-slate-800 rounded-xl space-y-1">
+                <div className="max-h-36 overflow-y-auto p-2 bg-[#F8FAFC] dark:bg-slate-950 border border-[#DCE7F2] dark:border-slate-800 rounded-xl space-y-1">
                   {buildings.length === 0 ? (
                     <p className="text-slate-500 p-2 text-center text-xs">No facilities added yet.</p>
                   ) : (
                     buildings.map((b) => (
                       <label
                         key={b.id}
-                        className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-900 cursor-pointer text-slate-300 hover:text-white"
+                        className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 cursor-pointer text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
                       >
                         <input
                           type="checkbox"
@@ -920,7 +920,7 @@ export function TechnicianManagement({
       ========================================================================= */}
       {createdSuccessTech && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border-2 border-emerald-500/60 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5 text-center">
+          <div className="bg-white dark:bg-slate-900 border border-[#DCE7F2] dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5 text-center text-slate-900 dark:text-white">
             <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center mx-auto shadow-lg">
               <CheckCircle2 className="w-8 h-8" />
             </div>
@@ -929,34 +929,34 @@ export function TechnicianManagement({
               <span className="text-xs uppercase font-extrabold tracking-widest text-emerald-400">
                 Ready for Field Dispatch
               </span>
-              <h3 className="text-xl font-black text-white">Technician Created Successfully</h3>
+              <h3 className="text-xl font-black text-slate-900 dark:text-white">Technician Created Successfully</h3>
               <p className="text-xs text-slate-400">
                 Send the installable mobile app link and login PIN directly to their WhatsApp in 1 click.
               </p>
             </div>
 
             {/* Credentials Card */}
-            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-left text-xs space-y-2.5">
+            <div className="bg-[#F4F8FB] dark:bg-slate-950 p-4 rounded-xl border border-[#DCE7F2] dark:border-slate-800 text-left text-xs space-y-2.5">
               <div className="flex justify-between items-center">
                 <span className="text-slate-400">Technician Name:</span>
-                <strong className="text-white text-sm">{createdSuccessTech.fullName}</strong>
+                <strong className="text-slate-900 dark:text-white text-sm">{createdSuccessTech.fullName}</strong>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-400">Mobile Login No:</span>
-                <strong className="text-emerald-400 font-mono text-sm">
+                <strong className="text-emerald-600 dark:text-emerald-400 font-mono text-sm">
                   {createdSuccessTech.phone || '—'}
                 </strong>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-400">Staff ID:</span>
-                <strong className="text-cyan-300 font-mono text-sm">
+                <strong className="text-[#0077B6] dark:text-cyan-300 font-mono text-sm">
                   {createdSuccessTech.employeeId || '—'}
                 </strong>
               </div>
               {createdSuccessTech.tempPassword && (
-                <div className="flex justify-between items-center pt-1 border-t border-slate-800">
+                <div className="flex justify-between items-center pt-1 border-t border-[#DCE7F2] dark:border-slate-800">
                   <span className="text-slate-400">6-Digit Login PIN:</span>
-                  <strong className="text-amber-400 font-mono text-base tracking-widest">
+                  <strong className="text-amber-600 dark:text-amber-400 font-mono text-base tracking-widest">
                     {createdSuccessTech.tempPassword}
                   </strong>
                 </div>
@@ -981,7 +981,7 @@ export function TechnicianManagement({
                   onClick={() =>
                     handleCopyCredentials(createdSuccessTech, createdSuccessTech.tempPassword)
                   }
-                  className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 border border-[#DCE7F2] dark:border-slate-700"
                 >
                   <Copy className="w-3.5 h-3.5" />
                   <span>Copy Login Details</span>
@@ -989,7 +989,7 @@ export function TechnicianManagement({
                 <button
                   type="button"
                   onClick={() => setCreatedSuccessTech(null)}
-                  className="py-2.5 px-4 rounded-xl border border-slate-700 hover:bg-slate-800 text-slate-300 font-bold text-xs transition-colors"
+                  className="py-2.5 px-4 rounded-xl border border-[#DCE7F2] dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors"
                 >
                   Done
                 </button>
@@ -1004,14 +1004,14 @@ export function TechnicianManagement({
       ========================================================================= */}
       {editModalTech && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 my-8">
+          <div className="bg-white dark:bg-slate-900 border border-[#DCE7F2] dark:border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 my-8 text-slate-900 dark:text-white">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
                   <Edit className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white">Edit Technician Details</h3>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Edit Technician Details</h3>
                   <p className="text-xs text-slate-400">{editModalTech.employeeId || editModalTech.phone}</p>
                 </div>
               </div>
@@ -1032,7 +1032,7 @@ export function TechnicianManagement({
             <form onSubmit={handleEditSubmit} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="space-y-1">
-                  <label className="text-slate-300 font-bold">Full Name</label>
+                  <label className="text-slate-700 dark:text-slate-300 font-bold">Full Name</label>
                   <input
                     type="text"
                     required
@@ -1043,7 +1043,7 @@ export function TechnicianManagement({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-slate-300 font-bold">Staff / Employee ID</label>
+                  <label className="text-slate-700 dark:text-slate-300 font-bold">Staff / Employee ID</label>
                   <input
                     type="text"
                     value={editForm.employeeId}
@@ -1055,7 +1055,7 @@ export function TechnicianManagement({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="space-y-1">
-                  <label className="text-slate-300 font-bold">Mobile Phone</label>
+                  <label className="text-slate-700 dark:text-slate-300 font-bold">Mobile Phone</label>
                   <input
                     type="tel"
                     value={editForm.phone}
@@ -1065,7 +1065,7 @@ export function TechnicianManagement({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-slate-300 font-bold">Account Access</label>
+                  <label className="text-slate-700 dark:text-slate-300 font-bold">Account Access</label>
                   <select
                     value={editForm.status}
                     onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
@@ -1079,17 +1079,17 @@ export function TechnicianManagement({
 
               {/* Building Assignments */}
               <div className="space-y-1.5 pt-1">
-                <label className="text-slate-300 font-bold flex items-center justify-between">
+                <label className="text-slate-700 dark:text-slate-300 font-bold flex items-center justify-between">
                   <span>Assigned Facilities</span>
                   <span className="text-[11px] text-slate-500 font-normal">
                     {editForm.assignedBuildingIds.length} selected
                   </span>
                 </label>
-                <div className="max-h-36 overflow-y-auto p-2 bg-slate-950 border border-slate-800 rounded-xl space-y-1">
+                <div className="max-h-36 overflow-y-auto p-2 bg-[#F8FAFC] dark:bg-slate-950 border border-[#DCE7F2] dark:border-slate-800 rounded-xl space-y-1">
                   {buildings.map((b) => (
                     <label
                       key={b.id}
-                      className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-900 cursor-pointer text-slate-300 hover:text-white"
+                      className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 cursor-pointer text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
                     >
                       <input
                         type="checkbox"
@@ -1143,11 +1143,11 @@ export function TechnicianManagement({
       ========================================================================= */}
       {resetPasswordTech && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+          <div className="bg-white dark:bg-slate-900 border border-[#DCE7F2] dark:border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-slate-900 dark:text-white">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-2">
                 <KeyRound className="w-5 h-5 text-amber-400" />
-                <h3 className="text-base font-bold text-white">Reset 6-Digit PIN / Password</h3>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">Reset 6-Digit PIN / Password</h3>
               </div>
               <button
                 onClick={() => setResetPasswordTech(null)}
@@ -1158,7 +1158,7 @@ export function TechnicianManagement({
             </div>
 
             <p className="text-xs text-slate-400">
-              Set a new login PIN for <strong className="text-white">{resetPasswordTech.fullName}</strong> (
+              Set a new login PIN for <strong className="text-slate-900 dark:text-white">{resetPasswordTech.fullName}</strong> (
               {resetPasswordTech.employeeId !== '—' ? resetPasswordTech.employeeId : resetPasswordTech.phone}).
             </p>
 
@@ -1171,7 +1171,7 @@ export function TechnicianManagement({
             <form onSubmit={handleResetPassword} className="space-y-4 text-xs">
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <label className="text-slate-300 font-bold">New 6-Digit PIN / Password</label>
+                  <label className="text-slate-700 dark:text-slate-300 font-bold">New 6-Digit PIN / Password</label>
                   <button
                     type="button"
                     onClick={() => setNewPassword(generateSixDigitPin())}
@@ -1188,7 +1188,7 @@ export function TechnicianManagement({
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Min 6 characters"
-                  className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-amber-400 font-mono font-bold tracking-wider placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  className="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-amber-700 dark:text-amber-400 font-mono font-bold tracking-wider placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
               </div>
 
@@ -1218,14 +1218,14 @@ export function TechnicianManagement({
       ========================================================================= */}
       {viewDetailTech && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-5 my-8">
+          <div className="bg-white dark:bg-slate-900 border border-[#DCE7F2] dark:border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-5 my-8 text-slate-900 dark:text-white">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0077B6] to-[#023E8A] text-white flex items-center justify-center font-bold text-base shadow-md">
                   {viewDetailTech.fullName?.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white">{viewDetailTech.fullName}</h3>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">{viewDetailTech.fullName}</h3>
                   <p className="text-xs text-slate-400">
                     {viewDetailTech.employeeId !== '—' ? `Staff ID: ${viewDetailTech.employeeId}` : viewDetailTech.email}
                   </p>
@@ -1240,7 +1240,7 @@ export function TechnicianManagement({
             </div>
 
             {/* Profile Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-slate-950 p-4 rounded-xl border border-slate-800">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-[#F4F8FB] dark:bg-slate-950 p-4 rounded-xl border border-[#DCE7F2] dark:border-slate-800">
               <div>
                 <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold block">Status</span>
                 <span className={viewDetailTech.status === 'ACTIVE' ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
@@ -1334,17 +1334,17 @@ export function TechnicianManagement({
       ========================================================================= */}
       {deleteConfirmTech && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+          <div className="bg-white dark:bg-slate-900 border border-[#DCE7F2] dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-slate-900 dark:text-white">
             <div className="flex items-center gap-3 text-red-400">
               <AlertTriangle className="w-6 h-6 shrink-0" />
-              <h3 className="text-base font-bold text-white">Remove Technician Account?</h3>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Remove Technician Account?</h3>
             </div>
 
             <p className="text-xs text-slate-300 leading-relaxed">
-              Are you sure you want to remove <strong className="text-white">{deleteConfirmTech.fullName}</strong>?
+              Are you sure you want to remove <strong className="text-slate-900 dark:text-white">{deleteConfirmTech.fullName}</strong>?
             </p>
 
-            <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-[11px] text-slate-400 space-y-1">
+            <div className="p-3 rounded-xl bg-[#F8FAFC] dark:bg-slate-950 border border-[#DCE7F2] dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-400 space-y-1">
               <p className="font-semibold text-amber-300 flex items-center gap-1">
                 <ShieldCheck className="w-3.5 h-3.5" />
                 Audit Trail Protection

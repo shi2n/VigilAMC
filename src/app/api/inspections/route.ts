@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getCurrentUser, logAuditActivity } from '@/lib/auth';
+import { logAuditActivity } from '@/lib/auth';
+import { getAuthenticatedActor } from '@/lib/techSession';
 import { ensureR2PhotoUrl } from '@/lib/r2';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
-    const auth = await getCurrentUser(request);
+    const auth = await getAuthenticatedActor(request);
     if (!auth || !auth.organization) {
       return NextResponse.json({ inspections: [] });
     }
@@ -48,7 +49,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const auth = await getCurrentUser(request);
+    const auth = await getAuthenticatedActor(request);
     if (!auth || !auth.organization) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

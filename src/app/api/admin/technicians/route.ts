@@ -3,6 +3,8 @@ import { db } from '@/lib/db';
 import { requireAdmin, logAuditActivity } from '@/lib/auth';
 import { checkPlanLimit, getAgencySubscriptionAndUsage } from '@/lib/plans';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { hashPin } from '@/lib/techSession';
+import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
 

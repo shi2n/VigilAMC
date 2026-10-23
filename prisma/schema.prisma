@@ -63,6 +63,7 @@ model UserProfile {
   lastLoginAt       DateTime?
   phone             String?
   employeeId        String?                        @unique
+  passwordHash      String?
   assignedRegion    String?
   avatarUrl         String?
   organizationId    String?

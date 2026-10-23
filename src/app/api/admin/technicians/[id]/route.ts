@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { requireAdmin, logAuditActivity } from '@/lib/auth';
 import { checkPlanLimit, getAgencySubscriptionAndUsage } from '@/lib/plans';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { hashPin } from '@/lib/techSession';
 
 export const dynamic = 'force-dynamic';
 
@@ -172,20 +173,26 @@ export async function PATCH(
       });
     }
 
-    // 4. Handle Password Reset
-    if (newPassword) {
-      if (newPassword.length < 6) {
-        return NextResponse.json({ error: 'New password must be at least 6 characters long' }, { status: 400 });
+    // 4. Handle Password / PIN Reset
+    const targetPassword = newPassword || (body as any).password;
+    if (targetPassword) {
+      if (String(targetPassword).length < 6) {
+        return NextResponse.json({ error: 'New PIN / password must be at least 6 characters long' }, { status: 400 });
       }
 
-      const supabaseAdmin = getSupabaseAdmin();
-      const { error: resetError } = await supabaseAdmin.auth.admin.updateUserById(technicianId, {
-        password: newPassword,
+      const hashedPin = hashPin(String(targetPassword));
+      await (db as any).userProfile.update({
+        where: { id: technicianId },
+        data: { passwordHash: hashedPin },
       });
 
-      if (resetError) {
-        console.error('Failed to reset technician password in Supabase Auth:', resetError);
-        return NextResponse.json({ error: `Failed to reset password: ${resetError.message}` }, { status: 400 });
+      try {
+        const supabaseAdmin = getSupabaseAdmin();
+        await supabaseAdmin.auth.admin.updateUserById(technicianId, {
+          password: String(targetPassword),
+        });
+      } catch (err) {
+        console.warn('Supabase password reset note:', err);
       }
 
       await logAuditActivity({
@@ -195,7 +202,7 @@ export async function PATCH(
         action: 'TECHNICIAN_PASSWORD_RESET',
         entityType: 'UserProfile',
         entityId: technicianId,
-        details: `Admin reset password for technician "${updatedProfile.fullName}"`,
+        details: `Admin reset PIN for technician "${updatedProfile.fullName}"`,
       });
     }
 
