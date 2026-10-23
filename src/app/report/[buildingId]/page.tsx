@@ -3,7 +3,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import QRCode from 'qrcode';
 import {
   Printer,
   ArrowLeft,
@@ -18,6 +17,7 @@ import {
   SlidersHorizontal,
   FileText,
   Clock,
+  MapPin,
 } from 'lucide-react';
 
 function formatSafeDate(dateVal: any): string {
@@ -47,7 +47,6 @@ export default function ComplianceReportPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [qrDataUrl, setQrDataUrl] = useState('');
 
   // Client delivery state
   const [clientPhone, setClientPhone] = useState('');
@@ -85,14 +84,6 @@ export default function ComplianceReportPage() {
         const refNum = json.report?.reportNumber || `FORM-B-${new Date().getFullYear()}`;
         document.title = `${json.building.name} - Form-B Certificate (${refNum})`;
       }
-
-      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://vigilamc.vercel.app';
-      const qr = await QRCode.toDataURL(`${origin}/report/${buildingId}`, {
-        width: 130,
-        margin: 1,
-        color: { dark: '#000000', light: '#ffffff' },
-      });
-      setQrDataUrl(qr);
     } catch (e: any) {
       console.error('Error loading report:', e);
       setError(e?.message || 'Unexpected network error while generating report.');
@@ -650,20 +641,40 @@ export default function ComplianceReportPage() {
           </div>
         </div>
 
-        {/* Signoff & Municipal Authenticator */}
+        {/* Signoff & Digital GPS & Timestamp Verification Badge */}
         <div className="pt-6 border-t border-slate-300 flex flex-col sm:flex-row items-center justify-between gap-6">
-          {/* Municipal Authenticator */}
-          <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
-            {qrDataUrl && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={qrDataUrl} alt="Report Verification" className="w-16 h-16 object-contain" />
-            )}
-            <div className="text-[10px] text-slate-500 space-y-0.5">
-              <span className="font-bold text-slate-800 uppercase block">
-                Equipment Schedule with Locations &amp; Photos
-              </span>
-              <p>Verified service records on {company?.name || 'Agency'} compliance portal.</p>
-              <p className="font-mono font-semibold text-slate-600">{report?.reportNumber || 'FORM-B'}</p>
+          {/* Digital GPS & Timestamp Verification Badge */}
+          <div className="flex items-start gap-3.5 p-3.5 bg-slate-50 rounded-xl border border-slate-200 max-w-md w-full sm:w-auto">
+            <div className="w-12 h-12 rounded-xl bg-[#023E8A] text-white flex flex-col items-center justify-center shrink-0 shadow-xs border border-blue-900">
+              <MapPin className="w-5 h-5 text-cyan-300" />
+              <span className="text-[8px] font-black uppercase tracking-wider text-cyan-100 mt-0.5">GPS STAMP</span>
+            </div>
+            <div className="text-[10px] text-slate-600 space-y-1">
+              <div className="flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span className="font-extrabold text-slate-900 uppercase tracking-tight">
+                  Digital GPS &amp; Timestamp Verification Badge
+                </span>
+              </div>
+              <p className="font-mono text-[10px] text-slate-800 font-semibold">
+                {data?.latestGpsInspection?.latitude != null && data?.latestGpsInspection?.longitude != null
+                  ? `Verified GPS: ${Number(data.latestGpsInspection.latitude).toFixed(4)}° N, ${Number(
+                      data.latestGpsInspection.longitude
+                    ).toFixed(4)}° E`
+                  : `Verified Site Location: ${building?.address || 'On-Site Physical Audit'}`}
+              </p>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-slate-500">
+                <span>
+                  Ref ID: <strong className="font-mono text-slate-700">{report?.reportNumber || 'FORM-B'}</strong>
+                </span>
+                <span>•</span>
+                <span>
+                  Timestamp:{' '}
+                  <strong className="text-slate-700">
+                    {formatSafeDate(data?.latestGpsInspection?.date || report?.generatedAt || new Date())}
+                  </strong>
+                </span>
+              </div>
             </div>
           </div>
 

@@ -29,6 +29,7 @@ import { ClientsView } from '@/components/admin/ClientsView';
 import { BuildingsView } from '@/components/admin/BuildingsView';
 import { FireAssetsView } from '@/components/admin/FireAssetsView';
 import { SettingsView } from '@/components/admin/SettingsView';
+import { TechnicianManagement } from '@/components/admin/TechnicianManagement';
 import { compressImageToDataUrl, uploadCompressedPhoto } from '@/lib/compressImage';
 
 const LAST_ORG_CACHE_KEY = 'vigilamc_dash_last_org';
@@ -346,6 +347,7 @@ export default function AdminDashboardPage() {
         INSPECTIONS_WORK: inspectionsWorkSubTab === 'INSPECTIONS' ? 'INSPECTIONS' : 'WORK_ORDERS',
         INSPECTIONS: 'INSPECTIONS',
         REPAIRS: 'WORK_ORDERS',
+        FIELD_TEAM: 'TECHNICIANS',
         REPORTS: 'FIRE_ASSETS',
         SETTINGS: 'CLIENTS',
       };
@@ -731,6 +733,7 @@ export default function AdminDashboardPage() {
                   {(activeTab === 'CLIENTS_SITES' || activeTab === 'SITES') && 'Clients & Sites'}
                   {activeTab === 'FIRE_EQUIPMENT' && 'Fire Equipment'}
                   {(activeTab === 'INSPECTIONS_WORK' || activeTab === 'INSPECTIONS' || activeTab === 'REPAIRS') && 'Inspections & Work'}
+                  {activeTab === 'FIELD_TEAM' && 'Field Team & Technicians'}
                   {activeTab === 'REPORTS' && 'Compliance Reports'}
                   {activeTab === 'SETTINGS' && 'Agency Settings'}
                 </h1>
@@ -844,7 +847,8 @@ export default function AdminDashboardPage() {
                   } else if (tab === 'REPAIRS') {
                     setActiveTab('INSPECTIONS_WORK');
                     setInspectionsWorkSubTab('REPAIRS');
-                  } else if (tab === 'REPORTS') setActiveTab('REPORTS');
+                  } else if (tab === 'FIELD_TEAM') setActiveTab('FIELD_TEAM');
+                  else if (tab === 'REPORTS') setActiveTab('REPORTS');
                   else if (tab === 'SETTINGS') setActiveTab('SETTINGS');
                 }}
                 onAddEquipment={() => {
@@ -1063,6 +1067,22 @@ export default function AdminDashboardPage() {
                   />
                 )}
               </div>
+            )}
+
+            {/* =========================================================================
+                GROUP 4B: FIELD TEAM & TECHNICIAN MANAGEMENT
+            ========================================================================= */}
+            {activeTab === 'FIELD_TEAM' && (
+              <TechnicianManagement
+                showToast={showToast}
+                onOpenImport={() => handleOpenImport('TECHNICIANS')}
+                initialTechnicians={techniciansList}
+                initialBuildings={buildings}
+                initialSeatUsage={subscriptionData?.usage?.technicians}
+                initialPlan={subscriptionData?.plan}
+                agencyName={company?.name}
+                onRefreshDashboard={() => refreshDashboard({ silent: true })}
+              />
             )}
 
             {/* =========================================================================

@@ -32,7 +32,8 @@ interface BuildingsViewProps {
   onBulkAdd: (b: any) => void;
   onSingleAdd: (b: any) => void;
   onOpenExport: () => void;
-  onOpenImport?: () => void; onEditEquipment?: (eq: any) => void;
+  onOpenImport?: () => void;
+  onEditEquipment?: (eq: any) => void;
 }
 
 export function BuildingsView({
@@ -46,7 +47,8 @@ export function BuildingsView({
   onBulkAdd,
   onSingleAdd,
   onOpenExport,
-  onOpenImport, onEditEquipment,
+  onOpenImport,
+  onEditEquipment,
 }: BuildingsViewProps) {
   return (
     <div className="space-y-6">
@@ -274,7 +276,9 @@ export function BuildingsView({
                       </button>
 
                       <Link
-                        href={`/report/${b.id}`} target="_blank" rel="noopener noreferrer"
+                        href={`/report/${b.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-[#EAF6FF] hover:bg-[#D5EEFF] text-[#007DB8] border border-[#007DB8]/30 text-xs font-bold transition-all hover:scale-[1.02] shadow-sm dark:bg-amber-500/15 dark:hover:bg-amber-500/25 dark:text-amber-400 dark:border-amber-500/30"
                       >
                         <FileText className="w-3.5 h-3.5" />
@@ -338,17 +342,24 @@ export function BuildingsView({
                                 const diffDays = Math.ceil(
                                   (new Date(eq.nextDueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
                                 );
-                                const status = diffDays < 0 ? 'OVERDUE' : diffDays <= 30 ? 'DUE_SOON' : (eq.complianceStatus || eq.status || 'VERIFIED');
+                                const status =
+                                  diffDays < 0
+                                    ? 'OVERDUE'
+                                    : diffDays <= 30
+                                    ? 'DUE_SOON'
+                                    : eq.complianceStatus || eq.status || 'VERIFIED';
 
                                 return (
                                   <tr key={eq.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
                                     <td className="py-3 px-4 font-mono font-bold">
-                                      <Link
-                                        href={`/verify/${eq.qrCode}`} target="_blank" rel="noopener noreferrer"
-                                        className="text-[#2563EB] hover:underline bg-[#EFF6FF] px-2 py-0.5 rounded border border-[#2563EB]/30 dark:text-[#60A5FA] dark:bg-blue-500/10 dark:border-blue-500/20"
+                                      <button
+                                        type="button"
+                                        onClick={() => onEditEquipment && onEditEquipment(eq)}
+                                        className="text-[#2563EB] hover:underline bg-[#EFF6FF] px-2 py-0.5 rounded border border-[#2563EB]/30 dark:text-[#60A5FA] dark:bg-blue-500/10 dark:border-blue-500/20 cursor-pointer"
+                                        title="Open Asset Details & Service Schedule"
                                       >
                                         {eq.qrCode}
-                                      </Link>
+                                      </button>
                                     </td>
                                     <td className="py-3 px-4 font-semibold text-slate-900 dark:text-white">
                                       {eq.capacity} ({eq.type})
@@ -395,17 +406,27 @@ export function BuildingsView({
                                             : 'bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
                                         }`}
                                       >
-                                        {status === 'VERIFIED' || status === 'COMPLIANT' ? 'Verified' : status === 'DUE_SOON' ? 'DUE SOON (<30d)' : status === 'OVERDUE' ? 'OVERDUE' : 'Not Inspected'}
+                                        {status === 'VERIFIED' || status === 'COMPLIANT'
+                                          ? 'Verified'
+                                          : status === 'DUE_SOON'
+                                          ? 'DUE SOON (<30d)'
+                                          : status === 'OVERDUE'
+                                          ? 'OVERDUE'
+                                          : 'Not Inspected'}
                                       </span>
                                     </td>
                                     <td className="py-3 px-4 text-right">
-                                      <Link
-                                        href={`/verify/${eq.qrCode}`} target="_blank" rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold shadow-xs transition-all hover:scale-105"
-                                      >
-                                        <MapPin className="w-3 h-3 stroke-[2.5]" />
-                                        <span>Visit History</span></Link>{onEditEquipment && (<button onClick={() => onEditEquipment(eq)} className="ml-1.5 p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 dark:hover:text-white inline-flex items-center" title="Edit Equipment & Due Date"><Edit className="w-3.5 h-3.5" /></button>)}<Link className="hidden" href="#"><span>Visit History</span>
-                                      </Link>
+                                      {onEditEquipment && (
+                                        <button
+                                          type="button"
+                                          onClick={() => onEditEquipment(eq)}
+                                          className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+                                          title="Inspect / Edit Equipment & Service Dates"
+                                        >
+                                          <MapPin className="w-3 h-3 stroke-[2.5]" />
+                                          <span>Inspect / Edit</span>
+                                        </button>
+                                      )}
                                     </td>
                                   </tr>
                                 );

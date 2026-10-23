@@ -168,8 +168,54 @@ export async function GET(
         hasGPS: evaluation.hasGPS,
         hasPhoto: Boolean(resolvedPhotoUrl) || evaluation.hasPhoto,
         isImported: evaluation.isImported,
+        latestLatitude: latestInspection?.latitude ?? null,
+        latestLongitude: latestInspection?.longitude ?? null,
+        latestInspectionDate: latestInspection?.date || eq.lastServiceDate || null,
+        latestTechnicianName: latestInspection?.technicianName || latestLog?.technicianName || null,
       };
     });
+
+    // Find latest GPS-verified inspection across the building's equipment or building inspections
+    let latestGpsInspection: any = null;
+    for (const eq of evaluatedEquipments) {
+      if (eq.latestLatitude != null && eq.latestLongitude != null) {
+        if (
+          !latestGpsInspection ||
+          new Date(eq.latestInspectionDate || 0).getTime() >
+            new Date(latestGpsInspection.date || 0).getTime()
+        ) {
+          latestGpsInspection = {
+            latitude: eq.latestLatitude,
+            longitude: eq.latestLongitude,
+            date: eq.latestInspectionDate,
+            technicianName: eq.latestTechnicianName,
+            assetCode: eq.qrCode,
+          };
+        }
+      }
+    }
+
+    if (!latestGpsInspection) {
+      const bldgInsp = await (db as any).inspection
+        .findFirst({
+          where: {
+            buildingId: building.id,
+            latitude: { not: null },
+            longitude: { not: null },
+          },
+          orderBy: { date: 'desc' },
+        })
+        .catch(() => null);
+      if (bldgInsp) {
+        latestGpsInspection = {
+          latitude: bldgInsp.latitude,
+          longitude: bldgInsp.longitude,
+          date: bldgInsp.date,
+          technicianName: bldgInsp.technicianName,
+          assetCode: null,
+        };
+      }
+    }
 
     const isFullyCompliant = overdueCount === 0 && rawEquipments.length > 0;
     const overallReportStatus = isFullyCompliant ? 'COMPLIANT' : 'ACTION_NEEDED';
@@ -223,6 +269,7 @@ export async function GET(
         equipments: evaluatedEquipments,
       },
       report,
+      latestGpsInspection,
       summary: {
         total: rawEquipments.length,
         verified: verifiedCount,

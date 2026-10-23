@@ -226,6 +226,7 @@ export function SettingsView({
           initialBuildings={initialBuildings}
           initialSeatUsage={initialSeatUsage}
           initialPlan={initialPlan}
+          agencyName={company?.name}
           onRefreshDashboard={onRefreshDashboard}
         />
       )}

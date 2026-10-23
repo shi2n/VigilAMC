@@ -68,8 +68,37 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      const rawIdentifier = email.trim();
+      let resolvedAuthEmail = rawIdentifier.toLowerCase();
+
+      if (!rawIdentifier.includes('@')) {
+        const resolveRes = await fetch('/api/auth/resolve-identifier', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier: rawIdentifier }),
+        });
+        const resolveData = await resolveRes.json();
+        if (!resolveRes.ok || !resolveData.email) {
+          throw new Error(
+            resolveData.error || 'Could not find account with this Mobile Number or Staff ID.'
+          );
+        }
+        resolvedAuthEmail = resolveData.email.trim().toLowerCase();
+      } else {
+        // Also check if email user is deactivated before signing in
+        const resolveRes = await fetch('/api/auth/resolve-identifier', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier: resolvedAuthEmail }),
+        });
+        if (resolveRes.status === 403) {
+          const resolveData = await resolveRes.json();
+          throw new Error(resolveData.error || 'This account has been deactivated.');
+        }
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
+        email: resolvedAuthEmail,
         password,
       });
 
@@ -303,14 +332,14 @@ export default function LoginPage() {
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Work Email Address
+                    Mobile Number, Staff ID, or Email
                   </label>
                   <div className="relative">
                     <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                     <input
-                      type="email"
+                      type="text"
                       required
-                      placeholder="e.g. director@firesafetyagency.com"
+                      placeholder="e.g. 9876543210, TECH-101, or email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0077B6]"

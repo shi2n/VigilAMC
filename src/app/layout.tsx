@@ -1,10 +1,22 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { SiteLayout } from "@/components/SiteLayout";
 import { SITE_CONFIG } from "@/lib/siteConfig";
 
+export const viewport: Viewport = {
+  themeColor: "#023E8A",
+  width: "device-width",
+  initialScale: 1,
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_CONFIG.SITE_URL),
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "VigilAMC",
+  },
   title: "VigilAMC — Never Miss a Compliance Deadline Again | Fire Safety AMC Software India",
   description: "Serving fire safety AMC teams and fire protection agencies across India. Track annual maintenance contracts, log GPS-verified inspections with location details and photos, quote defect repairs, and generate client-ready Form-B reports in minutes.",
   keywords: [
@@ -30,10 +42,12 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512x512.png", sizes: "512x512", type: "image/png" },
       { url: "/favicon.ico", sizes: "any" }
     ],
     shortcut: "/favicon.svg",
-    apple: "/favicon.svg",
+    apple: "/icon-192x192.png",
   },
   openGraph: {
     title: "VigilAMC — Never Miss a Compliance Deadline Again | Pan-India Fire Safety AMC Software",

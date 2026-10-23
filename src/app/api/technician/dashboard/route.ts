@@ -9,31 +9,70 @@ export async function GET(request: Request) {
     const auth = await requireAuth(request);
     const userId = auth.user.id;
     const organizationId = auth.organization?.id;
+    const role = auth.profile?.role;
 
     if (!organizationId) {
       return NextResponse.json({ error: 'No associated agency organization found' }, { status: 403 });
     }
 
-    // Fetch assignments, jobs, workOrders, and recentLogs in parallel
-    const [assignments, jobs, workOrders, recentLogs] = await Promise.all([
-      (db as any).technicianBuildingAssignment.findMany({
-        where: { technicianId: userId },
-        include: {
-          building: {
+    const equipInclude = {
+      id: true,
+      qrCode: true,
+      type: true,
+      category: true,
+      capacity: true,
+      location: true,
+      floor: true,
+      wing: true,
+      status: true,
+      lastServiceDate: true,
+      nextDueDate: true,
+      serviceIntervalMonths: true,
+      photoUrl: true,
+      inspections: {
+        orderBy: { date: 'desc' as const },
+        take: 1,
+        select: {
+          id: true,
+          date: true,
+          status: true,
+          latitude: true,
+          longitude: true,
+          gpsAccuracy: true,
+          remarks: true,
+          photos: true,
+          technicianName: true,
+        },
+      },
+    };
+
+    const isAdmin = role === 'ORG_ADMIN' || role === 'SUPER_ADMIN';
+
+    // Fetch assignments, jobs, workOrders, and recentInspections in parallel
+    const [assignments, jobs, workOrders, recentInspections] = await Promise.all([
+      isAdmin
+        ? Promise.resolve([])
+        : (db as any).technicianBuildingAssignment.findMany({
+            where: { technicianId: userId },
             include: {
-              client: true,
-              equipments: {
-                select: { id: true, status: true, nextDueDate: true },
+              building: {
+                include: {
+                  client: true,
+                  equipments: {
+                    select: equipInclude,
+                    orderBy: { location: 'asc' },
+                  },
+                },
               },
             },
-          },
-        },
-      }),
+          }),
       (db as any).job.findMany({
-        where: {
-          organizationId,
-          technicianId: userId,
-        },
+        where: isAdmin
+          ? { organizationId }
+          : {
+              organizationId,
+              technicianId: userId,
+            },
         include: {
           building: { select: { id: true, name: true, address: true } },
           client: { select: { name: true } },
@@ -42,43 +81,49 @@ export async function GET(request: Request) {
         take: 20,
       }),
       (db as any).workOrder.findMany({
-        where: {
-          organizationId,
-          assignedToId: userId,
-        },
+        where: isAdmin
+          ? { organizationId }
+          : {
+              organizationId,
+              OR: [{ assignedToId: userId }, { assignedToId: null }],
+            },
         include: {
           building: { select: { id: true, name: true, address: true } },
-          equipment: { select: { id: true, qrCode: true, type: true } },
+          equipment: { select: { id: true, qrCode: true, type: true, location: true } },
         },
-        orderBy: { dueDate: 'asc' },
+        orderBy: { createdAt: 'desc' },
         take: 20,
       }),
-      (db as any).serviceLog.findMany({
-        where: {
-          technicianName: auth.profile?.fullName || auth.user.email,
-        },
-        include: {
-          equipment: {
-            include: {
-              building: { select: { id: true, name: true } },
+      (db as any).inspection.findMany({
+        where: isAdmin
+          ? { organizationId }
+          : {
+              organizationId,
+              OR: [
+                { technicianId: userId },
+                { technicianName: auth.profile?.fullName || auth.user.email },
+              ],
             },
-          },
+        include: {
+          building: { select: { id: true, name: true, address: true } },
+          equipment: { select: { id: true, qrCode: true, type: true, capacity: true, location: true } },
         },
-        orderBy: { servicedAt: 'desc' },
-        take: 15,
+        orderBy: { date: 'desc' },
+        take: 25,
       }),
     ]);
 
     let assignedBuildings = assignments.map((a: any) => a.building);
 
-    // If no explicit assignments, fallback to all agency buildings
+    // If ORG_ADMIN or no explicit building assignments, show all agency buildings
     if (assignedBuildings.length === 0) {
       assignedBuildings = await (db as any).building.findMany({
         where: { organizationId },
         include: {
           client: true,
           equipments: {
-            select: { id: true, status: true, nextDueDate: true },
+            select: equipInclude,
+            orderBy: { location: 'asc' },
           },
         },
         orderBy: { name: 'asc' },
@@ -86,29 +131,76 @@ export async function GET(request: Request) {
     }
 
     const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const thirtyDaysAgo = now.getTime() - 30 * 24 * 60 * 60 * 1000;
 
-    // Map buildings with live asset counts and due status
+    // Map buildings with live asset counts, floors, and due status
     const evaluatedBuildings = assignedBuildings.map((b: any) => {
       let overdue = 0;
       let dueSoon = 0;
       let compliant = 0;
+      let checkedRecently = 0;
 
-      (b.equipments || []).forEach((eq: any) => {
-        const diffDays = Math.ceil((new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        if (diffDays < 0) overdue++;
-        else if (diffDays <= 30) dueSoon++;
+      const enrichedEquipments = (b.equipments || []).map((eq: any) => {
+        const diffDays = Math.ceil(
+          (new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        const latestInsp = eq.inspections?.[0] || null;
+        const lastCheckTs = latestInsp?.date
+          ? new Date(latestInsp.date).getTime()
+          : eq.lastServiceDate
+          ? new Date(eq.lastServiceDate).getTime()
+          : 0;
+
+        const isCheckedToday = lastCheckTs >= todayStart;
+        const isCheckedCycle = lastCheckTs >= thirtyDaysAgo && eq.status !== 'DEFECTIVE' && diffDays > 0;
+
+        if (isCheckedToday || isCheckedCycle) {
+          checkedRecently++;
+        }
+
+        if (diffDays < 0 || eq.status === 'OVERDUE' || eq.status === 'DEFECTIVE') overdue++;
+        else if (diffDays <= 30 || eq.status === 'DUE_SOON') dueSoon++;
         else compliant++;
+
+        // Infer floor / zone pill label cleanly from floor or location
+        let floorZone = (eq.floor || '').trim();
+        if (!floorZone && eq.location) {
+          const loc = String(eq.location).trim();
+          const m = loc.match(/^(B\d|Basement\s*\d?|Ground(?:\s*Floor)?|GF|Floor\s*\d+|Level\s*\d+|Terrace|Pump\s*Room|Lobby|Gate)/i);
+          if (m) {
+            floorZone = m[1];
+          } else {
+            const firstPart = loc.split(/[-–•,]/)[0]?.trim();
+            floorZone = firstPart && firstPart.length <= 18 ? firstPart : 'Main Zone';
+          }
+        }
+        if (!floorZone) floorZone = 'General';
+
+        return {
+          ...eq,
+          floorZone,
+          diffDays,
+          isCheckedToday,
+          isCheckedCycle,
+          latestInspection: latestInsp,
+        };
       });
 
       return {
         id: b.id,
         name: b.name,
         address: b.address,
-        clientName: b.client?.name || 'General Facility',
-        totalAssets: b.equipments?.length || 0,
+        city: b.city,
+        state: b.state,
+        clientName: b.client?.name || 'Client Facility',
+        clientPhone: b.client?.phone || '',
+        totalAssets: enrichedEquipments.length,
+        checkedCount: checkedRecently,
         overdueCount: overdue,
         dueSoonCount: dueSoon,
         compliantCount: compliant,
+        equipments: enrichedEquipments,
       };
     });
 
@@ -117,7 +209,7 @@ export async function GET(request: Request) {
       activeJobsCount: jobs.filter((j: any) => j.status === 'ASSIGNED' || j.status === 'IN_PROGRESS').length,
       completedJobsCount: jobs.filter((j: any) => j.status === 'COMPLETED').length,
       openWorkOrdersCount: workOrders.filter((w: any) => w.status === 'OPEN' || w.status === 'IN_PROGRESS').length,
-      totalServicesLogged: recentLogs.length,
+      totalServicesLogged: recentInspections.length,
     };
 
     return NextResponse.json({
@@ -135,11 +227,15 @@ export async function GET(request: Request) {
       assignedBuildings: evaluatedBuildings,
       jobs,
       workOrders,
-      recentServices: recentLogs,
+      recentServices: recentInspections,
     });
   } catch (error: any) {
     console.error('Error fetching technician dashboard data:', error);
-    const status = error.message?.startsWith('UNAUTHORIZED') ? 401 : error.message?.startsWith('FORBIDDEN') ? 403 : 500;
+    const status = error.message?.startsWith('UNAUTHORIZED')
+      ? 401
+      : error.message?.startsWith('FORBIDDEN')
+      ? 403
+      : 500;
     return NextResponse.json({ error: error.message }, { status });
   }
 }

@@ -139,14 +139,14 @@ export function FireAssetsView({
                 return (
                   <tr key={eq.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-850/40 transition-colors">
                     <td className="py-3 px-4 font-mono font-bold">
-                      <Link
-                        href={`/verify/${eq.qrCode}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[#2563EB] hover:underline bg-[#EFF6FF] px-2 py-0.5 rounded border border-[#2563EB]/30 dark:text-[#60A5FA] dark:bg-blue-500/10 dark:border-blue-500/20"
+                      <button
+                        type="button"
+                        onClick={() => onEditEquipment(eq)}
+                        className="text-[#2563EB] hover:underline bg-[#EFF6FF] px-2 py-0.5 rounded border border-[#2563EB]/30 dark:text-[#60A5FA] dark:bg-blue-500/10 dark:border-blue-500/20 cursor-pointer"
+                        title="Open Asset Details & Service Schedule"
                       >
                         {eq.qrCode}
-                      </Link>
+                      </button>
                     </td>
                     <td className="py-3 px-4 font-medium text-slate-600 dark:text-slate-300">{eq.building?.name || '—'}</td>
                     <td className="py-3 px-4 text-slate-900 font-semibold dark:text-white">
@@ -208,16 +208,15 @@ export function FireAssetsView({
                       </span>
                     </td>
                     <td className="py-3 px-4 text-right space-x-2 whitespace-nowrap">
-                      <Link
-                        href={`/verify/${eq.qrCode}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold shadow-xs transition-all"
-                        title="View Field Visit History & Proof"
+                      <button
+                        type="button"
+                        onClick={() => onEditEquipment(eq)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+                        title="Inspect / Edit Asset & Service Dates"
                       >
                         <MapPin className="w-3 h-3 stroke-[2.5]" />
-                        <span>Visit History</span>
-                      </Link>
+                        <span>Inspect / Edit</span>
+                      </button>
                       <button
                         onClick={() => onEditEquipment(eq)}
                         className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 dark:hover:text-white"

@@ -296,6 +296,7 @@ model Inspection {
   photos              String?           // Legacy JSON array of URLs
   latitude            Float?
   longitude           Float?
+  gpsAccuracy         Float?
   isImported          Boolean           @default(false)
   inspectionPhotos    InspectionPhoto[]
   issues              InspectionIssue[]

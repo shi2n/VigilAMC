@@ -20,18 +20,13 @@ const nextConfig = {
   async redirects() {
     return [
       {
-        source: '/technician',
-        destination: '/',
-        permanent: false,
-      },
-      {
         source: '/scan',
-        destination: '/',
+        destination: '/technician',
         permanent: false,
       },
       {
         source: '/scan/:path*',
-        destination: '/',
+        destination: '/technician',
         permanent: false,
       },
       {

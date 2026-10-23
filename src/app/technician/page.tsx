@@ -1,505 +1,1394 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  MapPin,
-  Camera,
+  ShieldCheck,
   Building2,
   CheckCircle2,
   AlertTriangle,
-  Clock,
+  MapPin,
+  Camera,
+  Layers,
   ArrowRight,
   LogOut,
   RefreshCw,
-  User,
-  ShieldCheck,
-  FileText,
   Search,
   Check,
   Phone,
-  Calendar,
-  Layers,
+  Mic,
+  MicOff,
+  Wifi,
+  WifiOff,
+  Download,
+  Flame,
   Wrench,
-  ChevronRight
+  ChevronRight,
+  ArrowLeft,
+  PenTool,
+  Lock,
+  User,
+  Sparkles,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
-export default function TechnicianPortalPage() {
+interface GPSCoordinates {
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+  timestamp: number;
+  isBasementCached?: boolean;
+}
+
+interface QueuedInspection {
+  clientSyncId: string;
+  buildingId: string;
+  equipmentId?: string;
+  status: 'PASSED' | 'FAILED';
+  checklist: any;
+  remarks: string;
+  photoDataUrl?: string;
+  latitude?: number;
+  longitude?: number;
+  gpsAccuracy?: number;
+  technicianName?: string;
+  issueChips?: string[];
+  createdAt: number;
+}
+
+const COMMON_DEFECT_CHIPS = [
+  { id: 'LOW_PRESSURE', label: 'Low Pressure / Refill', icon: '📉' },
+  { id: 'HOSE_LEAK', label: 'Valve / Hose Leak', icon: '💧' },
+  { id: 'SEAL_MISSING', label: 'Pin / Seal Missing', icon: '🔒' },
+  { id: 'DAMAGED_PART', label: 'Damaged Horn / Part', icon: '⚠️' },
+  { id: 'PANEL_FAULT', label: 'Battery / Panel Fault', icon: '⚡' },
+  { id: 'BLOCKED_ACCESS', label: 'Missing / Blocked', icon: '🚫' },
+];
+
+export default function TechnicianPWA() {
   const router = useRouter();
   const supabase = createClient();
 
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'BUILDINGS' | 'WORK_ORDERS' | 'RECENT_SERVICES'>('BUILDINGS');
-  const [searchQuery, setSearchQuery] = useState('');
+  // Authentication State
+  const [authChecking, setAuthChecking] = useState(true);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [isAdminTester, setIsAdminTester] = useState(false);
 
-  const fetchTechnicianData = async () => {
+  // In-App Login Form State
+  const [loginIdentifier, setLoginIdentifier] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+
+  // PWA Install Prompt State
+  const [deferredInstallPrompt, setDeferredInstallPrompt] = useState<any>(null);
+  const [isAppInstalled, setIsAppInstalled] = useState(false);
+
+  // Data State
+  const [dataLoading, setDataLoading] = useState(false);
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [selectedBuilding, setSelectedBuilding] = useState<any>(null);
+  const [activeFloorFilter, setActiveFloorFilter] = useState<string>('ALL');
+  const [activeAssetInspection, setActiveAssetInspection] = useState<any>(null);
+
+  // Live GPS Tracker State
+  const [gpsLocation, setGpsLocation] = useState<GPSCoordinates | null>(null);
+  const [gpsStatus, setGpsStatus] = useState<'LOCKING' | 'LOCKED' | 'BASEMENT_CACHED' | 'DENIED'>('LOCKING');
+  const lastKnownGpsRef = useRef<GPSCoordinates | null>(null);
+  const watchIdRef = useRef<number | null>(null);
+
+  // Inspection Check Sheet State
+  const [inspStatus, setInspStatus] = useState<'PASSED' | 'FAILED'>('PASSED');
+  const [selectedIssues, setSelectedIssues] = useState<string[]>([]);
+  const [pressureReading, setPressureReading] = useState('');
+  const [remarks, setRemarks] = useState('');
+  const [isListeningMic, setIsListeningMic] = useState(false);
+  const [submittingInspection, setSubmittingInspection] = useState(false);
+
+  // Stamped Camera Photo State
+  const [capturedPhotoUrl, setCapturedPhotoUrl] = useState<string | null>(null);
+  const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Offline Basement Sync Queue
+  const [offlineQueue, setOfflineQueue] = useState<QueuedInspection[]>([]);
+  const [isOnline, setIsOnline] = useState(true);
+  const [isSyncingQueue, setIsSyncingQueue] = useState(false);
+
+  // Guard Signature Pad State
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const [guardName, setGuardName] = useState('');
+  const [guardDesignation, setGuardDesignation] = useState('Site Security Supervisor');
+  const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
+  const [isDrawingSignature, setIsDrawingSignature] = useState(false);
+  const sigCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Toast Notification
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const triggerToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => {
+      setToastMsg((prev) => (prev === msg ? null : prev));
+    }, 3500);
+  };
+
+  // 1. Service Worker & PWA Install Listener
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsOnline(navigator.onLine);
+      const handleOnline = () => {
+        setIsOnline(true);
+        triggerToast('🟢 Network restored. Syncing offline logs...');
+      };
+      const handleOffline = () => {
+        setIsOnline(false);
+        triggerToast('🟠 Offline mode activated (Basement safe).');
+      };
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+
+      // Register Service Worker
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch((err) => {
+          console.warn('SW registration failed:', err);
+        });
+      }
+
+      // Capture beforeinstallprompt
+      const handleBeforeInstall = (e: Event) => {
+        e.preventDefault();
+        setDeferredInstallPrompt(e);
+      };
+      window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+
+      // Check if installed
+      if (window.matchMedia('(display-mode: standalone)').matches) {
+        setIsAppInstalled(true);
+      }
+
+      // Load offline queue from localStorage
+      try {
+        const savedQueue = localStorage.getItem('vigil_offline_insp_queue');
+        if (savedQueue) {
+          setOfflineQueue(JSON.parse(savedQueue));
+        }
+        const savedGps = localStorage.getItem('vigil_last_known_gps');
+        if (savedGps) {
+          lastKnownGpsRef.current = JSON.parse(savedGps);
+        }
+      } catch {
+        // Ignore JSON error
+      }
+
+      return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+      };
+    }
+  }, []);
+
+  // 2. Continuous GPS Location Tracker (navigator.geolocation.watchPosition)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'geolocation' in navigator) {
+      setGpsStatus('LOCKING');
+      watchIdRef.current = navigator.geolocation.watchPosition(
+        (pos) => {
+          const coords: GPSCoordinates = {
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            accuracy: Math.round(pos.coords.accuracy || 10),
+            timestamp: pos.timestamp,
+            isBasementCached: false,
+          };
+          setGpsLocation(coords);
+          setGpsStatus('LOCKED');
+          lastKnownGpsRef.current = coords;
+          try {
+            localStorage.setItem('vigil_last_known_gps', JSON.stringify(coords));
+          } catch {}
+        },
+        (err) => {
+          console.warn('Geolocation error / basement drop:', err);
+          if (lastKnownGpsRef.current) {
+            setGpsLocation({
+              ...lastKnownGpsRef.current,
+              isBasementCached: true,
+            });
+            setGpsStatus('BASEMENT_CACHED');
+          } else {
+            setGpsStatus('DENIED');
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 12000,
+          maximumAge: 5000,
+        }
+      );
+
+      return () => {
+        if (watchIdRef.current !== null) {
+          navigator.geolocation.clearWatch(watchIdRef.current);
+        }
+      };
+    }
+  }, []);
+
+  // 3. Authenticate User Session
+  const loadDashboardData = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
+      setDataLoading(true);
       const res = await fetch('/api/technician/dashboard');
       if (res.status === 401) {
-        router.push('/login?redirect=/technician');
-        return;
-      }
-      if (res.status === 403) {
-        const d = await res.json();
-        setError(d.error || 'Access denied. Account may be inactive.');
+        setUserProfile(null);
         return;
       }
       const json = await res.json();
       if (!res.ok) {
-        throw new Error(json.error || 'Failed to load technician dashboard');
+        throw new Error(json.error || 'Failed to load technician app');
       }
-      setData(json);
+      setUserProfile(json.profile);
+      setIsAdminTester(json.profile?.role === 'ORG_ADMIN' || json.profile?.role === 'SUPER_ADMIN');
+      setDashboardData(json);
     } catch (e: any) {
-      setError(e.message || 'Error loading technician workspace');
+      console.error(e);
     } finally {
-      setLoading(false);
+      setDataLoading(false);
+      setAuthChecking(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchTechnicianData();
-  }, []);
+    loadDashboardData();
+  }, [loadDashboardData]);
+
+  // 4. In-App Mobile / Staff ID Login
+  const handleInAppLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError(null);
+    setLoginLoading(true);
+
+    try {
+      const rawIdent = loginIdentifier.trim();
+      let resolvedEmail = rawIdent.toLowerCase();
+
+      // Resolve Mobile / Staff ID to internal email if needed
+      if (!rawIdent.includes('@')) {
+        const resolveRes = await fetch('/api/auth/resolve-identifier', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier: rawIdent }),
+        });
+        const resolveData = await resolveRes.json();
+        if (!resolveRes.ok || !resolveData.email) {
+          throw new Error(resolveData.error || 'Account not found. Please check with your supervisor.');
+        }
+        resolvedEmail = resolveData.email.trim().toLowerCase();
+      } else {
+        const resolveRes = await fetch('/api/auth/resolve-identifier', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier: resolvedEmail }),
+        });
+        if (resolveRes.status === 403) {
+          const resolveData = await resolveRes.json();
+          throw new Error(resolveData.error || 'This staff account has been deactivated.');
+        }
+      }
+
+      const { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
+        email: resolvedEmail,
+        password: loginPassword,
+      });
+
+      if (authErr) {
+        throw new Error(authErr.message || 'Invalid credentials or PIN');
+      }
+
+      if (authData.session) {
+        triggerToast('✅ Signed in successfully!');
+        await loadDashboardData();
+      }
+    } catch (err: any) {
+      setLoginError(err.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setLoginLoading(false);
+    }
+  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    router.push('/login');
+    setUserProfile(null);
+    setDashboardData(null);
+    setSelectedBuilding(null);
+    setActiveAssetInspection(null);
   };
 
-  const handleQuickScan = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/scan/${encodeURIComponent(searchQuery.trim().toUpperCase())}`);
+  const handleInstallApp = async () => {
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt();
+      const choice = await deferredInstallPrompt.userChoice;
+      if (choice.outcome === 'accepted') {
+        setIsAppInstalled(true);
+        setDeferredInstallPrompt(null);
+      }
+    } else {
+      triggerToast('📱 Open browser menu & select "Add to Home Screen"');
     }
   };
 
-  if (loading) {
+  // 5. Offline Queue Sync Handler
+  const syncOfflineQueue = useCallback(async () => {
+    if (offlineQueue.length === 0 || !navigator.onLine || isSyncingQueue) return;
+    setIsSyncingQueue(true);
+
+    const remaining: QueuedInspection[] = [];
+
+    for (const item of offlineQueue) {
+      try {
+        const res = await fetch('/api/inspections', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            buildingId: item.buildingId,
+            equipmentId: item.equipmentId,
+            status: item.status,
+            checklist: item.checklist,
+            remarks: item.remarks,
+            photos: item.photoDataUrl ? [item.photoDataUrl] : [],
+            latitude: item.latitude,
+            longitude: item.longitude,
+            gpsAccuracy: item.gpsAccuracy,
+            technicianName: item.technicianName,
+            issueChips: item.issueChips,
+          }),
+        });
+
+        if (!res.ok) {
+          remaining.push(item);
+        }
+      } catch {
+        remaining.push(item);
+      }
+    }
+
+    setOfflineQueue(remaining);
+    try {
+      localStorage.setItem('vigil_offline_insp_queue', JSON.stringify(remaining));
+    } catch {}
+
+    setIsSyncingQueue(false);
+    if (remaining.length === 0) {
+      triggerToast('🟢 All offline basement inspections synced successfully!');
+      loadDashboardData();
+    }
+  }, [offlineQueue, isSyncingQueue, loadDashboardData]);
+
+  useEffect(() => {
+    if (isOnline && offlineQueue.length > 0) {
+      syncOfflineQueue();
+    }
+  }, [isOnline, offlineQueue.length, syncOfflineQueue]);
+
+  // 6. Camera Photo Capture + Burned-In GPS Watermark
+  const handlePhotoCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsProcessingPhoto(true);
+
+      // Create Image and Canvas
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = objectUrl;
+      });
+
+      // Compress to max 1280px dimension
+      const maxDim = 1280;
+      let width = img.naturalWidth || img.width;
+      let height = img.naturalHeight || img.height;
+
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) throw new Error('Canvas not supported');
+
+      // Draw photo
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Burn-in Dark Semi-Transparent Footer Badge
+      const barHeight = Math.max(54, Math.round(height * 0.09));
+      ctx.fillStyle = 'rgba(7, 25, 46, 0.88)';
+      ctx.fillRect(0, height - barHeight, width, barHeight);
+
+      // Watermark Text: VigilAMC Verified • Building • Asset • Lat,Lng • Date Time IST
+      const bldgName = selectedBuilding?.name || 'Site Inspection';
+      const assetCode = activeAssetInspection?.qrCode || 'Fire Unit';
+      const gpsString = gpsLocation
+        ? `${gpsLocation.latitude.toFixed(4)}°N, ${gpsLocation.longitude.toFixed(4)}°E (±${gpsLocation.accuracy}m)${
+            gpsLocation.isBasementCached ? ' [B1 Cached]' : ''
+          }`
+        : 'GPS Locked';
+      const dateString = new Date().toLocaleString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+      ctx.fillStyle = '#38BDF8'; // Cyan
+      ctx.font = `bold ${Math.round(barHeight * 0.32)}px sans-serif`;
+      ctx.fillText(`VigilAMC Verified • ${bldgName} • ${assetCode}`, 16, height - barHeight * 0.55);
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = `${Math.round(barHeight * 0.26)}px sans-serif`;
+      ctx.fillText(`📍 ${gpsString} • 🕒 ${dateString} IST`, 16, height - barHeight * 0.2);
+
+      const watermarkedWebP = canvas.toDataURL('image/webp', 0.82);
+      setCapturedPhotoUrl(watermarkedWebP);
+      URL.revokeObjectURL(objectUrl);
+      triggerToast('📸 Photo stamped with GPS & Timestamp!');
+    } catch (err: any) {
+      console.error(err);
+      triggerToast('Error capturing photo. Please try again.');
+    } finally {
+      setIsProcessingPhoto(false);
+    }
+  };
+
+  // 7. Speech-to-Text Voice Notes Handler
+  const toggleSpeechRecognition = () => {
+    if (typeof window === 'undefined') return;
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      triggerToast('Speech recognition not supported in this browser. Please type notes.');
+      return;
+    }
+
+    if (isListeningMic) {
+      setIsListeningMic(false);
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'hi-IN'; // Multi-lingual Indian English / Hindi
+
+      recognition.onstart = () => {
+        setIsListeningMic(true);
+        triggerToast('🎤 Listening... Speak your observation now');
+      };
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setRemarks((prev) => (prev ? `${prev} • ${transcript}` : transcript));
+        setIsListeningMic(false);
+        triggerToast('✓ Voice note captured!');
+      };
+
+      recognition.onerror = () => {
+        setIsListeningMic(false);
+      };
+
+      recognition.onend = () => {
+        setIsListeningMic(false);
+      };
+
+      recognition.start();
+    } catch {
+      setIsListeningMic(false);
+    }
+  };
+
+  // 8. Submit Check Sheet (Online or Offline Basement Queue)
+  const handleSubmitChecksheet = async () => {
+    if (!selectedBuilding || !activeAssetInspection) return;
+    setSubmittingInspection(true);
+
+    const inspectionPayload = {
+      clientSyncId: `SYNC-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      buildingId: selectedBuilding.id,
+      equipmentId: activeAssetInspection.id,
+      status: inspStatus,
+      checklist: {
+        pressure: pressureReading || (inspStatus === 'PASSED' ? 'NORMAL' : 'LOW'),
+        condition: inspStatus === 'PASSED' ? 'GOOD' : 'NEEDS_ATTENTION',
+        issues: selectedIssues,
+      },
+      remarks: remarks.trim(),
+      photoDataUrl: capturedPhotoUrl || undefined,
+      latitude: gpsLocation?.latitude,
+      longitude: gpsLocation?.longitude,
+      gpsAccuracy: gpsLocation?.accuracy,
+      technicianName: userProfile?.fullName || 'Field Technician',
+      issueChips: selectedIssues,
+      createdAt: Date.now(),
+    };
+
+    if (!navigator.onLine) {
+      // Store in Offline Basement Queue
+      const updatedQueue = [...offlineQueue, inspectionPayload];
+      setOfflineQueue(updatedQueue);
+      try {
+        localStorage.setItem('vigil_offline_insp_queue', JSON.stringify(updatedQueue));
+      } catch {}
+      triggerToast('📦 Saved in Offline Basement Queue. Will sync automatically.');
+      closeInspectionModal();
+      setSubmittingInspection(false);
+      return;
+    }
+
+    try {
+      let finalPhotoUrl = capturedPhotoUrl;
+      // If photo captured, upload to R2
+      if (capturedPhotoUrl) {
+        const uploadRes = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            dataUrl: capturedPhotoUrl,
+            folder: 'inspections',
+          }),
+        });
+        const uploadData = await uploadRes.json();
+        if (uploadRes.ok && uploadData.url) {
+          finalPhotoUrl = uploadData.url;
+        }
+      }
+
+      const res = await fetch('/api/inspections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          buildingId: inspectionPayload.buildingId,
+          equipmentId: inspectionPayload.equipmentId,
+          status: inspectionPayload.status,
+          checklist: inspectionPayload.checklist,
+          remarks: inspectionPayload.remarks,
+          photoUrl: finalPhotoUrl,
+          latitude: inspectionPayload.latitude,
+          longitude: inspectionPayload.longitude,
+          gpsAccuracy: inspectionPayload.gpsAccuracy,
+          technicianName: inspectionPayload.technicianName,
+          issueChips: inspectionPayload.issueChips,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Server submission error');
+      }
+
+      triggerToast('✅ Inspection logged with GPS & photo watermark!');
+      closeInspectionModal();
+      loadDashboardData();
+    } catch (err: any) {
+      console.warn('Network failed during submission, queuing offline:', err);
+      const updatedQueue = [...offlineQueue, inspectionPayload];
+      setOfflineQueue(updatedQueue);
+      try {
+        localStorage.setItem('vigil_offline_insp_queue', JSON.stringify(updatedQueue));
+      } catch {}
+      triggerToast('🟠 Connection dropped. Saved to Basement Queue!');
+      closeInspectionModal();
+    } finally {
+      setSubmittingInspection(false);
+    }
+  };
+
+  const closeInspectionModal = () => {
+    setActiveAssetInspection(null);
+    setInspStatus('PASSED');
+    setSelectedIssues([]);
+    setPressureReading('');
+    setRemarks('');
+    setCapturedPhotoUrl(null);
+  };
+
+  // 9. Guard Signature Canvas Drawing Handlers
+  const startDrawingSig = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    setIsDrawingSignature(true);
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    ctx.beginPath();
+    ctx.moveTo(clientX - rect.left, clientY - rect.top);
+  };
+
+  const drawSig = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawingSignature) return;
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#0284C7';
+    ctx.lineTo(clientX - rect.left, clientY - rect.top);
+    ctx.stroke();
+  };
+
+  const stopDrawingSig = () => {
+    setIsDrawingSignature(false);
+    if (sigCanvasRef.current) {
+      setSignatureDataUrl(sigCanvasRef.current.toDataURL('image/png'));
+    }
+  };
+
+  const clearSignature = () => {
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setSignatureDataUrl(null);
+  };
+
+  const handleSubmitGuardSignoff = async () => {
+    if (!selectedBuilding || !signatureDataUrl) return;
+    try {
+      await fetch('/api/inspections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          buildingId: selectedBuilding.id,
+          status: 'PASSED',
+          customerName: guardName || 'Site Security Guard',
+          customerDesignation: guardDesignation,
+          customerSignature: signatureDataUrl,
+          latitude: gpsLocation?.latitude,
+          longitude: gpsLocation?.longitude,
+          gpsAccuracy: gpsLocation?.accuracy,
+        }),
+      });
+      triggerToast('✍️ Site Guard sign-off submitted successfully!');
+      setShowSignatureModal(false);
+      clearSignature();
+      loadDashboardData();
+    } catch {
+      triggerToast('Error saving signoff. Please try again.');
+    }
+  };
+
+  // ----------------------------------------------------------------------------------
+  // RENDER SCREEN 1: FULL SCREEN IN-APP LOGIN (If not authenticated)
+  // ----------------------------------------------------------------------------------
+  if (authChecking) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4">
         <div className="text-center space-y-3">
           <RefreshCw className="w-8 h-8 animate-spin text-[#0077B6] mx-auto" />
-          <p className="text-sm font-semibold text-slate-700">Loading technician workspace...</p>
-          <p className="text-xs text-slate-400">Verifying assigned facilities and jobs</p>
+          <p className="text-sm font-bold text-slate-300">Initializing VigilAMC Field App...</p>
         </div>
       </div>
     );
   }
 
-  if (error) {
+  if (!userProfile) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white border border-red-200 rounded-2xl p-6 text-center space-y-4 shadow-sm">
-          <div className="w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto">
-            <AlertTriangle className="w-6 h-6" />
-          </div>
-          <h2 className="text-lg font-bold text-slate-900">Access Restricted</h2>
-          <p className="text-sm text-slate-600">{error}</p>
-          <div className="pt-2 flex flex-col gap-2">
-            <button
-              onClick={fetchTechnicianData}
-              className="w-full py-2.5 px-4 bg-[#0077B6] text-white text-xs font-bold rounded-xl hover:bg-[#023E8A] transition-colors"
-            >
-              Try Again
-            </button>
-            <button
-              onClick={handleSignOut}
-              className="w-full py-2 px-4 text-xs font-semibold text-slate-600 hover:text-slate-900"
-            >
-              Sign In with Another Account
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const profile = data?.profile;
-  const stats = data?.stats;
-  const assignedBuildings = data?.assignedBuildings || [];
-  const workOrders = data?.workOrders || [];
-  const jobs = data?.jobs || [];
-  const recentServices = data?.recentServices || [];
-
-  return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Top Header Bar */}
-      <header className="bg-[#023E8A] text-white sticky top-0 z-30 shadow-md">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-cyan-200 border border-white/20">
-              <ShieldCheck className="w-5 h-5 text-cyan-300" />
+      <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-center px-4 py-8">
+        <div className="max-w-md w-full mx-auto space-y-6">
+          {/* Header Brand */}
+          <div className="text-center space-y-2">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#023E8A] to-[#0077B6] border border-cyan-400/40 flex items-center justify-center mx-auto shadow-xl">
+              <ShieldCheck className="w-9 h-9 text-cyan-300" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-base tracking-tight">VigilAMC</span>
-                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-200 border border-cyan-400/30">
-                  Technician App
-                </span>
+            <h1 className="text-2xl font-black tracking-tight text-white">VigilAMC Field Operations</h1>
+            <p className="text-xs text-slate-400">
+              Pan-India Mobile App for Fire Safety Field Technicians
+            </p>
+          </div>
+
+          {/* Quick Install Banner if available */}
+          {deferredInstallPrompt && !isAppInstalled && (
+            <div className="bg-[#023E8A]/40 border border-cyan-400/30 rounded-2xl p-3 flex items-center justify-between gap-3">
+              <div className="text-left text-xs">
+                <span className="font-bold text-cyan-200">Install as App?</span>
+                <p className="text-[11px] text-slate-300">Fast 1-tap launch directly from your home screen</p>
               </div>
-              <p className="text-[11px] text-cyan-200/80 truncate max-w-[200px] sm:max-w-sm">
-                {profile?.agencyName || 'Fire Safety Operations'}
+              <button
+                type="button"
+                onClick={handleInstallApp}
+                className="px-3 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shrink-0 shadow-sm"
+              >
+                Install App
+              </button>
+            </div>
+          )}
+
+          {/* Login Card */}
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-5">
+            <div className="border-b border-slate-800 pb-3">
+              <h2 className="text-base font-bold text-white">Staff / Mobile Login</h2>
+              <p className="text-xs text-slate-400">
+                Enter your 10-digit Mobile Number or Staff ID + PIN
+              </p>
+            </div>
+
+            {loginError && (
+              <div className="p-3 rounded-xl bg-red-950/60 border border-red-500/50 text-red-200 text-xs flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+                <span>{loginError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleInAppLogin} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-300 font-bold uppercase tracking-wider mb-1.5">
+                  Mobile Number / Staff ID *
+                </label>
+                <div className="relative">
+                  <Phone className="w-4 h-4 text-slate-500 absolute left-3 top-3.5" />
+                  <input
+                    type="text"
+                    required
+                    value={loginIdentifier}
+                    onChange={(e) => setLoginIdentifier(e.target.value)}
+                    placeholder="e.g. 9876543210 or TECH-101"
+                    className="w-full pl-9 pr-3 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm placeholder-slate-600 focus:outline-none focus:border-cyan-400 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-bold uppercase tracking-wider mb-1.5">
+                  6-Digit Login PIN / Password *
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-3.5" />
+                  <input
+                    type="password"
+                    required
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    placeholder="••••••"
+                    className="w-full pl-9 pr-3 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm placeholder-slate-600 focus:outline-none focus:border-cyan-400 font-mono tracking-widest"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loginLoading}
+                className="w-full py-3.5 bg-gradient-to-r from-[#0077B6] to-[#023E8A] hover:from-[#0096C7] hover:to-[#0077B6] text-white font-extrabold text-sm rounded-2xl shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+              >
+                {loginLoading ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Signing in...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Enter Mobile App</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="text-center pt-2">
+              <p className="text-[11px] text-slate-500">
+                Credentials sent via WhatsApp by your agency admin. For help, contact your supervisor.
               </p>
             </div>
           </div>
-
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="hidden sm:flex flex-col text-right">
-              <span className="text-xs font-bold text-white leading-tight">{profile?.fullName}</span>
-              <span className="text-[10px] text-cyan-200">{profile?.employeeId ? `ID: ${profile.employeeId}` : profile?.email}</span>
-            </div>
-            <button
-              onClick={handleSignOut}
-              title="Sign Out"
-              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-slate-100 hover:text-white transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
         </div>
-      </header>
+      </div>
+    );
+  }
 
-      {/* Main Body */}
-      <main className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 space-y-6">
-        {/* Welcome Banner & Quick Action */}
-        <div className="bg-gradient-to-br from-[#0077B6] to-[#023E8A] rounded-2xl p-5 sm:p-6 text-white shadow-lg relative overflow-hidden">
-          <div className="relative z-10 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <span className="text-xs uppercase font-extrabold tracking-widest text-cyan-200 bg-white/10 px-2.5 py-1 rounded-md border border-white/15">
-                  Field Operations Hub
+  // ----------------------------------------------------------------------------------
+  // RENDER SCREEN 2: STANDALONE MOBILE APP SHELL (`max-w-md mx-auto bg-slate-950`)
+  // ----------------------------------------------------------------------------------
+  const assignedBuildings = dashboardData?.assignedBuildings || [];
+  const selectedBldgEquipments = selectedBuilding?.equipments || [];
+
+  // Extract distinct floors/zones for horizontal filter pills
+  const availableFloors = Array.from(
+    new Set(selectedBldgEquipments.map((eq: any) => eq.floorZone).filter(Boolean))
+  ) as string[];
+
+  const filteredAssets = selectedBldgEquipments.filter((eq: any) => {
+    if (activeFloorFilter === 'ALL') return true;
+    return eq.floorZone === activeFloorFilter;
+  });
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-between selection:bg-[#0077B6] selection:text-white">
+      {/* Toast Notification */}
+      {toastMsg && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-slate-900 border border-cyan-400/50 text-white px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-top-4">
+          <span>{toastMsg}</span>
+        </div>
+      )}
+
+      {/* Main Container constrained to mobile max-w-md */}
+      <div className="max-w-md w-full mx-auto flex-1 flex flex-col pb-16">
+        {/* Top App Header & Live GPS Status Bar */}
+        <header className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-md border-b border-slate-800 p-3 space-y-2">
+          {/* Top Bar: Admin Return Pill & Profile */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              {selectedBuilding ? (
+                <button
+                  type="button"
+                  onClick={() => setSelectedBuilding(null)}
+                  className="p-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </button>
+              ) : (
+                <div className="w-8 h-8 rounded-xl bg-[#0077B6] flex items-center justify-center font-black text-xs text-white">
+                  V
+                </div>
+              )}
+              <div className="truncate">
+                <span className="font-extrabold text-sm text-white block truncate leading-tight">
+                  {selectedBuilding ? selectedBuilding.name : 'VigilAMC Mobile'}
                 </span>
-                <h1 className="text-xl sm:text-2xl font-black mt-2 tracking-tight">
-                  Welcome back, {profile?.fullName?.split(' ')[0] || 'Technician'}
-                </h1>
-                <p className="text-xs sm:text-sm text-cyan-100 mt-0.5">
-                  Record maintenance checks with asset details, floor & location notes, GPS position, and photo evidence.
-                </p>
+                <span className="text-[10px] text-cyan-300 truncate block">
+                  {userProfile?.fullName || 'Technician'} ({userProfile?.employeeId || 'STAFF'})
+                </span>
               </div>
-
-              <Link
-                href="/scan"
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-white text-[#023E8A] font-bold text-sm shadow-md hover:bg-slate-100 transition-all active:scale-[0.98] shrink-0"
-              >
-                <MapPin className="w-4 h-4 text-[#0077B6]" />
-                <span>New Inspection Record</span>
-              </Link>
             </div>
 
-            {/* Quick Asset Search */}
-            <form onSubmit={handleQuickScan} className="pt-2 flex gap-2">
-              <div className="relative flex-1">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Enter Asset ID / Serial (e.g. EXT-01, HYD-04)..."
-                  className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-cyan-100/60 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-cyan-300 backdrop-blur-sm"
-                />
-              </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              {isAdminTester && (
+                <Link
+                  href="/dashboard"
+                  className="px-2.5 py-1 rounded-full bg-blue-500/20 text-cyan-300 border border-cyan-400/30 text-[10px] font-bold"
+                >
+                  ← Admin OS
+                </Link>
+              )}
+
+              {deferredInstallPrompt && (
+                <button
+                  type="button"
+                  onClick={handleInstallApp}
+                  className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 text-[10px] font-bold flex items-center gap-1"
+                >
+                  <Download className="w-3 h-3" />
+                  <span>Install</span>
+                </button>
+              )}
+
               <button
-                type="submit"
-                className="px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-navy-950 font-bold text-xs sm:text-sm transition-colors"
+                type="button"
+                onClick={handleSignOut}
+                className="p-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-rose-400"
+                title="Sign Out"
               >
-                Lookup
+                <LogOut className="w-4 h-4" />
               </button>
-            </form>
-          </div>
-        </div>
-
-        {/* Stats Row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-            <span className="text-slate-400 text-[11px] font-semibold uppercase tracking-wider block">
-              Assigned Sites
-            </span>
-            <div className="mt-1 flex items-baseline gap-2">
-              <span className="text-2xl font-black text-slate-900">{stats?.assignedBuildingsCount || 0}</span>
-              <Building2 className="w-4 h-4 text-[#0077B6]" />
             </div>
-            <span className="text-[10px] text-slate-400 mt-1 block">Authorized facilities</span>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-            <span className="text-slate-400 text-[11px] font-semibold uppercase tracking-wider block">
-              Active Work Orders
-            </span>
-            <div className="mt-1 flex items-baseline gap-2">
-              <span className="text-2xl font-black text-amber-600">{stats?.openWorkOrdersCount || 0}</span>
-              <Wrench className="w-4 h-4 text-amber-500" />
+          {/* Persistent Continuous GPS Status Pill */}
+          <div className="flex items-center justify-between px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-[11px] font-mono">
+            <div className="flex items-center gap-2 truncate">
+              {gpsStatus === 'LOCKED' ? (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                  <span className="text-emerald-300 font-bold truncate">
+                    GPS Locked: {gpsLocation?.latitude.toFixed(4)}° N, {gpsLocation?.longitude.toFixed(4)}° E (±{gpsLocation?.accuracy}m)
+                  </span>
+                </>
+              ) : gpsStatus === 'BASEMENT_CACHED' ? (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                  <span className="text-amber-300 font-bold truncate">
+                    Basement Mode (Gate Cached ±{gpsLocation?.accuracy}m)
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-cyan-400 animate-spin shrink-0" />
+                  <span className="text-slate-400 truncate">Locking Satellite GPS...</span>
+                </>
+              )}
             </div>
-            <span className="text-[10px] text-slate-400 mt-1 block">Assigned to you</span>
-          </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-            <span className="text-slate-400 text-[11px] font-semibold uppercase tracking-wider block">
-              Scheduled Jobs
-            </span>
-            <div className="mt-1 flex items-baseline gap-2">
-              <span className="text-2xl font-black text-slate-900">{stats?.activeJobsCount || 0}</span>
-              <Calendar className="w-4 h-4 text-[#023E8A]" />
+            <div className="flex items-center gap-1 shrink-0 text-[10px] font-sans">
+              {isOnline ? (
+                <span className="text-emerald-400 font-bold flex items-center gap-0.5">
+                  <Wifi className="w-3 h-3" /> Live
+                </span>
+              ) : (
+                <span className="text-amber-400 font-bold flex items-center gap-0.5">
+                  <WifiOff className="w-3 h-3" /> Offline ({offlineQueue.length})
+                </span>
+              )}
             </div>
-            <span className="text-[10px] text-slate-400 mt-1 block">Maintenance visits</span>
           </div>
+        </header>
 
-          <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-            <span className="text-slate-400 text-[11px] font-semibold uppercase tracking-wider block">
-              Services Logged
-            </span>
-            <div className="mt-1 flex items-baseline gap-2">
-              <span className="text-2xl font-black text-emerald-600">{stats?.totalServicesLogged || 0}</span>
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+        {/* VIEW A: ASSIGNED BUILDINGS LIST */}
+        {!selectedBuilding && (
+          <div className="p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-black text-white">Assigned Facilities</h2>
+                <p className="text-xs text-slate-400">Tap a site to start continuous inspection</p>
+              </div>
+              <span className="px-2.5 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-xs font-bold text-cyan-300">
+                {assignedBuildings.length} Sites
+              </span>
             </div>
-            <span className="text-[10px] text-slate-400 mt-1 block">Verified records</span>
-          </div>
-        </div>
 
-        {/* Tab Selector */}
-        <div className="flex border-b border-slate-200 gap-2">
-          <button
-            onClick={() => setActiveTab('BUILDINGS')}
-            className={`pb-3 px-3 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-1.5 ${
-              activeTab === 'BUILDINGS'
-                ? 'border-[#0077B6] text-[#0077B6]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Building2 className="w-4 h-4" />
-            <span>Assigned Facilities ({assignedBuildings.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('WORK_ORDERS')}
-            className={`pb-3 px-3 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-1.5 ${
-              activeTab === 'WORK_ORDERS'
-                ? 'border-[#0077B6] text-[#0077B6]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Wrench className="w-4 h-4" />
-            <span>Work Orders ({workOrders.length + jobs.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('RECENT_SERVICES')}
-            className={`pb-3 px-3 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-1.5 ${
-              activeTab === 'RECENT_SERVICES'
-                ? 'border-[#0077B6] text-[#0077B6]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            <span>My Service History ({recentServices.length})</span>
-          </button>
-        </div>
-
-        {/* Tab 1: Assigned Buildings */}
-        {activeTab === 'BUILDINGS' && (
-          <div className="space-y-4">
             {assignedBuildings.length === 0 ? (
-              <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center space-y-3">
-                <Building2 className="w-10 h-10 text-slate-300 mx-auto" />
-                <h3 className="text-base font-bold text-slate-800">No Facilities Assigned Yet</h3>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                  Your agency administrator hasn't assigned specific buildings to your account yet. Check back soon or contact your admin.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {assignedBuildings.map((building: any) => (
-                  <div
-                    key={building.id}
-                    className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow space-y-4"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-base font-bold text-slate-900">{building.name}</h3>
-                        </div>
-                        <p className="text-xs text-[#0077B6] font-semibold mt-0.5">{building.clientName}</p>
-                        <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
-                          <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                          <span className="truncate">{building.address}</span>
-                        </p>
-                      </div>
-
-                      <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 shrink-0">
-                        {building.totalAssets} Assets
-                      </span>
-                    </div>
-
-                    {/* Status badges */}
-                    <div className="flex flex-wrap gap-2 text-xs pt-1 border-t border-slate-100">
-                      {building.overdueCount > 0 && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-50 text-red-700 font-semibold border border-red-200">
-                          <AlertTriangle className="w-3 h-3 text-red-600" />
-                          {building.overdueCount} Overdue
-                        </span>
-                      )}
-                      {building.dueSoonCount > 0 && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 font-semibold border border-amber-200">
-                          <Clock className="w-3 h-3 text-amber-600" />
-                          {building.dueSoonCount} Due Soon
-                        </span>
-                      )}
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 font-semibold border border-emerald-200">
-                        <Check className="w-3 h-3 text-emerald-600" />
-                        {building.compliantCount} Compliant
-                      </span>
-                    </div>
-
-                    <div className="pt-2">
-                      <Link
-                        href={`/buildings/${building.id}`}
-                        className="w-full py-2 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold flex items-center justify-between transition-colors border border-slate-200"
-                      >
-                        <span>View Facility Inventory & Compliance</span>
-                        <ChevronRight className="w-4 h-4 text-slate-400" />
-                      </Link>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Tab 2: Work Orders & Jobs */}
-        {activeTab === 'WORK_ORDERS' && (
-          <div className="space-y-4">
-            {workOrders.length === 0 && jobs.length === 0 ? (
-              <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center space-y-3">
-                <Wrench className="w-10 h-10 text-slate-300 mx-auto" />
-                <h3 className="text-base font-bold text-slate-800">No Open Work Orders Assigned</h3>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                  You currently have no pending service tickets or scheduled jobs. When your administrator assigns tasks, they will appear here.
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center space-y-3">
+                <Building2 className="w-10 h-10 text-slate-600 mx-auto" />
+                <h3 className="text-sm font-bold text-slate-300">No Facilities Assigned Yet</h3>
+                <p className="text-xs text-slate-500">
+                  Your administrator has not assigned specific buildings yet.
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
-                {workOrders.map((wo: any) => (
-                  <div
-                    key={wo.id}
-                    className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold uppercase px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
-                          {wo.priority}
-                        </span>
-                        <h4 className="text-sm font-bold text-slate-900">{wo.title}</h4>
-                      </div>
-                      <p className="text-xs text-slate-500">{wo.description}</p>
-                      <p className="text-[11px] text-slate-400 flex items-center gap-2 mt-1">
-                        <span>Facility: <strong>{wo.building?.name || '—'}</strong></span>
-                        {wo.equipment?.qrCode && (
-                          <span>• Asset: <strong>{wo.equipment.qrCode} ({wo.equipment.type})</strong></span>
-                        )}
-                        {wo.dueDate && (
-                          <span>• Due: <strong>{new Date(wo.dueDate).toLocaleDateString('en-IN')}</strong></span>
-                        )}
-                      </p>
-                    </div>
+                {assignedBuildings.map((bldg: any) => {
+                  const percentChecked =
+                    bldg.totalAssets > 0
+                      ? Math.min(100, Math.round((bldg.checkedCount / bldg.totalAssets) * 100))
+                      : 0;
 
-                    <div className="shrink-0 flex items-center gap-2">
-                      {wo.equipment?.qrCode ? (
-                        <Link
-                          href={`/scan/${wo.equipment.qrCode}`}
-                          className="px-3.5 py-1.5 rounded-lg bg-[#0077B6] hover:bg-[#023E8A] text-white text-xs font-bold flex items-center gap-1.5"
-                        >
-                          <MapPin className="w-3.5 h-3.5" />
-                          <span>Record Service</span>
-                        </Link>
+                  return (
+                    <div
+                      key={bldg.id}
+                      className="bg-slate-900 border border-slate-800 rounded-3xl p-4 shadow-md space-y-3.5 hover:border-slate-700 transition-all"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="space-y-0.5">
+                          <h3 className="text-base font-extrabold text-white">{bldg.name}</h3>
+                          <p className="text-xs text-slate-400 flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-cyan-400 shrink-0" />
+                            <span className="truncate">{bldg.address}</span>
+                          </p>
+                        </div>
+                        <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                          {bldg.totalAssets} Units
+                        </span>
+                      </div>
+
+                      {/* Progress Bar */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-[11px] text-slate-400 font-bold">
+                          <span>Progress: {bldg.checkedCount} / {bldg.totalAssets} Checked</span>
+                          <span className="text-cyan-300">{percentChecked}%</span>
+                        </div>
+                        <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-full transition-all duration-300"
+                            style={{ width: `${percentChecked}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Action Button: 52px+ height touch target */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedBuilding(bldg);
+                          setActiveFloorFilter('ALL');
+                        }}
+                        className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#0077B6] to-[#023E8A] hover:from-[#0096C7] hover:to-[#0077B6] text-white font-extrabold text-sm shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                      >
+                        <MapPin className="w-4 h-4 text-cyan-300" />
+                        <span>📍 Start Site Inspection</span>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* VIEW B: INSIDE BUILDING — FLOOR TABS + 6-SECOND VISUAL CHECK SHEET */}
+        {selectedBuilding && (
+          <div className="p-4 space-y-4">
+            {/* Building Info Card + Supervisor Signoff Action */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex items-center justify-between gap-3">
+              <div>
+                <span className="text-[10px] uppercase font-bold text-cyan-300 block">Inspecting Premise</span>
+                <h2 className="text-sm font-extrabold text-white truncate max-w-[200px]">{selectedBuilding.name}</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSignatureModal(true)}
+                className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 shadow-sm"
+              >
+                <PenTool className="w-3.5 h-3.5" />
+                <span>Guard Sign-Off</span>
+              </button>
+            </div>
+
+            {/* Horizontal Floor / Zone Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+              <button
+                type="button"
+                onClick={() => setActiveFloorFilter('ALL')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                  activeFloorFilter === 'ALL'
+                    ? 'bg-cyan-500 text-slate-950 font-black shadow-sm'
+                    : 'bg-slate-900 border border-slate-800 text-slate-300 hover:text-white'
+                }`}
+              >
+                All Units ({selectedBldgEquipments.length})
+              </button>
+              {availableFloors.map((fl) => (
+                <button
+                  key={fl}
+                  type="button"
+                  onClick={() => setActiveFloorFilter(fl)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                    activeFloorFilter === fl
+                      ? 'bg-cyan-500 text-slate-950 font-black shadow-sm'
+                      : 'bg-slate-900 border border-slate-800 text-slate-300 hover:text-white'
+                  }`}
+                >
+                  {fl}
+                </button>
+              ))}
+            </div>
+
+            {/* Assets List */}
+            <div className="space-y-3">
+              {filteredAssets.map((asset: any) => {
+                const isChecked = asset.isCheckedToday || asset.isCheckedCycle;
+
+                return (
+                  <div
+                    key={asset.id}
+                    className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-md"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-base font-black text-white">{asset.qrCode}</span>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300">
+                            {asset.capacity || asset.type}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-400">{asset.location || 'Location not specified'}</p>
+                      </div>
+
+                      {isChecked ? (
+                        <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-extrabold flex items-center gap-1">
+                          <Check className="w-3 h-3" />
+                          <span>DONE</span>
+                        </span>
                       ) : (
-                        <span className="px-2.5 py-1 rounded text-xs font-semibold bg-slate-100 text-slate-600">
-                          {wo.status}
+                        <span className="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-extrabold">
+                          PENDING
                         </span>
                       )}
                     </div>
-                  </div>
-                ))}
 
-                {jobs.map((job: any) => (
-                  <div
-                    key={job.id}
-                    className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold uppercase px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
-                          {job.serviceType}
-                        </span>
-                        <h4 className="text-sm font-bold text-slate-900">{job.title || job.jobNumber}</h4>
-                      </div>
-                      <p className="text-xs text-slate-500">
-                        {job.building?.name} ({job.client?.name})
-                      </p>
-                      <p className="text-[11px] text-slate-400">
-                        Scheduled: {new Date(job.scheduledDate).toLocaleDateString('en-IN')} • Priority: {job.priority}
-                      </p>
-                    </div>
-
-                    <div className="shrink-0">
-                      <span className="px-2.5 py-1 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        {job.status}
-                      </span>
-                    </div>
+                    {/* Big Action Tap Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveAssetInspection(asset);
+                        setInspStatus('PASSED');
+                        setSelectedIssues([]);
+                        setPressureReading('');
+                        setRemarks('');
+                        setCapturedPhotoUrl(null);
+                      }}
+                      className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-between px-4 transition-all"
+                    >
+                      <span>⚡ Open 6-Sec Inspection Form</span>
+                      <ChevronRight className="w-4 h-4 text-cyan-400" />
+                    </button>
                   </div>
-                ))}
-              </div>
-            )}
+                );
+              })}
+            </div>
           </div>
         )}
+      </div>
 
-        {/* Tab 3: Recent Service History */}
-        {activeTab === 'RECENT_SERVICES' && (
-          <div className="space-y-4">
-            {recentServices.length === 0 ? (
-              <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center space-y-3">
-                <CheckCircle2 className="w-10 h-10 text-slate-300 mx-auto" />
-                <h3 className="text-base font-bold text-slate-800">No Services Logged Yet</h3>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                  When you record asset service actions with GPS position and photo evidence, your completed verification entries will appear here for audit reference.
-                </p>
+      {/* =========================================================================
+          MODAL: 6-SECOND VISUAL CHECK SHEET (GIANT BUTTONS + DEFECT CHIPS + CAMERA)
+      ========================================================================= */}
+      {activeAssetInspection && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex flex-col justify-end sm:justify-center p-0 sm:p-4 overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-3xl max-w-md w-full mx-auto p-5 space-y-4 max-h-[92vh] overflow-y-auto shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div>
+                <span className="text-[10px] font-bold uppercase text-cyan-400 block font-mono">
+                  {activeAssetInspection.qrCode} • {activeAssetInspection.capacity}
+                </span>
+                <h3 className="text-base font-black text-white">{activeAssetInspection.location}</h3>
               </div>
-            ) : (
-              <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-                <div className="divide-y divide-slate-100">
-                  {recentServices.map((log: any) => (
-                    <div key={log.id} className="p-4 flex items-start justify-between gap-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-slate-900">
-                            {log.equipment?.qrCode || 'Asset'}
-                          </span>
-                          <span className="text-[11px] px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-medium">
-                            {log.equipment?.type || 'Fire Equipment'}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-600">{log.actionType}</p>
-                        <p className="text-[11px] text-slate-400">
-                          {log.equipment?.building?.name || 'Facility'} • Serviced on {new Date(log.servicedAt).toLocaleDateString('en-IN')}
-                        </p>
-                      </div>
+              <button
+                type="button"
+                onClick={closeInspectionModal}
+                className="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
 
-                      <div className="text-right shrink-0">
-                        <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded border border-emerald-200 inline-block">
-                          Next Due: {new Date(log.nextDueDate).toLocaleDateString('en-IN')}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+            {/* Giant Side-by-Side Status Buttons */}
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setInspStatus('PASSED');
+                  setSelectedIssues([]);
+                }}
+                className={`py-4 px-3 rounded-2xl font-black text-sm flex flex-col items-center justify-center gap-1.5 transition-all border-2 ${
+                  inspStatus === 'PASSED'
+                    ? 'bg-emerald-600 text-white border-emerald-400 shadow-lg scale-[1.02]'
+                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700'
+                }`}
+              >
+                <CheckCircle2 className="w-6 h-6" />
+                <span>🟢 ✓ PASS / OK</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setInspStatus('FAILED')}
+                className={`py-4 px-3 rounded-2xl font-black text-sm flex flex-col items-center justify-center gap-1.5 transition-all border-2 ${
+                  inspStatus === 'FAILED'
+                    ? 'bg-rose-600 text-white border-rose-400 shadow-lg scale-[1.02]'
+                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700'
+                }`}
+              >
+                <AlertTriangle className="w-6 h-6" />
+                <span>🔴 ⚠ DEFECT / REFILL</span>
+              </button>
+            </div>
+
+            {/* Visual Defect Chips (Shown when DEFECT is chosen) */}
+            {inspStatus === 'FAILED' && (
+              <div className="space-y-2 p-3 bg-slate-950 rounded-2xl border border-rose-900/40">
+                <span className="text-[11px] font-bold text-rose-300 uppercase tracking-wide block">
+                  Select Visual Defect Reason:
+                </span>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {COMMON_DEFECT_CHIPS.map((chip) => {
+                    const isSel = selectedIssues.includes(chip.label);
+                    return (
+                      <button
+                        key={chip.id}
+                        type="button"
+                        onClick={() => {
+                          if (isSel) {
+                            setSelectedIssues((prev) => prev.filter((i) => i !== chip.label));
+                          } else {
+                            setSelectedIssues((prev) => [...prev, chip.label]);
+                          }
+                        }}
+                        className={`p-2.5 rounded-xl border text-left font-bold flex items-center gap-2 transition-all ${
+                          isSel
+                            ? 'bg-rose-600/30 text-rose-200 border-rose-500'
+                            : 'bg-slate-900 text-slate-300 border-slate-800'
+                        }`}
+                      >
+                        <span className="text-base">{chip.icon}</span>
+                        <span className="truncate">{chip.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
+
+            {/* Camera Photo with Stamped GPS & Watermark */}
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
+                Evidence Photo (Rear Camera Stamped)
+              </span>
+
+              {capturedPhotoUrl ? (
+                <div className="relative rounded-2xl overflow-hidden border border-slate-700">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={capturedPhotoUrl} alt="Inspection Watermarked" className="w-full h-44 object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setCapturedPhotoUrl(null)}
+                    className="absolute top-2 right-2 px-2.5 py-1 bg-black/70 text-white rounded-lg text-xs font-bold"
+                  >
+                    Retake
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handlePhotoCapture}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    disabled={isProcessingPhoto}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full py-4 rounded-2xl bg-slate-950 border-2 border-dashed border-slate-700 hover:border-cyan-400 text-slate-300 font-bold text-xs flex items-center justify-center gap-2"
+                  >
+                    <Camera className="w-5 h-5 text-cyan-400" />
+                    <span>{isProcessingPhoto ? 'Burning Watermark...' : '📸 Open Camera & Stamp GPS'}</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Optional Voice Notes / Remarks */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-400">Notes / Audio Speech Note</span>
+                <button
+                  type="button"
+                  onClick={toggleSpeechRecognition}
+                  className={`text-[11px] font-bold px-2 py-0.5 rounded-lg flex items-center gap-1 ${
+                    isListeningMic ? 'bg-rose-500 text-white animate-pulse' : 'bg-slate-800 text-cyan-300'
+                  }`}
+                >
+                  {isListeningMic ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
+                  <span>{isListeningMic ? 'Stop Recording' : '🎤 Speak Voice Note'}</span>
+                </button>
+              </div>
+              <input
+                type="text"
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
+                placeholder="Optional observation (or speak using mic above)..."
+                className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder-slate-600 focus:outline-none focus:border-cyan-400"
+              />
+            </div>
+
+            {/* Final Submit Button */}
+            <button
+              type="button"
+              disabled={submittingInspection || isProcessingPhoto}
+              onClick={handleSubmitChecksheet}
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-sm shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+            >
+              {submittingInspection ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Logging Inspection...</span>
+                </>
+              ) : (
+                <>
+                  <Check className="w-5 h-5" />
+                  <span>Save Inspection ({inspStatus === 'PASSED' ? 'PASS' : 'DEFECT'})</span>
+                </>
+              )}
+            </button>
           </div>
-        )}
-      </main>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL: GUARD / SUPERVISOR FINGER SIGNATURE PAD
+      ========================================================================= */}
+      {showSignatureModal && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <h3 className="text-base font-black text-white">Facility Guard Sign-Off</h3>
+                <p className="text-xs text-slate-400">Site Facility Manager / Security Guard signs on glass</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSignatureModal(false)}
+                className="p-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block text-slate-300 font-bold mb-1">Guard / Supervisor Name</label>
+                <input
+                  type="text"
+                  value={guardName}
+                  onChange={(e) => setGuardName(e.target.value)}
+                  placeholder="e.g. Surender Singh (Security Head)"
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-cyan-400"
+                />
+              </div>
+
+              {/* Touch Canvas Pad */}
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-slate-300 font-bold">Finger Touch Signature *</label>
+                  <button
+                    type="button"
+                    onClick={clearSignature}
+                    className="text-[11px] text-cyan-400 font-bold hover:underline"
+                  >
+                    Clear Signature
+                  </button>
+                </div>
+                <div className="bg-slate-950 border-2 border-dashed border-slate-700 rounded-2xl overflow-hidden touch-none">
+                  <canvas
+                    ref={sigCanvasRef}
+                    width={360}
+                    height={160}
+                    onMouseDown={startDrawingSig}
+                    onMouseMove={drawSig}
+                    onMouseUp={stopDrawingSig}
+                    onTouchStart={startDrawingSig}
+                    onTouchMove={drawSig}
+                    onTouchEnd={stopDrawingSig}
+                    className="w-full h-40 cursor-crosshair"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="button"
+                disabled={!signatureDataUrl}
+                onClick={handleSubmitGuardSignoff}
+                className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-black text-xs shadow-md transition-all"
+              >
+                Submit Verified Site Sign-Off
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
