@@ -19,7 +19,7 @@ reviews:
         Critical: (1) every handler must check auth BEFORE reading request body; (2) exported HTTP methods must match every fetch() that calls this route (405 = bug); (3) all queries must be tenant/company scoped; (4) empty strings must be converted to null before Prisma writes; (5) never log or return secrets.
     - path: "src/components/**"
       instructions: |
-        Enforce the VigilAMC LIGHT brand theme: backgrounds #F4F8FB, cards #FFFFFF, borders #DCE7F2, primary #0077B6, deep #023E8A. Flag any bg-slate-950 / dark-theme usage, neon-purple default palettes from copied UI libraries, and any QR-code-related UI. Flag silent catch blocks (console.error only) — every mutation failure needs a user-visible toast/banner plus state revert.
+        Enforce the VigilAMC dual-brand theme: Public marketing pages (/, SiteLayout navbar/footer, src/components/home/**, og-image) use the VIGILAMC FIRE palette (white #FFFFFF/#FFF8F2/#FFF4EC, fire orange #EA580C/#C2410C/#FF8C42, ember border #FED7AA, charcoal #1C1917/#44403C). Product surfaces (/dashboard, /technician, /report, /login) keep the blue system (backgrounds #F4F8FB, cards #FFFFFF, borders #DCE7F2, primary #0077B6, deep #023E8A). Flag any bg-slate-950 / dark-theme usage, neon-purple default palettes from copied UI libraries, and any QR-code-related UI. Flag silent catch blocks (console.error only) — every mutation failure needs a user-visible toast/banner plus state revert.
     - path: "prisma/**"
       instructions: |
         Check enum values against schema, null handling for optional dates/ids, and index coverage for tenant-scoped queries.

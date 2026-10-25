@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
-export const alt = 'VigilAMC — Fire Safety AMC & Compliance Software India';
+export const alt = 'VigilAMC - Fire Safety AMC & Compliance Software India';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -16,11 +16,10 @@ export default async function Image() {
           flexDirection: 'column',
           justifyContent: 'space-between',
           padding: '60px 70px',
-          backgroundColor: '#0A2540',
+          backgroundColor: '#FFFFFF',
           backgroundImage:
-            'radial-gradient(circle at 25px 25px, rgba(255, 255, 255, 0.05) 2%, transparent 0%), linear-gradient(135deg, #0A2540 0%, #0F172A 100%)',
-          backgroundSize: '40px 40px, 100% 100%',
-          color: '#ffffff',
+            'radial-gradient(circle at 80% 35%, rgba(234, 88, 12, 0.14) 0%, rgba(255, 140, 66, 0.06) 45%, transparent 70%), linear-gradient(180deg, #FFFFFF 0%, #FFF8F2 100%)',
+          color: '#1C1917',
           fontFamily: 'sans-serif',
         }}
       >
@@ -33,16 +32,16 @@ export default async function Image() {
               gap: '12px',
               padding: '8px 20px',
               borderRadius: '9999px',
-              backgroundColor: 'rgba(0, 119, 182, 0.25)',
-              border: '1px solid rgba(0, 180, 216, 0.4)',
-              color: '#90E0EF',
+              backgroundColor: '#FFF4EC',
+              border: '1px solid #FED7AA',
+              color: '#C2410C',
               fontSize: '15px',
               fontWeight: 700,
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
             }}
           >
-            <span>FIRE SAFETY AMC &amp; COMPLIANCE SOFTWARE • INDIA</span>
+            <span>FIRE SAFETY AMC &amp; COMPLIANCE SOFTWARE - INDIA</span>
           </div>
 
           <div
@@ -50,7 +49,7 @@ export default async function Image() {
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              color: '#38BDF8',
+              color: '#C2410C',
               fontSize: '18px',
               fontWeight: 800,
               letterSpacing: '-0.02em',
@@ -64,17 +63,17 @@ export default async function Image() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div
             style={{
-              fontSize: '56px',
+              fontSize: '58px',
               fontWeight: 900,
-              lineHeight: 1.15,
+              lineHeight: 1.08,
               letterSpacing: '-0.03em',
-              color: '#FFFFFF',
+              color: '#1C1917',
               display: 'flex',
               flexDirection: 'column',
             }}
           >
-            <span>Never Miss a Compliance</span>
-            <span style={{ color: '#38BDF8' }}>Deadline Again</span>
+            <span>Never Miss a Fire Compliance</span>
+            <span style={{ color: '#EA580C' }}>Deadline Again</span>
           </div>
 
           <div
@@ -82,11 +81,11 @@ export default async function Image() {
               fontSize: '24px',
               fontWeight: 500,
               lineHeight: 1.4,
-              color: '#94A3B8',
+              color: '#44403C',
               maxWidth: '960px',
             }}
           >
-            GPS &amp; Photo-Verified Inspections • Instant Defect Quotes • 1-Click Form-B Reports
+            Live GPS Proof &bull; Photo Evidence &bull; Client Signatures &bull; Compliance Reports in 1 Tap
           </div>
         </div>
 
@@ -97,7 +96,7 @@ export default async function Image() {
             alignItems: 'center',
             justifyContent: 'space-between',
             paddingTop: '24px',
-            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+            borderTop: '1px solid #FED7AA',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -105,8 +104,8 @@ export default async function Image() {
               style={{
                 width: '42px',
                 height: '42px',
-                borderRadius: '10px',
-                backgroundColor: '#0077B6',
+                borderRadius: '9999px',
+                backgroundImage: 'linear-gradient(135deg, #FF8C42 0%, #EA580C 55%, #C2410C 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -118,9 +117,9 @@ export default async function Image() {
               V
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '20px', fontWeight: 800, color: '#FFFFFF' }}>VigilAMC</span>
-              <span style={{ fontSize: '14px', color: '#64748B' }}>
-                Built for Fire Protection AMC Agencies &amp; Contractors
+              <span style={{ fontSize: '22px', fontWeight: 800, color: '#1C1917' }}>VigilAMC</span>
+              <span style={{ fontSize: '14px', color: '#44403C' }}>
+                Fire safety AMC software - tracked, proven, reported.
               </span>
             </div>
           </div>
@@ -131,8 +130,8 @@ export default async function Image() {
               alignItems: 'center',
               gap: '12px',
               fontSize: '15px',
-              fontWeight: 600,
-              color: '#E2E8F0',
+              fontWeight: 700,
+              color: '#FAFAF9',
             }}
           >
             <div
@@ -140,14 +139,14 @@ export default async function Image() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                padding: '6px 14px',
-                borderRadius: '8px',
-                backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                border: '1px solid rgba(16, 185, 129, 0.3)',
-                color: '#34D399',
+                padding: '8px 16px',
+                borderRadius: '10px',
+                backgroundColor: '#1C1917',
+                border: '1px solid #C2410C',
+                color: '#FAFAF9',
               }}
             >
-              <span>NBC 2016 &amp; Form-B Ready</span>
+              <span>190 Hrs &amp; Rs.96,000 Saved / Year</span>
             </div>
           </div>
         </div>

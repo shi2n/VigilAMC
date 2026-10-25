@@ -3,16 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  Menu,
-  X,
-  PhoneCall,
-  ArrowRight,
-  CheckCircle2,
-  Linkedin,
-  Instagram,
-  Youtube
-} from 'lucide-react';
+import { Menu, X, ArrowUpRight } from 'lucide-react';
 import { SITE_CONFIG } from '@/lib/siteConfig';
 
 interface CorporateHeaderProps {
@@ -22,304 +13,120 @@ interface CorporateHeaderProps {
 export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // Close mobile menu on route change
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  // Customer navigation links (Invest is intentionally excluded per B2B positioning)
   const navLinks = [
-    { name: 'Home', href: '/' },
-    { name: 'How It Works', href: '/how-it-works' },
-    { name: 'Features', href: '/features' },
+    { name: 'How It Works', href: '/#how-it-works' },
     { name: 'Sample Report', href: '/sample-report' },
-    { name: 'About', href: '/about' },
-    { name: 'Contact', href: '/contact' },
+    { name: 'Field App', href: '/technician' },
   ];
 
   return (
-    <header className="w-full relative z-40">
-      {/* Top Utility Bar (Clean single-line on <640px screens, full info on desktop) */}
-      <div className="bg-[#023E8A] text-white text-[11px] sm:text-xs py-1.5 px-3 sm:px-4 border-b border-navy-700/50">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
-          {/* Desktop Left: Positioning statement */}
-          <div className="hidden sm:flex items-center gap-2.5 sm:gap-3 truncate">
-            <span className="inline-flex items-center gap-1.5 font-medium text-cyan-200 shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              Built for Fire-Safety AMC &amp; Service Teams
-            </span>
-            <span className="hidden md:inline text-navy-300">|</span>
-            <span className="hidden lg:inline text-slate-200 truncate">
-              GPS &amp; Photo-Verified Inspections &bull; Form-B Compliance Reports
-            </span>
-          </div>
+    <header className="sticky top-0 z-50 w-full bg-white/70 backdrop-blur-xl border-b border-[#FED7AA]/40 transition-colors">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        {/* Wordmark "VigilAMC" with small ember-dot logo mark */}
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2.5 min-h-[44px] px-1 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C2410C] group"
+        >
+          <span
+            aria-hidden="true"
+            className="relative flex h-3.5 w-3.5 items-center justify-center"
+          >
+            <span className="h-3 w-3 rounded-full bg-gradient-to-br from-[#FF8C42] via-[#EA580C] to-[#C2410C] shadow-[0_0_10px_rgba(234,88,12,0.45)] transition-transform duration-200 group-hover:scale-110" />
+          </span>
+          <span className="font-display text-lg sm:text-xl font-bold tracking-[-0.02em] text-[#1C1917]">
+            Vigil<span className="text-[#C2410C]">AMC</span>
+          </span>
+        </Link>
 
-          {/* Right Action/Helpline (Full width on mobile so 390px never clips) */}
-          <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3 sm:gap-4 shrink-0 text-[11px] sm:text-xs">
-            <div className="hidden xl:flex items-center gap-2.5 pr-2 border-r border-navy-700/60 text-cyan-200">
-              <span className="text-[10px] text-cyan-300 font-semibold">@vigilamc</span>
-              <a
-                href={SITE_CONFIG.SOCIAL.LINKEDIN}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-white transition-colors"
-                title="LinkedIn: vigilamc"
-                aria-label="LinkedIn"
+        {/* Desktop Nav Links */}
+        <nav aria-label="Main Navigation" className="hidden md:flex items-center gap-1">
+          {navLinks.map((link) => {
+            const isActive = pathname === link.href;
+            return (
+              <Link
+                key={link.name}
+                href={link.href}
+                className={`min-h-[44px] inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C2410C] ${
+                  isActive
+                    ? 'text-[#C2410C] bg-[#FFF4EC] font-semibold'
+                    : 'text-[#44403C] hover:text-[#1C1917] hover:bg-[#FFF8F2]'
+                }`}
               >
-                <Linkedin className="w-3 h-3" />
-              </a>
-              <a
-                href={SITE_CONFIG.SOCIAL.INSTAGRAM}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-white transition-colors"
-                title="Instagram: @vigilamc"
-                aria-label="Instagram"
-              >
-                <Instagram className="w-3 h-3" />
-              </a>
-              <a
-                href={SITE_CONFIG.SOCIAL.TWITTER}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-white transition-colors"
-                title="X (Twitter): @vigilamc"
-                aria-label="X (Twitter)"
-              >
-                <svg className="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 24.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                </svg>
-              </a>
-              <a
-                href={SITE_CONFIG.SOCIAL.YOUTUBE}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-white transition-colors"
-                title="YouTube: @vigilamc"
-                aria-label="YouTube"
-              >
-                <Youtube className="w-3 h-3" />
-              </a>
-            </div>
+                {link.name}
+              </Link>
+            );
+          })}
+          <Link
+            href="/login"
+            className="min-h-[44px] inline-flex items-center px-3.5 py-2 rounded-xl text-sm font-medium text-[#44403C] hover:text-[#1C1917] hover:bg-[#FFF8F2] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C2410C]"
+          >
+            Login
+          </Link>
+        </nav>
 
-            <a
-              href={SITE_CONFIG.PHONE_TEL}
-              className="flex items-center gap-1.5 text-slate-100 hover:text-cyan-200 transition-colors font-medium"
-            >
-              <PhoneCall className="w-3 h-3 text-cyan-300 shrink-0" />
-              <span className="hidden sm:inline">AMC Helpline:</span>
-              <strong className="tracking-wide">{SITE_CONFIG.PHONE_DISPLAY}</strong>
-            </a>
+        {/* Desktop CTA Button */}
+        <div className="hidden md:flex items-center gap-3">
+          <a
+            href={SITE_CONFIG.WHATSAPP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={onOpenDemoModal ? undefined : undefined}
+            className="min-h-[44px] inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#C2410C] hover:bg-[#EA580C] text-white text-sm font-bold shadow-[0_6px_20px_-4px_rgba(194,65,12,0.38)] transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C2410C]"
+          >
+            <span>Book a Free Demo</span>
+            <ArrowUpRight className="w-4 h-4" aria-hidden="true" />
+          </a>
+        </div>
 
-            <span className="text-navy-400">|</span>
-
-            <Link
-              href="/login"
-              className="text-white hover:text-cyan-200 font-semibold flex items-center gap-1 transition-colors"
-            >
-              <span>Agency Login</span>
-              <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
+        {/* Mobile Actions */}
+        <div className="flex md:hidden items-center gap-2">
+          <a
+            href={SITE_CONFIG.WHATSAPP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="min-h-[44px] inline-flex items-center justify-center px-3.5 py-2 rounded-xl bg-[#C2410C] hover:bg-[#EA580C] text-white text-xs font-bold shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C2410C]"
+          >
+            Book a Free Demo
+          </a>
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+            className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl text-[#1C1917] hover:bg-[#FFF4EC] border border-[#FED7AA]/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C2410C]"
+            aria-expanded={mobileMenuOpen}
+            aria-label="Toggle navigation menu"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
       </div>
 
-      {/* Main Unified Navigation Bar */}
-      <nav
-        className={`w-full transition-all duration-200 border-b ${
-          isScrolled
-            ? 'sticky top-0 bg-white/95 backdrop-blur-md shadow-md border-slate-200/90 py-2.5'
-            : 'bg-white border-slate-100 py-3.5 shadow-sm'
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            {/* Brand Logo & Tagline */}
-            <Link href="/" className="flex items-center gap-3 group shrink-0">
-              <div className="bg-white p-1 rounded-xl border border-slate-100 shadow-sm transition-transform duration-200 group-hover:scale-105">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/logo.jpg"
-                  alt="VigilAMC"
-                  className="h-9 sm:h-10 w-auto object-contain rounded-lg"
-                />
-              </div>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-extrabold text-base sm:text-lg tracking-tight text-[#023E8A]">
-                    Vigil<span className="text-[#0077B6]">AMC</span>
-                  </span>
-                  <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-ocean-50 text-[#0077B6] border border-ocean-200/80">
-                    Form-B Autopilot
-                  </span>
-                </div>
-                <p className="text-[10px] text-slate-500 font-medium tracking-tight hidden sm:block">
-                  Never miss a compliance deadline again
-                </p>
-              </div>
+      {/* Mobile Glass Drawer */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-white/95 backdrop-blur-xl border-b border-[#FED7AA]/60 px-4 pt-2 pb-5 space-y-1.5 shadow-lg">
+          {navLinks.map((link) => (
+            <Link
+              key={link.name}
+              href={link.href}
+              onClick={() => setMobileMenuOpen(false)}
+              className="min-h-[44px] flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-[#1C1917] hover:bg-[#FFF4EC] hover:text-[#C2410C] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C2410C]"
+            >
+              <span>{link.name}</span>
             </Link>
-
-            {/* Desktop Navigation Links */}
-            <div className="hidden lg:flex items-center space-x-1">
-              {navLinks.map((item) => {
-                const isActive = pathname === item.href;
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={`relative px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                      isActive
-                        ? 'text-[#0077B6] bg-ocean-50/90 font-bold shadow-xs'
-                        : 'text-slate-600 hover:text-[#0077B6] hover:bg-slate-50'
-                    }`}
-                  >
-                    {item.name}
-                    {isActive && (
-                      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-[#0077B6] rounded-full" />
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-
-            {/* Right Quick Actions */}
-            <div className="hidden sm:flex items-center space-x-2.5">
-              <Link
-                href="/#pilot-section"
-                className="text-xs font-semibold text-[#023E8A] hover:text-[#0077B6] px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors"
-              >
-                Join Free Testing
-              </Link>
-              <button
-                onClick={onOpenDemoModal}
-                className="inline-flex items-center justify-center px-4 py-2 text-xs font-bold rounded-xl text-white bg-gradient-to-r from-[#0077B6] to-[#023E8A] hover:from-[#006494] hover:to-[#011F48] shadow-sm hover:shadow transition-all group active:scale-[0.98] cursor-pointer"
-              >
-                <span>Book 15-Min Demo</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-1 transition-transform group-hover:translate-x-0.5" />
-              </button>
-            </div>
-
-            {/* Mobile Hamburger Button */}
-            <div className="flex lg:hidden items-center gap-2">
-              <button
-                onClick={onOpenDemoModal}
-                className="text-xs font-bold text-white bg-[#0077B6] px-3 py-1.5 rounded-lg active:scale-95 cursor-pointer"
-              >
-                Demo
-              </button>
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 rounded-lg text-slate-700 hover:text-[#0077B6] hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
-                aria-expanded={mobileMenuOpen}
-                aria-label="Toggle navigation menu"
-              >
-                {mobileMenuOpen ? (
-                  <X className="w-6 h-6 text-slate-800" />
-                ) : (
-                  <Menu className="w-6 h-6 text-slate-800" />
-                )}
-              </button>
-            </div>
-          </div>
+          ))}
+          <Link
+            href="/login"
+            onClick={() => setMobileMenuOpen(false)}
+            className="min-h-[44px] flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-[#44403C] hover:bg-[#FFF4EC] hover:text-[#C2410C] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C2410C]"
+          >
+            <span>Agency Login</span>
+          </Link>
         </div>
-
-        {/* Mobile Dropdown Drawer */}
-        {mobileMenuOpen && (
-          <div className="lg:hidden bg-white border-t border-slate-100 shadow-xl px-4 pt-3 pb-6 space-y-2 animate-in fade-in slide-in-from-top-4 duration-200">
-            <div className="grid gap-1 pb-3 border-b border-slate-100">
-              {navLinks.map((item) => {
-                const isActive = pathname === item.href;
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-                      isActive
-                        ? 'text-[#0077B6] bg-ocean-50 font-bold'
-                        : 'text-slate-700 hover:text-[#0077B6] hover:bg-slate-50'
-                    }`}
-                  >
-                    <span>{item.name}</span>
-                    {isActive && <CheckCircle2 className="w-4 h-4 text-[#0077B6]" />}
-                  </Link>
-                );
-              })}
-            </div>
-
-            <div className="pt-2 flex flex-col gap-2">
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenDemoModal?.();
-                }}
-                className="w-full text-center py-2.5 text-xs font-bold text-white bg-gradient-to-r from-[#0077B6] to-[#023E8A] rounded-lg shadow active:scale-[0.98] cursor-pointer"
-              >
-                Book 15-Minute Agency Demo
-              </button>
-              <div className="text-center pt-2 text-xs text-slate-500">
-                Helpline: <a href={SITE_CONFIG.PHONE_TEL} className="text-[#0077B6] font-bold">{SITE_CONFIG.PHONE_DISPLAY}</a>
-              </div>
-              <div className="flex items-center justify-center gap-3 pt-3 border-t border-slate-100">
-                <span className="text-[11px] font-semibold text-slate-500">Follow @vigilamc:</span>
-                <a
-                  href={SITE_CONFIG.SOCIAL.LINKEDIN}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-7 h-7 rounded-md bg-slate-100 text-[#0A66C2] flex items-center justify-center hover:bg-[#0A66C2] hover:text-white transition-colors"
-                  aria-label="LinkedIn"
-                  title="LinkedIn: vigilamc"
-                >
-                  <Linkedin className="w-3.5 h-3.5" />
-                </a>
-                <a
-                  href={SITE_CONFIG.SOCIAL.INSTAGRAM}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-7 h-7 rounded-md bg-slate-100 text-pink-600 flex items-center justify-center hover:bg-pink-600 hover:text-white transition-colors"
-                  aria-label="Instagram"
-                  title="Instagram: @vigilamc"
-                >
-                  <Instagram className="w-3.5 h-3.5" />
-                </a>
-                <a
-                  href={SITE_CONFIG.SOCIAL.TWITTER}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-7 h-7 rounded-md bg-slate-100 text-slate-800 flex items-center justify-center hover:bg-black hover:text-white transition-colors"
-                  aria-label="X (Twitter)"
-                  title="X (Twitter): @vigilamc"
-                >
-                  <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 24.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                  </svg>
-                </a>
-                <a
-                  href={SITE_CONFIG.SOCIAL.YOUTUBE}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-7 h-7 rounded-md bg-slate-100 text-red-600 flex items-center justify-center hover:bg-red-600 hover:text-white transition-colors"
-                  aria-label="YouTube"
-                  title="YouTube: @vigilamc"
-                >
-                  <Youtube className="w-3.5 h-3.5" />
-                </a>
-              </div>
-            </div>
-          </div>
-        )}
-      </nav>
+      )}
     </header>
   );
 }

@@ -1,11 +1,26 @@
 import type { Metadata, Viewport } from "next";
+import { Sora, Inter } from "next/font/google";
 import "./globals.css";
 import { SiteLayout } from "@/components/SiteLayout";
 import { SITE_CONFIG } from "@/lib/siteConfig";
 import { Toaster } from "@/components/ui/sonner";
 
+const sora = Sora({
+  subsets: ["latin"],
+  weight: ["600", "700"],
+  variable: "--font-sora",
+  display: "swap",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
 export const viewport: Viewport = {
-  themeColor: "#023E8A",
+  themeColor: "#C2410C",
   width: "device-width",
   initialScale: 1,
 };
@@ -18,8 +33,9 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "VigilAMC",
   },
-  title: "VigilAMC — Never Miss a Compliance Deadline Again | Fire Safety AMC Software India",
-  description: "Serving fire safety AMC teams and fire protection agencies across India. Track annual maintenance contracts, log GPS-verified inspections with location details and photos, quote defect repairs, and generate client-ready Form-B reports in minutes.",
+  title: "VigilAMC - Fire Safety AMC & Compliance Software | India",
+  description:
+    "VigilAMC is the simple software that fire-safety service companies across India use to track every extinguisher, pump and alarm, record visits with live GPS, photos and client signatures, and send compliance-ready Form-B reports in minutes.",
   keywords: [
     "Fire Safety AMC Software India",
     "Fire NOC Compliance India",
@@ -32,7 +48,7 @@ export const metadata: Metadata = {
     "Hydrant Inspection Software",
     "NBC 2016 Fire Compliance",
     "IS 2190 Maintenance",
-    "VigilAMC"
+    "VigilAMC",
   ],
   authors: [{ name: SITE_CONFIG.FOUNDER_NAME, url: SITE_CONFIG.SITE_URL }],
   creator: SITE_CONFIG.COMPANY_NAME,
@@ -45,14 +61,15 @@ export const metadata: Metadata = {
       { url: "/favicon.svg", type: "image/svg+xml" },
       { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
       { url: "/icon-512x512.png", sizes: "512x512", type: "image/png" },
-      { url: "/favicon.ico", sizes: "any" }
+      { url: "/favicon.ico", sizes: "any" },
     ],
     shortcut: "/favicon.svg",
     apple: "/icon-192x192.png",
   },
   openGraph: {
-    title: "VigilAMC — Never Miss a Compliance Deadline Again | Pan-India Fire Safety AMC Software",
-    description: "Serving fire safety AMC teams and fire protection agencies across India. Track annual maintenance contracts, log GPS-verified inspections with location details and photos, quote defect repairs, and generate client-ready Form-B reports in minutes.",
+    title: "VigilAMC - Fire Safety AMC & Compliance Software | India",
+    description:
+      "Never Miss a Fire Compliance Deadline Again. Track every extinguisher, pump and alarm with live GPS, photo proof, client signatures, and 1-tap compliance reports.",
     url: SITE_CONFIG.SITE_URL,
     siteName: SITE_CONFIG.COMPANY_NAME,
     locale: "en_IN",
@@ -60,8 +77,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "VigilAMC — Never Miss a Compliance Deadline Again | Pan-India Fire Safety AMC Software",
-    description: "Serving fire safety AMC teams and fire protection agencies across India. Track annual maintenance contracts, log GPS-verified inspections with location details and photos, quote defect repairs, and generate client-ready Form-B reports in minutes.",
+    title: "VigilAMC - Fire Safety AMC & Compliance Software | India",
+    description:
+      "Never Miss a Fire Compliance Deadline Again. Track every extinguisher, pump and alarm with live GPS, photo proof, client signatures, and 1-tap compliance reports.",
     creator: "@vigilamc",
   },
   robots: {
@@ -76,11 +94,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth">
-      <body className="antialiased bg-white text-slate-900 min-h-screen flex flex-col font-sans selection:bg-[#0077B6] selection:text-white">
-        <SiteLayout>
-          {children}
-        </SiteLayout>
+    <html lang="en" className={`${sora.variable} ${inter.variable} scroll-smooth`}>
+      <body className="antialiased bg-white text-[#1C1917] min-h-screen flex flex-col font-sans selection:bg-[#EA580C] selection:text-white">
+        <SiteLayout>{children}</SiteLayout>
         <Toaster />
       </body>
     </html>
