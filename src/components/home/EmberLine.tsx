@@ -21,7 +21,7 @@ export function EmberLine() {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-y-0 left-3 sm:left-6 lg:left-1/2 lg:-translate-x-1/2 z-0 flex flex-col items-center"
+      className="pointer-events-none absolute inset-y-0 left-3 sm:left-5 lg:left-8 z-10 flex flex-col items-center"
     >
       {/* Mobile (<640px) or Reduced Motion: static 2px line at 30% opacity */}
       <div className="w-[2px] h-full bg-gradient-to-b from-[#FF8C42] via-[#EA580C] to-transparent opacity-30 block sm:hidden motion-reduce:!block" />
