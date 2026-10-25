@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
 const config: Config = {
   darkMode: 'class',
@@ -76,8 +77,17 @@ const config: Config = {
         'glass': '0 8px 30px rgba(2, 62, 138, 0.06), inset 0 1px 1px rgba(255, 255, 255, 0.8)',
         'glow-ocean': '0 0 30px rgba(0, 119, 182, 0.25)',
       },
+      keyframes: {
+        marquee: {
+          from: { transform: 'translateX(0)' },
+          to: { transform: 'translateX(calc(-100% - var(--gap, 0.75rem)))' },
+        },
+      },
+      animation: {
+        marquee: 'marquee var(--duration, 28s) linear infinite',
+      },
     },
   },
-  plugins: [],
+  plugins: [tailwindcssAnimate],
 };
 export default config;

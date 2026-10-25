@@ -97,7 +97,7 @@ export function ReportsView({ buildings = [], summary, company }: ReportsViewPro
               <select
                 value={selectedBuildingId}
                 onChange={(e) => setSelectedBuildingId(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-white border border-[#DCE7F2] text-xs text-slate-900 focus:outline-none focus:border-[#007DB8] shadow-sm dark:bg-slate-950 dark:border-slate-800 dark:text-white"
+                className="w-full px-3 py-2 rounded-xl bg-white border border-[#DCE7F2] text-xs text-slate-900 focus:outline-none focus:border-[#007DB8] shadow-sm  dark:border-slate-800 dark:text-white"
               >
                 {buildings.map((b) => (
                   <option key={b.id} value={b.id}>
@@ -112,7 +112,7 @@ export function ReportsView({ buildings = [], summary, company }: ReportsViewPro
               const hasZeroEquip = equipCount === 0;
 
               return (
-                <div className="p-4 rounded-xl bg-slate-50 border border-[#DCE7F2] flex flex-col sm:flex-row sm:items-center justify-between gap-4 dark:bg-slate-950 dark:border-slate-800">
+                <div className="p-4 rounded-xl bg-slate-50 border border-[#DCE7F2] flex flex-col sm:flex-row sm:items-center justify-between gap-4  dark:border-slate-800">
                   <div className="space-y-1">
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white">{selectedBuilding.name}</h4>
                     <p className="text-xs text-slate-500 dark:text-slate-400">{selectedBuilding.address}</p>

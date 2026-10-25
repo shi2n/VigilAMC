@@ -111,7 +111,7 @@ export function BuildingsView({
       {/* Buildings List Card */}
       <div className="rounded-2xl bg-white border border-[#DCE7F2] shadow-sm overflow-hidden dark:bg-slate-900/90 dark:border-slate-800 dark:shadow-xl">
         {/* List Header */}
-        <div className="p-4 sm:p-5 border-b border-[#DCE7F2] bg-slate-50/80 flex items-center justify-between flex-wrap gap-3 dark:border-slate-800 dark:bg-slate-950/80">
+        <div className="p-4 sm:p-5 border-b border-[#DCE7F2] bg-slate-50/80 flex items-center justify-between flex-wrap gap-3 dark:border-slate-800 ">
           <div className="flex items-center gap-2.5">
             <Building2 className="w-5 h-5 text-[#007DB8] dark:text-amber-400" />
             <h2 className="text-sm sm:text-base font-bold text-[#023E8A] dark:text-white tracking-tight">
@@ -227,7 +227,7 @@ export function BuildingsView({
                         </p>
 
                         <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 pt-0.5">
-                          <span className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 font-mono text-[11px] text-slate-700 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-300">
+                          <span className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 font-mono text-[11px] text-slate-700  dark:border-slate-800 dark:text-slate-300">
                             {b.complianceCycle}
                           </span>
                           <span>•</span>
@@ -259,7 +259,7 @@ export function BuildingsView({
 
                     {/* Actions & Equipment Breakdown Pill */}
                     <div className="flex items-center gap-2 self-end md:self-auto flex-wrap">
-                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-medium dark:bg-slate-950 dark:border-slate-800">
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-medium  dark:border-slate-800">
                         <span className="text-slate-900 dark:text-white font-bold">{b.totalEquipments} Units:</span>
                         <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{b.verifiedCount ?? b.compliantCount ?? 0} Fit</span>
                         {b.dueCount > 0 && <span className="text-amber-600 dark:text-amber-400 font-semibold">• {b.dueCount} Due</span>}
@@ -310,7 +310,7 @@ export function BuildingsView({
 
                   {/* Expanded Equipment Breakdown Table */}
                   {isExpanded && (
-                    <div className="bg-slate-50/70 border-t border-[#DCE7F2] p-4 sm:p-6 space-y-4 dark:bg-slate-950/90 dark:border-slate-800">
+                    <div className="bg-slate-50/70 border-t border-[#DCE7F2] p-4 sm:p-6 space-y-4  dark:border-slate-800">
                       <div className="flex items-center justify-between">
                         <h3 className="text-xs font-black uppercase tracking-wider text-[#023E8A] dark:text-amber-400 flex items-center gap-2">
                           <Layers className="w-4 h-4 text-[#007DB8]" />
@@ -331,7 +331,7 @@ export function BuildingsView({
                       ) : (
                         <div className="bg-white rounded-xl border border-[#DCE7F2] overflow-x-auto shadow-sm dark:bg-slate-900/80 dark:border-slate-800">
                           <table className="w-full text-left text-xs">
-                            <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider border-b border-[#DCE7F2] dark:bg-slate-950/90 dark:text-slate-400 dark:border-slate-800">
+                            <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider border-b border-[#DCE7F2]  dark:text-slate-400 dark:border-slate-800">
                               <tr>
                                 <th className="py-3 px-4">Asset ID / Serial</th>
                                 <th className="py-3 px-4">Type &amp; Spec</th>

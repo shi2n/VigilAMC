@@ -62,7 +62,7 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose }: Ima
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900 backdrop-blur-md p-4 animate-in fade-in duration-200"
       onClick={onClose}
     >
       {/* Lightbox Container */}
@@ -98,12 +98,12 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose }: Ima
             </div>
 
             {current.specs && (
-              <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-xs font-mono text-cyan-200">
+              <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-mono text-cyan-200">
                 {current.specs}
               </div>
             )}
 
-            <div className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800/80 space-y-1 text-[11px] font-mono text-slate-300">
+            <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800/80 space-y-1 text-[11px] font-mono text-slate-300">
               <div className="flex justify-between">
                 <span className="text-slate-500">Inspection Standard:</span>
                 <span className="text-slate-300">IS 2190 &bull; NBC Part 4</span>

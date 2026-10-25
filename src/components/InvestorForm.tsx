@@ -263,7 +263,7 @@ export function InvestorForm() {
                 value={formData.fullName}
                 onChange={handleChange}
                 placeholder="e.g. Rahul Sharma"
-                className={`w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950/80 border ${
+                className={`w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900 border ${
                   errors.fullName ? 'border-red-500' : 'border-slate-800 focus:border-[#0077B6]'
                 } text-white placeholder-slate-500 text-xs sm:text-sm outline-none transition-all`}
               />
@@ -283,7 +283,7 @@ export function InvestorForm() {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="rahul@venturefund.com"
-                className={`w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950/80 border ${
+                className={`w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900 border ${
                   errors.email ? 'border-red-500' : 'border-slate-800 focus:border-[#0077B6]'
                 } text-white placeholder-slate-500 text-xs sm:text-sm outline-none transition-all`}
               />
@@ -306,7 +306,7 @@ export function InvestorForm() {
                 value={formData.phone}
                 onChange={handleChange}
                 placeholder="+91 98765 43210"
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 focus:border-[#0077B6] text-white placeholder-slate-500 text-xs sm:text-sm outline-none transition-all"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-[#0077B6] text-white placeholder-slate-500 text-xs sm:text-sm outline-none transition-all"
               />
             </div>
           </div>
@@ -323,7 +323,7 @@ export function InvestorForm() {
                 value={formData.city}
                 onChange={handleChange}
                 placeholder="e.g. New Delhi, Bengaluru"
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 focus:border-[#0077B6] text-white placeholder-slate-500 text-xs sm:text-sm outline-none transition-all"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-[#0077B6] text-white placeholder-slate-500 text-xs sm:text-sm outline-none transition-all"
               />
             </div>
           </div>
@@ -340,7 +340,7 @@ export function InvestorForm() {
                 value={formData.country}
                 onChange={handleChange}
                 placeholder="India"
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 focus:border-[#0077B6] text-white placeholder-slate-500 text-xs sm:text-sm outline-none transition-all"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-[#0077B6] text-white placeholder-slate-500 text-xs sm:text-sm outline-none transition-all"
               />
             </div>
           </div>
@@ -358,7 +358,7 @@ export function InvestorForm() {
                 name="investorType"
                 value={formData.investorType}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 focus:border-[#0077B6] text-white text-xs sm:text-sm outline-none transition-all"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-[#0077B6] text-white text-xs sm:text-sm outline-none transition-all"
               >
                 <option value="Angel Investor">Angel Investor</option>
                 <option value="Micro VC / Early-Stage VC">Micro VC / Early-Stage VC</option>
@@ -383,7 +383,7 @@ export function InvestorForm() {
                 value={formData.organization}
                 onChange={handleChange}
                 placeholder="e.g. Apex Ventures / Independent"
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 focus:border-[#0077B6] text-white placeholder-slate-500 text-xs sm:text-sm outline-none transition-all"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-[#0077B6] text-white placeholder-slate-500 text-xs sm:text-sm outline-none transition-all"
               />
             </div>
           </div>
@@ -403,7 +403,7 @@ export function InvestorForm() {
                 value={formData.websiteLinkedin}
                 onChange={handleChange}
                 placeholder="https://linkedin.com/in/username"
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 focus:border-[#0077B6] text-white placeholder-slate-500 text-xs sm:text-sm outline-none transition-all"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-[#0077B6] text-white placeholder-slate-500 text-xs sm:text-sm outline-none transition-all"
               />
             </div>
           </div>
@@ -416,7 +416,7 @@ export function InvestorForm() {
               name="investmentExperience"
               value={formData.investmentExperience}
               onChange={handleChange}
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 focus:border-[#0077B6] text-white text-xs sm:text-sm outline-none transition-all"
+              className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-[#0077B6] text-white text-xs sm:text-sm outline-none transition-all"
             >
               <option value="First-time Angel">First-time Angel Investor</option>
               <option value="Active Angel (1-5 deals)">Active Angel (1–5 portfolio deals)</option>
@@ -440,7 +440,7 @@ export function InvestorForm() {
                 name="investmentRange"
                 value={formData.investmentRange}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 focus:border-[#0077B6] text-white text-xs sm:text-sm outline-none transition-all"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-[#0077B6] text-white text-xs sm:text-sm outline-none transition-all"
               >
                 <option value="₹5 Lakhs - ₹10 Lakhs">₹5 Lakhs – ₹10 Lakhs</option>
                 <option value="₹10 Lakhs - ₹25 Lakhs">₹10 Lakhs – ₹25 Lakhs</option>
@@ -462,7 +462,7 @@ export function InvestorForm() {
                 name="investmentTimeline"
                 value={formData.investmentTimeline}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 focus:border-[#0077B6] text-white text-xs sm:text-sm outline-none transition-all"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-[#0077B6] text-white text-xs sm:text-sm outline-none transition-all"
               >
                 <option value="Immediate (< 30 days)">Immediate (&lt; 30 days)</option>
                 <option value="1 - 3 months">1 – 3 months</option>
@@ -486,7 +486,7 @@ export function InvestorForm() {
               value={formData.interestMessage}
               onChange={handleChange}
               placeholder="e.g. Looking to back vertical B2B SaaS tackling unorganized Indian enterprise service contracts..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 focus:border-[#0077B6] text-white placeholder-slate-500 text-xs sm:text-sm outline-none transition-all resize-y"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-[#0077B6] text-white placeholder-slate-500 text-xs sm:text-sm outline-none transition-all resize-y"
             />
           </div>
         </div>
@@ -502,7 +502,7 @@ export function InvestorForm() {
             value={formData.contributionMessage}
             onChange={handleChange}
             placeholder="e.g. Enterprise facilities management intros, enterprise GTM advisory, SaaS scaling guidance..."
-            className="w-full px-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 focus:border-[#0077B6] text-white placeholder-slate-500 text-xs sm:text-sm outline-none transition-all resize-y"
+            className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-[#0077B6] text-white placeholder-slate-500 text-xs sm:text-sm outline-none transition-all resize-y"
           />
         </div>
 
@@ -514,7 +514,7 @@ export function InvestorForm() {
               name="consent"
               checked={formData.consent}
               onChange={handleChange}
-              className="mt-1 w-4 h-4 rounded border-slate-700 bg-slate-950 text-[#0077B6] focus:ring-0 focus:ring-offset-0 transition-colors"
+              className="mt-1 w-4 h-4 rounded border-slate-700 bg-slate-900 text-[#0077B6] focus:ring-0 focus:ring-offset-0 transition-colors"
             />
             <span className="text-xs text-slate-400 group-hover:text-slate-300 leading-relaxed">
               I understand that submitting this form is a private expression of interest and does not constitute an offer, sale, or public solicitation of securities. I agree to receive communications from the VigilAMC founding team.

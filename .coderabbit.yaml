@@ -1,0 +1,31 @@
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  sequence_diagrams: true
+  changed_files_summary: true
+  path_filters:
+    - "!**/*.lock"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/node_modules/**"
+    - "!**/.next/**"
+  path_instructions:
+    - path: "app/api/**"
+      instructions: |
+        Critical: (1) every handler must check auth BEFORE reading request body; (2) exported HTTP methods must match every fetch() that calls this route (405 = bug); (3) all queries must be tenant/company scoped; (4) empty strings must be converted to null before Prisma writes; (5) never log or return secrets.
+    - path: "src/components/**"
+      instructions: |
+        Enforce the VigilAMC LIGHT brand theme: backgrounds #F4F8FB, cards #FFFFFF, borders #DCE7F2, primary #0077B6, deep #023E8A. Flag any bg-slate-950 / dark-theme usage, neon-purple default palettes from copied UI libraries, and any QR-code-related UI. Flag silent catch blocks (console.error only) — every mutation failure needs a user-visible toast/banner plus state revert.
+    - path: "prisma/**"
+      instructions: |
+        Check enum values against schema, null handling for optional dates/ids, and index coverage for tenant-scoped queries.
+  auto_review:
+    enabled: true
+    drafts: false
+knowledge_base:
+  learnings:
+    scope: local

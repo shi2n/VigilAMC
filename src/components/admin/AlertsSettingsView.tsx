@@ -1,4 +1,5 @@
 'use client';
+import { toast } from 'sonner';
 
 import React, { useState } from 'react';
 import {
@@ -65,7 +66,7 @@ export function AlertsSettingsView({ company, showToast }: AlertsSettingsViewPro
       setEmailLogs([newEntry, ...emailLogs]);
       if (showToast) showToast('Test notification sent successfully.');
     } catch {
-      alert('Failed to send test email.');
+      toast.error('Failed to send test email.', { duration: 5500 });
     } finally {
       setSendingTest(false);
     }
@@ -77,7 +78,7 @@ export function AlertsSettingsView({ company, showToast }: AlertsSettingsViewPro
     setTimeout(() => {
       setSaving(false);
       if (showToast) showToast('Alert settings saved.');
-      else alert('Alert preferences saved.');
+      else toast.error('Alert preferences saved.', { duration: 5500 });
     }, 600);
   };
 
@@ -107,7 +108,7 @@ export function AlertsSettingsView({ company, showToast }: AlertsSettingsViewPro
                 value={recipientEmails}
                 onChange={(e) => setRecipientEmails(e.target.value)}
                 placeholder="service@agency.in, manager@agency.in"
-                className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white outline-none focus:border-[#0077B6]"
+                className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white  text-slate-900 dark:text-white outline-none focus:border-[#0077B6]"
               />
             </div>
             <p className="text-[11px] text-slate-400 mt-1">

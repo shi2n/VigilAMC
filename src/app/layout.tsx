@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { SiteLayout } from "@/components/SiteLayout";
 import { SITE_CONFIG } from "@/lib/siteConfig";
+import { Toaster } from "@/components/ui/sonner";
 
 export const viewport: Viewport = {
   themeColor: "#023E8A",
@@ -80,6 +81,7 @@ export default function RootLayout({
         <SiteLayout>
           {children}
         </SiteLayout>
+        <Toaster />
       </body>
     </html>
   );

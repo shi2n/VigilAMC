@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
 import { createClient } from '@/lib/supabase/client';
 import {
   Building2,
@@ -145,7 +148,13 @@ export default function AdminDashboardPage() {
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 4000);
+    const isErr = /fail|error|invalid|could not|denied|unauth/i.test(msg);
+    if (isErr) {
+      toast.error(msg, { duration: 5500 });
+    } else {
+      toast.success(msg);
+    }
+    setTimeout(() => setToastMessage(null), 4500);
   };
 
   // Add building form state
@@ -726,7 +735,7 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className={`min-h-screen ${theme === 'dark' ? 'dark' : ''} bg-[#F8FAFC] flex flex-col lg:flex-row text-slate-900 dark:bg-[#080d1a] dark:text-slate-100 selection:bg-[#EAF6FF] selection:text-[#073F8F] dark:selection:bg-amber-500 dark:selection:text-slate-950`}>
+    <div className="min-h-screen bg-[#F4F8FB] flex flex-col lg:flex-row text-slate-900 selection:bg-[#EAF6FF] selection:text-[#023E8A]">
       
       {/* Toast Alert */}
       {toastMessage && (
@@ -837,23 +846,36 @@ export default function AdminDashboardPage() {
 
         {/* Skeleton placeholders ONLY on the very first cold visit when data === null */}
         {loading && !data ? (
-          <div className="space-y-6 animate-pulse">
+          <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[1, 2, 3, 4].map((n) => (
                 <div
                   key={n}
-                  className="h-28 rounded-2xl bg-white border border-[#E2E8F0] p-5 dark:bg-[#111827] dark:border-[#293548]"
+                  className="h-28 rounded-2xl bg-white border border-[#DCE7F2] p-5 space-y-3"
                 >
-                  <div className="h-3 w-24 bg-slate-200 dark:bg-slate-800 rounded mb-3" />
-                  <div className="h-7 w-16 bg-slate-200 dark:bg-slate-800 rounded mb-2" />
-                  <div className="h-2.5 w-32 bg-slate-100 dark:bg-slate-800/60 rounded" />
+                  <Skeleton className="h-3.5 w-24" />
+                  <Skeleton className="h-7 w-16" />
+                  <Skeleton className="h-2.5 w-32" />
                 </div>
               ))}
             </div>
-            <div className="h-96 rounded-2xl bg-white border border-[#E2E8F0] p-6 dark:bg-[#111827] dark:border-[#293548]" />
+            <div className="rounded-2xl bg-white border border-[#DCE7F2] p-6 space-y-4">
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-14 w-full" />
+              <Skeleton className="h-14 w-full" />
+              <Skeleton className="h-14 w-full" />
+            </div>
           </div>
         ) : (
-          <>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 2 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -2 }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
+              className="space-y-6"
+            >
             {/* =========================================================================
                 GROUP 1: OVERVIEW SCREEN
             ========================================================================= */}
@@ -1169,7 +1191,8 @@ export default function AdminDashboardPage() {
                 onRefreshDashboard={() => refreshDashboard({ silent: true })}
               />
             )}
-          </>
+            </motion.div>
+          </AnimatePresence>
         )}
 
         {/* Excel Export Dialog */}

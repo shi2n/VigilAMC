@@ -88,7 +88,7 @@ export function ClientsView({
           </button>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-[#DCE7F2] overflow-x-auto shadow-sm dark:bg-slate-950/80 dark:border-slate-800">
+        <div className="bg-white rounded-xl border border-[#DCE7F2] overflow-x-auto shadow-sm  dark:border-slate-800">
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider border-b border-[#DCE7F2] dark:bg-slate-900/90 dark:text-slate-400 dark:border-slate-800">
               <tr>

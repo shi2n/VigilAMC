@@ -53,6 +53,11 @@ import { TrustTransparencySection } from '@/components/TrustTransparencySection'
 import { FreePilotForm } from '@/components/FreePilotForm';
 import { DemoModal } from '@/components/DemoModal';
 import { SITE_CONFIG } from '@/lib/siteConfig';
+import { Spotlight } from '@/components/ui/spotlight';
+import { TextReveal } from '@/components/ui/text-reveal';
+import { Marquee } from '@/components/ui/marquee';
+import { NumberTicker } from '@/components/ui/number-ticker';
+import { BorderBeam } from '@/components/ui/border-beam';
 
 export default function HomePage() {
   // Demo / Workflow review modal
@@ -197,7 +202,8 @@ export default function HomePage() {
           HERO SECTION: High-Conversion B2B Messaging & Contractor Focus
           ========================================================================= */}
       <section className="relative min-h-[640px] lg:min-h-[700px] flex items-center justify-center pt-8 pb-16 px-4 sm:px-6 lg:px-8 ocean-mesh border-b border-slate-200/80">
-        {/* Animated Particle Canvas */}
+        {/* Animated Particle Canvas & Brand Spotlight */}
+        <Spotlight className="-top-20 left-0 md:left-32" fill="#0077B6" />
         <CanvasHero />
 
         {/* Ambient Decorative Glows */}
@@ -220,7 +226,7 @@ export default function HomePage() {
 
           {/* Dual-Hook Value Proposition (Compliance Protection + Billable Defect Revenue) */}
           <p className="mt-6 text-base sm:text-lg lg:text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed font-normal text-pretty">
-            Protect your AMC contracts against missed refill or hydro-testing deadlines, and get instant photo-backed client approval for billable refills, spare parts, and Form-B certification.
+            <TextReveal text="Protect your AMC contracts against missed refill or hydro-testing deadlines, and get instant photo-backed client approval for billable refills, spare parts, and Form-B certification." />
           </p>
 
           {/* Simplified High-Intent CTAs */}
@@ -308,8 +314,35 @@ export default function HomePage() {
             </div>
           </div>
 
+          {/* Marquee of Client-Type Badges in Brand Colors */}
+          <div className="mt-10 max-w-4xl mx-auto">
+            <Marquee pauseOnHover className="[--duration:28s]">
+              {[
+                'Hospitals & Healthcare',
+                'Shopping Malls & Retail',
+                'Residential High-Rises',
+                'IT & Tech Parks',
+                'Schools & Universities',
+                'Industrial Warehouses',
+                'Hotels & Hospitality',
+                'Commercial Towers',
+              ].map((sector) => (
+                <span
+                  key={sector}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white border border-[#DCE7F2] text-xs font-bold text-[#023E8A] shadow-xs"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#0077B6]" />
+                  <span>{sector}</span>
+                </span>
+              ))}
+            </Marquee>
+          </div>
+
           {/* Interactive SaaS Browser + Mobile Mockup Showcase */}
-          <HeroProductPreview onOpenModal={() => setWorkflowModalOpen(true)} />
+          <div className="relative rounded-3xl">
+            <BorderBeam />
+            <HeroProductPreview onOpenModal={() => setWorkflowModalOpen(true)} />
+          </div>
         </div>
       </section>
 
@@ -379,8 +412,8 @@ export default function HomePage() {
                   <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                     Buildings / Facilities Under AMC
                   </label>
-                  <span className="px-3 py-1 bg-white border border-slate-300 rounded-lg text-sm font-black text-[#023E8A] font-display tabular-nums shadow-xs">
-                    {calcBuildings} Facilities
+                  <span className="px-3 py-1 bg-white border border-[#DCE7F2] rounded-lg text-sm font-black text-[#023E8A] font-display tabular-nums shadow-xs">
+                    <NumberTicker value={calcBuildings} suffix=" Facilities" />
                   </span>
                 </div>
                 <input
@@ -403,8 +436,8 @@ export default function HomePage() {
                   <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                     Total Fire Assets Managed (Cylinders, Hydrants, Panels)
                   </label>
-                  <span className="px-3 py-1 bg-white border border-slate-300 rounded-lg text-sm font-black text-[#0077B6] font-display tabular-nums shadow-xs">
-                    {calcAssets} Assets
+                  <span className="px-3 py-1 bg-white border border-[#DCE7F2] rounded-lg text-sm font-black text-[#0077B6] font-display tabular-nums shadow-xs">
+                    <NumberTicker value={calcAssets} suffix=" Assets" />
                   </span>
                 </div>
                 <input
@@ -444,7 +477,7 @@ export default function HomePage() {
                 </div>
                 <div className="mt-3 flex items-baseline gap-2">
                   <span className="font-display text-4xl sm:text-5xl font-black text-white tabular-nums tracking-tight">
-                    {adminHoursSaved}
+                    <NumberTicker value={adminHoursSaved} />
                   </span>
                   <span className="text-base text-cyan-200 font-semibold">Hours / Year</span>
                 </div>
@@ -458,7 +491,7 @@ export default function HomePage() {
                   Estimated Annual Business Impact
                 </div>
                 <div className="font-display text-2xl sm:text-3xl font-black text-white mt-1 tabular-nums tracking-tight">
-                  ₹{totalAnnualImpact.toLocaleString('en-IN')}{' '}
+                  <NumberTicker value={totalAnnualImpact} prefix="₹" />{' '}
                   <span className="text-xs text-slate-300 font-normal">/ yr</span>
                 </div>
 

@@ -294,7 +294,7 @@ export default function FounderConsolePage() {
                       className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                         enquiryStatusFilter === st
                           ? 'bg-amber-500 text-slate-950 shadow-sm'
-                          : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                          : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
                       }`}
                     >
                       {st}
@@ -318,7 +318,7 @@ export default function FounderConsolePage() {
               ) : (
                 <div className="border border-slate-800 rounded-xl overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] font-bold border-b border-slate-800">
+                    <thead className="bg-slate-900 text-slate-400 uppercase text-[10px] font-bold border-b border-slate-800">
                       <tr>
                         <th className="py-2.5 px-3">Date</th>
                         <th className="py-2.5 px-3">Name / Contact</th>
@@ -421,7 +421,7 @@ export default function FounderConsolePage() {
                 </div>
               </div>
 
-              <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
+              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
                 <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
                   <Sparkles className="w-5 h-5 text-amber-400" />
                   <span>Load Clean Starter Template</span>

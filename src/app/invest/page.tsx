@@ -220,7 +220,7 @@ export default function InvestPage() {
       {/* =========================================================================
           SECTION 3: THE PROBLEM WE'RE SOLVING (7 Clear Pain Points)
           ========================================================================= */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-950/60 border-y border-slate-800/80">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-900 border-y border-slate-800/80">
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/15 text-rose-300 text-xs font-bold border border-rose-500/30 mb-3">
@@ -438,7 +438,7 @@ export default function InvestPage() {
       {/* =========================================================================
           SECTION 5: INVESTOR OPPORTUNITY (3 Profiles)
           ========================================================================= */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-950/70 border-y border-slate-800/80">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-900 border-y border-slate-800/80">
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 text-xs font-bold border border-amber-500/30 mb-3">
@@ -627,7 +627,7 @@ export default function InvestPage() {
       {/* =========================================================================
           SECTION 8: STATUTORY TRUST / LEGAL DISCLAIMER
           ========================================================================= */}
-      <section className="py-12 px-4 sm:px-6 lg:px-8 border-t border-slate-800/80 bg-slate-950/80">
+      <section className="py-12 px-4 sm:px-6 lg:px-8 border-t border-slate-800/80 bg-slate-900">
         <div className="max-w-4xl mx-auto text-center space-y-3 text-[11px] text-slate-400 leading-relaxed">
           <div className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
             <ShieldCheck className="w-4 h-4 text-cyan-400" />

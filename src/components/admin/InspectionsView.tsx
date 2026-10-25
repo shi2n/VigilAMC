@@ -188,16 +188,16 @@ export function InspectionsView({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by facility, equipment ID, technician..."
-              className="w-full pl-9 pr-3 py-2 bg-white border border-[#DCE7F2] rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#007DB8] shadow-sm dark:bg-slate-950 dark:border-slate-800 dark:text-white dark:placeholder-slate-500"
+              className="w-full pl-9 pr-3 py-2 bg-white border border-[#DCE7F2] rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#007DB8] shadow-sm  dark:border-slate-800 dark:text-white dark:placeholder-slate-500"
             />
           </div>
 
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs dark:bg-slate-950 dark:border-slate-800">
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs  dark:border-slate-800">
             <button
               onClick={() => setStatusFilter('ALL')}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
                 statusFilter === 'ALL'
-                  ? 'bg-[#007DB8] text-white shadow-sm dark:bg-amber-500 dark:text-slate-950'
+                  ? 'bg-[#007DB8] text-white shadow-sm dark:bg-amber-500 '
                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
@@ -207,7 +207,7 @@ export function InspectionsView({
               onClick={() => setStatusFilter('PASSED')}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
                 statusFilter === 'PASSED'
-                  ? 'bg-emerald-600 text-white shadow-sm dark:bg-emerald-500 dark:text-slate-950'
+                  ? 'bg-emerald-600 text-white shadow-sm dark:bg-emerald-500 '
                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
@@ -217,7 +217,7 @@ export function InspectionsView({
               onClick={() => setStatusFilter('SERVICE_REQUIRED')}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
                 statusFilter === 'SERVICE_REQUIRED'
-                  ? 'bg-amber-500 text-white shadow-sm dark:bg-amber-500 dark:text-slate-950'
+                  ? 'bg-amber-500 text-white shadow-sm dark:bg-amber-500 '
                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
@@ -247,7 +247,7 @@ export function InspectionsView({
 
           <button
             onClick={fetchInspections}
-            className="p-2 rounded-xl bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors dark:bg-slate-950 dark:border-slate-800 dark:hover:border-slate-700 dark:text-slate-400 dark:hover:text-white"
+            className="p-2 rounded-xl bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors  dark:border-slate-800 dark:hover:border-slate-700 dark:text-slate-400 dark:hover:text-white"
             title="Refresh Inspections"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#007DB8]' : ''}`} />
@@ -269,7 +269,7 @@ export function InspectionsView({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-[#DCE7F2] bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] font-bold dark:border-slate-800 dark:bg-slate-950/70 dark:text-slate-400">
+                <tr className="border-b border-[#DCE7F2] bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] font-bold dark:border-slate-800  dark:text-slate-400">
                   <th className="py-3.5 px-4">Date</th>
                   <th className="py-3.5 px-4">Facility</th>
                   <th className="py-3.5 px-4">Equipment ID</th>
@@ -377,7 +377,7 @@ export function InspectionsView({
                   onChange={(e) =>
                     setInspectionForm({ ...inspectionForm, buildingId: e.target.value, equipmentId: '' })
                   }
-                  className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
+                  className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900  dark:border-slate-800 dark:text-white"
                 >
                   <option value="">Select Facility...</option>
                   {buildings.map((b: any) => (
@@ -393,7 +393,7 @@ export function InspectionsView({
                 <select
                   value={inspectionForm.equipmentId}
                   onChange={(e) => setInspectionForm({ ...inspectionForm, equipmentId: e.target.value })}
-                  className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
+                  className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900  dark:border-slate-800 dark:text-white"
                 >
                   <option value="">General Facility Inspection</option>
                   {matchingEquipments.map((eq: any) => (
@@ -410,7 +410,7 @@ export function InspectionsView({
                   <select
                     value={inspectionForm.status}
                     onChange={(e) => setInspectionForm({ ...inspectionForm, status: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
+                    className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900  dark:border-slate-800 dark:text-white"
                   >
                     <option value="PASSED">PASSED (Compliant)</option>
                     <option value="SERVICE_REQUIRED">SERVICE REQUIRED</option>
@@ -425,7 +425,7 @@ export function InspectionsView({
                     placeholder="e.g. Rakesh Sharma"
                     value={inspectionForm.technicianName}
                     onChange={(e) => setInspectionForm({ ...inspectionForm, technicianName: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
+                    className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900  dark:border-slate-800 dark:text-white"
                   />
                 </div>
               </div>
@@ -437,7 +437,7 @@ export function InspectionsView({
                   placeholder="e.g. Gauge 14.2 Bar green zone, safety pin & seal intact"
                   value={inspectionForm.remarks}
                   onChange={(e) => setInspectionForm({ ...inspectionForm, remarks: e.target.value })}
-                  className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
+                  className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900  dark:border-slate-800 dark:text-white"
                 />
               </div>
 
@@ -446,7 +446,7 @@ export function InspectionsView({
                   Photo Evidence (Auto-compressed WebP &rarr; Cloudflare R2)
                 </label>
                 <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer border border-slate-200 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-300">
+                  <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer border border-slate-200  dark:border-slate-800 dark:text-slate-300">
                     <Camera className="w-3.5 h-3.5 text-[#007DB8]" />
                     <span>{uploadingPhoto ? 'Uploading photo...' : 'Attach Photo'}</span>
                     <input

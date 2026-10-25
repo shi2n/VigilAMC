@@ -466,16 +466,16 @@ export function TechnicianManagement({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by name, mobile number, Staff ID..."
-              className="w-full pl-9 pr-3 py-2 bg-white border border-[#DCE7F2] rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#007DB8] shadow-sm dark:bg-slate-950 dark:border-slate-800 dark:text-white dark:placeholder-slate-500"
+              className="w-full pl-9 pr-3 py-2 bg-white border border-[#DCE7F2] rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#007DB8] shadow-sm  dark:border-slate-800 dark:text-white dark:placeholder-slate-500"
             />
           </div>
 
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs dark:bg-slate-950 dark:border-slate-800">
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs  dark:border-slate-800">
             <button
               onClick={() => setStatusFilter('ALL')}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
                 statusFilter === 'ALL'
-                  ? 'bg-[#007DB8] text-white shadow-sm dark:bg-amber-500 dark:text-slate-950'
+                  ? 'bg-[#007DB8] text-white shadow-sm dark:bg-amber-500 '
                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
@@ -485,7 +485,7 @@ export function TechnicianManagement({
               onClick={() => setStatusFilter('ACTIVE')}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
                 statusFilter === 'ACTIVE'
-                  ? 'bg-emerald-600 text-white shadow-sm dark:bg-emerald-500 dark:text-slate-950'
+                  ? 'bg-emerald-600 text-white shadow-sm dark:bg-emerald-500 '
                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
@@ -517,7 +517,7 @@ export function TechnicianManagement({
 
           <button
             onClick={fetchTechnicians}
-            className="p-2 rounded-xl bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors dark:bg-slate-950 dark:border-slate-800 dark:hover:border-slate-700 dark:text-slate-400 dark:hover:text-white"
+            className="p-2 rounded-xl bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors  dark:border-slate-800 dark:hover:border-slate-700 dark:text-slate-400 dark:hover:text-white"
             title="Refresh List"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#007DB8]' : ''}`} />
@@ -567,7 +567,7 @@ export function TechnicianManagement({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-[#DCE7F2] bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] font-bold dark:border-slate-800 dark:bg-slate-950/70 dark:text-slate-400">
+                <tr className="border-b border-[#DCE7F2] bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] font-bold dark:border-slate-800  dark:text-slate-400">
                   <th className="py-3.5 px-4">Technician &amp; Staff ID</th>
                   <th className="py-3.5 px-4">Mobile / Login ID</th>
                   <th className="py-3.5 px-4">Access Status</th>
@@ -782,7 +782,7 @@ export function TechnicianManagement({
                     value={addForm.fullName}
                     onChange={(e) => setAddForm({ ...addForm, fullName: e.target.value })}
                     placeholder="e.g. Ramesh Kumar"
-                    className="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
+                    className="w-full px-3 py-2.5 rounded-xl bg-white  border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
                   />
                 </div>
 
@@ -794,7 +794,7 @@ export function TechnicianManagement({
                     value={addForm.phone}
                     onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })}
                     placeholder="+91 98765 43210"
-                    className="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0077B6] font-mono"
+                    className="w-full px-3 py-2.5 rounded-xl bg-white  border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0077B6] font-mono"
                   />
                 </div>
               </div>
@@ -807,7 +807,7 @@ export function TechnicianManagement({
                     value={addForm.employeeId}
                     onChange={(e) => setAddForm({ ...addForm, employeeId: e.target.value.toUpperCase() })}
                     placeholder="Auto: TECH-101"
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-cyan-300 font-mono placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 uppercase"
+                    className="w-full px-3 py-2.5 rounded-xl bg-[#F4F8FB] border border-slate-800 text-cyan-300 font-mono placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 uppercase"
                   />
                 </div>
 
@@ -830,7 +830,7 @@ export function TechnicianManagement({
                     value={addForm.password}
                     onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
                     placeholder="e.g. 482915"
-                    className="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-amber-700 dark:text-amber-400 font-mono font-bold tracking-wider placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2.5 rounded-xl bg-white  border border-slate-300 dark:border-slate-800 text-amber-700 dark:text-amber-400 font-mono font-bold tracking-wider placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
               </div>
@@ -844,7 +844,7 @@ export function TechnicianManagement({
                   value={addForm.email}
                   onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
                   placeholder="Optional — leave blank for field staff without email"
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 rounded-xl bg-[#F4F8FB] border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
 
@@ -858,7 +858,7 @@ export function TechnicianManagement({
                       : `${addForm.assignedBuildingIds.length} selected`}
                   </span>
                 </label>
-                <div className="max-h-36 overflow-y-auto p-2 bg-[#F8FAFC] dark:bg-slate-950 border border-[#DCE7F2] dark:border-slate-800 rounded-xl space-y-1">
+                <div className="max-h-36 overflow-y-auto p-2 bg-[#F8FAFC]  border border-[#DCE7F2] dark:border-slate-800 rounded-xl space-y-1">
                   {buildings.length === 0 ? (
                     <p className="text-slate-500 p-2 text-center text-xs">No facilities added yet.</p>
                   ) : (
@@ -936,7 +936,7 @@ export function TechnicianManagement({
             </div>
 
             {/* Credentials Card */}
-            <div className="bg-[#F4F8FB] dark:bg-slate-950 p-4 rounded-xl border border-[#DCE7F2] dark:border-slate-800 text-left text-xs space-y-2.5">
+            <div className="bg-[#F4F8FB]  p-4 rounded-xl border border-[#DCE7F2] dark:border-slate-800 text-left text-xs space-y-2.5">
               <div className="flex justify-between items-center">
                 <span className="text-slate-400">Technician Name:</span>
                 <strong className="text-slate-900 dark:text-white text-sm">{createdSuccessTech.fullName}</strong>
@@ -1038,7 +1038,7 @@ export function TechnicianManagement({
                     required
                     value={editForm.fullName}
                     onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-2 rounded-xl bg-[#F4F8FB] border border-slate-800 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
                   />
                 </div>
 
@@ -1048,7 +1048,7 @@ export function TechnicianManagement({
                     type="text"
                     value={editForm.employeeId}
                     onChange={(e) => setEditForm({ ...editForm, employeeId: e.target.value.toUpperCase() })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono uppercase focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-2 rounded-xl bg-[#F4F8FB] border border-slate-800 text-white font-mono uppercase focus:outline-none focus:ring-1 focus:ring-amber-500"
                   />
                 </div>
               </div>
@@ -1060,7 +1060,7 @@ export function TechnicianManagement({
                     type="tel"
                     value={editForm.phone}
                     onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-2 rounded-xl bg-[#F4F8FB] border border-slate-800 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
                   />
                 </div>
 
@@ -1069,7 +1069,7 @@ export function TechnicianManagement({
                   <select
                     value={editForm.status}
                     onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-2 rounded-xl bg-[#F4F8FB] border border-slate-800 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
                   >
                     <option value="ACTIVE">Active (Can Sign In)</option>
                     <option value="INACTIVE">Blocked / Inactive (Access Revoked)</option>
@@ -1085,7 +1085,7 @@ export function TechnicianManagement({
                     {editForm.assignedBuildingIds.length} selected
                   </span>
                 </label>
-                <div className="max-h-36 overflow-y-auto p-2 bg-[#F8FAFC] dark:bg-slate-950 border border-[#DCE7F2] dark:border-slate-800 rounded-xl space-y-1">
+                <div className="max-h-36 overflow-y-auto p-2 bg-[#F8FAFC]  border border-[#DCE7F2] dark:border-slate-800 rounded-xl space-y-1">
                   {buildings.map((b) => (
                     <label
                       key={b.id}
@@ -1188,7 +1188,7 @@ export function TechnicianManagement({
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Min 6 characters"
-                  className="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-amber-700 dark:text-amber-400 font-mono font-bold tracking-wider placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2.5 rounded-xl bg-white  border border-slate-300 dark:border-slate-800 text-amber-700 dark:text-amber-400 font-mono font-bold tracking-wider placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
               </div>
 
@@ -1240,7 +1240,7 @@ export function TechnicianManagement({
             </div>
 
             {/* Profile Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-[#F4F8FB] dark:bg-slate-950 p-4 rounded-xl border border-[#DCE7F2] dark:border-slate-800">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-[#F4F8FB]  p-4 rounded-xl border border-[#DCE7F2] dark:border-slate-800">
               <div>
                 <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold block">Status</span>
                 <span className={viewDetailTech.status === 'ACTIVE' ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
@@ -1287,7 +1287,7 @@ export function TechnicianManagement({
             {/* Recent Activity Log */}
             <div className="space-y-2">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300">Recent Activity Trail</h4>
-              <div className="max-h-48 overflow-y-auto bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2 text-xs">
+              <div className="max-h-48 overflow-y-auto bg-[#F4F8FB] p-3 rounded-xl border border-slate-800 space-y-2 text-xs">
                 {viewDetailTech.activity?.length > 0 ? (
                   viewDetailTech.activity.map((act: any) => (
                     <div
@@ -1344,7 +1344,7 @@ export function TechnicianManagement({
               Are you sure you want to remove <strong className="text-slate-900 dark:text-white">{deleteConfirmTech.fullName}</strong>?
             </p>
 
-            <div className="p-3 rounded-xl bg-[#F8FAFC] dark:bg-slate-950 border border-[#DCE7F2] dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-400 space-y-1">
+            <div className="p-3 rounded-xl bg-[#F8FAFC]  border border-[#DCE7F2] dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-400 space-y-1">
               <p className="font-semibold text-amber-300 flex items-center gap-1">
                 <ShieldCheck className="w-3.5 h-3.5" />
                 Audit Trail Protection

@@ -1,4 +1,5 @@
 'use client';
+import { toast } from 'sonner';
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -106,7 +107,7 @@ export function InvestorLeadsView() {
       );
     } catch (err: any) {
       console.error(err);
-      alert('Could not update status. Please try again.');
+      toast.error('Could not update status. Please try again.', { duration: 5500 });
     } finally {
       setUpdatingId(null);
     }
@@ -152,7 +153,7 @@ export function InvestorLeadsView() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search name, firm, email..."
-            className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-white placeholder-slate-500 outline-none focus:border-[#0077B6]"
+            className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#F4F8FB] border border-slate-800 text-xs text-white placeholder-slate-500 outline-none focus:border-[#0077B6]"
           />
         </form>
 
@@ -164,7 +165,7 @@ export function InvestorLeadsView() {
               className={`px-3 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all ${
                 statusFilter === st
                   ? 'bg-amber-500 text-slate-950'
-                  : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                  : 'bg-[#F4F8FB] text-slate-400 hover:text-white border border-slate-800'
               }`}
             >
               {st}
@@ -187,7 +188,7 @@ export function InvestorLeadsView() {
           <p className="text-xs">Loading investor submissions...</p>
         </div>
       ) : investors.length === 0 ? (
-        <div className="py-16 text-center border border-dashed border-slate-800 rounded-2xl bg-slate-950/40">
+        <div className="py-16 text-center border border-dashed border-slate-800 rounded-2xl bg-[#F4F8FB]">
           <TrendingUp className="w-8 h-8 mx-auto text-slate-600 mb-3" />
           <p className="text-sm font-bold text-slate-300">No investor expressions of interest found</p>
           <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
@@ -209,7 +210,7 @@ export function InvestorLeadsView() {
             return (
               <div
                 key={lead.id}
-                className="p-5 rounded-2xl bg-slate-950/90 border border-slate-800 hover:border-slate-700 transition-all space-y-4"
+                className="p-5 rounded-2xl bg-[#F4F8FB] border border-slate-800 hover:border-slate-700 transition-all space-y-4"
               >
                 {/* Top row: Name, Type, Status */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800/80">

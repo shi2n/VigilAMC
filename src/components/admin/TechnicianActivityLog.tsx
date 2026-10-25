@@ -92,14 +92,14 @@ export function TechnicianActivityLog() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search audit trail by keyword, asset, or technician..."
-              className="w-full pl-9 pr-3 py-2 bg-white border border-[#DCE7F2] rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#007DB8] shadow-sm dark:bg-slate-950 dark:border-slate-800 dark:text-white dark:placeholder-slate-500"
+              className="w-full pl-9 pr-3 py-2 bg-white border border-[#DCE7F2] rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#007DB8] shadow-sm  dark:border-slate-800 dark:text-white dark:placeholder-slate-500"
             />
           </div>
 
           <select
             value={selectedTech}
             onChange={(e) => setSelectedTech(e.target.value)}
-            className="px-3 py-2 bg-white border border-[#DCE7F2] rounded-xl text-xs text-slate-800 focus:outline-none focus:border-[#007DB8] shadow-sm dark:bg-slate-950 dark:border-slate-800 dark:text-slate-300"
+            className="px-3 py-2 bg-white border border-[#DCE7F2] rounded-xl text-xs text-slate-800 focus:outline-none focus:border-[#007DB8] shadow-sm  dark:border-slate-800 dark:text-slate-300"
           >
             <option value="ALL">All Technicians ({technicians.length})</option>
             {technicians.map((t) => (
@@ -112,7 +112,7 @@ export function TechnicianActivityLog() {
 
         <button
           onClick={fetchActivities}
-          className="p-2 rounded-xl bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors self-end sm:self-auto dark:bg-slate-950 dark:border-slate-800 dark:hover:border-slate-700 dark:text-slate-400 dark:hover:text-white"
+          className="p-2 rounded-xl bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors self-end sm:self-auto  dark:border-slate-800 dark:hover:border-slate-700 dark:text-slate-400 dark:hover:text-white"
           title="Refresh Log"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#007DB8]' : ''}`} />
@@ -121,7 +121,7 @@ export function TechnicianActivityLog() {
 
       {/* Activity Timeline List */}
       <div className="bg-white border border-[#DCE7F2] rounded-2xl overflow-hidden shadow-sm dark:bg-slate-900/80 dark:border-slate-800 dark:shadow-xl">
-        <div className="p-4 border-b border-[#DCE7F2] bg-slate-50/80 flex items-center justify-between dark:border-slate-800 dark:bg-slate-950/70">
+        <div className="p-4 border-b border-[#DCE7F2] bg-slate-50/80 flex items-center justify-between dark:border-slate-800 ">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-[#007DB8] dark:text-amber-400" />
             <span>Field Activity &amp; Compliance Audit Feed</span>

@@ -164,7 +164,7 @@ export function SubscriptionManager({ showToast, onPlanChanged }: SubscriptionMa
         {/* 3 Capacity Progress Bars */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {/* Technicians */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-[#DCE7F2] space-y-2 dark:bg-slate-950 dark:border-slate-800">
+          <div className="bg-slate-50 p-4 rounded-xl border border-[#DCE7F2] space-y-2  dark:border-slate-800">
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-600 dark:text-slate-400 font-bold flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5 text-[#007DB8]" />
@@ -190,7 +190,7 @@ export function SubscriptionManager({ showToast, onPlanChanged }: SubscriptionMa
           </div>
 
           {/* Towers / Buildings */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-[#DCE7F2] space-y-2 dark:bg-slate-950 dark:border-slate-800">
+          <div className="bg-slate-50 p-4 rounded-xl border border-[#DCE7F2] space-y-2  dark:border-slate-800">
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-600 dark:text-slate-400 font-bold flex items-center gap-1.5">
                 <Building2 className="w-3.5 h-3.5 text-[#007DB8]" />
@@ -216,7 +216,7 @@ export function SubscriptionManager({ showToast, onPlanChanged }: SubscriptionMa
           </div>
 
           {/* Fire Assets */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-[#DCE7F2] space-y-2 dark:bg-slate-950 dark:border-slate-800">
+          <div className="bg-slate-50 p-4 rounded-xl border border-[#DCE7F2] space-y-2  dark:border-slate-800">
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-600 dark:text-slate-400 font-bold flex items-center gap-1.5">
                 <Flame className="w-3.5 h-3.5 text-rose-500" />
@@ -259,7 +259,7 @@ export function SubscriptionManager({ showToast, onPlanChanged }: SubscriptionMa
               onClick={() => setBillingCycle('MONTHLY')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 billingCycle === 'MONTHLY'
-                  ? 'bg-white text-slate-900 shadow-sm dark:bg-amber-500 dark:text-slate-950'
+                  ? 'bg-white text-slate-900 shadow-sm dark:bg-amber-500 '
                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
@@ -269,7 +269,7 @@ export function SubscriptionManager({ showToast, onPlanChanged }: SubscriptionMa
               onClick={() => setBillingCycle('ANNUAL')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
                 billingCycle === 'ANNUAL'
-                  ? 'bg-[#007DB8] text-white shadow-sm dark:bg-amber-500 dark:text-slate-950'
+                  ? 'bg-[#007DB8] text-white shadow-sm dark:bg-amber-500 '
                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
@@ -305,7 +305,7 @@ export function SubscriptionManager({ showToast, onPlanChanged }: SubscriptionMa
                 )}
 
                 {isCurrent && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-[#007DB8] text-white text-[10px] font-black uppercase tracking-wider shadow dark:bg-amber-500 dark:text-slate-950">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-[#007DB8] text-white text-[10px] font-black uppercase tracking-wider shadow dark:bg-amber-500 ">
                     Active Plan
                   </div>
                 )}
@@ -409,7 +409,7 @@ export function SubscriptionManager({ showToast, onPlanChanged }: SubscriptionMa
               <strong className="text-slate-900 dark:text-white">{confirmDowngradePlan.name}</strong>?
             </p>
 
-            <div className="p-3.5 rounded-xl bg-slate-50 border border-[#DCE7F2] text-xs text-slate-600 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-400 space-y-2">
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-[#DCE7F2] text-xs text-slate-600  dark:border-slate-800 dark:text-slate-400 space-y-2">
               <p className="font-semibold text-slate-900 dark:text-amber-300 flex items-center gap-1.5">
                 <ShieldCheck className="w-4 h-4 text-emerald-500" />
                 Data Preservation Guarantee

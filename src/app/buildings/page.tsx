@@ -364,7 +364,7 @@ export default function BuildingsPage() {
                       placeholder="e.g. NOC/DFS/2026/042"
                       value={form.fireNocNumber}
                       onChange={(e) => setForm({ ...form, fireNocNumber: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white"
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-white"
                     />
                   </div>
                   <div>
@@ -373,7 +373,7 @@ export default function BuildingsPage() {
                       type="text"
                       value={form.nocAuthority}
                       onChange={(e) => setForm({ ...form, nocAuthority: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white"
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-white"
                     />
                   </div>
                   <div>
@@ -383,7 +383,7 @@ export default function BuildingsPage() {
                       required
                       value={form.nocExpiryDate}
                       onChange={(e) => setForm({ ...form, nocExpiryDate: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white"
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-white"
                     />
                   </div>
                 </div>

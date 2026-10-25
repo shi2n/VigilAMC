@@ -137,7 +137,7 @@ function PrintQrContent() {
             <select
               value={selectedBuilding}
               onChange={(e) => setSelectedBuilding(e.target.value)}
-              className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-white font-medium focus:outline-none focus:border-amber-500"
+              className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white font-medium focus:outline-none focus:border-amber-500"
             >
               <option value="ALL">All Buildings ({buildings.length})</option>
               {buildings.map((b) => (

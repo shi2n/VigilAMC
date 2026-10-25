@@ -1,4 +1,5 @@
 'use client';
+import { toast } from 'sonner';
 
 import React, { useState, useEffect } from 'react';
 import { FileSpreadsheet, X, Check, Calendar, Filter, Download } from 'lucide-react';
@@ -90,7 +91,7 @@ export function ExportModal({
       onClose();
     } catch (err: any) {
       console.error(err);
-      alert(err.message || 'Export failed');
+      toast.error(err.message || 'Export failed', { duration: 5500 });
     } finally {
       setExporting(false);
     }
@@ -139,7 +140,7 @@ export function ExportModal({
           </div>
 
           {/* Filters: Status and Date Range */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 bg-[#F8FAFC] rounded-xl border border-[#DCE7F2] dark:bg-slate-950/80 dark:border-slate-800">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 bg-[#F8FAFC] rounded-xl border border-[#DCE7F2]  dark:border-slate-800">
             <div>
               <label className="block text-slate-700 font-semibold mb-1 flex items-center gap-1.5 dark:text-slate-300">
                 <Filter className="w-3.5 h-3.5 text-[#007DB8] dark:text-amber-400" />
@@ -197,7 +198,7 @@ export function ExportModal({
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 p-3 bg-[#F8FAFC] rounded-xl border border-[#DCE7F2] max-h-44 overflow-y-auto dark:bg-slate-950/60 dark:border-slate-800">
+            <div className="grid grid-cols-2 gap-2 p-3 bg-[#F8FAFC] rounded-xl border border-[#DCE7F2] max-h-44 overflow-y-auto  dark:border-slate-800">
               {activeConfig.columns.map((col) => {
                 const isChecked = selectedCols.includes(col.id);
                 return (
@@ -234,7 +235,7 @@ export function ExportModal({
             type="button"
             disabled={exporting || currentDataset.length === 0}
             onClick={handleExecuteExport}
-            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs shadow-md transition-all dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-slate-950 dark:font-black"
+            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs shadow-md transition-all dark:bg-emerald-500 dark:hover:bg-emerald-400  dark:font-black"
           >
             <Download className="w-4 h-4" />
             <span>{exporting ? 'Generating XLSX...' : `Export Excel (${currentDataset.length})`}</span>

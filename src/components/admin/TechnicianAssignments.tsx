@@ -123,13 +123,13 @@ export function TechnicianAssignments({ showToast }: TechnicianAssignmentsProps)
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search facility by name, client, address..."
-            className="w-full pl-9 pr-3 py-2 bg-white border border-[#DCE7F2] rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#007DB8] shadow-sm dark:bg-slate-950 dark:border-slate-800 dark:text-white dark:placeholder-slate-500"
+            className="w-full pl-9 pr-3 py-2 bg-white border border-[#DCE7F2] rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#007DB8] shadow-sm  dark:border-slate-800 dark:text-white dark:placeholder-slate-500"
           />
         </div>
 
         <button
           onClick={fetchData}
-          className="p-2 rounded-xl bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors dark:bg-slate-950 dark:border-slate-800 dark:hover:border-slate-700 dark:text-slate-400 dark:hover:text-white"
+          className="p-2 rounded-xl bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors  dark:border-slate-800 dark:hover:border-slate-700 dark:text-slate-400 dark:hover:text-white"
           title="Refresh Assignments"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#007DB8]' : ''}`} />
@@ -169,7 +169,7 @@ export function TechnicianAssignments({ showToast }: TechnicianAssignmentsProps)
                     </p>
                   </div>
 
-                  <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#EAF6FF] text-[#007DB8] border border-[#007DB8]/30 shrink-0 dark:bg-slate-950 dark:text-slate-300 dark:border-slate-800">
+                  <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#EAF6FF] text-[#007DB8] border border-[#007DB8]/30 shrink-0  dark:text-slate-300 dark:border-slate-800">
                     {building.totalEquipments || building.equipments?.length || 0} Assets
                   </span>
                 </div>
@@ -194,7 +194,7 @@ export function TechnicianAssignments({ showToast }: TechnicianAssignmentsProps)
                       assignedTechs.map((tech) => (
                         <span
                           key={tech.id}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-700 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-700  dark:border-slate-800 dark:text-slate-200"
                         >
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                           <span className="font-medium">{tech.fullName}</span>
@@ -235,7 +235,7 @@ export function TechnicianAssignments({ showToast }: TechnicianAssignmentsProps)
                 Select which field technicians are authorized to access and perform inspections at this facility:
               </p>
 
-              <div className="max-h-56 overflow-y-auto bg-slate-50 p-2 rounded-xl border border-slate-200 space-y-1 dark:bg-slate-950 dark:border-slate-800">
+              <div className="max-h-56 overflow-y-auto bg-slate-50 p-2 rounded-xl border border-slate-200 space-y-1  dark:border-slate-800">
                 {technicians.length === 0 ? (
                   <p className="p-3 text-center text-slate-400 text-xs">No active technicians available.</p>
                 ) : (

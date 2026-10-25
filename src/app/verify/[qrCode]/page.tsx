@@ -223,7 +223,7 @@ export default function PublicVerifyPassportPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-            <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
+            <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
               <div className="flex items-center gap-2 font-black text-amber-400 text-sm mb-1">
                 <span className="w-6 h-6 rounded-lg bg-amber-500/20 flex items-center justify-center">P</span>
                 <span>PULL</span>
@@ -231,7 +231,7 @@ export default function PublicVerifyPassportPage() {
               <p className="text-slate-300 text-[11px]">{eqInfo.passGuide.p}</p>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
+            <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
               <div className="flex items-center gap-2 font-black text-amber-400 text-sm mb-1">
                 <span className="w-6 h-6 rounded-lg bg-amber-500/20 flex items-center justify-center">A</span>
                 <span>AIM</span>
@@ -239,7 +239,7 @@ export default function PublicVerifyPassportPage() {
               <p className="text-slate-300 text-[11px]">{eqInfo.passGuide.a}</p>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
+            <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
               <div className="flex items-center gap-2 font-black text-amber-400 text-sm mb-1">
                 <span className="w-6 h-6 rounded-lg bg-amber-500/20 flex items-center justify-center">S</span>
                 <span>SQUEEZE</span>
@@ -247,7 +247,7 @@ export default function PublicVerifyPassportPage() {
               <p className="text-slate-300 text-[11px]">{eqInfo.passGuide.s1}</p>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
+            <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
               <div className="flex items-center gap-2 font-black text-amber-400 text-sm mb-1">
                 <span className="w-6 h-6 rounded-lg bg-amber-500/20 flex items-center justify-center">S</span>
                 <span>SWEEP</span>

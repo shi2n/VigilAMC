@@ -1,5 +1,7 @@
 'use client';
 
+import { toast } from 'sonner';
+
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -995,6 +997,11 @@ export default function TechnicianPWA() {
                   <WifiOff className="w-3 h-3" /> Offline ({offlineQueue.length})
                 </span>
               )}
+              {isSyncingQueue && (
+                <span className="ml-1 inline-flex items-center gap-1 text-[#0077B6] font-bold">
+                  <RefreshCw className="w-3 h-3 animate-spin" /> Syncing
+                </span>
+              )}
             </div>
           </div>
         </header>
@@ -1038,7 +1045,7 @@ export default function TechnicianPWA() {
                   return (
                     <div
                       key={bldg.id}
-                      className="bg-white border border-[#DCE7F2] rounded-3xl p-4 shadow-sm space-y-3.5 hover:border-[#0077B6] transition-all"
+                      className="bg-white border border-[#DCE7F2] rounded-3xl p-4 shadow-sm space-y-3.5 hover:border-[#0077B6] transition-all duration-150 animate-in fade-in"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="space-y-0.5">
@@ -1145,7 +1152,7 @@ export default function TechnicianPWA() {
                 return (
                   <div
                     key={asset.id}
-                    className="bg-white border border-[#DCE7F2] rounded-2xl p-4 space-y-3 shadow-sm hover:border-[#0077B6] transition-all"
+                    className="bg-white border border-[#DCE7F2] rounded-2xl p-4 space-y-3 shadow-sm hover:border-[#0077B6] transition-all duration-150 animate-in fade-in"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="space-y-0.5">
@@ -1181,7 +1188,7 @@ export default function TechnicianPWA() {
                         setRemarks('');
                         setCapturedPhotoUrl(null);
                       }}
-                      className="w-full py-3 rounded-xl bg-[#F0F7FF] hover:bg-[#E1EFFF] text-[#0077B6] border border-[#DCE7F2] font-bold text-xs flex items-center justify-between px-4 transition-all"
+                      className="w-full py-3 rounded-xl bg-[#EAF6FF] hover:bg-[#D5EEFF] text-[#0077B6] border border-[#DCE7F2] font-bold text-xs flex items-center justify-between px-4 transition-all duration-150 active:scale-95"
                     >
                       <span>⚡ Open 6-Sec Inspection Form</span>
                       <ChevronRight className="w-4 h-4 text-[#0077B6]" />
@@ -1354,7 +1361,7 @@ export default function TechnicianPWA() {
               type="button"
               disabled={submittingInspection || isProcessingPhoto}
               onClick={handleSubmitChecksheet}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-sm shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#0E9F6E] to-emerald-600 hover:from-emerald-600 hover:to-teal-600 text-white font-black text-sm shadow-xl transition-all duration-150 active:scale-95 flex items-center justify-center gap-2"
             >
               {submittingInspection ? (
                 <>

@@ -226,7 +226,7 @@ export function ProductWorkflowSection() {
                       <span className="text-emerald-400 font-semibold">Intact &bull; Verified</span>
                     </div>
 
-                    <div className="p-2 rounded bg-slate-950/80 border border-slate-800/80 space-y-1 text-[11px] font-mono text-slate-300">
+                    <div className="p-2 rounded bg-slate-900 border border-slate-800/80 space-y-1 text-[11px] font-mono text-slate-300">
                       <div className="flex justify-between">
                         <span className="text-slate-500">GPS Position:</span>
                         <span className="text-cyan-300">28.4595° N, 77.0266° E</span>
@@ -273,7 +273,7 @@ export function ProductWorkflowSection() {
                       Tare 10.20kg &bull; Full Gross 14.70kg &bull; Measured Gross 14.00kg (Net Gas: 3.80kg vs 4.50kg &bull; Loss: -0.70kg / -15.5% &gt; 10% IS 2190 threshold &mdash; Immediate Refill Required). Photo evidence logged.
                     </p>
 
-                    <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 space-y-1.5 text-[11px]">
+                    <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1.5 text-[11px]">
                       <div className="flex items-center justify-between text-slate-400 font-mono">
                         <span className="flex items-center gap-1.5 text-slate-300">
                           <Receipt className="w-3.5 h-3.5 text-cyan-400" />
@@ -326,7 +326,7 @@ export function ProductWorkflowSection() {
                       </div>
                     </div>
 
-                    <div className="p-2 rounded bg-slate-950 border border-slate-800 flex items-center justify-between text-[11px]">
+                    <div className="p-2 rounded bg-slate-900 border border-slate-800 flex items-center justify-between text-[11px]">
                       <span className="text-slate-400">Authorized Agency Seal Block:</span>
                       <span className="text-cyan-300 font-mono">DL/FIRE/LIC/2026/042</span>
                     </div>

@@ -1,4 +1,5 @@
 'use client';
+import { toast } from 'sonner';
 
 import React, { useState } from 'react';
 import { X, MessageSquare, Star, Send, CheckCircle2, Loader2 } from 'lucide-react';
@@ -43,7 +44,7 @@ export function FeedbackModal({ isOpen, onClose, userEmail }: FeedbackModalProps
       }, 2500);
     } catch (err) {
       console.error(err);
-      alert('Failed to submit feedback. Please try again.');
+      toast.error('Failed to submit feedback. Please try again.', { duration: 5500 });
     } finally {
       setSubmitting(false);
     }
@@ -117,7 +118,7 @@ export function FeedbackModal({ isOpen, onClose, userEmail }: FeedbackModalProps
                 value={confusingText}
                 onChange={(e) => setConfusingText(e.target.value)}
                 placeholder="e.g. It was not clear how to assign a technician..."
-                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0077B6] outline-none transition-all"
+                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:bg-white dark:focus:bg-[#F4F8FB] focus:border-[#0077B6] outline-none transition-all"
               />
             </div>
 
@@ -130,7 +131,7 @@ export function FeedbackModal({ isOpen, onClose, userEmail }: FeedbackModalProps
                 value={missingFeatures}
                 onChange={(e) => setMissingFeatures(e.target.value)}
                 placeholder="e.g. A quick way to print customer AMC quotation..."
-                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0077B6] outline-none transition-all"
+                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:bg-white dark:focus:bg-[#F4F8FB] focus:border-[#0077B6] outline-none transition-all"
               />
             </div>
 
@@ -143,7 +144,7 @@ export function FeedbackModal({ isOpen, onClose, userEmail }: FeedbackModalProps
                 value={fairPrice}
                 onChange={(e) => setFairPrice(e.target.value)}
                 placeholder="e.g. ₹999/month, ₹5,000/year, or Pay per building"
-                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0077B6] outline-none transition-all"
+                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:bg-white dark:focus:bg-[#F4F8FB] focus:border-[#0077B6] outline-none transition-all"
               />
             </div>
 

@@ -78,7 +78,7 @@ export function AdminUsersView({ currentUser, userProfile, company }: AdminUsers
 
       {activeTab === 'USERS' && (
         <div className="bg-white border border-[#DCE7F2] rounded-2xl overflow-hidden shadow-sm dark:bg-slate-900/80 dark:border-slate-800 dark:shadow-xl">
-          <div className="p-5 border-b border-[#DCE7F2] bg-slate-50/80 flex items-center justify-between dark:border-slate-800 dark:bg-slate-950/70">
+          <div className="p-5 border-b border-[#DCE7F2] bg-slate-50/80 flex items-center justify-between dark:border-slate-800 ">
             <div>
               <h3 className="text-base font-bold text-[#023E8A] dark:text-white">Agency Administrators</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -91,9 +91,9 @@ export function AdminUsersView({ currentUser, userProfile, company }: AdminUsers
           </div>
 
           <div className="p-6 space-y-4">
-            <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-[#DCE7F2] dark:bg-slate-950 dark:border-slate-800">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-[#DCE7F2]  dark:border-slate-800">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#007DB8] to-[#073F8F] text-white flex items-center justify-center font-black shadow-md dark:from-amber-500 dark:to-orange-600 dark:text-slate-950">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#007DB8] to-[#073F8F] text-white flex items-center justify-center font-black shadow-md dark:from-amber-500 dark:to-orange-600 ">
                   <ShieldCheck className="w-5 h-5 stroke-[2.5]" />
                 </div>
                 <div>
@@ -101,7 +101,7 @@ export function AdminUsersView({ currentUser, userProfile, company }: AdminUsers
                     <span className="font-bold text-slate-900 dark:text-white text-sm">
                       {adminDisplayName}
                     </span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-[#007DB8] text-white dark:bg-amber-500 dark:text-slate-950">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-[#007DB8] text-white dark:bg-amber-500 ">
                       AGENCY ADMIN
                     </span>
                   </div>
@@ -125,7 +125,7 @@ export function AdminUsersView({ currentUser, userProfile, company }: AdminUsers
 
       {activeTab === 'PERMISSIONS' && (
         <div className="bg-white border border-[#DCE7F2] rounded-2xl overflow-hidden shadow-sm dark:bg-slate-900/80 dark:border-slate-800 dark:shadow-xl">
-          <div className="p-5 border-b border-[#DCE7F2] bg-slate-50/80 dark:border-slate-800 dark:bg-slate-950/70">
+          <div className="p-5 border-b border-[#DCE7F2] bg-slate-50/80 dark:border-slate-800 ">
             <h3 className="text-base font-bold text-[#023E8A] dark:text-white">Role-Based Access Control Matrix</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Strict multi-tenant security architecture separating administrative operations from field execution.
@@ -135,7 +135,7 @@ export function AdminUsersView({ currentUser, userProfile, company }: AdminUsers
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-[#DCE7F2] bg-slate-50 text-slate-500 uppercase text-[10px] font-bold dark:border-slate-800 dark:bg-slate-950/80 dark:text-slate-400">
+                <tr className="border-b border-[#DCE7F2] bg-slate-50 text-slate-500 uppercase text-[10px] font-bold dark:border-slate-800  dark:text-slate-400">
                   <th className="py-3 px-5">Capability / Function</th>
                   <th className="py-3 px-5 text-center w-36">Agency Admin</th>
                   <th className="py-3 px-5 text-center w-36">Field Technician</th>

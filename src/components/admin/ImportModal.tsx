@@ -1,4 +1,5 @@
 'use client';
+import { toast } from 'sonner';
 
 import React, { useState, useEffect, useRef } from 'react';
 import * as XLSX from 'xlsx';
@@ -136,7 +137,7 @@ export function ImportModal({
     if (!uploadedFile) return;
 
     if (uploadedFile.size > 10 * 1024 * 1024) {
-      alert('File size exceeds 10MB limit. Please upload a smaller file or split into parts.');
+      toast.error('File size exceeds 10MB limit. Please upload a smaller file or split into parts.', { duration: 5500 });
       return;
     }
 
@@ -155,7 +156,7 @@ export function ImportModal({
       });
 
       if (jsonData.length === 0) {
-        alert('Spreadsheet is empty. Please upload a file with data rows.');
+        toast.error('Spreadsheet is empty. Please upload a file with data rows.', { duration: 5500 });
         return;
       }
 
@@ -170,7 +171,7 @@ export function ImportModal({
       setCurrentStep('MAP_COLUMNS');
     } catch (err: any) {
       console.error('Failed to parse file:', err);
-      alert('Could not read Excel file. Please ensure it is a valid .xlsx, .xls, or .csv file.');
+      toast.error('Could not read Excel file. Please ensure it is a valid .xlsx, .xls, or .csv file.', { duration: 5500 });
     }
   };
 
@@ -190,7 +191,7 @@ export function ImportModal({
 
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || 'Validation failed');
+        toast.error(data.error || 'Validation failed', { duration: 5500 });
         return;
       }
 
@@ -198,7 +199,7 @@ export function ImportModal({
       setCurrentStep('PREVIEW_STRATEGY');
     } catch (e: any) {
       console.error(e);
-      alert('Error validating spreadsheet data: ' + e.message);
+      toast.error('Error validating spreadsheet data: ' + e.message, { duration: 5500 });
     } finally {
       setIsValidating(false);
     }
@@ -337,9 +338,9 @@ export function ImportModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
       <div className="relative w-full max-w-4xl bg-white border border-[#DCE7F2] rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-slate-800 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#DCE7F2] bg-[#F8FAFC] shrink-0 dark:border-slate-800 dark:bg-slate-950/70">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#DCE7F2] bg-[#F8FAFC] shrink-0 dark:border-slate-800 ">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#EAF6FF] border border-[#007DB8]/30 flex items-center justify-center text-[#073F8F] font-bold shadow-sm dark:bg-gradient-to-br dark:from-amber-500 dark:to-orange-600 dark:text-slate-950">
+            <div className="w-10 h-10 rounded-xl bg-[#EAF6FF] border border-[#007DB8]/30 flex items-center justify-center text-[#073F8F] font-bold shadow-sm dark:bg-gradient-to-br dark:from-amber-500 dark:to-orange-600 ">
               <FileSpreadsheet className="w-5 h-5 text-[#007DB8] dark:text-inherit" />
             </div>
             <div>
@@ -360,7 +361,7 @@ export function ImportModal({
               onClick={() => setActiveTab(activeTab === 'WIZARD' ? 'HISTORY' : 'WIZARD')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === 'HISTORY'
-                  ? 'bg-[#073F8F] text-white shadow-sm dark:bg-amber-500 dark:text-slate-950'
+                  ? 'bg-[#073F8F] text-white shadow-sm dark:bg-amber-500 '
                   : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300'
               }`}
             >
@@ -403,7 +404,7 @@ export function ImportModal({
                   <p className="text-xs">Loading audit logs...</p>
                 </div>
               ) : historyLogs.length === 0 ? (
-                <div className="p-12 text-center text-slate-500 bg-slate-950/50 rounded-2xl border border-slate-800">
+                <div className="p-12 text-center text-slate-500 bg-[#F4F8FB] rounded-2xl border border-slate-800">
                   <History className="w-10 h-10 mx-auto text-slate-600 mb-2" />
                   <p className="text-sm font-bold text-slate-400">No import batches on record</p>
                   <p className="text-xs mt-1">Complete your first Excel import using the wizard.</p>
@@ -411,7 +412,7 @@ export function ImportModal({
               ) : (
                 <div className="border border-slate-800 rounded-2xl overflow-hidden">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] font-bold border-b border-slate-800">
+                    <thead className="bg-[#F4F8FB] text-slate-400 uppercase text-[10px] font-bold border-b border-slate-800">
                       <tr>
                         <th className="py-2.5 px-3">Date &amp; Time</th>
                         <th className="py-2.5 px-3">Data Module</th>
@@ -574,7 +575,7 @@ export function ImportModal({
                           className={`p-4 rounded-2xl border cursor-pointer transition-all hover:scale-[1.01] ${
                             isSelected
                               ? 'bg-amber-500/10 border-amber-500/50 shadow-lg shadow-amber-500/10'
-                              : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                              : 'bg-[#F4F8FB] border-slate-800 hover:border-slate-700'
                           }`}
                         >
                           <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 ${item.color}`}>
@@ -593,7 +594,7 @@ export function ImportModal({
               {currentStep === 'UPLOAD_FILE' && (
                 <div className="space-y-6">
                   {/* Selected Entity Banner */}
-                  <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="p-4 rounded-2xl bg-[#F4F8FB] border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold">
                         <FileSpreadsheet className="w-4 h-4" />
@@ -641,7 +642,7 @@ export function ImportModal({
                     className={`border-2 border-dashed rounded-3xl p-10 text-center cursor-pointer transition-all ${
                       dragActive
                         ? 'border-amber-400 bg-amber-500/5 scale-[1.01]'
-                        : 'border-slate-700 bg-slate-950/40 hover:border-slate-600 hover:bg-slate-950/60'
+                        : 'border-slate-700 bg-[#F4F8FB] hover:border-slate-600 hover:bg-[#F4F8FB]'
                     }`}
                   >
                     <input
@@ -671,7 +672,7 @@ export function ImportModal({
                   </div>
 
                   {/* Field Guidance Notes */}
-                  <div className="p-4 rounded-2xl bg-slate-950/40 border border-slate-800 space-y-2 text-xs">
+                  <div className="p-4 rounded-2xl bg-[#F4F8FB] border border-slate-800 space-y-2 text-xs">
                     <div className="font-bold text-slate-300 flex items-center gap-1.5">
                       <HelpCircle className="w-4 h-4 text-amber-400" />
                       <span>Data Format Guidelines for {currentConfig.plural}:</span>
@@ -696,14 +697,14 @@ export function ImportModal({
                       </p>
                     </div>
 
-                    <div className="text-xs font-semibold text-slate-400 bg-slate-950 px-3 py-1 rounded-lg border border-slate-800">
+                    <div className="text-xs font-semibold text-slate-400 bg-[#F4F8FB] px-3 py-1 rounded-lg border border-slate-800">
                       Total Rows Detected: <strong className="text-white font-mono">{rawRows.length}</strong>
                     </div>
                   </div>
 
                   <div className="border border-slate-800 rounded-2xl overflow-hidden max-h-[380px] overflow-y-auto">
                     <table className="w-full text-left text-xs">
-                      <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] font-bold border-b border-slate-800 sticky top-0">
+                      <thead className="bg-[#F4F8FB] text-slate-400 uppercase text-[10px] font-bold border-b border-slate-800 sticky top-0">
                         <tr>
                           <th className="py-2.5 px-3">Spreadsheet Column Header</th>
                           <th className="py-2.5 px-3">Sample Value (Row 1)</th>
@@ -735,7 +736,7 @@ export function ImportModal({
                                       [header]: val,
                                     });
                                   }}
-                                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500"
+                                  className="w-full bg-[#F4F8FB] border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500"
                                 >
                                   <option value="">— Do Not Import (Ignore) —</option>
                                   {currentConfig.fields.map((f) => (
@@ -804,7 +805,7 @@ export function ImportModal({
                 <div className="space-y-5">
                   {/* Summary Metric Badges */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
+                    <div className="p-3.5 rounded-xl bg-[#F4F8FB] border border-slate-800">
                       <span className="text-[10px] font-bold text-slate-400 uppercase">Total Rows</span>
                       <div className="text-xl font-black text-white">{validationResult.totalRows}</div>
                     </div>
@@ -823,7 +824,7 @@ export function ImportModal({
                   </div>
 
                   {/* Duplicate Strategy Radio Selector */}
-                  <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2.5">
+                  <div className="p-4 rounded-2xl bg-[#F4F8FB] border border-slate-800 space-y-2.5">
                     <div className="flex items-center gap-2 text-xs font-bold text-white">
                       <span>Duplicate Handling Strategy:</span>
                       <span className="text-[11px] font-normal text-slate-400">
@@ -883,7 +884,7 @@ export function ImportModal({
 
                     <div className="border border-slate-800 rounded-xl overflow-hidden max-h-[220px] overflow-y-auto">
                       <table className="w-full text-left text-[11px]">
-                        <thead className="bg-slate-950 text-slate-400 uppercase text-[9px] font-bold border-b border-slate-800 sticky top-0">
+                        <thead className="bg-[#F4F8FB] text-slate-400 uppercase text-[9px] font-bold border-b border-slate-800 sticky top-0">
                           <tr>
                             <th className="py-2 px-3">Row</th>
                             <th className="py-2 px-3">Status</th>
@@ -1022,7 +1023,7 @@ export function ImportModal({
                       <span className="text-[10px] font-bold text-cyan-400 uppercase">Updated</span>
                       <div className="text-lg font-black text-cyan-300">{batchStats.updated}</div>
                     </div>
-                    <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
+                    <div className="p-3 rounded-xl bg-[#F4F8FB] border border-slate-800">
                       <span className="text-[10px] font-bold text-slate-400 uppercase">Skipped</span>
                       <div className="text-lg font-black text-slate-300">{batchStats.skipped}</div>
                     </div>

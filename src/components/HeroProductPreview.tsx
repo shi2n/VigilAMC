@@ -130,7 +130,7 @@ export function HeroProductPreview({ onOpenModal }: HeroProductPreviewProps) {
                   </div>
 
                   {/* App Screen Container */}
-                  <div className="rounded-2xl bg-slate-950 p-3.5 border border-slate-800/80 space-y-3">
+                  <div className="rounded-2xl bg-slate-900 p-3.5 border border-slate-800/80 space-y-3">
                     {/* Top Bar with Offline Tag */}
                     <div className="flex items-center justify-between pb-2 border-b border-slate-800 text-xs">
                       <div>
@@ -161,13 +161,13 @@ export function HeroProductPreview({ onOpenModal }: HeroProductPreviewProps) {
 
                       {/* Checklist items */}
                       <div className="space-y-1.5 pt-1 text-[11px]">
-                        <div className="flex items-center justify-between p-1.5 rounded bg-slate-950/70 border border-slate-800">
+                        <div className="flex items-center justify-between p-1.5 rounded bg-slate-900 border border-slate-800">
                           <span className="text-slate-300">Pressure Gauge Reading</span>
                           <span className="text-emerald-400 font-semibold flex items-center gap-1">
                             <CheckCircle2 className="w-3 h-3" /> 14.5 Bar (Normal)
                           </span>
                         </div>
-                        <div className="flex items-center justify-between p-1.5 rounded bg-slate-950/70 border border-slate-800">
+                        <div className="flex items-center justify-between p-1.5 rounded bg-slate-900 border border-slate-800">
                           <span className="text-slate-300">Safety Pin &amp; Lead Seal</span>
                           <span className="text-emerald-400 font-semibold flex items-center gap-1">
                             <CheckCircle2 className="w-3 h-3" /> Intact
