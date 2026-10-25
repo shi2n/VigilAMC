@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   try {
     const auth = await getCurrentUser(request);
     if (!auth || !auth.organization) {
-      return NextResponse.json({ equipments: [] });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);

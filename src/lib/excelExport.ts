@@ -74,6 +74,9 @@ export const EXPORT_CONFIGS: Record<
       { id: 'lastServiceDate', label: 'Last Service Date', defaultSelected: true, getValue: (a) => a.lastServiceDate ? new Date(a.lastServiceDate).toLocaleDateString('en-GB') : '—' },
       { id: 'nextDueDate', label: 'Next Service Due', defaultSelected: true, getValue: (a) => a.nextDueDate ? new Date(a.nextDueDate).toLocaleDateString('en-GB') : '—' },
       { id: 'status', label: 'Status', defaultSelected: true, getValue: (a) => {
+        if (!a.nextDueDate || isNaN(new Date(a.nextDueDate).getTime())) {
+          return a.status || 'COMPLIANT';
+        }
         const diff = Math.ceil((new Date(a.nextDueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
         return diff < 0 ? 'OVERDUE' : diff <= 30 ? 'DUE_SOON' : 'COMPLIANT';
       }},
@@ -105,8 +108,10 @@ export const EXPORT_CONFIGS: Record<
     statuses: [
       { id: 'ALL', label: 'All Work Orders' },
       { id: 'OPEN', label: 'Open' },
+      { id: 'ASSIGNED', label: 'Assigned' },
       { id: 'IN_PROGRESS', label: 'In Progress' },
       { id: 'COMPLETED', label: 'Completed' },
+      { id: 'CANCELLED', label: 'Cancelled' },
     ],
     columns: [
       { id: 'id', label: 'Order ID', defaultSelected: true, getValue: (w) => w.id?.substring(0, 8) || '—' },
@@ -160,6 +165,9 @@ export function exportToExcel({
   if (statusFilter && statusFilter !== 'ALL') {
     filtered = filtered.filter((item) => {
       if (configKey === 'FIRE_ASSETS') {
+        if (!item.nextDueDate || isNaN(new Date(item.nextDueDate).getTime())) {
+          return item.status === statusFilter;
+        }
         const diff = Math.ceil((new Date(item.nextDueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
         const status = diff < 0 ? 'OVERDUE' : diff <= 30 ? 'DUE_SOON' : 'COMPLIANT';
         return status === statusFilter;

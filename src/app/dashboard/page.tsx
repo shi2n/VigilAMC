@@ -418,15 +418,16 @@ export default function AdminDashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(companyForm),
       });
-      const resData = await res.json();
-      if (resData.success) {
+      const resData = await res.json().catch(() => ({}));
+      if (res.ok && resData.success) {
         showToast('AMC Company Profile saved successfully!');
         refreshDashboard({ silent: true });
       } else {
-        alert(resData.error || 'Failed to update company');
+        showToast(resData.error || 'Failed to update company');
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      showToast(e?.message || 'Failed to update company');
     }
   };
 
@@ -439,8 +440,8 @@ export default function AdminDashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(buildingForm),
       });
-      const resData = await res.json();
-      if (resData.success) {
+      const resData = await res.json().catch(() => ({}));
+      if (res.ok && resData.success) {
         setAddBuildingModalOpen(false);
         showToast(`Building '${buildingForm.buildingName}' created successfully.`);
         setBuildingForm({
@@ -457,9 +458,12 @@ export default function AdminDashboardPage() {
           cycleIntervalMos: 3,
         });
         refreshDashboard({ silent: true });
+      } else {
+        showToast(resData.error || 'Failed to create building');
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      showToast(e?.message || 'Failed to create building');
     }
   };
 
@@ -476,14 +480,17 @@ export default function AdminDashboardPage() {
           ...equipmentForm,
         }),
       });
-      const resData = await res.json();
-      if (resData.success) {
+      const resData = await res.json().catch(() => ({}));
+      if (res.ok && resData.success) {
         setBulkAddModalOpen(null);
         showToast(`Added ${resData.count} fire equipment items for ${bulkAddModalOpen.name}`);
         refreshDashboard({ silent: true });
+      } else {
+        showToast(resData.error || 'Failed to add equipment');
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      showToast(e?.message || 'Failed to add equipment');
     }
   };
 
@@ -501,8 +508,8 @@ export default function AdminDashboardPage() {
           ...singleEquipForm,
         }),
       });
-      const resData = await res.json();
-      if (resData.success) {
+      const resData = await res.json().catch(() => ({}));
+      if (res.ok && resData.success) {
         setSingleAddEquipModalOpen(null);
         showToast(`Added equipment ${singleEquipForm.qrCode}`);
         setSingleEquipForm({
@@ -517,10 +524,11 @@ export default function AdminDashboardPage() {
         });
         await refreshDashboard({ silent: true });
       } else {
-        alert(resData.error || 'Failed to add equipment');
+        showToast(resData.error || 'Failed to add equipment');
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      showToast(e?.message || 'Failed to add equipment');
     }
   };
 
@@ -534,31 +542,42 @@ export default function AdminDashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editClientModal),
       });
-      const json = await res.json();
-      if (json.success) {
+      const json = await res.json().catch(() => ({}));
+      if (res.ok && json.success) {
         setEditClientModal(null);
         showToast('Client details updated');
         refreshDashboard({ silent: true });
+      } else {
+        showToast(json.error || 'Failed to update client');
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      showToast(e?.message || 'Failed to update client');
     }
   };
 
   // Delete Client
   const handleDeleteClient = async (id: string, name: string) => {
     if (!confirm(`Are you sure you want to delete client '${name}'? This will also delete their buildings and equipment.`)) return;
+    const prevClients = clientsList;
     // Optimistic removal
     setClientsList((prev) => prev.filter((c) => c.id !== id));
     try {
       const res = await fetch(`/api/admin/clients/${id}`, { method: 'DELETE' });
-      const json = await res.json();
-      if (json.success) {
+      const json = await res.json().catch(() => ({}));
+      if (res.ok && json.success) {
         showToast(`Deleted client '${name}'`);
         refreshDashboard({ silent: true });
+      } else {
+        setClientsList(prevClients);
+        showToast(json.error || 'Failed to delete client');
+        refreshDashboard({ silent: true });
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      setClientsList(prevClients);
+      showToast(e?.message || 'Failed to delete client');
+      refreshDashboard({ silent: true });
     }
   };
 
@@ -572,14 +591,17 @@ export default function AdminDashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editBuildingModal),
       });
-      const json = await res.json();
-      if (json.success) {
+      const json = await res.json().catch(() => ({}));
+      if (res.ok && json.success) {
         setEditBuildingModal(null);
         showToast('Building updated successfully');
         refreshDashboard({ silent: true });
+      } else {
+        showToast(json.error || 'Failed to update building');
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      showToast(e?.message || 'Failed to update building');
     }
   };
 
@@ -588,13 +610,18 @@ export default function AdminDashboardPage() {
     if (!confirm(`Are you sure you want to delete building '${name}' and all its equipment?`)) return;
     try {
       const res = await fetch(`/api/admin/buildings/${id}`, { method: 'DELETE' });
-      const json = await res.json();
-      if (json.success) {
+      const json = await res.json().catch(() => ({}));
+      if (res.ok && json.success) {
         showToast(`Deleted building '${name}'`);
         refreshDashboard({ silent: true });
+      } else {
+        showToast(json.error || 'Failed to delete building');
+        refreshDashboard({ silent: true });
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      showToast(e?.message || 'Failed to delete building');
+      refreshDashboard({ silent: true });
     }
   };
 
@@ -608,33 +635,42 @@ export default function AdminDashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editEquipmentModal),
       });
-      const json = await res.json();
-      if (json.success) {
+      const json = await res.json().catch(() => ({}));
+      if (res.ok && json.success) {
         setEditEquipmentModal(null);
         showToast(`Updated equipment ${editEquipmentModal.qrCode}`);
         refreshDashboard({ silent: true });
       } else {
-        alert(json.error || 'Failed to update equipment');
+        showToast(json.error || 'Failed to update equipment');
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      showToast(e?.message || 'Failed to update equipment');
     }
   };
 
   // Delete Equipment
   const handleDeleteEquipment = async (id: string, qrCode: string) => {
     if (!confirm(`Are you sure you want to delete equipment '${qrCode}'?`)) return;
+    const prevEquipments = equipmentsList;
     // Optimistic removal
     setEquipmentsList((prev) => prev.filter((eq) => eq.id !== id));
     try {
       const res = await fetch(`/api/admin/equipment/${id}`, { method: 'DELETE' });
-      const json = await res.json();
-      if (json.success) {
+      const json = await res.json().catch(() => ({}));
+      if (res.ok && json.success) {
         showToast(`Deleted equipment '${qrCode}'`);
         refreshDashboard({ silent: true });
+      } else {
+        setEquipmentsList(prevEquipments);
+        showToast(json.error || 'Failed to delete equipment');
+        refreshDashboard({ silent: true });
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      setEquipmentsList(prevEquipments);
+      showToast(e?.message || 'Failed to delete equipment');
+      refreshDashboard({ silent: true });
     }
   };
 
@@ -650,11 +686,12 @@ export default function AdminDashboardPage() {
     let overdue = 0;
     let dueSoon = 0;
     for (const eq of equipmentsList) {
-      const diffDays = eq.nextDueDate
+      const hasDueDate = Boolean(eq.nextDueDate && !isNaN(new Date(eq.nextDueDate).getTime()));
+      const diffDays = hasDueDate
         ? Math.ceil((new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-        : 0;
-      if (diffDays < 0 || eq.status === 'OVERDUE' || eq.liveStatus === 'OVERDUE') overdue++;
-      else if (diffDays <= 30 || eq.status === 'DUE_SOON' || eq.liveStatus === 'DUE_SOON') dueSoon++;
+        : null;
+      if ((diffDays !== null && diffDays < 0) || eq.status === 'OVERDUE' || eq.liveStatus === 'OVERDUE') overdue++;
+      else if ((diffDays !== null && diffDays <= 30) || eq.status === 'DUE_SOON' || eq.liveStatus === 'DUE_SOON') dueSoon++;
     }
     return { overdue, dueSoon, total: equipmentsList.length };
   }, [equipmentsList]);
@@ -667,9 +704,16 @@ export default function AdminDashboardPage() {
   }, [workOrdersList, kpis.openWorkOrders]);
 
   const liveInspectionsThisWeek = useMemo(() => {
+    if (!inspectionsList || inspectionsList.length === 0) {
+      return (kpis as any).inspectionsThisWeek ?? 0;
+    }
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const count = inspectionsList.filter((ins) => new Date(ins.date || ins.createdAt) >= sevenDaysAgo).length;
-    return count > 0 ? count : (kpis as any).inspectionsThisWeek ?? inspectionsList.length ?? 0;
+    return inspectionsList.filter((ins) => {
+      const rawDate = ins.date || ins.createdAt;
+      if (!rawDate) return false;
+      const d = new Date(rawDate);
+      return !isNaN(d.getTime()) && d >= sevenDaysAgo;
+    }).length;
   }, [inspectionsList, kpis]);
 
   const exportDataMap: Record<string, any[]> = {

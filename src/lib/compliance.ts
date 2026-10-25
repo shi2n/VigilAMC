@@ -13,8 +13,10 @@ export interface EquipmentStatusResult {
 }
 
 export function evaluateEquipmentStatus(eq: any, now: Date = new Date()): EquipmentStatusResult {
-  const nextDue = eq.nextDueDate ? new Date(eq.nextDueDate) : null;
-  const diffDays = nextDue ? Math.ceil((nextDue.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+  const parsedDue = eq.nextDueDate ? new Date(eq.nextDueDate) : null;
+  const nextDue = parsedDue && !isNaN(parsedDue.getTime()) ? parsedDue : null;
+  const hasDue = Boolean(nextDue);
+  const diffDays = nextDue ? Math.ceil((nextDue.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 999999;
 
   const latestInspection = eq.inspections?.[0] || eq.serviceLogs?.[0] || null;
   const hasInspection = Boolean(latestInspection || eq.lastServiceDate || eq.status);
@@ -32,13 +34,13 @@ export function evaluateEquipmentStatus(eq: any, now: Date = new Date()): Equipm
     : null;
 
   // 1. Overdue (red) - always takes priority when nextDueDate has passed
-  if (diffDays < 0 || eq.status === 'OVERDUE') {
+  if ((hasDue && diffDays < 0) || eq.status === 'OVERDUE') {
     return {
       status: 'OVERDUE',
       label: 'Overdue',
       color: 'rose',
       badgeClass: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800/50',
-      diffDays,
+      diffDays: hasDue ? diffDays : -1,
       lastVerifiedDate: verifiedDate,
       hasGPS,
       hasPhoto,
@@ -47,13 +49,13 @@ export function evaluateEquipmentStatus(eq: any, now: Date = new Date()): Equipm
   }
 
   // 2. Due soon (amber, due within 30 days)
-  if (diffDays <= 30 || eq.status === 'DUE_SOON') {
+  if ((hasDue && diffDays <= 30) || eq.status === 'DUE_SOON') {
     return {
       status: 'DUE_SOON',
       label: 'Due soon (<30d)',
       color: 'amber',
       badgeClass: 'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/50',
-      diffDays,
+      diffDays: hasDue ? diffDays : 30,
       lastVerifiedDate: verifiedDate,
       hasGPS,
       hasPhoto,
@@ -210,7 +212,15 @@ export function getNocStatus(expiryDate: Date | string): NocStatus {
   }
 }
 
-export function getAssetRefillStatus(nextRefillDate: Date | string) {
+export function getAssetRefillStatus(nextRefillDate?: Date | string | null) {
+  if (!nextRefillDate || isNaN(new Date(nextRefillDate).getTime())) {
+    return {
+      status: 'OK',
+      label: 'No due date set',
+      color: 'bg-slate-600 text-white',
+      badgeClass: 'bg-slate-800 text-slate-300 border border-slate-700',
+    };
+  }
   const due = new Date(nextRefillDate);
   const now = new Date();
   const diffDays = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));

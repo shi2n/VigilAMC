@@ -83,6 +83,12 @@ export async function GET(request: Request) {
     let overdueCount = 0;
 
     equipments.forEach((eq: any) => {
+      if (!eq.nextDueDate || isNaN(new Date(eq.nextDueDate).getTime())) {
+        if (eq.status === 'OVERDUE') overdueCount++;
+        else if (eq.status === 'DUE_SOON') dueCount++;
+        else compliantCount++;
+        return;
+      }
       const diffDays = Math.ceil(
         (new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
       );

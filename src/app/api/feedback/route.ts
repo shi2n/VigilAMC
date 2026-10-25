@@ -1,13 +1,17 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getCurrentUser } from '@/lib/auth';
+import { getAuthenticatedActor } from '@/lib/techSession';
 import { isFounderOwner } from '@/lib/founderAuth';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
-    const auth = await getCurrentUser();
+    const auth = await getAuthenticatedActor(request);
+    if (!auth || !auth.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { confusingText, missingFeatures, fairPrice, rating } = body;
 
@@ -32,7 +36,7 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    const auth = await getCurrentUser(request);
+    const auth = await getAuthenticatedActor(request);
     if (!auth?.user?.email || !isFounderOwner(auth.user.email)) {
       return NextResponse.json({ error: 'Forbidden: Founder privileges required' }, { status: 403 });
     }

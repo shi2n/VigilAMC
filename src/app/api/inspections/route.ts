@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   try {
     const auth = await getAuthenticatedActor(request);
     if (!auth || !auth.organization) {
-      return NextResponse.json({ inspections: [] });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);

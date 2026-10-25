@@ -124,7 +124,7 @@ export function DashboardOverview({
     .map((eq) => {
       const diffDays = eq.nextDueDate
         ? Math.ceil((new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-        : 0;
+        : 999999;
       return { ...eq, diffDays };
     })
     .filter((eq) => eq.diffDays <= 30) // Overdue or due within 30 days

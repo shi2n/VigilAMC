@@ -33,7 +33,9 @@ export function WorkOrdersView({
   const [technicians, setTechnicians] = useState<any[]>(initialTechnicians || []);
   const [buildings, setBuildings] = useState<any[]>(initialBuildings || []);
   const [loading, setLoading] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'OPEN' | 'IN_PROGRESS' | 'COMPLETED'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<
+    'ALL' | 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED'
+  >('ALL');
   const [search, setSearch] = useState('');
 
   // Add work order modal
@@ -65,24 +67,34 @@ export function WorkOrdersView({
     try {
       setLoading(true);
       if (onRefreshDashboard) {
-        await onRefreshDashboard();
+        const [woRes] = await Promise.all([
+          fetch('/api/work-orders', { cache: 'no-store' }),
+          onRefreshDashboard(),
+        ]);
+        if (woRes.ok) {
+          const woJson = await woRes.json().catch(() => ({}));
+          if (Array.isArray(woJson.workOrders)) {
+            setWorkOrders(woJson.workOrders);
+          }
+        }
       } else {
         const [woRes, techRes, bldRes] = await Promise.all([
-          fetch('/api/work-orders'),
-          fetch('/api/admin/technicians'),
-          fetch('/api/admin/buildings'),
+          fetch('/api/work-orders', { cache: 'no-store' }),
+          fetch('/api/admin/technicians', { cache: 'no-store' }),
+          fetch('/api/admin/buildings', { cache: 'no-store' }),
         ]);
 
-        const woJson = await woRes.json();
-        const techJson = await techRes.json();
-        const bldJson = await bldRes.json();
+        const woJson = await woRes.json().catch(() => ({}));
+        const techJson = await techRes.json().catch(() => ({}));
+        const bldJson = await bldRes.json().catch(() => ({}));
 
-        setWorkOrders(woJson.workOrders || []);
-        setTechnicians(techJson.technicians || []);
-        setBuildings(bldJson.buildings || []);
+        if (Array.isArray(woJson.workOrders)) setWorkOrders(woJson.workOrders);
+        if (Array.isArray(techJson.technicians)) setTechnicians(techJson.technicians);
+        if (Array.isArray(bldJson.buildings)) setBuildings(bldJson.buildings);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      showToast(e?.message || 'Failed to refresh work orders');
     } finally {
       setLoading(false);
     }
@@ -104,13 +116,19 @@ export function WorkOrdersView({
     setSubmitting(true);
 
     try {
+      const payload = {
+        ...form,
+        assignedToId: form.assignedToId && form.assignedToId.trim() !== '' ? form.assignedToId.trim() : null,
+        dueDate: form.dueDate && form.dueDate.trim() !== '' ? form.dueDate.trim() : null,
+      };
+
       const res = await fetch('/api/work-orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
 
-      const json = await res.json();
+      const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || 'Failed to create work order');
 
       // Optimistic local insert
@@ -120,8 +138,12 @@ export function WorkOrdersView({
         setWorkOrders((prev) => [
           {
             ...json.workOrder,
-            building: matchedBuilding ? { id: matchedBuilding.id, name: matchedBuilding.name } : undefined,
-            assignedTo: matchedTech ? { id: matchedTech.id, fullName: matchedTech.fullName } : undefined,
+            building:
+              json.workOrder.building ||
+              (matchedBuilding ? { id: matchedBuilding.id, name: matchedBuilding.name } : undefined),
+            assignedTo:
+              json.workOrder.assignedTo ||
+              (matchedTech ? { id: matchedTech.id, fullName: matchedTech.fullName } : undefined),
           },
           ...prev,
         ]);
@@ -146,22 +168,31 @@ export function WorkOrdersView({
   };
 
   const handleUpdateStatus = async (id: string, newStatus: string) => {
+    const previousOrders = workOrders;
     // Optimistic update
     setWorkOrders((prev) =>
       prev.map((wo) => (wo.id === id ? { ...wo, status: newStatus } : wo))
     );
     try {
-      const res = await fetch(`/api/work-orders`, {
+      const res = await fetch('/api/work-orders', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, status: newStatus }),
       });
-      if (res.ok) {
-        showToast(`Work order status updated to ${newStatus}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setWorkOrders(previousOrders);
+        showToast(data?.error || 'Failed to update status');
         await fetchWorkOrders();
+        return;
       }
-    } catch (e) {
+      showToast(`Work order status updated to ${newStatus}`);
+      await fetchWorkOrders();
+    } catch (e: any) {
       console.error(e);
+      setWorkOrders(previousOrders);
+      showToast(e?.message || 'Failed to update status');
+      await fetchWorkOrders();
     }
   };
 
@@ -191,7 +222,7 @@ export function WorkOrdersView({
             />
           </div>
 
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs dark:bg-slate-950 dark:border-slate-800">
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs flex-wrap dark:bg-slate-950 dark:border-slate-800">
             <button
               onClick={() => setStatusFilter('ALL')}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
@@ -211,6 +242,16 @@ export function WorkOrdersView({
               }`}
             >
               Open ({workOrders.filter((w) => w.status === 'OPEN').length})
+            </button>
+            <button
+              onClick={() => setStatusFilter('ASSIGNED')}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                statusFilter === 'ASSIGNED'
+                  ? 'bg-blue-600 text-white shadow-sm dark:bg-blue-500 dark:text-slate-950'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+              }`}
+            >
+              Assigned ({workOrders.filter((w) => w.status === 'ASSIGNED').length})
             </button>
             <button
               onClick={() => setStatusFilter('IN_PROGRESS')}
@@ -279,7 +320,10 @@ export function WorkOrdersView({
         ) : (
           <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
             {filteredOrders.map((wo) => {
-              const isOverdue = wo.status !== 'COMPLETED' && wo.dueDate && new Date(wo.dueDate) < new Date();
+              const isOverdue =
+                ['OPEN', 'ASSIGNED', 'IN_PROGRESS'].includes(wo.status) &&
+                wo.dueDate &&
+                new Date(wo.dueDate) < new Date();
               const isUnassigned = !wo.assignedToId && !wo.assignedTo;
 
               return (
@@ -336,11 +380,12 @@ export function WorkOrdersView({
 
                   <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
                     <select
-                      value={wo.status}
+                      value={wo.status || 'OPEN'}
                       onChange={(e) => handleUpdateStatus(wo.id, e.target.value)}
                       className="px-2.5 py-1.5 rounded-lg bg-white border border-[#DCE7F2] text-xs font-bold text-slate-700 shadow-sm focus:outline-none focus:border-[#007DB8] dark:bg-slate-950 dark:border-slate-800 dark:text-slate-300"
                     >
                       <option value="OPEN">OPEN</option>
+                      <option value="ASSIGNED">ASSIGNED</option>
                       <option value="IN_PROGRESS">IN_PROGRESS</option>
                       <option value="COMPLETED">COMPLETED</option>
                       <option value="CANCELLED">CANCELLED</option>

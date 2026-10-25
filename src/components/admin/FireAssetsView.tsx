@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
 import { Layers, Search, Edit, Trash2, MapPin, FileSpreadsheet } from 'lucide-react';
 
 interface FireAssetsViewProps {
@@ -126,15 +125,31 @@ export function FireAssetsView({
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
               {equipmentsList.map((eq) => {
-                const diffDays = eq.nextDueDate
-                  ? Math.ceil((new Date(eq.nextDueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-                  : 0;
-                const isOverdue = diffDays < 0 || eq.status === 'OVERDUE' || eq.liveStatus === 'OVERDUE';
-                const isDueSoon = !isOverdue && (diffDays <= 30 || eq.status === 'DUE_SOON' || eq.liveStatus === 'DUE_SOON');
+                const hasDue = Boolean(
+                  eq.nextDueDate && !isNaN(new Date(eq.nextDueDate).getTime())
+                );
+                const diffDays = hasDue
+                  ? Math.ceil(
+                      (new Date(eq.nextDueDate).getTime() - new Date().getTime()) /
+                        (1000 * 60 * 60 * 24)
+                    )
+                  : null;
+                const isOverdue =
+                  (diffDays !== null && diffDays < 0) ||
+                  eq.status === 'OVERDUE' ||
+                  eq.liveStatus === 'OVERDUE';
+                const isDueSoon =
+                  !isOverdue &&
+                  ((diffDays !== null && diffDays <= 30) ||
+                    eq.status === 'DUE_SOON' ||
+                    eq.liveStatus === 'DUE_SOON');
                 const isVerified =
                   !isOverdue &&
                   !isDueSoon &&
-                  (eq.status === 'VERIFIED' || eq.status === 'COMPLIANT' || eq.liveStatus === 'COMPLIANT' || eq.liveStatus === 'VERIFIED');
+                  (eq.status === 'VERIFIED' ||
+                    eq.status === 'COMPLIANT' ||
+                    eq.liveStatus === 'COMPLIANT' ||
+                    eq.liveStatus === 'VERIFIED');
 
                 return (
                   <tr key={eq.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-850/40 transition-colors">
@@ -154,7 +169,7 @@ export function FireAssetsView({
                     </td>
                     <td className="py-3 px-4 text-slate-500 dark:text-slate-400">{eq.location}</td>
                     <td className="py-3 px-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                      {eq.lastServiceDate
+                      {eq.lastServiceDate && !isNaN(new Date(eq.lastServiceDate).getTime())
                         ? new Date(eq.lastServiceDate).toLocaleDateString('en-IN', {
                             day: 'numeric',
                             month: 'short',
@@ -163,7 +178,7 @@ export function FireAssetsView({
                         : '—'}
                     </td>
                     <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                      {eq.nextDueDate
+                      {hasDue
                         ? new Date(eq.nextDueDate).toLocaleDateString('en-IN', {
                             day: 'numeric',
                             month: 'short',
@@ -179,7 +194,9 @@ export function FireAssetsView({
                             : 'text-slate-500 dark:text-slate-400'
                         }`}
                       >
-                        {isOverdue
+                        {diffDays === null
+                          ? 'No due date set'
+                          : isOverdue
                           ? `Overdue by ${Math.abs(diffDays)}d`
                           : isDueSoon
                           ? `Due in ${diffDays}d`
@@ -225,11 +242,7 @@ export function FireAssetsView({
                         <Edit className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => {
-                          if (confirm(`Are you sure you want to delete equipment '${eq.qrCode}'?`)) {
-                            onDeleteEquipment(eq.id, eq.qrCode);
-                          }
-                        }}
+                        onClick={() => onDeleteEquipment(eq.id, eq.qrCode)}
                         className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors dark:bg-red-950/40 dark:hover:bg-red-900/60 dark:text-red-400 dark:border-red-500/30"
                         title="Delete Equipment"
                       >

@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getCurrentUser } from '@/lib/auth';
+import { getAuthenticatedActor } from '@/lib/techSession';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const auth = await getCurrentUser();
+    const auth = await getAuthenticatedActor(request);
     if (!auth || !auth.organization) {
-      return NextResponse.json({ company: null });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     return NextResponse.json({ company: auth.organization, profile: auth.profile });
@@ -20,7 +20,7 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    const auth = await getCurrentUser(request);
+    const auth = await getAuthenticatedActor(request);
     if (!auth || !auth.organization) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

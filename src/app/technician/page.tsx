@@ -255,8 +255,10 @@ export default function TechnicianPWA() {
       setUserProfile(json.profile);
       setIsAdminTester(json.profile?.role === 'ORG_ADMIN' || json.profile?.role === 'SUPER_ADMIN');
       setDashboardData(json);
+      setLoginError(null);
     } catch (e: any) {
       console.error(e);
+      setLoginError(e?.message || 'Failed to load technician app');
     } finally {
       setDataLoading(false);
       setAuthChecking(false);
@@ -404,6 +406,8 @@ export default function TechnicianPWA() {
     if (remaining.length === 0) {
       triggerToast('🟢 All offline basement inspections synced successfully!');
       loadDashboardData();
+    } else {
+      triggerToast(`⚠ ${remaining.length} inspection${remaining.length === 1 ? '' : 's'} failed to sync — will retry`);
     }
   }, [offlineQueue, isSyncingQueue, loadDashboardData]);
 
@@ -994,6 +998,13 @@ export default function TechnicianPWA() {
             </div>
           </div>
         </header>
+
+        {loginError && (
+          <div className="mx-3 mt-3 p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2.5 text-rose-700 text-xs font-medium">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
+            <span>{loginError}</span>
+          </div>
+        )}
 
         {/* VIEW A: ASSIGNED BUILDINGS LIST */}
         {!selectedBuilding && (
