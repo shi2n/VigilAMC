@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   MapPin,
@@ -31,7 +31,14 @@ const TRUST_ITEMS = [
 
 export function HeroGlass() {
   const heroRef = useRef<HTMLElement>(null);
-  const shouldReduceMotion = useReducedMotion();
+  const prefersReduced = useReducedMotion();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const shouldReduceMotion = mounted && Boolean(prefersReduced);
 
   const { scrollYProgress } = useScroll({
     target: heroRef,
@@ -65,7 +72,7 @@ export function HeroGlass() {
     <section
       ref={heroRef}
       aria-labelledby="hero-heading"
-      className="relative min-h-[calc(100vh-4rem)] lg:max-h-[115vh] flex flex-col justify-between pt-6 pb-8 sm:pt-10 sm:pb-12 px-4 sm:px-6 lg:px-8 bg-[#FFFFFF] overflow-hidden border-b border-[#FED7AA]/50"
+      className="relative min-h-[calc(100vh-4rem)] lg:max-h-[115vh] flex flex-col justify-between pt-6 pb-6 sm:pt-8 sm:pb-10 px-4 sm:px-6 lg:px-8 bg-[#FFFFFF] overflow-hidden border-b border-[#FED7AA]/50"
     >
       {/* =====================================================================
           BACK PLANE: Soft radial ember glow field + thin gradient hairline
@@ -73,12 +80,10 @@ export function HeroGlass() {
       <motion.div
         aria-hidden="true"
         style={{ y: backGlowY }}
-        className="pointer-events-none absolute inset-0 overflow-hidden"
+        className="pointer-events-none absolute inset-0 overflow-hidden motion-reduce:!transform-none"
       >
         <div
-          className={`absolute top-1/2 right-[6%] -translate-y-1/2 w-[34rem] h-[34rem] rounded-full ${
-            shouldReduceMotion ? 'opacity-12' : 'animate-ember-breathe'
-          }`}
+          className="absolute top-1/2 right-[6%] -translate-y-1/2 w-[34rem] h-[34rem] rounded-full animate-ember-breathe motion-reduce:!animate-none motion-reduce:opacity-15"
           style={{
             background:
               'radial-gradient(circle, rgba(232,89,12,0.16) 0%, rgba(255,140,66,0.08) 45%, rgba(255,255,255,0) 72%)',
@@ -91,7 +96,7 @@ export function HeroGlass() {
               'radial-gradient(circle, rgba(232,89,12,0.10) 0%, rgba(255,244,236,0.4) 55%, rgba(255,255,255,0) 75%)',
           }}
         />
-        {/* Animated gradient hairline across the hero field */}
+        {/* Thin gradient hairline across the hero field */}
         <div className="absolute top-[18%] inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[#FF8C42]/45 to-transparent" />
       </motion.div>
 
@@ -103,10 +108,10 @@ export function HeroGlass() {
           <div className="lg:col-span-7 text-left space-y-5">
             {/* Eyebrow chip (glass pill) */}
             <motion.div
-              initial={shouldReduceMotion ? false : { opacity: 1, y: 12 }}
+              initial={{ opacity: 1, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-[#FED7AA] shadow-[0_2px_10px_rgba(234,88,12,0.08)]"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-[#FED7AA] shadow-[0_2px_10px_rgba(234,88,12,0.08)] motion-reduce:!transform-none"
             >
               <span className="h-2 w-2 rounded-full bg-[#EA580C]" aria-hidden="true" />
               <span className="font-display text-[11px] sm:text-xs font-bold uppercase tracking-[0.08em] text-[#C2410C]">
@@ -117,20 +122,20 @@ export function HeroGlass() {
             {/* H1: Fits <= 3 lines on 375px mobile and scales with clamp on desktop */}
             <motion.h1
               id="hero-heading"
-              initial={shouldReduceMotion ? false : { opacity: 1, y: 14 }}
+              initial={{ opacity: 1, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.05, ease: [0.23, 1, 0.32, 1] }}
-              className="font-display text-[1.75rem] sm:text-[clamp(2.6rem,5.2vw,4.15rem)] font-bold text-[#1C1917] tracking-[-0.02em] leading-[1.05] max-w-[18ch]"
+              className="font-display text-[1.75rem] sm:text-[clamp(2.6rem,5.2vw,4.15rem)] font-bold text-[#1C1917] tracking-[-0.02em] leading-[1.05] max-w-[18ch] motion-reduce:!transform-none"
             >
               Never Miss a Fire Compliance Deadline Again
             </motion.h1>
 
             {/* Subheadline: 1 sentence, grade-8 plain words */}
             <motion.p
-              initial={shouldReduceMotion ? false : { opacity: 1, y: 16 }}
+              initial={{ opacity: 1, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.11, ease: [0.23, 1, 0.32, 1] }}
-              className="text-[15px] sm:text-lg text-[#44403C] leading-[1.55] max-w-2xl font-normal"
+              className="text-[15px] sm:text-lg text-[#44403C] leading-[1.55] max-w-2xl font-normal motion-reduce:!transform-none"
             >
               VigilAMC is the simple software that fire-safety service companies use to track every
               extinguisher, pump and alarm - record each service visit with live GPS, photos and
@@ -139,10 +144,10 @@ export function HeroGlass() {
 
             {/* Primary & Secondary CTAs */}
             <motion.div
-              initial={shouldReduceMotion ? false : { opacity: 1, y: 16 }}
+              initial={{ opacity: 1, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.17, ease: [0.23, 1, 0.32, 1] }}
-              className="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5"
+              className="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 motion-reduce:!transform-none"
             >
               <a
                 href={SITE_CONFIG.WHATSAPP_URL}
@@ -168,10 +173,10 @@ export function HeroGlass() {
 
             {/* Icon-First Trust Strip (6 items, 2-word labels) */}
             <motion.div
-              initial={shouldReduceMotion ? false : { opacity: 1, y: 16 }}
+              initial={{ opacity: 1, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.23, ease: [0.23, 1, 0.32, 1] }}
-              className="pt-2 grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-w-xl"
+              className="pt-2 grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-w-xl motion-reduce:!transform-none"
             >
               {TRUST_ITEMS.map(({ icon: Icon, label }) => (
                 <div
@@ -197,7 +202,7 @@ export function HeroGlass() {
           >
             {/* DESKTOP (>=640px) 3-PLANE COMPOSITION */}
             <div
-              className="hidden sm:block relative pt-2 pb-16 pl-4 pr-2"
+              className="hidden sm:block relative pt-2 pb-12 pl-4 pr-2 motion-reduce:!transform-none"
               style={{
                 transform: shouldReduceMotion
                   ? undefined
@@ -208,7 +213,7 @@ export function HeroGlass() {
               {/* MID PLANE: Floating Glass Dashboard Card (tilted 2deg, slow parallax) */}
               <motion.div
                 style={{ y: midPlaneY }}
-                className="relative z-10 rotate-[2deg] rounded-2xl bg-white/80 backdrop-blur-xl border border-[#FED7AA] p-5 shadow-[0_24px_60px_-15px_rgba(28,25,23,0.14),inset_0_1px_0_rgba(255,255,255,0.9)]"
+                className="relative z-10 rotate-[2deg] motion-reduce:rotate-0 motion-reduce:!transform-none rounded-2xl bg-white/80 backdrop-blur-xl border border-[#FED7AA] p-5 shadow-[0_24px_60px_-15px_rgba(28,25,23,0.14),inset_0_1px_0_rgba(255,255,255,0.9)]"
               >
                 {/* Card Header */}
                 <div className="flex items-center justify-between pb-3.5 mb-3.5 border-b border-[#FED7AA]/60">
@@ -309,7 +314,7 @@ export function HeroGlass() {
               {/* FRONT PLANE: Overlapping Glass Proof Card (counter-tilted, stronger parallax) */}
               <motion.div
                 style={{ y: frontPlaneY }}
-                className="relative z-20 -mt-10 -ml-4 max-w-[21rem] -rotate-[1.5deg] rounded-2xl bg-white/92 backdrop-blur-2xl border border-[#FED7AA] p-4 shadow-[0_28px_56px_-12px_rgba(194,65,12,0.22),inset_0_1px_0_rgba(255,255,255,0.95)]"
+                className="relative z-20 -mt-10 -ml-4 max-w-[21rem] -rotate-[1.5deg] motion-reduce:rotate-0 motion-reduce:!transform-none rounded-2xl bg-white/92 backdrop-blur-2xl border border-[#FED7AA] p-4 shadow-[0_28px_56px_-12px_rgba(194,65,12,0.22),inset_0_1px_0_rgba(255,255,255,0.95)]"
               >
                 <div className="flex items-start gap-3">
                   {/* Photo Thumbnail with Gauge Illustration */}
@@ -470,15 +475,15 @@ export function HeroGlass() {
       </div>
 
       {/* Scroll Cue: Thin ember line + "See how it works" (cue opacity >= 0.5) */}
-      <div className="relative z-10 pt-6 flex flex-col items-center justify-center opacity-85">
+      <div className="relative z-10 pt-4 flex flex-col items-center justify-center opacity-85">
         <a
           href="#how-it-works"
-          className="inline-flex flex-col items-center gap-1.5 text-xs font-display font-semibold text-[#C2410C] hover:text-[#1C1917] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C2410C] rounded-lg px-3 py-1"
+          className="inline-flex flex-col items-center gap-1 text-xs font-display font-semibold text-[#C2410C] hover:text-[#1C1917] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C2410C] rounded-lg px-3 py-1"
         >
           <span>See how it works</span>
           <span
             aria-hidden="true"
-            className="w-[2px] h-6 bg-gradient-to-b from-[#FF8C42] via-[#EA580C] to-transparent rounded-full"
+            className="w-[2px] h-5 bg-gradient-to-b from-[#FF8C42] via-[#EA580C] to-transparent rounded-full"
           />
         </a>
       </div>

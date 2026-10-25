@@ -4,9 +4,9 @@ import { SITE_CONFIG } from '@/lib/siteConfig';
 
 export function CorporateFooter() {
   return (
-    <footer className="bg-[#1C1917] text-[#FAFAF9] border-t border-[#FED7AA]/15 py-12 px-4 sm:px-6 lg:px-8 no-print">
+    <footer className="bg-[#1C1917] text-[#FAFAF9] border-t border-[#FED7AA]/15 py-8 px-4 sm:px-6 lg:px-8 no-print">
       <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pb-10 border-b border-[#FAFAF9]/10">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pb-6 border-b border-[#FAFAF9]/10">
           {/* Brand Wordmark + One-Liner */}
           <div className="md:col-span-6 space-y-3">
             <Link
