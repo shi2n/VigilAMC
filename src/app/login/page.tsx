@@ -227,8 +227,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center p-4 bg-slate-50">
-      <div className="max-w-md w-full bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
+    <div className="relative min-h-[85vh] flex items-center justify-center p-4 bg-[#FFF8F2] overflow-hidden" style={{ background: "linear-gradient(180deg, #FFFFFF 0%, #FFF8F2 45%, #FFE8D6 100%)" }}>
+      <div aria-hidden="true" className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[380px] rounded-full" style={{ background: "radial-gradient(circle, rgba(232, 89, 12, 0.22) 0%, rgba(255, 140, 66, 0.14) 50%, rgba(255, 248, 242, 0) 74%)", filter: "blur(85px)" }} />
+      <div data-testid="login-glass-card" className="relative z-10 max-w-md w-full glass-panel rounded-3xl p-6 sm:p-8 space-y-6">
         {/* Brand */}
         <div className="text-center space-y-2">
           <Link href="/" className="inline-block">
@@ -251,9 +252,9 @@ export default function LoginPage() {
 
         {/* If user is already authenticated */}
         {!checkingSession && currentUser ? (
-          <div className="p-4 bg-ocean-50 border border-ocean-200 rounded-xl space-y-3">
+          <div className="p-4 bg-[#FFF0E6] border border-[#FED7AA] rounded-xl space-y-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#0077B6] text-white flex items-center justify-center font-bold">
+              <div className="w-10 h-10 rounded-full bg-[#C2410C] text-white flex items-center justify-center font-bold">
                 {currentUser.email?.[0].toUpperCase()}
               </div>
               <div className="text-left flex-1 min-w-0">
@@ -264,7 +265,7 @@ export default function LoginPage() {
             <div className="flex gap-2 pt-2">
               <Link
                 href="/dashboard"
-                className="flex-1 py-2.5 px-4 bg-[#0077B6] hover:bg-[#023E8A] text-white font-bold text-xs rounded-lg text-center transition-colors flex items-center justify-center gap-1.5 shadow"
+                className="flex-1 py-2.5 px-4 bg-[#C2410C] hover:bg-[#9A3412] text-white font-bold text-xs rounded-lg text-center transition-colors flex items-center justify-center gap-1.5 shadow"
               >
                 <span>Go to Dashboard</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -283,7 +284,7 @@ export default function LoginPage() {
           <>
             {/* Mode Switcher Tabs */}
             {mode !== 'FORGOT_PASSWORD' && (
-              <div className="flex rounded-xl bg-slate-100 p-1 border border-slate-200 text-xs font-bold">
+              <div className="flex rounded-xl bg-[#FFF0E6] p-1 border border-[#FED7AA] text-xs font-bold">
                 <button
                   type="button"
                   onClick={() => {
@@ -342,7 +343,7 @@ export default function LoginPage() {
                       placeholder="e.g. 9876543210, TECH-101, or email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
+                      className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-[#EA580C]"
                     />
                   </div>
                 </div>
@@ -355,7 +356,7 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setMode('FORGOT_PASSWORD')}
-                      className="text-xs text-[#0077B6] hover:underline"
+                      className="text-xs text-[#C2410C] hover:underline"
                     >
                       Forgot password?
                     </button>
@@ -368,7 +369,7 @@ export default function LoginPage() {
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
+                      className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-[#EA580C]"
                     />
                   </div>
                 </div>
@@ -376,7 +377,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 bg-[#0077B6] hover:bg-[#023E8A] disabled:opacity-60 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-[#C2410C] hover:bg-[#9A3412] disabled:opacity-60 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <>
@@ -407,7 +408,7 @@ export default function LoginPage() {
                       placeholder="e.g. Apex Fire Protection Services"
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
+                      className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-[#EA580C]"
                     />
                   </div>
                 </div>
@@ -424,7 +425,7 @@ export default function LoginPage() {
                       placeholder="e.g. Vikram Sharma"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
+                      className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-[#EA580C]"
                     />
                   </div>
                 </div>
@@ -441,7 +442,7 @@ export default function LoginPage() {
                       placeholder="vikram@apexfire.in"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
+                      className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-[#EA580C]"
                     />
                   </div>
                 </div>
@@ -458,7 +459,7 @@ export default function LoginPage() {
                       placeholder="+91 98000 00000"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
+                      className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-[#EA580C]"
                     />
                   </div>
                 </div>
@@ -476,7 +477,7 @@ export default function LoginPage() {
                       placeholder="Minimum 6 characters"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
+                      className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-[#EA580C]"
                     />
                   </div>
                 </div>
@@ -484,7 +485,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 bg-[#0077B6] hover:bg-[#023E8A] disabled:opacity-60 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 pt-3"
+                  className="w-full py-3 bg-[#C2410C] hover:bg-[#9A3412] disabled:opacity-60 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 pt-3"
                 >
                   {loading ? (
                     <>
@@ -518,7 +519,7 @@ export default function LoginPage() {
                       placeholder="your.email@agency.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
+                      className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-[#EA580C]"
                     />
                   </div>
                 </div>
@@ -537,7 +538,7 @@ export default function LoginPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex-1 py-2.5 px-4 bg-[#0077B6] hover:bg-[#023E8A] disabled:opacity-60 text-white font-bold text-xs rounded-xl shadow transition-colors"
+                    className="flex-1 py-2.5 px-4 bg-[#C2410C] hover:bg-[#9A3412] disabled:opacity-60 text-white font-bold text-xs rounded-xl shadow transition-colors"
                   >
                     {loading ? 'Sending...' : 'Send Reset Link'}
                   </button>
@@ -549,7 +550,7 @@ export default function LoginPage() {
 
         {/* Security Notice */}
         <div className="pt-2 border-t border-slate-100 flex items-center justify-center gap-1.5 text-slate-400 text-xs">
-          <ShieldCheck className="w-4 h-4 text-[#0077B6]" />
+          <ShieldCheck className="w-4 h-4 text-[#C2410C]" />
           <span>Secure sign-in</span>
         </div>
       </div>

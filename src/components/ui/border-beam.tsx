@@ -14,8 +14,8 @@ interface BorderBeamProps {
 export function BorderBeam({
   className,
   duration = 8,
-  colorFrom = "#0077B6",
-  colorTo = "#023E8A",
+  colorFrom = "#C2410C",
+  colorTo = "#1C1917",
 }: BorderBeamProps) {
   const prefersReducedMotion = useReducedMotion();
 
@@ -25,7 +25,7 @@ export function BorderBeam({
         aria-hidden="true"
         data-slot="border-beam"
         className={cn(
-          "border-beam pointer-events-none absolute inset-0 rounded-[inherit] border border-[#0077B6]/35",
+          "border-beam pointer-events-none absolute inset-0 rounded-[inherit] border border-[#C2410C]/35",
           className
         )}
       />
@@ -46,9 +46,9 @@ export function BorderBeam({
         animate={{ opacity: [0.45, 0.9, 0.45] }}
         transition={{ duration: duration / 2, repeat: Infinity, ease: "easeInOut" }}
         style={{
-          borderImage: `linear-gradient(135deg, ${colorFrom}, ${colorTo}, #0096C7) 1`,
+          borderImage: `linear-gradient(135deg, ${colorFrom}, ${colorTo}, #EA580C) 1`,
         }}
-        className="border-beam-track absolute inset-0 rounded-[inherit] border-2 border-[#0077B6]/40"
+        className="border-beam-track absolute inset-0 rounded-[inherit] border-2 border-[#C2410C]/40"
       />
     </div>
   );

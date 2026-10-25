@@ -8,7 +8,7 @@ function Skeleton({
   return (
     <div
       className={cn(
-        "animate-pulse rounded-xl bg-gradient-to-r from-[#EAF6FF] via-[#DCE7F2]/70 to-[#EAF6FF] bg-[length:200%_100%]",
+        "animate-pulse rounded-xl bg-gradient-to-r from-[#FFF0E6] via-[#FED7AA]/70 to-[#FFF0E6] bg-[length:200%_100%]",
         className
       )}
       {...props}

@@ -99,22 +99,22 @@ export function ExportModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white border border-[#DCE7F2] rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl text-slate-800 space-y-5 animate-in fade-in zoom-in-95 duration-200 dark:bg-[#0d1424] dark:border-slate-700/80 dark:text-slate-100">
+      <div className="bg-white border border-[#FED7AA] rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl text-slate-800 space-y-5 animate-in fade-in zoom-in-95 duration-200">
         
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#DCE7F2] pb-3 dark:border-slate-800">
+        <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 dark:bg-emerald-500/20 dark:border-emerald-500/30 dark:text-emerald-400">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
               <FileSpreadsheet className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-[#073F8F] dark:text-white">Export to Excel (.xlsx)</h3>
-              <p className="text-xs text-[#475569] dark:text-slate-400">Generate a structured spreadsheet from live database records</p>
+              <h3 className="text-base font-bold text-[#1C1917]">Export to Excel (.xlsx)</h3>
+              <p className="text-xs text-[#475569]">Generate a structured spreadsheet from live database records</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition-colors dark:hover:text-white dark:hover:bg-slate-800"
+            className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -125,11 +125,11 @@ export function ExportModal({
           
           {/* Data Type Selector */}
           <div>
-            <label className="block text-slate-700 font-semibold mb-1.5 dark:text-slate-300">Data Category</label>
+            <label className="block text-slate-700 font-semibold mb-1.5">Data Category</label>
             <select
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
-              className="w-full bg-white border border-[#DCE7F2] rounded-xl p-2.5 text-slate-900 font-medium focus:outline-none focus:border-[#007DB8] shadow-sm dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
+              className="w-full bg-white border border-[#FED7AA] rounded-xl p-2.5 text-slate-900 font-medium focus:outline-none focus:border-[#C2410C] shadow-sm"
             >
               {Object.entries(EXPORT_CONFIGS).map(([key, cfg]) => (
                 <option key={key} value={key}>
@@ -140,16 +140,16 @@ export function ExportModal({
           </div>
 
           {/* Filters: Status and Date Range */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 bg-[#F8FAFC] rounded-xl border border-[#DCE7F2]  dark:border-slate-800">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 bg-[#F8FAFC] rounded-xl border border-[#FED7AA]">
             <div>
-              <label className="block text-slate-700 font-semibold mb-1 flex items-center gap-1.5 dark:text-slate-300">
-                <Filter className="w-3.5 h-3.5 text-[#007DB8] dark:text-amber-400" />
+              <label className="block text-slate-700 font-semibold mb-1 flex items-center gap-1.5">
+                <Filter className="w-3.5 h-3.5 text-[#C2410C]" />
                 <span>Status Filter</span>
               </label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full bg-white border border-[#DCE7F2] rounded-lg p-2 text-slate-900 font-medium focus:outline-none focus:border-[#007DB8] text-xs shadow-sm dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
+                className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 font-medium focus:outline-none focus:border-[#C2410C] text-xs shadow-sm"
               >
                 {activeConfig.statuses.map((st) => (
                   <option key={st.id} value={st.id}>
@@ -160,8 +160,8 @@ export function ExportModal({
             </div>
 
             <div>
-              <label className="block text-slate-700 font-semibold mb-1 flex items-center gap-1.5 dark:text-slate-300">
-                <Calendar className="w-3.5 h-3.5 text-[#007DB8] dark:text-amber-400" />
+              <label className="block text-slate-700 font-semibold mb-1 flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-[#C2410C]" />
                 <span>Date Range</span>
               </label>
               <div className="grid grid-cols-2 gap-1.5">
@@ -170,7 +170,7 @@ export function ExportModal({
                   value={dateFrom}
                   onChange={(e) => setDateFrom(e.target.value)}
                   placeholder="From"
-                  className="bg-white border border-[#DCE7F2] rounded-lg p-1.5 text-slate-900 text-[11px] focus:outline-none focus:border-[#007DB8] dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
+                  className="bg-white border border-[#FED7AA] rounded-lg p-1.5 text-slate-900 text-[11px] focus:outline-none focus:border-[#C2410C]"
                   title="From Date"
                 />
                 <input
@@ -178,7 +178,7 @@ export function ExportModal({
                   value={dateTo}
                   onChange={(e) => setDateTo(e.target.value)}
                   placeholder="To"
-                  className="bg-white border border-[#DCE7F2] rounded-lg p-1.5 text-slate-900 text-[11px] focus:outline-none focus:border-[#007DB8] dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-amber-500"
+                  className="bg-white border border-[#FED7AA] rounded-lg p-1.5 text-slate-900 text-[11px] focus:outline-none focus:border-[#C2410C]"
                   title="To Date"
                 />
               </div>
@@ -188,29 +188,29 @@ export function ExportModal({
           {/* Column Checkboxes */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-slate-700 font-semibold dark:text-slate-300">Columns to Include ({selectedCols.length})</label>
+              <label className="text-slate-700 font-semibold">Columns to Include ({selectedCols.length})</label>
               <button
                 type="button"
                 onClick={handleSelectAllCols}
-                className="text-[11px] text-[#007DB8] hover:underline font-bold dark:text-amber-400"
+                className="text-[11px] text-[#C2410C] hover:underline font-bold"
               >
                 Select All
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 p-3 bg-[#F8FAFC] rounded-xl border border-[#DCE7F2] max-h-44 overflow-y-auto  dark:border-slate-800">
+            <div className="grid grid-cols-2 gap-2 p-3 bg-[#F8FAFC] rounded-xl border border-[#FED7AA] max-h-44 overflow-y-auto">
               {activeConfig.columns.map((col) => {
                 const isChecked = selectedCols.includes(col.id);
                 return (
                   <label
                     key={col.id}
-                    className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer text-slate-700 hover:text-slate-900 transition-colors dark:hover:bg-slate-900 dark:text-slate-300 dark:hover:text-white"
+                    className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer text-slate-700 hover:text-slate-900 transition-colors"
                   >
                     <input
                       type="checkbox"
                       checked={isChecked}
                       onChange={() => handleToggleCol(col.id)}
-                      className="rounded border-slate-300 text-[#007DB8] focus:ring-0 focus:outline-none dark:border-slate-700 dark:text-amber-500 dark:bg-slate-900"
+                      className="rounded border-slate-300 text-[#C2410C] focus:ring-0 focus:outline-none"
                     />
                     <span className="text-[11px] font-medium">{col.label}</span>
                   </label>
@@ -222,11 +222,11 @@ export function ExportModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#DCE7F2] dark:border-slate-800">
+        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#FED7AA]">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300"
+            className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors"
           >
             Cancel
           </button>
@@ -235,7 +235,7 @@ export function ExportModal({
             type="button"
             disabled={exporting || currentDataset.length === 0}
             onClick={handleExecuteExport}
-            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs shadow-md transition-all dark:bg-emerald-500 dark:hover:bg-emerald-400  dark:font-black"
+            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs shadow-md transition-all"
           >
             <Download className="w-4 h-4" />
             <span>{exporting ? 'Generating XLSX...' : `Export Excel (${currentDataset.length})`}</span>

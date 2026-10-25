@@ -61,7 +61,7 @@ export function CardBody({
   return (
     <div
       className={cn(
-        "rounded-2xl bg-white border border-[#DCE7F2] p-6 shadow-sm hover:shadow-[0_8px_24px_rgba(0,119,182,0.12)] transition-shadow duration-200",
+        "rounded-2xl bg-white border border-[#FED7AA] p-6 shadow-sm hover:shadow-[0_8px_24px_rgba(232, 89, 12,0.12)] transition-shadow duration-200",
         className
       )}
     >

@@ -28,10 +28,10 @@ export function StickyCTA({ onOpenDemo }: StickyCTAProps) {
 
   return (
     <div className="fixed bottom-6 left-6 z-40 animate-in fade-in slide-in-from-bottom-4 duration-300">
-      <div className="bg-white/95 backdrop-blur-md rounded-2xl p-1.5 shadow-2xl border border-slate-200 hover:border-[#0077B6] flex items-center gap-3 transition-all transform hover:scale-[1.02]">
+      <div className="bg-white/95 backdrop-blur-md rounded-2xl p-1.5 shadow-2xl border border-slate-200 hover:border-[#C2410C] flex items-center gap-3 transition-all transform hover:scale-[1.02]">
         <button
           onClick={onOpenDemo}
-          className="flex items-center gap-2.5 px-4 py-2.5 bg-gradient-to-r from-[#0077B6] to-[#023E8A] hover:from-[#006494] hover:to-[#011F48] text-white rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-[#0077B6]/20 transition-all group"
+          className="flex items-center gap-2.5 px-4 py-2.5 bg-gradient-to-r from-[#C2410C] to-[#1C1917] hover:from-[#9A3412] hover:to-[#9A3412] text-white rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-[#C2410C]/20 transition-all group"
         >
           <span className="relative flex h-2.5 w-2.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-300 opacity-75"></span>
@@ -42,7 +42,7 @@ export function StickyCTA({ onOpenDemo }: StickyCTAProps) {
         </button>
 
         <div className="hidden sm:flex flex-col pr-3 text-left">
-          <span className="text-[11px] font-bold text-[#023E8A] leading-tight">
+          <span className="text-[11px] font-bold text-[#1C1917] leading-tight">
             15-Min Workflow Review
           </span>
           <span className="text-[10px] text-slate-500 leading-tight">

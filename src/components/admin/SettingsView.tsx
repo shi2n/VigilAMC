@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Bell,
   Download,
+  Sparkles,
 } from 'lucide-react';
 import { AlertsSettingsView } from './AlertsSettingsView';
 import { TechnicianManagement } from './TechnicianManagement';
@@ -59,6 +60,10 @@ export function SettingsView({
   onRefreshDashboard,
 }: SettingsViewProps) {
   const [internalSubTab, setInternalSubTab] = useState<SettingsSubTab>('AGENCY');
+  const [whiteLabelEnabled, setWhiteLabelEnabled] = useState<boolean>(true);
+  const [quarterlyAmcFee, setQuarterlyAmcFee] = useState<string>('12500');
+  const [refillServiceFee, setRefillServiceFee] = useState<string>('650');
+
   const activeSubTab = externalSubTab || internalSubTab;
   const setActiveSubTab = (tab: SettingsSubTab) => {
     if (externalSetSubTab) externalSetSubTab(tab);
@@ -74,10 +79,15 @@ export function SettingsView({
     { id: 'IMPORT_EXPORT', label: 'Import & Export Data', icon: FileSpreadsheet },
   ];
 
+  const isOwnerUser = Boolean(
+    currentUser?.email &&
+      /shaizan/i.test(String(currentUser.email))
+  );
+
   return (
-    <div className="rounded-2xl bg-white border border-[#E2E8F0] shadow-xs p-5 sm:p-6 space-y-6 text-slate-800 dark:bg-[#172033] dark:border-[#293548] dark:shadow-xl dark:text-slate-100">
+    <div className="glass-panel-dense rounded-2xl p-5 sm:p-6 space-y-6 text-[#1C1917]">
       {/* Sub Navigation Bar */}
-      <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4 flex-wrap gap-3 dark:border-[#293548]">
+      <div className="flex items-center justify-between border-b border-[#1C1917]/10 pb-4 flex-wrap gap-3">
         <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full">
           {agencyTabs.map((tab) => {
             const Icon = tab.icon;
@@ -88,11 +98,11 @@ export function SettingsView({
                 onClick={() => setActiveSubTab(tab.id as SettingsSubTab)}
                 className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                   active
-                    ? 'bg-[#EFF6FF] text-[#2563EB] border border-[#2563EB]/30 font-bold shadow-xs dark:bg-blue-600 dark:text-white dark:border-blue-500'
-                    : 'bg-slate-50 text-slate-600 hover:text-slate-900 border border-[#E2E8F0] dark:bg-[#111827] dark:text-[#94A3B8] dark:hover:text-white dark:border-[#293548]'
+                    ? 'bg-[#FFF0E6] text-[#C2410C] border border-[#EA580C]/40 font-bold shadow-xs'
+                    : 'bg-white/75 text-[#44403C] hover:text-[#1C1917] border border-[#FED7AA]'
                 }`}
               >
-                <Icon className="w-3.5 h-3.5 text-[#2563EB] dark:text-inherit" />
+                <Icon className="w-3.5 h-3.5 text-[#C2410C]" />
                 <span>{tab.label}</span>
               </button>
             );
@@ -106,19 +116,19 @@ export function SettingsView({
       {activeSubTab === 'AGENCY' && (
         <div className="space-y-4 max-w-2xl">
           <div>
-            <h3 className="text-base font-bold text-[#0F172A] dark:text-white">Agency Organization Profile</h3>
-            <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+            <h3 className="text-base font-bold text-[#1C1917]">Agency Organization Profile</h3>
+            <p className="text-xs text-[#44403C]">
               Official statutory credentials printed on state fire compliance certificates and equipment schedules.
             </p>
           </div>
 
           <form
             onSubmit={handleSaveCompany}
-            className="p-5 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-4 text-xs dark:bg-[#0B1220] dark:border-[#293548]"
+            className="p-5 rounded-2xl bg-white/70 border border-[#FED7AA] space-y-4 text-xs"
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">
+                <label className="block text-[#1C1917] font-bold mb-1">
                   Company / Agency Name *
                 </label>
                 <input
@@ -127,12 +137,12 @@ export function SettingsView({
                   value={companyForm.name}
                   onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
                   placeholder="e.g. National Fire Safety & AMC Services"
-                  className="w-full bg-white border border-[#E2E8F0] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#2563EB] font-medium shadow-xs dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
+                  className="glass-input w-full rounded-xl p-3 text-[#1C1917] font-medium shadow-xs"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">
+                <label className="block text-[#1C1917] font-bold mb-1">
                   Admin Full Name *
                 </label>
                 <input
@@ -140,15 +150,15 @@ export function SettingsView({
                   required
                   value={companyForm.fullName || ''}
                   onChange={(e) => setCompanyForm({ ...companyForm, fullName: e.target.value })}
-                  placeholder="e.g. Shaizan"
-                  className="w-full bg-white border border-[#E2E8F0] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#2563EB] font-medium shadow-xs dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
+                  placeholder="e.g. Agency Director"
+                  className="glass-input w-full rounded-xl p-3 text-[#1C1917] font-medium shadow-xs"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">
+                <label className="block text-[#1C1917] font-bold mb-1">
                   Govt. Fire License Number *
                 </label>
                 <input
@@ -157,11 +167,11 @@ export function SettingsView({
                   value={companyForm.licenseNumber}
                   onChange={(e) => setCompanyForm({ ...companyForm, licenseNumber: e.target.value })}
                   placeholder="e.g. DL/FIRE/LIC/2026/042"
-                  className="w-full bg-white border border-[#E2E8F0] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#2563EB] font-medium shadow-xs dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
+                  className="glass-input w-full rounded-xl p-3 text-[#1C1917] font-medium shadow-xs"
                 />
               </div>
               <div>
-                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">
+                <label className="block text-[#1C1917] font-bold mb-1">
                   Emergency Dispatch Phone *
                 </label>
                 <input
@@ -170,13 +180,13 @@ export function SettingsView({
                   value={companyForm.phone}
                   onChange={(e) => setCompanyForm({ ...companyForm, phone: e.target.value })}
                   placeholder="e.g. +91 98200 11223"
-                  className="w-full bg-white border border-[#E2E8F0] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#2563EB] font-medium shadow-xs dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
+                  className="glass-input w-full rounded-xl p-3 text-[#1C1917] font-medium shadow-xs"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">
+              <label className="block text-[#1C1917] font-bold mb-1">
                 Official Service Email *
               </label>
               <input
@@ -185,12 +195,12 @@ export function SettingsView({
                 value={companyForm.email}
                 onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })}
                 placeholder="e.g. service@nationalfireamc.in"
-                className="w-full bg-white border border-[#E2E8F0] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#2563EB] font-medium shadow-xs dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
+                className="glass-input w-full rounded-xl p-3 text-[#1C1917] font-medium shadow-xs"
               />
             </div>
 
             <div>
-              <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">
+              <label className="block text-[#1C1917] font-bold mb-1">
                 Registered Service Office Address *
               </label>
               <textarea
@@ -199,14 +209,75 @@ export function SettingsView({
                 value={companyForm.address}
                 onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })}
                 placeholder="e.g. Plot 24, Industrial Area Phase III, New Delhi - 110020"
-                className="w-full bg-white border border-[#E2E8F0] rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#2563EB] font-medium shadow-xs dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
+                className="glass-input w-full rounded-xl p-3 text-[#1C1917] font-medium shadow-xs"
               />
             </div>
+
+            {/* C6: White-label toggle + fee fields using ember accents */}
+            <div className="pt-3 border-t border-[#1C1917]/10 space-y-3">
+              <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#FFF0E6]/70 border border-[#FED7AA]">
+                <div className="space-y-0.5">
+                  <div className="font-bold text-[#1C1917] flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[#C2410C]" />
+                    <span>White-Label Client Certificates</span>
+                  </div>
+                  <p className="text-[11px] text-[#44403C]">
+                    Display your agency logo and license header on printed Annex B / Form-B PDF reports
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={whiteLabelEnabled}
+                  onClick={() => setWhiteLabelEnabled((v) => !v)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ${
+                    whiteLabelEnabled ? 'bg-[#C2410C]' : 'bg-[#44403C]/30'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition duration-200 ${
+                      whiteLabelEnabled ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[#1C1917] font-bold mb-1">
+                    Standard Quarterly AMC Fee (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={quarterlyAmcFee}
+                    onChange={(e) => setQuarterlyAmcFee(e.target.value)}
+                    className="glass-input w-full rounded-xl p-2.5 text-[#1C1917] font-semibold tabular-nums"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[#1C1917] font-bold mb-1">
+                    Per-Cylinder Refill Rate (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={refillServiceFee}
+                    onChange={(e) => setRefillServiceFee(e.target.value)}
+                    className="glass-input w-full rounded-xl p-2.5 text-[#1C1917] font-semibold tabular-nums"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {isOwnerUser && (
+              <div className="p-3 rounded-xl bg-white/80 border border-[#FED7AA] text-[11px] text-[#44403C]">
+                Platform Support Contact:vigilamc.support@gmail.com
+              </div>
+            )}
 
             <div className="pt-2 flex justify-end">
               <button
                 type="submit"
-                className="px-6 py-3 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold text-xs shadow-xs transition-all hover:scale-[1.02]"
+                className="btn-flame px-6 py-3 rounded-xl text-white font-bold text-xs shadow-xs"
               >
                 Save Agency Profile
               </button>
@@ -249,98 +320,98 @@ export function SettingsView({
       {activeSubTab === 'IMPORT_EXPORT' && (
         <div className="space-y-6">
           <div>
-            <h3 className="text-base font-bold text-[#073F8F] dark:text-white">Excel Import &amp; Export Center</h3>
-            <p className="text-xs text-[#475569] dark:text-slate-400">
+            <h3 className="text-base font-bold text-[#1C1917]">Excel Import &amp; Export Center</h3>
+            <p className="text-xs text-[#44403C]">
               Bulk upload existing spreadsheets or download operational records in Excel (.xlsx) format.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Import Card */}
-            <div className="p-5 rounded-2xl bg-slate-50 border border-[#E2E8F0] dark:bg-[#0B1220] dark:border-[#293548] space-y-4">
-              <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white text-sm">
-                <Upload className="w-5 h-5 text-[#2563EB] dark:text-[#60A5FA]" />
+            <div className="p-5 rounded-2xl bg-white/75 border border-[#FED7AA] space-y-4">
+              <div className="flex items-center gap-2 font-bold text-[#1C1917] text-sm">
+                <Upload className="w-5 h-5 text-[#C2410C]" />
                 <span>Import Spreadsheets (.xlsx)</span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-[#94A3B8]">
+              <p className="text-xs text-[#44403C]">
                 Upload existing client lists, building rosters, equipment schedules, or technician records.
               </p>
               <div className="grid grid-cols-2 gap-2 pt-1">
                 <button
                   type="button"
                   onClick={() => onOpenImport?.('CLIENTS')}
-                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#E2E8F0] shadow-xs flex items-center justify-center gap-1.5 dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-200 dark:border-[#293548]"
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] text-xs font-bold transition-all border border-[#FED7AA] shadow-xs flex items-center justify-center gap-1.5"
                 >
-                  <Upload className="w-3.5 h-3.5 text-blue-500" />
+                  <Upload className="w-3.5 h-3.5 text-[#C2410C]" />
                   <span>Clients</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => onOpenImport?.('BUILDINGS')}
-                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#E2E8F0] shadow-xs flex items-center justify-center gap-1.5 dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-200 dark:border-[#293548]"
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] text-xs font-bold transition-all border border-[#FED7AA] shadow-xs flex items-center justify-center gap-1.5"
                 >
-                  <Upload className="w-3.5 h-3.5 text-indigo-500" />
+                  <Upload className="w-3.5 h-3.5 text-[#C2410C]" />
                   <span>Buildings</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => onOpenImport?.('FIRE_ASSETS')}
-                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#E2E8F0] shadow-xs flex items-center justify-center gap-1.5 dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-200 dark:border-[#293548]"
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] text-xs font-bold transition-all border border-[#FED7AA] shadow-xs flex items-center justify-center gap-1.5"
                 >
-                  <Upload className="w-3.5 h-3.5 text-blue-400" />
+                  <Upload className="w-3.5 h-3.5 text-[#C2410C]" />
                   <span>Equipment</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => onOpenImport?.('TECHNICIANS')}
-                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#E2E8F0] shadow-xs flex items-center justify-center gap-1.5 dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-200 dark:border-[#293548]"
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] text-xs font-bold transition-all border border-[#FED7AA] shadow-xs flex items-center justify-center gap-1.5"
                 >
-                  <Upload className="w-3.5 h-3.5 text-[#0077B6]" />
+                  <Upload className="w-3.5 h-3.5 text-[#C2410C]" />
                   <span>Technicians</span>
                 </button>
               </div>
             </div>
 
             {/* Export Card */}
-            <div className="p-5 rounded-2xl bg-slate-50 border border-[#E2E8F0] dark:bg-[#0B1220] dark:border-[#293548] space-y-4">
-              <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white text-sm">
-                <Download className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <div className="p-5 rounded-2xl bg-white/75 border border-[#FED7AA] space-y-4">
+              <div className="flex items-center gap-2 font-bold text-[#1C1917] text-sm">
+                <Download className="w-5 h-5 text-[#059669]" />
                 <span>Export Operations Data (.xlsx)</span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-[#94A3B8]">
+              <p className="text-xs text-[#44403C]">
                 Download verified records for statutory audits, client handover reports, or external accounting.
               </p>
               <div className="grid grid-cols-2 gap-2 pt-1">
                 <button
                   type="button"
                   onClick={() => onOpenExport?.('CLIENTS')}
-                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#E2E8F0] shadow-xs flex items-center justify-center gap-1.5 dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-200 dark:border-[#293548]"
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] text-xs font-bold transition-all border border-[#FED7AA] shadow-xs flex items-center justify-center gap-1.5"
                 >
-                  <Download className="w-3.5 h-3.5 text-emerald-600" />
+                  <Download className="w-3.5 h-3.5 text-[#059669]" />
                   <span>Clients</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => onOpenExport?.('BUILDINGS')}
-                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#E2E8F0] shadow-xs flex items-center justify-center gap-1.5 dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-200 dark:border-[#293548]"
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] text-xs font-bold transition-all border border-[#FED7AA] shadow-xs flex items-center justify-center gap-1.5"
                 >
-                  <Download className="w-3.5 h-3.5 text-emerald-600" />
+                  <Download className="w-3.5 h-3.5 text-[#059669]" />
                   <span>Buildings</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => onOpenExport?.('FIRE_ASSETS')}
-                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#E2E8F0] shadow-xs flex items-center justify-center gap-1.5 dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-200 dark:border-[#293548]"
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] text-xs font-bold transition-all border border-[#FED7AA] shadow-xs flex items-center justify-center gap-1.5"
                 >
-                  <Download className="w-3.5 h-3.5 text-emerald-600" />
+                  <Download className="w-3.5 h-3.5 text-[#059669]" />
                   <span>Equipment</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => onOpenExport?.('INSPECTIONS')}
-                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#E2E8F0] shadow-xs flex items-center justify-center gap-1.5 dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-200 dark:border-[#293548]"
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] text-xs font-bold transition-all border border-[#FED7AA] shadow-xs flex items-center justify-center gap-1.5"
                 >
-                  <Download className="w-3.5 h-3.5 text-emerald-600" />
+                  <Download className="w-3.5 h-3.5 text-[#059669]" />
                   <span>Inspections</span>
                 </button>
               </div>

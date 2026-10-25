@@ -108,10 +108,10 @@ export default function CustomersPage() {
       {/* Page Header */}
       <section className="bg-gradient-to-b from-ocean-50 to-white py-20 px-4 sm:px-6 lg:px-8 border-b border-slate-200">
         <div className="max-w-4xl mx-auto text-center">
-          <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-white px-3.5 py-1.5 rounded-full border border-ocean-200 shadow-sm">
+          <span className="text-xs uppercase font-extrabold tracking-widest text-[#C2410C] bg-white px-3.5 py-1.5 rounded-full border border-ocean-200 shadow-sm">
             Inspection Protocols &amp; Scenarios
           </span>
-          <h1 className="text-4xl sm:text-5xl font-black text-[#023E8A] tracking-tight mt-4">
+          <h1 className="text-4xl sm:text-5xl font-black text-[#1C1917] tracking-tight mt-4">
             Field Scenarios &amp; Operational Benchmarks
           </h1>
           <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
@@ -138,7 +138,7 @@ export default function CustomersPage() {
                 </div>
 
                 <div className="pt-3 pb-2">
-                  <div className="w-10 h-10 rounded-xl bg-[#0077B6]/30 border border-cyan-400/30 flex items-center justify-center text-cyan-300 mb-2 group-hover:scale-110 transition-transform">
+                  <div className="w-10 h-10 rounded-xl bg-[#C2410C]/30 border border-cyan-400/30 flex items-center justify-center text-cyan-300 mb-2 group-hover:scale-110 transition-transform">
                     {idx === 0 && <Flame className="w-5 h-5 text-amber-400" />}
                     {idx === 1 && <Gauge className="w-5 h-5 text-cyan-400" />}
                     {idx === 2 && <Activity className="w-5 h-5 text-emerald-400" />}
@@ -179,10 +179,10 @@ export default function CustomersPage() {
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-50 border-t border-slate-200">
         <div className="max-w-5xl mx-auto space-y-16">
           <div className="text-center max-w-2xl mx-auto">
-            <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-white px-3.5 py-1.5 rounded-full border border-slate-200">
+            <span className="text-xs uppercase font-extrabold tracking-widest text-[#C2410C] bg-white px-3.5 py-1.5 rounded-full border border-slate-200">
               Operational Scenarios
             </span>
-            <h2 className="text-3xl font-extrabold text-[#023E8A] mt-3">
+            <h2 className="text-3xl font-extrabold text-[#1C1917] mt-3">
               Representative Operational Scenarios
             </h2>
             <p className="text-sm text-slate-600 mt-2">
@@ -194,12 +194,12 @@ export default function CustomersPage() {
             <div key={i} className="corp-card p-8 sm:p-10 bg-white border-slate-200 shadow-lg">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-slate-200 gap-4">
                 <div>
-                  <span className="text-xs uppercase font-extrabold tracking-wider text-[#0077B6]">
+                  <span className="text-xs uppercase font-extrabold tracking-wider text-[#C2410C]">
                     {cs.type}
                   </span>
-                  <h3 className="text-2xl font-black text-[#023E8A] mt-1">{cs.client}</h3>
+                  <h3 className="text-2xl font-black text-[#1C1917] mt-1">{cs.client}</h3>
                 </div>
-                <span className="px-3.5 py-1.5 rounded-full bg-ocean-50 text-[#0077B6] text-xs font-bold border border-ocean-200 self-start sm:self-auto">
+                <span className="px-3.5 py-1.5 rounded-full bg-ocean-50 text-[#C2410C] text-xs font-bold border border-ocean-200 self-start sm:self-auto">
                   {cs.portfolio}
                 </span>
               </div>
@@ -220,7 +220,7 @@ export default function CustomersPage() {
               </div>
 
               <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
-                <h4 className="font-bold text-[#023E8A] uppercase tracking-wider text-xs mb-3">
+                <h4 className="font-bold text-[#1C1917] uppercase tracking-wider text-xs mb-3">
                   Operational Value Delivered
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-700">

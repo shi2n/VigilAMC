@@ -65,10 +65,10 @@ export function ProductWorkflowSection() {
     <section id="workflow" className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-50 border-t border-slate-200 scroll-mt-24">
       <div className="max-w-6xl mx-auto">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-ocean-50 text-[#0077B6] text-xs font-bold border border-ocean-200 mb-3">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-ocean-50 text-[#C2410C] text-xs font-bold border border-ocean-200 mb-3">
             <span>End-to-End AMC Lifecycle</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-black text-[#023E8A] tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-black text-[#1C1917] tracking-tight">
             How VigilAMC Works in Practice
           </h2>
           <p className="mt-3 text-base text-slate-600 leading-relaxed">
@@ -86,13 +86,13 @@ export function ProductWorkflowSection() {
                 onClick={() => setActiveStep(s.step)}
                 className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                   isSelected
-                    ? 'bg-[#0077B6] text-white shadow-md scale-105'
-                    : 'bg-white text-slate-600 hover:text-[#0077B6] border border-slate-200 hover:border-[#0077B6]/40'
+                    ? 'bg-[#C2410C] text-white shadow-md scale-105'
+                    : 'bg-white text-slate-600 hover:text-[#C2410C] border border-slate-200 hover:border-[#C2410C]/40'
                 }`}
               >
                 <span
                   className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
-                    isSelected ? 'bg-white text-[#0077B6]' : 'bg-slate-100 text-slate-600'
+                    isSelected ? 'bg-white text-[#C2410C]' : 'bg-slate-100 text-slate-600'
                   }`}
                 >
                   {s.step}
@@ -108,12 +108,12 @@ export function ProductWorkflowSection() {
           {/* Left Column: Description & Controls */}
           <div className="lg:col-span-6 space-y-4">
             <div className="flex items-center gap-2">
-              <span className="text-xs uppercase font-extrabold text-[#0077B6] tracking-wider">
+              <span className="text-xs uppercase font-extrabold text-[#C2410C] tracking-wider">
                 Step 0{current.step} of 04 &bull; {current.category}
               </span>
             </div>
 
-            <h3 className="text-2xl sm:text-3xl font-black text-[#023E8A]">
+            <h3 className="text-2xl sm:text-3xl font-black text-[#1C1917]">
               {current.title}
             </h3>
 
@@ -124,7 +124,7 @@ export function ProductWorkflowSection() {
             <div className="flex items-center gap-3 pt-3">
               <button
                 onClick={() => setActiveStep((prev) => (prev === 4 ? 1 : prev + 1))}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0077B6] hover:bg-[#023E8A] text-white text-xs font-bold transition-all shadow-sm active:scale-[0.98] cursor-pointer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#C2410C] hover:bg-[#1C1917] text-white text-xs font-bold transition-all shadow-sm active:scale-[0.98] cursor-pointer"
               >
                 <span>{activeStep === 4 ? 'Start Over (Step 1)' : 'Next Step'}</span>
                 <ArrowRight className="w-4 h-4" />

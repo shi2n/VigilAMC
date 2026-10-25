@@ -1,224 +1,322 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import {
-  MapPin,
-  PenTool,
+  BellRing,
+  Smartphone,
   FileCheck2,
-  ChevronDown,
-  Info,
   XCircle,
   CheckCircle2,
-  ArrowRight
+  MapPin,
+  Camera,
+  Mic,
+  ShieldAlert,
+  Sparkles,
 } from 'lucide-react';
-import { motion, useScroll, useMotionValueEvent, useReducedMotion } from 'motion/react';
+import SectorMarquee from './SectorMarquee';
 
 const STEPS = [
   {
-    num: '01',
-    title: 'INSPECT',
-    body: 'The technician arrives. The app logs live GPS, walks them floor-by-floor with simple tap checklists, and captures photos with automatic location stamps.',
-    icon: MapPin,
-    linkLabel: 'Preview Field App',
-    linkHref: '/technician',
+    number: '01',
+    title: 'Before the Visit — Automatic Reminders',
+    summary:
+      'VigilAMC remembers every cylinder, alarm, and pump expiry date for you — and sends WhatsApp & email alerts 30, 15, and 7 days before anything expires.',
+    proofPill: 'No more forgotten spreadsheets',
+    icon: BellRing,
+    previewTitle: 'Auto-Scheduled Reminder',
+    previewMeta: 'Sent 15 days before due date · Prestige Tower',
+    previewBadge: 'SCHEDULED',
   },
   {
-    num: '02',
-    title: 'PROVE',
-    body: 'The supervisor signs on the phone screen. Voice remarks work in any Indian language. Everything works even in basement parking with no internet.',
-    icon: PenTool,
-    linkLabel: null,
-    linkHref: null,
+    number: '02',
+    title: 'On Site — Proof the Technician Was Really There',
+    summary:
+      'Your technician opens the mobile checklist at the building. The app locks GPS within 20 metres, takes a live camera photo of the pressure gauge, and supports voice-to-text remarks.',
+    proofPill: 'GPS + Asset Tag ID + Camera Photo Proof',
+    icon: Smartphone,
+    previewTitle: 'Field Check · Floor 2 Hydrant Valve',
+    previewMeta: 'GPS Verified · Voice Note Logged · Photo Locked',
+    previewBadge: 'ON-SITE PROOF',
   },
   {
-    num: '03',
-    title: 'REPORT',
-    body: 'Before the technician leaves the building, the compliance report is ready - clean, branded, and shared with the client on WhatsApp in one tap.',
+    number: '03',
+    title: 'Instant Certificate — Audit-Ready PDF in 10 Seconds',
+    summary:
+      'The moment the technician and building manager sign on screen, VigilAMC builds your NBC 2016 / IS 2190 compliant Fire Safety Certificate — ready for fire officers and insurers.',
+    proofPill: 'Shareable link + printable A4 PDF',
     icon: FileCheck2,
-    linkLabel: 'See Sample Report',
-    linkHref: '/sample-report',
+    previewTitle: 'Form-B Fire Compliance Certificate',
+    previewMeta: 'Dual-Signed · Tamper-Evident Audit Log',
+    previewBadge: 'CERTIFIED',
   },
-] as const;
+];
+
+const OLD_WAY = [
+  'Paper registers that get lost, wet, or backdated the night before an inspection',
+  'Technicians ticking "OK" from home without checking a single pressure gauge',
+  'Scrambling for 3 days in Excel & WhatsApp when the Fire Officer or insurer asks for proof',
+];
+
+const VIGIL_WAY = [
+  'Live building dashboard — see every green (safe), amber (due soon), and red (expired) asset in 5 seconds',
+  'GPS + Asset Tag ID + Floor/Zone checklist + live camera photo proves every visit is real',
+  'One-click NBC 2016 & IS 2190 PDF report ready to hand to any Fire Officer or committee',
+];
 
 export function HowItWorks() {
   const sectionRef = useRef<HTMLElement>(null);
-  const prefersReduced = useReducedMotion();
-  const [mounted, setMounted] = useState(false);
-  const [explainerOpen, setExplainerOpen] = useState(true);
-  const [activeStep, setActiveStep] = useState<number>(0);
+  const [revealed, setRevealed] = useState(false);
+  const [stripRevealed, setStripRevealed] = useState(false);
+  const stripRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const shouldReduceMotion = mounted && Boolean(prefersReduced);
-
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ['start 75%', 'end 35%'],
-  });
-
-  useMotionValueEvent(scrollYProgress, 'change', (latest) => {
-    if (latest < 0.35) {
-      setActiveStep(0);
-    } else if (latest < 0.68) {
-      setActiveStep(1);
-    } else {
-      setActiveStep(2);
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (mq.matches) {
+      setRevealed(true);
+      setStripRevealed(true);
+      return;
     }
-  });
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            if (entry.target === sectionRef.current) {
+              setRevealed(true);
+            }
+            if (entry.target === stripRef.current) {
+              setStripRevealed(true);
+            }
+          }
+        });
+      },
+      { rootMargin: '0px 0px -15% 0px', threshold: 0.08 }
+    );
+
+    if (sectionRef.current) io.observe(sectionRef.current);
+    if (stripRef.current) io.observe(stripRef.current);
+
+    return () => io.disconnect();
+  }, []);
 
   return (
     <section
       id="how-it-works"
       ref={sectionRef}
       aria-labelledby="how-it-works-heading"
-      className="relative py-12 sm:py-14 px-4 sm:px-6 lg:px-8 bg-[#FFF8F2]/85 border-b border-[#FED7AA]/60 scroll-mt-16"
+      className="relative py-14 sm:py-20 lg:py-24 overflow-hidden border-t border-[#FED7AA]/70"
+      style={{
+        background:
+          'linear-gradient(180deg, #FFF4EC 0%, #FFF8F2 45%, #FFE8D6 85%, #FFF8F2 100%)',
+      }}
     >
-      <div className="relative z-10 max-w-6xl mx-auto space-y-6">
-        {/* Section Header */}
-        <div className="max-w-3xl space-y-2.5">
-          <div className="font-display text-xs font-bold uppercase tracking-[0.12em] text-[#C2410C]">
-            HOW IT WORKS
+      {/* Ambient Ember Glow Planes behind glass clusters (Critical Glass Rule) */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 w-[560px] sm:w-[880px] h-[340px] rounded-full"
+        style={{
+          background:
+            'radial-gradient(ellipse at center, rgba(232, 89, 12, 0.20) 0%, rgba(255, 140, 66, 0.14) 48%, rgba(255, 248, 242, 0) 74%)',
+          filter: 'blur(90px)',
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute top-[38%] left-[12%] w-[440px] h-[380px] rounded-full"
+        style={{
+          background:
+            'radial-gradient(circle, rgba(255, 140, 66, 0.22) 0%, rgba(232, 89, 12, 0.14) 50%, rgba(255, 248, 242, 0) 75%)',
+          filter: 'blur(95px)',
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute top-[40%] right-[10%] w-[460px] h-[380px] rounded-full"
+        style={{
+          background:
+            'radial-gradient(circle, rgba(232, 89, 12, 0.20) 0%, rgba(255, 140, 66, 0.14) 50%, rgba(255, 248, 242, 0) 75%)',
+          filter: 'blur(95px)',
+        }}
+      />
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Plain-Language Explainer Callout ("What is a Fire AMC, really?") */}
+        <div
+          style={{ transitionDelay: '0ms' }}
+          className={`sc-reveal ${
+            revealed ? 'is-visible' : ''
+          } glass-panel max-w-4xl mx-auto mb-12 sm:mb-16 rounded-2xl p-5 sm:p-7`}
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-4 border-b border-[#1C1917]/10">
+            <div className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#C2410C]">
+              <Sparkles className="w-4 h-4 text-[#EA580C]" />
+              <span>Wait — What is a &ldquo;Fire AMC&rdquo; in plain English?</span>
+            </div>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFF0E6] border border-[#FED7AA] text-xs font-semibold text-[#C2410C] w-fit">
+              <ShieldAlert className="w-3.5 h-3.5" />
+              Mandatory by Indian Fire Law
+            </span>
           </div>
-          <h2
-            id="how-it-works-heading"
-            className="font-display text-[clamp(1.8rem,3.5vw,2.6rem)] font-bold text-[#1C1917] tracking-[-0.02em] leading-[1.1]"
-          >
-            If you can use WhatsApp, you can use VigilAMC.
-          </h2>
-          <p className="text-base sm:text-lg text-[#44403C] leading-relaxed">
-            Three steps. No training. No QR stickers. No paper registers.
+          <p className="text-sm sm:text-base text-[#1C1917] leading-relaxed font-medium">
+            An <strong className="font-bold text-[#C2410C]">AMC (Annual Maintenance Contract)</strong> is a yearly promise that a trained fire technician will inspect every extinguisher, smoke detector, hydrant valve, and water pump in a building every quarter.{' '}
+            <span className="text-[#44403C] font-normal">
+              If a check is skipped or faked on paper, equipment can fail during a real fire — and the building risks losing its Fire NOC or insurance payout. VigilAMC makes every check automatic, honest, and provable.
+            </span>
           </p>
         </div>
 
-        {/* First-Timer Plain-English Explainer Chip (accessible button with aria-expanded) */}
-        <div className="max-w-3xl rounded-2xl bg-white/85 backdrop-blur-xl border border-[#FED7AA] shadow-[0_8px_24px_-8px_rgba(234,88,12,0.10)] overflow-hidden">
-          <button
-            type="button"
-            onClick={() => setExplainerOpen((prev) => !prev)}
-            aria-expanded={explainerOpen}
-            aria-controls="fire-amc-explainer-panel"
-            className="w-full min-h-[44px] px-4 sm:px-5 py-2.5 text-left flex items-center justify-between gap-3 text-xs sm:text-sm font-display font-bold text-[#1C1917] hover:bg-[#FFF4EC]/60 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#C2410C]"
+        {/* Section Heading */}
+        <div
+          style={{ transitionDelay: '60ms' }}
+          className={`sc-reveal ${
+            revealed ? 'is-visible' : ''
+          } text-center max-w-3xl mx-auto mb-10 sm:mb-14`}
+        >
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 border border-[#FED7AA] text-xs font-bold uppercase tracking-wider text-[#C2410C] mb-3 backdrop-blur-sm">
+            Simple 3-Step Story
+          </div>
+          <h2
+            id="how-it-works-heading"
+            className="font-display font-bold tracking-[-0.02em] text-[#1C1917] text-[clamp(1.75rem,3.5vw,2.6rem)] leading-[1.12]"
           >
-            <span className="inline-flex items-center gap-2">
-              <Info className="w-4 h-4 text-[#C2410C] shrink-0" aria-hidden="true" />
-              <span>New to fire safety? What is a Fire AMC?</span>
-            </span>
-            <ChevronDown
-              className={`w-4 h-4 text-[#C2410C] shrink-0 transition-transform duration-200 ${
-                explainerOpen ? 'rotate-180' : ''
-              }`}
-              aria-hidden="true"
-            />
-          </button>
-
-          {explainerOpen && (
-            <div
-              id="fire-amc-explainer-panel"
-              className="px-4 sm:px-5 pb-3.5 pt-1 text-sm text-[#44403C] leading-relaxed border-t border-[#FED7AA]/50"
-            >
-              New to fire safety? Buildings must keep every extinguisher, pump and alarm serviced
-              by law - that yearly service agreement is called a{' '}
-              <strong className="font-semibold text-[#1C1917]">
-                Fire AMC (Annual Maintenance Contract)
-              </strong>
-              . VigilAMC digitizes that work.
-            </div>
-          )}
+            How VigilAMC Keeps Every Building Safe — Step by Step
+          </h2>
+          <p className="mt-3 text-sm sm:text-base text-[#44403C]">
+            No complicated training. No hardware stickers that peel off. Just three clear steps from reminder to certificate.
+          </p>
         </div>
 
-        {/* 3 Glass Step Cards (stagger-reveal 25ms, left border ignites with Ember Line) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
-          {STEPS.map((step, idx) => {
+        {/* 3 Step Glass Cards (A3: scale 0.97 -> 1 + 24px rise + 6px->0 blur + 60ms stagger) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-7">
+          {STEPS.map((step, index) => {
             const Icon = step.icon;
-            const isLit = idx <= activeStep;
             return (
-              <motion.article
-                key={step.num}
-                initial={{ opacity: 0.95, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.25 }}
-                transition={{
-                  duration: 0.4,
-                  delay: shouldReduceMotion ? 0 : idx * 0.025,
-                  ease: [0.23, 1, 0.32, 1],
+              <div
+                key={step.number}
+                style={{
+                  transitionDelay: `${120 + index * 60}ms`,
+                  background: 'rgba(255, 255, 255, 0.45)',
                 }}
-                className={`relative rounded-2xl bg-white/90 backdrop-blur-xl border border-[#FED7AA] border-l-4 p-5 flex flex-col justify-between transition-all duration-300 motion-reduce:!transform-none ${
-                  isLit
-                    ? 'border-l-[#EA580C] shadow-[0_16px_38px_-12px_rgba(234,88,12,0.16)]'
-                    : 'border-l-[#FED7AA] shadow-sm'
-                }`}
+                className={`sc-reveal-step ${
+                  revealed ? 'is-visible' : ''
+                } glass-panel group relative rounded-2xl p-6 sm:p-7 flex flex-col justify-between hover:-translate-y-1 transition-all duration-300`}
               >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-display text-3xl font-bold tracking-tight bg-gradient-to-br from-[#FF8C42] via-[#EA580C] to-[#C2410C] bg-clip-text text-transparent tabular-nums">
-                      {step.num}
+                <div>
+                  {/* Step Badge + Icon */}
+                  <div className="flex items-center justify-between gap-3 mb-5">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#C2410C] text-white font-display font-bold text-xs tracking-wide shadow-sm">
+                      STEP {step.number}
                     </span>
-                    <span className="w-9 h-9 rounded-xl bg-[#FFF4EC] border border-[#FED7AA] flex items-center justify-center text-[#C2410C]">
-                      <Icon className="w-4 h-4" aria-hidden="true" />
-                    </span>
+                    <div className="w-10 h-10 rounded-xl bg-[#FFF0E6] border border-[#FED7AA] flex items-center justify-center text-[#C2410C] group-hover:scale-105 transition-transform">
+                      <Icon className="w-5 h-5" />
+                    </div>
                   </div>
 
-                  <h3 className="font-display text-lg font-bold text-[#1C1917] tracking-[-0.01em]">
+                  {/* Step Title & Plain-Language Explanation */}
+                  <h3 className="font-display font-bold text-lg sm:text-xl text-[#1C1917] mb-2.5 leading-snug">
                     {step.title}
                   </h3>
-
-                  <p className="text-sm text-[#44403C] leading-relaxed">{step.body}</p>
+                  <p className="text-sm text-[#44403C] leading-relaxed mb-5">
+                    {step.summary}
+                  </p>
                 </div>
 
-                {step.linkHref && step.linkLabel && (
-                  <div className="pt-3.5 mt-3.5 border-t border-[#FED7AA]/50">
-                    <Link
-                      href={step.linkHref}
-                      className="inline-flex items-center gap-1.5 text-xs font-display font-bold text-[#C2410C] hover:text-[#1C1917] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C2410C] rounded"
-                    >
-                      <span>{step.linkLabel}</span>
-                      <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-                    </Link>
+                {/* Mini Interactive UI Preview Slice inside each card */}
+                <div className="pt-4 border-t border-[#1C1917]/10">
+                  <div className="rounded-xl bg-white/75 border border-white/85 p-3.5 mb-3 shadow-sm">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-xs font-bold text-[#1C1917] truncate">
+                        {step.previewTitle}
+                      </span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#059669]/15 text-[#065F46] border border-[#059669]/30 shrink-0">
+                        {step.previewBadge}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-[#44403C]">{step.previewMeta}</div>
+                    {step.number === '02' && (
+                      <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-[#C2410C]">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white border border-[#FED7AA]">
+                          <MapPin className="w-3 h-3" /> GPS
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white border border-[#FED7AA]">
+                          <Camera className="w-3 h-3" /> Photo
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white border border-[#FED7AA]">
+                          <Mic className="w-3 h-3" /> Voice Note
+                        </span>
+                      </div>
+                    )}
                   </div>
-                )}
-              </motion.article>
+                  <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#C2410C]">
+                    <CheckCircle2 className="w-4 h-4 text-[#059669] shrink-0" />
+                    <span>{step.proofPill}</span>
+                  </div>
+                </div>
+              </div>
             );
           })}
         </div>
 
-        {/* Before / After Glass Strip (2 columns, slides in from 8px) */}
-        <motion.div
-          initial={{ opacity: 0.95, y: 8 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-          className="grid grid-cols-1 md:grid-cols-2 gap-4 motion-reduce:!transform-none"
+        {/* Before / After Comparison Strip (A6: "The VigilAMC way" wipes in via clip-path inset 500ms after "The old way") */}
+        <div
+          ref={stripRef}
+          className="mt-10 sm:mt-14 grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-6"
         >
-          {/* Old Way (muted stone) */}
-          <div className="rounded-2xl bg-[#F5F5F4]/90 border border-[#E7E5E4] p-4 sm:p-5 flex items-start gap-3.5">
-            <XCircle className="w-5 h-5 text-[#B91C1C] shrink-0 mt-0.5" aria-hidden="true" />
-            <div>
-              <h3 className="font-display text-sm font-bold uppercase tracking-wider text-[#44403C]">
-                The old way
-              </h3>
-              <p className="text-sm text-[#44403C] mt-1 leading-relaxed">
-                Paper registers, WhatsApp photo chaos, reports in 3 days, no proof during audits.
-              </p>
+          {/* Left: The Old Way */}
+          <div
+            className={`sc-reveal ${
+              stripRevealed ? 'is-visible' : ''
+            } glass-panel-dense rounded-2xl p-5 sm:p-6`}
+          >
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#DC2626]/10 border border-[#DC2626]/25 text-xs font-bold text-[#991B1B] mb-4">
+              <XCircle className="w-4 h-4 text-[#DC2626]" />
+              <span>THE OLD WAY · PAPER LOGBOOKS &amp; WHATSAPP</span>
             </div>
+            <ul className="space-y-3">
+              {OLD_WAY.map((item) => (
+                <li
+                  key={item}
+                  className="flex items-start gap-2.5 text-sm text-[#44403C] leading-relaxed"
+                >
+                  <XCircle className="w-4 h-4 text-[#DC2626] shrink-0 mt-0.5" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
           </div>
 
-          {/* The VigilAMC Way (ember accents) */}
-          <div className="rounded-2xl bg-white/95 backdrop-blur-xl border border-[#FED7AA] p-4 sm:p-5 flex items-start gap-3.5 shadow-[0_12px_30px_-10px_rgba(234,88,12,0.14)]">
-            <CheckCircle2 className="w-5 h-5 text-[#0E9F6E] shrink-0 mt-0.5" aria-hidden="true" />
-            <div>
-              <h3 className="font-display text-sm font-bold uppercase tracking-wider text-[#C2410C]">
-                The VigilAMC way
-              </h3>
-              <p className="text-sm text-[#1C1917] font-medium mt-1 leading-relaxed">
-                Live GPS proof, reports in 1 minute, expiry alerts, audit-ready in 2 taps.
-              </p>
+          {/* Right: The VigilAMC Way (A6 clip-path inset reveal 500ms after Old Way) */}
+          <div
+            data-testid="vigil-way-wipe"
+            style={{ transitionDelay: '180ms' }}
+            className={`sc-wipe-after ${
+              stripRevealed ? 'is-visible' : ''
+            } glass-panel rounded-2xl p-5 sm:p-6`}
+          >
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#059669]/15 border border-[#059669]/30 text-xs font-bold text-[#065F46] mb-4">
+              <CheckCircle2 className="w-4 h-4 text-[#059669]" />
+              <span>THE VIGILAMC WAY · LIVE PROOF IN 10 SECONDS</span>
             </div>
+            <ul className="space-y-3">
+              {VIGIL_WAY.map((item) => (
+                <li
+                  key={item}
+                  className="flex items-start gap-2.5 text-sm text-[#1C1917] font-medium leading-relaxed"
+                >
+                  <CheckCircle2 className="w-4 h-4 text-[#059669] shrink-0 mt-0.5" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-        </motion.div>
+        </div>
+
+        {/* Sector Pill Marquee (A5: scroll-velocity reactive + reversible) */}
+        <SectorMarquee />
       </div>
     </section>
   );
 }
+
+export default HowItWorks;

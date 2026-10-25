@@ -179,7 +179,7 @@ export function InspectionsView({
   return (
     <div className="space-y-6">
       {/* Search & Filter Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#DCE7F2] shadow-sm dark:bg-slate-900/60 dark:border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 glass-panel-dense p-4 rounded-2xl shadow-sm">
         <div className="flex items-center gap-2.5 flex-1 flex-wrap">
           <div className="relative flex-1 min-w-[220px] max-w-sm">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -188,17 +188,17 @@ export function InspectionsView({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by facility, equipment ID, technician..."
-              className="w-full pl-9 pr-3 py-2 bg-white border border-[#DCE7F2] rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#007DB8] shadow-sm  dark:border-slate-800 dark:text-white dark:placeholder-slate-500"
+              className="w-full pl-9 pr-3 py-2 bg-white border border-[#FED7AA] rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#C2410C] shadow-sm"
             />
           </div>
 
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs  dark:border-slate-800">
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs">
             <button
               onClick={() => setStatusFilter('ALL')}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
                 statusFilter === 'ALL'
-                  ? 'bg-[#007DB8] text-white shadow-sm dark:bg-amber-500 '
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  ? 'bg-[#C2410C] text-white shadow-sm '
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               All ({inspections.length})
@@ -207,8 +207,8 @@ export function InspectionsView({
               onClick={() => setStatusFilter('PASSED')}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
                 statusFilter === 'PASSED'
-                  ? 'bg-emerald-600 text-white shadow-sm dark:bg-emerald-500 '
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  ? 'bg-emerald-600 text-white shadow-sm '
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               Passed ({inspections.filter((i) => i.status === 'PASSED').length})
@@ -217,8 +217,8 @@ export function InspectionsView({
               onClick={() => setStatusFilter('SERVICE_REQUIRED')}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
                 statusFilter === 'SERVICE_REQUIRED'
-                  ? 'bg-amber-500 text-white shadow-sm dark:bg-amber-500 '
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  ? 'bg-amber-500 text-white shadow-sm '
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               Action Needed ({inspections.filter((i) => i.status === 'SERVICE_REQUIRED' || i.status === 'FAILED').length})
@@ -229,7 +229,7 @@ export function InspectionsView({
         <div className="flex items-center gap-2">
           <button
             onClick={() => setRecordModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-[#007DB8] hover:bg-[#006494] transition-all shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-[#C2410C] hover:bg-[#9A3412] transition-all shadow-xs"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Record Inspection</span>
@@ -238,7 +238,7 @@ export function InspectionsView({
           {onOpenImport && (
             <button
               onClick={onOpenImport}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[#007DB8] bg-[#EAF6FF] hover:bg-[#D5EEFF] border border-[#007DB8]/30 transition-all dark:text-amber-300 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 dark:border-amber-500/30"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[#C2410C] bg-[#FFF0E6] hover:bg-[#FED7AA] border border-[#C2410C]/30 transition-all"
               title="Import Inspections from Excel (.xlsx)"
             >
               <span>Import Inspections</span>
@@ -247,21 +247,21 @@ export function InspectionsView({
 
           <button
             onClick={fetchInspections}
-            className="p-2 rounded-xl bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors  dark:border-slate-800 dark:hover:border-slate-700 dark:text-slate-400 dark:hover:text-white"
+            className="p-2 rounded-xl bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors"
             title="Refresh Inspections"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#007DB8]' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#C2410C]' : ''}`} />
           </button>
         </div>
       </div>
 
       {/* Inspections Table / List */}
-      <div className="bg-white border border-[#DCE7F2] rounded-2xl overflow-hidden shadow-sm dark:bg-slate-900/80 dark:border-slate-800 dark:shadow-xl">
+      <div className="bg-white border border-[#FED7AA] rounded-2xl overflow-hidden shadow-sm">
         {filteredInspections.length === 0 ? (
           <div className="p-12 text-center space-y-3">
-            <ShieldCheck className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto" />
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">No Inspections Recorded</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+            <ShieldCheck className="w-10 h-10 text-slate-300 mx-auto" />
+            <h3 className="text-base font-bold text-slate-900">No Inspections Recorded</h3>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
               Field inspections logged with photo evidence and GPS coordinates will automatically synchronize here.
             </p>
           </div>
@@ -269,7 +269,7 @@ export function InspectionsView({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-[#DCE7F2] bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] font-bold dark:border-slate-800  dark:text-slate-400">
+                <tr className="border-b border-[#FED7AA] bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] font-bold">
                   <th className="py-3.5 px-4">Date</th>
                   <th className="py-3.5 px-4">Facility</th>
                   <th className="py-3.5 px-4">Equipment ID</th>
@@ -279,37 +279,37 @@ export function InspectionsView({
                   <th className="py-3.5 px-4 text-right">Certificate</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700 dark:divide-slate-800/60 dark:text-slate-300">
+              <tbody className="divide-y divide-slate-100 text-slate-700">
                 {filteredInspections.map((ins) => {
                   const thumb = parseFirstPhotoUrl(ins);
                   return (
-                    <tr key={ins.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
-                      <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 tabular-nums">
+                    <tr key={ins.id} className="hover:bg-[#FFF0E6]/80 transition-colors">
+                      <td className="py-3.5 px-4 text-slate-500 tabular-nums">
                         {new Date(ins.date || ins.createdAt).toLocaleDateString('en-IN', {
                           month: 'short',
                           day: 'numeric',
                           year: 'numeric',
                         })}
                       </td>
-                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                      <td className="py-3.5 px-4 font-bold text-slate-900">
                         {ins.building?.name || 'Facility'}
                       </td>
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-1.5">
-                          <span className="font-mono text-[#007DB8] dark:text-cyan-300 font-bold">{ins.equipment?.qrCode || 'Asset'}</span>
+                          <span className="font-mono text-[#C2410C] font-bold">{ins.equipment?.qrCode || 'Asset'}</span>
                           <span className="text-[10px] text-slate-400">({ins.equipment?.type || 'Extinguisher'})</span>
                         </div>
                       </td>
-                      <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300">
+                      <td className="py-3.5 px-4 text-slate-700">
                         {ins.technicianName || ins.technician?.fullName || 'Field Technician'}
                       </td>
                       <td className="py-3.5 px-4">
                         {ins.status === 'PASSED' ? (
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-bold uppercase dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30">
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-bold uppercase">
                             PASSED
                           </span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200 text-[10px] font-bold uppercase dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30">
+                          <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200 text-[10px] font-bold uppercase">
                             {ins.status}
                           </span>
                         )}
@@ -320,7 +320,7 @@ export function InspectionsView({
                             href={thumb}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 text-[#007DB8] hover:underline font-semibold"
+                            className="inline-flex items-center gap-1.5 text-[#C2410C] hover:underline font-semibold"
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
@@ -338,7 +338,7 @@ export function InspectionsView({
                         {ins.building?.id && (
                           <Link
                             href={`/report/${ins.building.id}`} target="_blank" rel="noopener noreferrer"
-                            className="text-[#007DB8] hover:underline dark:text-amber-400 dark:hover:text-amber-300 font-bold inline-flex items-center gap-1"
+                            className="text-[#C2410C] hover:underline font-bold inline-flex items-center gap-1"
                           >
                             <span>Form-B</span>
                             <ChevronRight className="w-3.5 h-3.5" />
@@ -357,12 +357,12 @@ export function InspectionsView({
       {/* Record Inspection Modal with R2 WebP Photo Upload */}
       {recordModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#DCE7F2] text-slate-900 text-xs dark:bg-slate-900 dark:border-slate-800 dark:text-white">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3 dark:border-slate-800">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#FED7AA] text-slate-900 text-xs">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <h3 className="font-bold text-base">Record Field Inspection</h3>
               <button
                 onClick={() => setRecordModalOpen(false)}
-                className="text-slate-400 hover:text-slate-700 dark:hover:text-white"
+                className="text-slate-400 hover:text-slate-700"
               >
                 ✕
               </button>
@@ -370,14 +370,14 @@ export function InspectionsView({
 
             <form onSubmit={handleCreateInspection} className="space-y-3">
               <div>
-                <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Facility / Building *</label>
+                <label className="block font-bold mb-1 text-slate-700">Facility / Building *</label>
                 <select
                   required
                   value={inspectionForm.buildingId}
                   onChange={(e) =>
                     setInspectionForm({ ...inspectionForm, buildingId: e.target.value, equipmentId: '' })
                   }
-                  className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900  dark:border-slate-800 dark:text-white"
+                  className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900"
                 >
                   <option value="">Select Facility...</option>
                   {buildings.map((b: any) => (
@@ -389,11 +389,11 @@ export function InspectionsView({
               </div>
 
               <div>
-                <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Equipment Asset (Optional)</label>
+                <label className="block font-bold mb-1 text-slate-700">Equipment Asset (Optional)</label>
                 <select
                   value={inspectionForm.equipmentId}
                   onChange={(e) => setInspectionForm({ ...inspectionForm, equipmentId: e.target.value })}
-                  className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900  dark:border-slate-800 dark:text-white"
+                  className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900"
                 >
                   <option value="">General Facility Inspection</option>
                   {matchingEquipments.map((eq: any) => (
@@ -406,11 +406,11 @@ export function InspectionsView({
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Inspection Result</label>
+                  <label className="block font-bold mb-1 text-slate-700">Inspection Result</label>
                   <select
                     value={inspectionForm.status}
                     onChange={(e) => setInspectionForm({ ...inspectionForm, status: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900  dark:border-slate-800 dark:text-white"
+                    className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900"
                   >
                     <option value="PASSED">PASSED (Compliant)</option>
                     <option value="SERVICE_REQUIRED">SERVICE REQUIRED</option>
@@ -419,35 +419,35 @@ export function InspectionsView({
                 </div>
 
                 <div>
-                  <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Technician Name</label>
+                  <label className="block font-bold mb-1 text-slate-700">Technician Name</label>
                   <input
                     type="text"
                     placeholder="e.g. Rakesh Sharma"
                     value={inspectionForm.technicianName}
                     onChange={(e) => setInspectionForm({ ...inspectionForm, technicianName: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900  dark:border-slate-800 dark:text-white"
+                    className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Remarks / Reading Notes</label>
+                <label className="block font-bold mb-1 text-slate-700">Remarks / Reading Notes</label>
                 <input
                   type="text"
                   placeholder="e.g. Gauge 14.2 Bar green zone, safety pin & seal intact"
                   value={inspectionForm.remarks}
                   onChange={(e) => setInspectionForm({ ...inspectionForm, remarks: e.target.value })}
-                  className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900  dark:border-slate-800 dark:text-white"
+                  className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900"
                 />
               </div>
 
               <div>
-                <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">
+                <label className="block font-bold mb-1 text-slate-700">
                   Photo Evidence (Auto-compressed WebP &rarr; Cloudflare R2)
                 </label>
                 <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer border border-slate-200  dark:border-slate-800 dark:text-slate-300">
-                    <Camera className="w-3.5 h-3.5 text-[#007DB8]" />
+                  <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer border border-slate-200">
+                    <Camera className="w-3.5 h-3.5 text-[#C2410C]" />
                     <span>{uploadingPhoto ? 'Uploading photo...' : 'Attach Photo'}</span>
                     <input
                       type="file"
@@ -476,14 +476,14 @@ export function InspectionsView({
                 <button
                   type="button"
                   onClick={() => setRecordModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={uploadingPhoto || submittingInspection}
-                  className="px-5 py-2 rounded-xl bg-[#007DB8] hover:bg-[#006494] disabled:opacity-50 text-white font-bold shadow-xs transition-all"
+                  className="px-5 py-2 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] disabled:opacity-50 text-white font-bold shadow-xs transition-all"
                 >
                   {submittingInspection ? 'Saving...' : 'Save Inspection'}
                 </button>

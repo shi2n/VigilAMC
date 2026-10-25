@@ -57,7 +57,7 @@ export default function SecurityPage() {
       <div className="max-w-4xl mx-auto space-y-10">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-[#0077B6] transition-colors"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-[#C2410C] transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Home</span>
@@ -65,12 +65,12 @@ export default function SecurityPage() {
 
         <div className="border-b border-slate-200 pb-6">
           <div className="flex items-center gap-2">
-            <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-ocean-50 px-3 py-1 rounded-full border border-ocean-200">
+            <span className="text-xs uppercase font-extrabold tracking-widest text-[#C2410C] bg-ocean-50 px-3 py-1 rounded-full border border-ocean-200">
               Technical Architecture &amp; Privacy
             </span>
             <StatusBadge status="LIVE" />
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-[#023E8A] mt-3">
+          <h1 className="text-3xl sm:text-4xl font-black text-[#1C1917] mt-3">
             Security &amp; Data Lock Guarantee
           </h1>
           <p className="text-sm text-slate-600 mt-2 max-w-2xl leading-relaxed">
@@ -119,15 +119,15 @@ export default function SecurityPage() {
 
         {/* Security Layers Grid */}
         <div className="space-y-6">
-          <h2 className="text-xl font-black text-[#023E8A]">
+          <h2 className="text-xl font-black text-[#1C1917]">
             Core Technical Implementations
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {securityLayers.map((layer, idx) => (
-              <div key={idx} className="p-6 rounded-xl border border-slate-200 bg-white hover:border-[#0077B6]/40 transition-colors shadow-2xs space-y-3">
+              <div key={idx} className="p-6 rounded-xl border border-slate-200 bg-white hover:border-[#C2410C]/40 transition-colors shadow-2xs space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="w-10 h-10 rounded-lg bg-ocean-50 text-[#0077B6] flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-lg bg-ocean-50 text-[#C2410C] flex items-center justify-center">
                     <layer.icon className="w-5 h-5" />
                   </div>
                   <StatusBadge status={layer.status} />
@@ -143,7 +143,7 @@ export default function SecurityPage() {
         <div className="p-6 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-3">
           <h3 className="font-bold text-slate-900 text-sm">Security Inquiries &amp; Vulnerability Reporting</h3>
           <p className="text-slate-600 leading-relaxed">
-            If you have technical questions regarding data handling or wish to report a security inquiry, please contact our engineering team directly at <a href={`mailto:${SITE_CONFIG.SUPPORT_EMAIL}`} className="text-[#0077B6] font-bold underline">{SITE_CONFIG.SUPPORT_EMAIL}</a>. We acknowledge and address inquiries promptly.
+            If you have technical questions regarding data handling or wish to report a security inquiry, please contact our engineering team directly at <a href={`mailto:${SITE_CONFIG.SUPPORT_EMAIL}`} className="text-[#C2410C] font-bold underline">{SITE_CONFIG.SUPPORT_EMAIL}</a>. We acknowledge and address inquiries promptly.
           </p>
         </div>
       </div>

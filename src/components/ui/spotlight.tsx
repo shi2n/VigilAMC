@@ -10,7 +10,7 @@ interface SpotlightProps {
 
 export function Spotlight({
   className,
-  fill = "#0077B6",
+  fill = "#C2410C",
 }: SpotlightProps) {
   return (
     <svg

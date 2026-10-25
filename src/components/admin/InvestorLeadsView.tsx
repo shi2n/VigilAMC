@@ -45,7 +45,7 @@ interface InvestorLead {
 const STATUS_CONFIGS: { [key: string]: { label: string; color: string; bg: string; border: string } } = {
   NEW: { label: 'New Lead', color: 'text-cyan-300', bg: 'bg-cyan-500/10', border: 'border-cyan-500/30' },
   CONTACTED: { label: 'Contacted', color: 'text-amber-300', bg: 'bg-amber-500/10', border: 'border-amber-500/30' },
-  IN_DISCUSSION: { label: 'In Discussion', color: 'text-[#0077B6]', bg: 'bg-[#EAF6FF]', border: 'border-[#0077B6]/30' },
+  IN_DISCUSSION: { label: 'In Discussion', color: 'text-[#C2410C]', bg: 'bg-[#FFF0E6]', border: 'border-[#C2410C]/30' },
   QUALIFIED: { label: 'Qualified', color: 'text-emerald-300', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30' },
   CLOSED: { label: 'Closed / Committed', color: 'text-green-300', bg: 'bg-green-500/20', border: 'border-green-500/40' },
   NOT_SUITABLE: { label: 'Not Suitable', color: 'text-slate-400', bg: 'bg-slate-800/40', border: 'border-slate-700/50' },
@@ -153,7 +153,7 @@ export function InvestorLeadsView() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search name, firm, email..."
-            className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#F4F8FB] border border-slate-800 text-xs text-white placeholder-slate-500 outline-none focus:border-[#0077B6]"
+            className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#FFF8F2] border border-slate-800 text-xs text-white placeholder-slate-500 outline-none focus:border-[#C2410C]"
           />
         </form>
 
@@ -165,7 +165,7 @@ export function InvestorLeadsView() {
               className={`px-3 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all ${
                 statusFilter === st
                   ? 'bg-amber-500 text-slate-900'
-                  : 'bg-[#F4F8FB] text-slate-400 hover:text-white border border-slate-800'
+                  : 'bg-[#FFF8F2] text-slate-400 hover:text-white border border-slate-800'
               }`}
             >
               {st}
@@ -184,11 +184,11 @@ export function InvestorLeadsView() {
       {/* Listings */}
       {loading && investors.length === 0 ? (
         <div className="py-16 text-center text-slate-500">
-          <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0077B6]" />
+          <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-[#C2410C]" />
           <p className="text-xs">Loading investor submissions...</p>
         </div>
       ) : investors.length === 0 ? (
-        <div className="py-16 text-center border border-dashed border-slate-800 rounded-2xl bg-[#F4F8FB]">
+        <div className="py-16 text-center border border-dashed border-slate-800 rounded-2xl bg-[#FFF8F2]">
           <TrendingUp className="w-8 h-8 mx-auto text-slate-600 mb-3" />
           <p className="text-sm font-bold text-slate-300">No investor expressions of interest found</p>
           <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
@@ -210,12 +210,12 @@ export function InvestorLeadsView() {
             return (
               <div
                 key={lead.id}
-                className="p-5 rounded-2xl bg-[#F4F8FB] border border-slate-800 hover:border-slate-700 transition-all space-y-4"
+                className="p-5 rounded-2xl bg-[#FFF8F2] border border-slate-800 hover:border-slate-700 transition-all space-y-4"
               >
                 {/* Top row: Name, Type, Status */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0077B6] to-[#023E8A] text-white flex items-center justify-center font-bold text-sm">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#EA580C] to-[#C2410C] text-white flex items-center justify-center font-bold text-sm">
                       {lead.fullName.slice(0, 2).toUpperCase()}
                     </div>
                     <div>
@@ -242,7 +242,7 @@ export function InvestorLeadsView() {
                       value={lead.status}
                       disabled={updatingId === lead.id}
                       onChange={(e) => handleUpdateStatus(lead.id, e.target.value)}
-                      className="px-2 py-1 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 outline-none focus:border-[#0077B6]"
+                      className="px-2 py-1 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 outline-none focus:border-[#C2410C]"
                     >
                       <option value="NEW">Set NEW</option>
                       <option value="CONTACTED">Set CONTACTED</option>

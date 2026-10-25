@@ -34,14 +34,14 @@ export function BackgroundBeams({ className }: { className?: string }) {
         />
         <defs>
           <linearGradient id="vigil-beam-1" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#0077B6" stopOpacity="0" />
-            <stop offset="50%" stopColor="#0077B6" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#023E8A" stopOpacity="0" />
+            <stop offset="0%" stopColor="#C2410C" stopOpacity="0" />
+            <stop offset="50%" stopColor="#C2410C" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#1C1917" stopOpacity="0" />
           </linearGradient>
           <linearGradient id="vigil-beam-2" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#023E8A" stopOpacity="0" />
-            <stop offset="50%" stopColor="#0096C7" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="#0077B6" stopOpacity="0" />
+            <stop offset="0%" stopColor="#1C1917" stopOpacity="0" />
+            <stop offset="50%" stopColor="#EA580C" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="#C2410C" stopOpacity="0" />
           </linearGradient>
         </defs>
       </svg>

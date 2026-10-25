@@ -17,7 +17,7 @@ export default function TermsPage() {
       <div className="max-w-4xl mx-auto space-y-8">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-[#0077B6] transition-colors"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-[#C2410C] transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Home</span>
@@ -25,10 +25,10 @@ export default function TermsPage() {
 
         {/* Page Header */}
         <div className="border-b border-slate-200 pb-6">
-          <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-ocean-50 px-3 py-1 rounded-full border border-ocean-200">
+          <span className="text-xs uppercase font-extrabold tracking-widest text-[#C2410C] bg-ocean-50 px-3 py-1 rounded-full border border-ocean-200">
             Legal &amp; Service Agreement
           </span>
-          <h1 className="text-3xl sm:text-4xl font-black text-[#023E8A] mt-3">
+          <h1 className="text-3xl sm:text-4xl font-black text-[#1C1917] mt-3">
             Terms and Conditions
           </h1>
           <p className="text-xs text-slate-500 mt-2">
@@ -53,22 +53,22 @@ export default function TermsPage() {
             Table of Contents
           </h2>
           <nav className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-            <a href="#about" className="text-[#0077B6] hover:underline">1. About VigilAMC &amp; Who We Are</a>
-            <a href="#acceptance" className="text-[#0077B6] hover:underline">2. Acceptance &amp; Authorized Users</a>
-            <a href="#testing" className="text-[#0077B6] hover:underline">3. Free Testing Phase &amp; Beta Terms</a>
-            <a href="#accounts" className="text-[#0077B6] hover:underline">4. Account Registration &amp; Security</a>
-            <a href="#customer-data" className="text-[#0077B6] hover:underline">5. Customer Data &amp; Ownership</a>
-            <a href="#location-photos" className="text-[#0077B6] hover:underline">6. GPS Location, Floor Notes &amp; Photos</a>
-            <a href="#disclaimer" className="text-[#0077B6] hover:underline">7. Statutory Compliance Disclaimer</a>
-            <a href="#acceptable-use" className="text-[#0077B6] hover:underline">8. Acceptable Use Policy</a>
-            <a href="#ip" className="text-[#0077B6] hover:underline">9. Intellectual Property</a>
-            <a href="#availability" className="text-[#0077B6] hover:underline">10. Availability &amp; Support</a>
-            <a href="#liability" className="text-[#0077B6] hover:underline">11. Limitation of Liability</a>
-            <a href="#termination" className="text-[#0077B6] hover:underline">12. Suspension &amp; Termination</a>
-            <a href="#feedback" className="text-[#0077B6] hover:underline">13. Feedback</a>
-            <a href="#changes" className="text-[#0077B6] hover:underline">14. Changes to These Terms</a>
-            <a href="#governing-law" className="text-[#0077B6] hover:underline">15. Governing Law &amp; Jurisdiction</a>
-            <a href="#contact" className="text-[#0077B6] hover:underline">16. Contact Details</a>
+            <a href="#about" className="text-[#C2410C] hover:underline">1. About VigilAMC &amp; Who We Are</a>
+            <a href="#acceptance" className="text-[#C2410C] hover:underline">2. Acceptance &amp; Authorized Users</a>
+            <a href="#testing" className="text-[#C2410C] hover:underline">3. Free Testing Phase &amp; Beta Terms</a>
+            <a href="#accounts" className="text-[#C2410C] hover:underline">4. Account Registration &amp; Security</a>
+            <a href="#customer-data" className="text-[#C2410C] hover:underline">5. Customer Data &amp; Ownership</a>
+            <a href="#location-photos" className="text-[#C2410C] hover:underline">6. GPS Location, Floor Notes &amp; Photos</a>
+            <a href="#disclaimer" className="text-[#C2410C] hover:underline">7. Statutory Compliance Disclaimer</a>
+            <a href="#acceptable-use" className="text-[#C2410C] hover:underline">8. Acceptable Use Policy</a>
+            <a href="#ip" className="text-[#C2410C] hover:underline">9. Intellectual Property</a>
+            <a href="#availability" className="text-[#C2410C] hover:underline">10. Availability &amp; Support</a>
+            <a href="#liability" className="text-[#C2410C] hover:underline">11. Limitation of Liability</a>
+            <a href="#termination" className="text-[#C2410C] hover:underline">12. Suspension &amp; Termination</a>
+            <a href="#feedback" className="text-[#C2410C] hover:underline">13. Feedback</a>
+            <a href="#changes" className="text-[#C2410C] hover:underline">14. Changes to These Terms</a>
+            <a href="#governing-law" className="text-[#C2410C] hover:underline">15. Governing Law &amp; Jurisdiction</a>
+            <a href="#contact" className="text-[#C2410C] hover:underline">16. Contact Details</a>
           </nav>
         </div>
 
@@ -232,10 +232,10 @@ export default function TermsPage() {
               <p className="text-slate-600">Founder: Shaizan</p>
               <p className="text-slate-600">Location: New Delhi 110092, India</p>
               <p className="text-slate-600">
-                Email: <a href="mailto:shaizan@vigilamc.com" className="text-[#0077B6] font-semibold hover:underline">shaizan@vigilamc.com</a>
+                Email: <a href="mailto:shaizan@vigilamc.com" className="text-[#C2410C] font-semibold hover:underline">shaizan@vigilamc.com</a>
               </p>
               <p className="text-slate-600">
-                Phone / WhatsApp: <a href="tel:+918383890483" className="text-[#0077B6] font-semibold hover:underline">+91 83838 90483</a>
+                Phone / WhatsApp: <a href="tel:+918383890483" className="text-[#C2410C] font-semibold hover:underline">+91 83838 90483</a>
               </p>
             </div>
           </section>

@@ -56,12 +56,12 @@ export default function AboutUsPage() {
       {/* Header Banner */}
       <section className="bg-gradient-to-b from-ocean-50 to-white py-20 px-4 sm:px-6 lg:px-8 border-b border-slate-200">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-ocean-200 shadow-xs text-xs font-bold text-[#0077B6] mb-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-ocean-200 shadow-xs text-xs font-bold text-[#C2410C] mb-4">
             <span>About VigilAMC</span>
             <span className="text-slate-300">&bull;</span>
             <span>New Delhi, India</span>
           </div>
-          <h1 className="text-4xl sm:text-5xl font-black text-[#023E8A] tracking-tight">
+          <h1 className="text-4xl sm:text-5xl font-black text-[#1C1917] tracking-tight">
             Building the Digital Backbone for Fire Safety AMC Operations
           </h1>
           <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
@@ -74,10 +74,10 @@ export default function AboutUsPage() {
       <section className="py-24 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-6 space-y-6">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#0077B6] bg-ocean-50 px-3 py-1 rounded-full border border-ocean-200">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#C2410C] bg-ocean-50 px-3 py-1 rounded-full border border-ocean-200">
               Founder Story
             </span>
-            <h2 className="text-3xl font-extrabold text-[#023E8A] tracking-tight">
+            <h2 className="text-3xl font-extrabold text-[#1C1917] tracking-tight">
               Why I Started VigilAMC
             </h2>
             <div className="space-y-4 text-sm sm:text-base text-slate-600 leading-relaxed">
@@ -93,18 +93,18 @@ export default function AboutUsPage() {
             </div>
 
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#0077B6] text-white flex items-center justify-center font-bold text-sm shrink-0">
+              <div className="w-10 h-10 rounded-full bg-[#C2410C] text-white flex items-center justify-center font-bold text-sm shrink-0">
                 S
               </div>
               <div>
                 <p className="font-bold text-slate-900">{SITE_CONFIG.FOUNDER_NAME}</p>
                 <p className="text-[11px] text-slate-500">
                   Founder &amp; Product Architect &bull; {SITE_CONFIG.FOUNDER_CITY} &bull;{' '}
-                  <a href={SITE_CONFIG.PHONE_TEL} className="text-[#0077B6] font-semibold hover:underline">
+                  <a href={SITE_CONFIG.PHONE_TEL} className="text-[#C2410C] font-semibold hover:underline">
                     {SITE_CONFIG.PHONE_DISPLAY}
                   </a>{' '}
                   &bull;{' '}
-                  <a href={`mailto:${SITE_CONFIG.CONTACT_EMAIL}`} className="text-[#0077B6] hover:underline">
+                  <a href={`mailto:${SITE_CONFIG.CONTACT_EMAIL}`} className="text-[#C2410C] hover:underline">
                     {SITE_CONFIG.CONTACT_EMAIL}
                   </a>
                 </p>
@@ -113,7 +113,7 @@ export default function AboutUsPage() {
           </div>
 
           <div className="lg:col-span-6">
-            <div className="corp-card p-8 bg-gradient-to-br from-[#023E8A] to-[#0077B6] text-white shadow-xl rounded-2xl relative overflow-hidden">
+            <div className="corp-card p-8 bg-gradient-to-br from-[#1C1917] to-[#C2410C] text-white shadow-xl rounded-2xl relative overflow-hidden">
               <div className="relative z-10 space-y-6">
                 <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center text-cyan-200">
                   <Target className="w-6 h-6" />
@@ -142,10 +142,10 @@ export default function AboutUsPage() {
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-50 border-y border-slate-200">
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-white px-3 py-1 rounded-full border border-slate-200">
+            <span className="text-xs uppercase font-extrabold tracking-widest text-[#C2410C] bg-white px-3 py-1 rounded-full border border-slate-200">
               Statutory Alignment
             </span>
-            <h2 className="text-3xl font-extrabold text-[#023E8A] mt-3">
+            <h2 className="text-3xl font-extrabold text-[#1C1917] mt-3">
               Built on Recognized Fire Codes &amp; Maintenance Protocols
             </h2>
             <p className="text-sm text-slate-600 mt-2">
@@ -155,7 +155,7 @@ export default function AboutUsPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="corp-card p-6 bg-white border border-slate-200">
-              <div className="w-10 h-10 rounded-lg bg-ocean-50 text-[#0077B6] flex items-center justify-center mb-4">
+              <div className="w-10 h-10 rounded-lg bg-ocean-50 text-[#C2410C] flex items-center justify-center mb-4">
                 <Award className="w-5 h-5" />
               </div>
               <h4 className="text-base font-bold text-slate-900">National Building Code (NBC 2016)</h4>
@@ -165,7 +165,7 @@ export default function AboutUsPage() {
             </div>
 
             <div className="corp-card p-6 bg-white border border-slate-200">
-              <div className="w-10 h-10 rounded-lg bg-navy-50 text-[#023E8A] flex items-center justify-center mb-4">
+              <div className="w-10 h-10 rounded-lg bg-navy-50 text-[#1C1917] flex items-center justify-center mb-4">
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <h4 className="text-base font-bold text-slate-900">IS 2190 &amp; IS 15683 Protocols</h4>
@@ -175,7 +175,7 @@ export default function AboutUsPage() {
             </div>
 
             <div className="corp-card p-6 bg-white border border-slate-200">
-              <div className="w-10 h-10 rounded-lg bg-ocean-50 text-[#0077B6] flex items-center justify-center mb-4">
+              <div className="w-10 h-10 rounded-lg bg-ocean-50 text-[#C2410C] flex items-center justify-center mb-4">
                 <FileCheck2 className="w-5 h-5" />
               </div>
               <h4 className="text-base font-bold text-slate-900">State Fire Rules &amp; Form-B</h4>
@@ -199,10 +199,10 @@ export default function AboutUsPage() {
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-4xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-16">
-            <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-ocean-50 px-3 py-1 rounded-full border border-ocean-200">
+            <span className="text-xs uppercase font-extrabold tracking-widest text-[#C2410C] bg-ocean-50 px-3 py-1 rounded-full border border-ocean-200">
               Development Roadmap
             </span>
-            <h2 className="text-3xl font-extrabold text-[#023E8A] mt-3">
+            <h2 className="text-3xl font-extrabold text-[#1C1917] mt-3">
               Our Journey &amp; Milestones
             </h2>
             <p className="text-sm text-slate-600 mt-2">
@@ -217,14 +217,14 @@ export default function AboutUsPage() {
                 className="relative flex flex-col md:flex-row items-start md:items-center gap-6"
               >
                 <div className={`md:w-1/2 ${idx % 2 === 0 ? 'md:text-right md:pr-10' : 'md:order-2 md:pl-10'}`}>
-                  <span className="text-xs font-black text-[#0077B6] bg-ocean-50 px-2.5 py-0.5 rounded border border-ocean-200">
+                  <span className="text-xs font-black text-[#C2410C] bg-ocean-50 px-2.5 py-0.5 rounded border border-ocean-200">
                     {m.period}
                   </span>
                   <h4 className="text-base font-bold text-slate-900 mt-1">{m.title}</h4>
                   <p className="text-xs text-slate-600 mt-1 leading-relaxed">{m.desc}</p>
                 </div>
 
-                <div className="absolute left-4 md:left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-[#0077B6] border-4 border-white shadow flex items-center justify-center shrink-0">
+                <div className="absolute left-4 md:left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-[#C2410C] border-4 border-white shadow flex items-center justify-center shrink-0">
                   <div className="w-1.5 h-1.5 rounded-full bg-white" />
                 </div>
 
@@ -236,7 +236,7 @@ export default function AboutUsPage() {
       </section>
 
       {/* Bottom CTA */}
-      <section className="py-20 px-4 bg-[#023E8A] text-white text-center">
+      <section className="py-20 px-4 bg-[#1C1917] text-white text-center">
         <div className="max-w-3xl mx-auto space-y-4">
           <h2 className="text-3xl font-extrabold">Ready to Join the VigilAMC Testing Program?</h2>
           <p className="text-cyan-100 text-sm max-w-xl mx-auto leading-relaxed">
@@ -245,7 +245,7 @@ export default function AboutUsPage() {
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/#pilot-section"
-              className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#0077B6] hover:bg-white hover:text-[#023E8A] font-bold text-sm rounded-xl transition-all shadow-lg"
+              className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#C2410C] hover:bg-white hover:text-[#1C1917] font-bold text-sm rounded-xl transition-all shadow-lg"
             >
               <span>Join the free testing</span>
               <ArrowRight className="w-4 h-4" />

@@ -107,9 +107,9 @@ export function DemoModal({ isOpen, onClose }: DemoModalProps) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Top Header */}
-        <div className="bg-[#023E8A] p-6 text-white flex items-center justify-between">
+        <div className="bg-[#1C1917] p-6 text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#0077B6] flex items-center justify-center text-white">
+            <div className="w-10 h-10 rounded-xl bg-[#C2410C] flex items-center justify-center text-white">
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
@@ -135,7 +135,7 @@ export function DemoModal({ isOpen, onClose }: DemoModalProps) {
               <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
                 <CheckCircle2 className="w-10 h-10" />
               </div>
-              <h4 className="text-2xl font-extrabold text-[#023E8A]">
+              <h4 className="text-2xl font-extrabold text-[#1C1917]">
                 Demo Request Received!
               </h4>
               <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
@@ -153,7 +153,7 @@ export function DemoModal({ isOpen, onClose }: DemoModalProps) {
                 </a>
                 <button
                   onClick={resetAndClose}
-                  className="w-full sm:w-auto px-6 py-2.5 bg-[#0077B6] hover:bg-[#023E8A] text-white text-sm font-bold rounded-xl transition-colors"
+                  className="w-full sm:w-auto px-6 py-2.5 bg-[#C2410C] hover:bg-[#1C1917] text-white text-sm font-bold rounded-xl transition-colors"
                 >
                   Return to Website
                 </button>
@@ -192,7 +192,7 @@ export function DemoModal({ isOpen, onClose }: DemoModalProps) {
                       onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                       className={`w-full pl-9 pr-3 py-2 text-sm rounded-lg border ${
                         errors.fullName ? 'border-red-500 bg-red-50/50' : 'border-slate-300'
-                      } focus:outline-none focus:ring-2 focus:ring-[#0077B6]`}
+                      } focus:outline-none focus:ring-2 focus:ring-[#C2410C]`}
                     />
                   </div>
                   {errors.fullName && <p className="text-xs text-red-600 mt-1">{errors.fullName}</p>}
@@ -211,7 +211,7 @@ export function DemoModal({ isOpen, onClose }: DemoModalProps) {
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       className={`w-full pl-9 pr-3 py-2 text-sm rounded-lg border ${
                         errors.email ? 'border-red-500 bg-red-50/50' : 'border-slate-300'
-                      } focus:outline-none focus:ring-2 focus:ring-[#0077B6]`}
+                      } focus:outline-none focus:ring-2 focus:ring-[#C2410C]`}
                     />
                   </div>
                   {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
@@ -232,7 +232,7 @@ export function DemoModal({ isOpen, onClose }: DemoModalProps) {
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       className={`w-full pl-9 pr-3 py-2 text-sm rounded-lg border ${
                         errors.phone ? 'border-red-500 bg-red-50/50' : 'border-slate-300'
-                      } focus:outline-none focus:ring-2 focus:ring-[#0077B6]`}
+                      } focus:outline-none focus:ring-2 focus:ring-[#C2410C]`}
                     />
                   </div>
                   {errors.phone && <p className="text-xs text-red-600 mt-1">{errors.phone}</p>}
@@ -251,7 +251,7 @@ export function DemoModal({ isOpen, onClose }: DemoModalProps) {
                       onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                       className={`w-full pl-9 pr-3 py-2 text-sm rounded-lg border ${
                         errors.company ? 'border-red-500 bg-red-50/50' : 'border-slate-300'
-                      } focus:outline-none focus:ring-2 focus:ring-[#0077B6]`}
+                      } focus:outline-none focus:ring-2 focus:ring-[#C2410C]`}
                     />
                   </div>
                   {errors.company && <p className="text-xs text-red-600 mt-1">{errors.company}</p>}
@@ -265,7 +265,7 @@ export function DemoModal({ isOpen, onClose }: DemoModalProps) {
                 <select
                   value={formData.buildingsCount}
                   onChange={(e) => setFormData({ ...formData, buildingsCount: e.target.value })}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#C2410C]"
                 >
                   <option value="1-2">1 to 2 Buildings (Up to 250 assets)</option>
                   <option value="3-10">3 to 10 Buildings (250 - 1,500 assets)</option>
@@ -274,9 +274,9 @@ export function DemoModal({ isOpen, onClose }: DemoModalProps) {
                 </select>
               </div>
 
-              <div className="p-3 bg-ocean-50 rounded-xl border border-ocean-200 text-xs text-[#023E8A] space-y-1">
+              <div className="p-3 bg-ocean-50 rounded-xl border border-ocean-200 text-xs text-[#1C1917] space-y-1">
                 <p className="font-semibold flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-[#0077B6]" />
+                  <CheckCircle2 className="w-4 h-4 text-[#C2410C]" />
                   What you will see in this 15-minute session:
                 </p>
                 <ul className="list-disc pl-5 space-y-0.5 text-slate-600">
@@ -296,7 +296,7 @@ export function DemoModal({ isOpen, onClose }: DemoModalProps) {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-3 px-4 bg-[#0077B6] hover:bg-[#023E8A] disabled:opacity-60 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-3 px-4 bg-[#C2410C] hover:bg-[#1C1917] disabled:opacity-60 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>{isSubmitting ? 'Reserving Session...' : 'Confirm 15-Minute Agency Demo'}</span>
                   <ArrowRight className="w-4 h-4" />

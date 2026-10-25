@@ -74,10 +74,10 @@ export default function PricingPage() {
       {/* Header Banner */}
       <section className="bg-gradient-to-b from-ocean-50 to-white py-20 px-4 sm:px-6 lg:px-8 border-b border-slate-200">
         <div className="max-w-4xl mx-auto text-center">
-          <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-white px-3.5 py-1.5 rounded-full border border-ocean-200 shadow-sm">
+          <span className="text-xs uppercase font-extrabold tracking-widest text-[#C2410C] bg-white px-3.5 py-1.5 rounded-full border border-ocean-200 shadow-sm">
             Transparent Pricing
           </span>
-          <h1 className="font-display text-4xl sm:text-5xl font-black text-[#023E8A] tracking-[-0.03em] mt-4 text-balance">
+          <h1 className="font-display text-4xl sm:text-5xl font-black text-[#1C1917] tracking-[-0.03em] mt-4 text-balance">
             Predictable Plans for Modern Fire AMC Operations
           </h1>
           <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto text-pretty">
@@ -90,7 +90,7 @@ export default function PricingPage() {
               onClick={() => setBillingCycle('monthly')}
               className={`px-5 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                 billingCycle === 'monthly'
-                  ? 'bg-white text-[#023E8A] shadow-sm'
+                  ? 'bg-white text-[#1C1917] shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -100,12 +100,12 @@ export default function PricingPage() {
               onClick={() => setBillingCycle('annual')}
               className={`px-5 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
                 billingCycle === 'annual'
-                  ? 'bg-[#0077B6] text-white shadow-sm'
+                  ? 'bg-[#C2410C] text-white shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <span>Annual Billing</span>
-              <span className="px-1.5 py-0.5 rounded text-[10px] bg-cyan-200 text-[#023E8A] font-extrabold">
+              <span className="px-1.5 py-0.5 rounded text-[10px] bg-cyan-200 text-[#1C1917] font-extrabold">
                 SAVE 20%
               </span>
             </button>
@@ -130,7 +130,7 @@ export default function PricingPage() {
               </p>
 
               <div className="mt-6 flex items-baseline gap-1">
-                <span className="font-display text-4xl font-black text-[#023E8A] tabular-nums tracking-tight">
+                <span className="font-display text-4xl font-black text-[#1C1917] tabular-nums tracking-tight">
                   G�{billingCycle === 'annual' ? '3,999' : '4,999'}
                 </span>
                 <span className="text-xs text-slate-500 font-medium">/ month</span>
@@ -169,7 +169,7 @@ export default function PricingPage() {
             <div className="mt-auto pt-8 border-t border-slate-100">
               <Link
                 href="/#pilot-section"
-                className="w-full py-3 px-4 rounded-xl text-xs font-bold text-[#0077B6] bg-ocean-50 hover:bg-ocean-100 text-center block transition-all border border-ocean-200 active:scale-[0.98]"
+                className="w-full py-3 px-4 rounded-xl text-xs font-bold text-[#C2410C] bg-ocean-50 hover:bg-ocean-100 text-center block transition-all border border-ocean-200 active:scale-[0.98]"
               >
                 Join the free testing
               </Link>
@@ -177,15 +177,15 @@ export default function PricingPage() {
           </div>
 
           {/* Plan 2: Pro Fleet */}
-          <div className="corp-card p-8 bg-white border-2 border-[#0077B6] shadow-xl ring-4 ring-[#0077B6]/15 relative flex flex-col justify-between h-full">
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-[#0077B6] to-[#023E8A] text-white text-[11px] font-extrabold uppercase tracking-wider shadow-md">
+          <div className="corp-card p-8 bg-white border-2 border-[#C2410C] shadow-xl ring-4 ring-[#C2410C]/15 relative flex flex-col justify-between h-full">
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-[#C2410C] to-[#1C1917] text-white text-[11px] font-extrabold uppercase tracking-wider shadow-md">
               Recommended for AMC Fleets
             </div>
 
             <div>
               <div className="flex justify-between items-center mt-1">
-                <h3 className="font-display text-xl font-bold text-[#023E8A]">Pro Fleet AMC</h3>
-                <span className="text-xs font-semibold px-2.5 py-1 bg-ocean-50 text-[#0077B6] rounded-md border border-ocean-200">
+                <h3 className="font-display text-xl font-bold text-[#1C1917]">Pro Fleet AMC</h3>
+                <span className="text-xs font-semibold px-2.5 py-1 bg-ocean-50 text-[#C2410C] rounded-md border border-ocean-200">
                   Up to 15 Facilities
                 </span>
               </div>
@@ -194,7 +194,7 @@ export default function PricingPage() {
               </p>
 
               <div className="mt-6 flex items-baseline gap-1">
-                <span className="font-display text-4xl font-black text-[#023E8A] tabular-nums tracking-tight">
+                <span className="font-display text-4xl font-black text-[#1C1917] tabular-nums tracking-tight">
                   G�{billingCycle === 'annual' ? '6,399' : '7,999'}
                 </span>
                 <span className="text-xs text-slate-500 font-medium">/ month</span>
@@ -204,7 +204,7 @@ export default function PricingPage() {
               </p>
 
               <div className="mt-8 space-y-3 text-xs text-slate-700">
-                <p className="font-bold text-[#023E8A] uppercase tracking-wider text-[11px]">
+                <p className="font-bold text-[#1C1917] uppercase tracking-wider text-[11px]">
                   Everything in Starter, plus:
                 </p>
                 <div className="flex items-start gap-2.5">
@@ -233,7 +233,7 @@ export default function PricingPage() {
             <div className="mt-auto pt-8 border-t border-slate-100">
               <Link
                 href="/#pilot-section"
-                className="w-full py-3.5 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#0077B6] to-[#023E8A] hover:from-[#006494] hover:to-[#011F48] text-center block transition-all shadow-md hover:shadow-lg active:scale-[0.98]"
+                className="w-full py-3.5 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#C2410C] to-[#1C1917] hover:from-[#9A3412] hover:to-[#9A3412] text-center block transition-all shadow-md hover:shadow-lg active:scale-[0.98]"
               >
                 Join the free testing
               </Link>
@@ -245,7 +245,7 @@ export default function PricingPage() {
             <div>
               <div className="flex justify-between items-center">
                 <h3 className="font-display text-xl font-bold text-slate-900">Custom / Enterprise AMC</h3>
-                <span className="text-xs font-semibold px-2.5 py-1 bg-navy-50 text-[#023E8A] rounded-md">
+                <span className="text-xs font-semibold px-2.5 py-1 bg-navy-50 text-[#1C1917] rounded-md">
                   Unlimited
                 </span>
               </div>
@@ -254,7 +254,7 @@ export default function PricingPage() {
               </p>
 
               <div className="mt-6 flex items-baseline gap-1">
-                <span className="font-display text-4xl font-black text-[#023E8A] tracking-tight">Custom</span>
+                <span className="font-display text-4xl font-black text-[#1C1917] tracking-tight">Custom</span>
                 <span className="text-xs text-slate-500 font-medium">tailored to fleet size</span>
               </div>
               <p className="text-[11px] text-slate-400 mt-1">
@@ -287,7 +287,7 @@ export default function PricingPage() {
             <div className="mt-auto pt-8 border-t border-slate-100">
               <Link
                 href="/contact"
-                className="w-full py-3 px-4 rounded-xl text-xs font-bold text-[#023E8A] bg-slate-100 hover:bg-slate-200 text-center block transition-all active:scale-[0.98]"
+                className="w-full py-3 px-4 rounded-xl text-xs font-bold text-[#1C1917] bg-slate-100 hover:bg-slate-200 text-center block transition-all active:scale-[0.98]"
               >
                 Contact for Enterprise Quote
               </Link>
@@ -300,10 +300,10 @@ export default function PricingPage() {
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-slate-50 border-y border-slate-200">
         <div className="max-w-4xl mx-auto corp-card p-8 bg-white border-ocean-200 shadow-md">
           <div className="text-center max-w-xl mx-auto mb-8">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#0077B6]">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#C2410C]">
               Custom Scale Estimator
             </span>
-            <h3 className="text-2xl font-bold text-[#023E8A] mt-1">
+            <h3 className="text-2xl font-bold text-[#1C1917] mt-1">
               Have a Custom Equipment Fleet Count?
             </h3>
             <p className="text-xs text-slate-500 mt-1">
@@ -317,7 +317,7 @@ export default function PricingPage() {
                 <span className="text-xs font-bold text-slate-700 uppercase">
                   Total Fire Assets
                 </span>
-                <span className="px-3 py-1 bg-ocean-50 text-[#0077B6] font-black text-sm rounded-lg border border-ocean-200">
+                <span className="px-3 py-1 bg-ocean-50 text-[#C2410C] font-black text-sm rounded-lg border border-ocean-200">
                   {assetCount.toLocaleString()} Assets
                 </span>
               </div>
@@ -328,7 +328,7 @@ export default function PricingPage() {
                 step="50"
                 value={assetCount}
                 onChange={(e) => setAssetCount(parseInt(e.target.value))}
-                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#0077B6]"
+                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#C2410C]"
               />
               <div className="flex justify-between text-[11px] text-slate-400 mt-1 font-mono">
                 <span>100 Assets</span>
@@ -341,19 +341,19 @@ export default function PricingPage() {
               <div>
                 <p className="text-xs text-slate-600">Estimated Monthly Investment</p>
                 <div className="flex items-baseline gap-1 mt-0.5">
-                  <span className="text-3xl font-black text-[#023E8A]">
+                  <span className="text-3xl font-black text-[#1C1917]">
                     G�{estimatedCost.toLocaleString('en-IN')}
                   </span>
                   <span className="text-xs text-slate-500 font-medium">/ month</span>
                 </div>
-                <p className="text-[11px] text-[#0077B6] font-semibold mt-0.5">
+                <p className="text-[11px] text-[#C2410C] font-semibold mt-0.5">
                   Includes Form-B engine &amp; mobile offline checklist
                 </p>
               </div>
 
               <Link
                 href="/#pilot-section"
-                className="px-6 py-2.5 bg-[#0077B6] hover:bg-[#023E8A] text-white text-xs font-bold rounded-xl shadow transition-colors whitespace-nowrap"
+                className="px-6 py-2.5 bg-[#C2410C] hover:bg-[#1C1917] text-white text-xs font-bold rounded-xl shadow transition-colors whitespace-nowrap"
               >
                 Join the free testing
               </Link>
@@ -365,7 +365,7 @@ export default function PricingPage() {
       {/* Feature Comparison Matrix */}
       <section className="py-24 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#023E8A]">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1C1917]">
             Comprehensive Plan Comparison Matrix
           </h2>
           <p className="text-sm text-slate-600 mt-2">
@@ -379,8 +379,8 @@ export default function PricingPage() {
               <tr>
                 <th className="py-4 px-6 font-bold text-sm">Feature / Quota</th>
                 <th className="py-4 px-6 font-bold text-slate-700">Starter AMC</th>
-                <th className="py-4 px-6 font-black text-[#0077B6] bg-ocean-50/50">Pro Fleet (Recommended)</th>
-                <th className="py-4 px-6 font-bold text-[#023E8A]">Custom / Enterprise</th>
+                <th className="py-4 px-6 font-black text-[#C2410C] bg-ocean-50/50">Pro Fleet (Recommended)</th>
+                <th className="py-4 px-6 font-bold text-[#1C1917]">Custom / Enterprise</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 text-slate-700">
@@ -401,7 +401,7 @@ export default function PricingPage() {
                       row.starter
                     )}
                   </td>
-                  <td className="py-3 px-6 bg-ocean-50/30 font-semibold text-[#0077B6]">
+                  <td className="py-3 px-6 bg-ocean-50/30 font-semibold text-[#C2410C]">
                     {typeof row.pro === 'boolean' ? (
                       row.pro ? (
                         <div className="flex items-center gap-1.5">
@@ -418,7 +418,7 @@ export default function PricingPage() {
                       </div>
                     )}
                   </td>
-                  <td className="py-3 px-6 font-bold text-[#023E8A]">
+                  <td className="py-3 px-6 font-bold text-[#1C1917]">
                     {typeof row.ent === 'boolean' ? (
                       row.ent ? (
                         <div className="flex items-center gap-1.5">
@@ -446,7 +446,7 @@ export default function PricingPage() {
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-50 border-t border-slate-200">
         <div className="max-w-4xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-12">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#023E8A]">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1C1917]">
               Frequently Asked Pricing Questions
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-2">
@@ -461,7 +461,7 @@ export default function PricingPage() {
                 <div
                   key={idx}
                   className={`corp-card overflow-hidden bg-white transition-all ${
-                    isOpen ? 'border-[#0077B6]/40 shadow-card' : 'border-slate-200'
+                    isOpen ? 'border-[#C2410C]/40 shadow-card' : 'border-slate-200'
                   }`}
                 >
                   <button
@@ -471,7 +471,7 @@ export default function PricingPage() {
                     <span className="text-sm font-bold text-slate-900">{faq.q}</span>
                     <ChevronDown
                       className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${
-                        isOpen ? 'rotate-180 text-[#0077B6]' : ''
+                        isOpen ? 'rotate-180 text-[#C2410C]' : ''
                       }`}
                     />
                   </button>

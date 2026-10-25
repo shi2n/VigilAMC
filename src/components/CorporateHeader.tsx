@@ -25,12 +25,15 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white/70 backdrop-blur-xl border-b border-[#FED7AA]/40 transition-colors">
+    <header
+      data-testid="public-glass-navbar"
+      className="sticky top-0 z-50 w-full glass-panel-dense border-t-0 border-x-0 transition-colors"
+    >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         {/* Wordmark "VigilAMC" with small ember-dot logo mark */}
         <Link
           href="/"
-          className="inline-flex items-center gap-2.5 min-h-[44px] px-1 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C2410C] group"
+          className="inline-flex items-center gap-2.5 min-h-[44px] px-1 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C] group"
         >
           <span
             aria-hidden="true"
@@ -51,7 +54,7 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
               <Link
                 key={link.name}
                 href={link.href}
-                className={`min-h-[44px] inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C2410C] ${
+                className={`min-h-[44px] inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C] ${
                   isActive
                     ? 'text-[#C2410C] bg-[#FFF4EC] font-semibold'
                     : 'text-[#44403C] hover:text-[#1C1917] hover:bg-[#FFF8F2]'
@@ -63,7 +66,7 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
           })}
           <Link
             href="/login"
-            className="min-h-[44px] inline-flex items-center px-3.5 py-2 rounded-xl text-sm font-medium text-[#44403C] hover:text-[#1C1917] hover:bg-[#FFF8F2] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C2410C]"
+            className="min-h-[44px] inline-flex items-center px-3.5 py-2 rounded-xl text-sm font-medium text-[#44403C] hover:text-[#1C1917] hover:bg-[#FFF8F2] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C]"
           >
             Login
           </Link>
@@ -76,7 +79,7 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
             target="_blank"
             rel="noopener noreferrer"
             onClick={onOpenDemoModal ? undefined : undefined}
-            className="min-h-[44px] inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#C2410C] hover:bg-[#EA580C] text-white text-sm font-bold shadow-[0_6px_20px_-4px_rgba(194,65,12,0.38)] transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C2410C]"
+            className="btn-flame min-h-[44px] inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl text-white text-sm font-bold shadow-[0_6px_20px_-4px_rgba(194,65,12,0.38)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C]"
           >
             <span>Book a Free Demo</span>
             <ArrowUpRight className="w-4 h-4" aria-hidden="true" />
@@ -89,14 +92,14 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
             href={SITE_CONFIG.WHATSAPP_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="min-h-[44px] inline-flex items-center justify-center px-3.5 py-2 rounded-xl bg-[#C2410C] hover:bg-[#EA580C] text-white text-xs font-bold shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C2410C]"
+            className="btn-flame min-h-[44px] inline-flex items-center justify-center px-3.5 py-2 rounded-xl text-white text-xs font-bold shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C]"
           >
             Book a Free Demo
           </a>
           <button
             type="button"
             onClick={() => setMobileMenuOpen((prev) => !prev)}
-            className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl text-[#1C1917] hover:bg-[#FFF4EC] border border-[#FED7AA]/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C2410C]"
+            className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl text-[#1C1917] hover:bg-[#FFF4EC] border border-[#FED7AA]/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C]"
             aria-expanded={mobileMenuOpen}
             aria-label="Toggle navigation menu"
           >
@@ -107,13 +110,13 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
 
       {/* Mobile Glass Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white/95 backdrop-blur-xl border-b border-[#FED7AA]/60 px-4 pt-2 pb-5 space-y-1.5 shadow-lg">
+        <div className="md:hidden glass-dialog border-t-0 border-x-0 px-4 pt-2 pb-5 space-y-1.5">
           {navLinks.map((link) => (
             <Link
               key={link.name}
               href={link.href}
               onClick={() => setMobileMenuOpen(false)}
-              className="min-h-[44px] flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-[#1C1917] hover:bg-[#FFF4EC] hover:text-[#C2410C] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C2410C]"
+              className="min-h-[44px] flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-[#1C1917] hover:bg-[#FFF4EC] hover:text-[#C2410C] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#EA580C]"
             >
               <span>{link.name}</span>
             </Link>
@@ -121,7 +124,7 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
           <Link
             href="/login"
             onClick={() => setMobileMenuOpen(false)}
-            className="min-h-[44px] flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-[#44403C] hover:bg-[#FFF4EC] hover:text-[#C2410C] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C2410C]"
+            className="min-h-[44px] flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-[#44403C] hover:bg-[#FFF4EC] hover:text-[#C2410C] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#EA580C]"
           >
             <span>Agency Login</span>
           </Link>

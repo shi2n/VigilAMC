@@ -68,28 +68,13 @@ export default function AdminDashboardPage() {
   const [expandedBuildingId, setExpandedBuildingId] = useState<string | null>(null);
 
   // Theme Mode: Light theme by default, persistent in localStorage
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
-
+  const [theme] = useState<'light' | 'dark'>('light');
   useEffect(() => {
-    const saved = localStorage.getItem('vigil_dashboard_theme') as 'light' | 'dark' | null;
-    const initialTheme = saved || 'light';
-    setTheme(initialTheme);
-    if (initialTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    document.documentElement.classList.remove('dark');
+    localStorage.setItem('vigil_dashboard_theme', 'light');
   }, []);
-
   const toggleTheme = () => {
-    const nextTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(nextTheme);
-    localStorage.setItem('vigil_dashboard_theme', nextTheme);
-    if (nextTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    document.documentElement.classList.remove('dark');
   };
 
   // Authenticated Admin Navigation Tab (6 Core Groups)
@@ -735,11 +720,11 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F8FB] flex flex-col lg:flex-row text-slate-900 selection:bg-[#EAF6FF] selection:text-[#073F8F]">
+    <div className="relative min-h-screen bg-[#FFF8F2] flex flex-col lg:flex-row text-[#1C1917] selection:bg-[#FFF0E6] selection:text-[#C2410C]" style={{ backgroundImage: "radial-gradient(circle at 12% 8%, rgba(232, 89, 12, 0.18) 0%, rgba(255, 140, 66, 0.12) 28%, rgba(255, 248, 242, 0) 60%), radial-gradient(circle at 86% 24%, rgba(255, 140, 66, 0.16) 0%, rgba(255, 248, 242, 0) 55%)" }}>
       
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 border-2 border-[#007DB8] text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
+        <div className="fixed bottom-6 right-6 z-50 bg-[#1C1917] border-2 border-[#EA580C] text-[#FAFAF9] px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
           <CheckCircle2 className="w-5 h-5 text-emerald-400" />
           <span className="text-xs font-bold">{toastMessage}</span>
         </div>
@@ -767,11 +752,11 @@ export default function AdminDashboardPage() {
       <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-6 overflow-y-auto">
         
         {/* Top Header Bar permanently mounted */}
-        <div className="rounded-2xl bg-white border border-[#E2E8F0] p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-[#111827] dark:border-[#293548]">
+        <div data-testid="dashboard-glass-topbar" className="glass-panel-dense rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 hover:text-slate-900 dark:bg-[#172033] dark:border-[#293548] dark:text-slate-300 dark:hover:text-white"
+              className="lg:hidden p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 hover:text-slate-900"
               aria-label="Open navigation menu"
             >
               <Menu className="w-5 h-5" />
@@ -779,9 +764,9 @@ export default function AdminDashboardPage() {
 
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-[#2563EB] dark:text-[#60A5FA]">VigilAMC</span>
-                <span className="text-slate-400 dark:text-slate-600">/</span>
-                <h1 className="text-lg sm:text-xl font-black text-[#0F172A] dark:text-white tracking-tight">
+                <span className="text-xs font-semibold text-[#C2410C]">VigilAMC</span>
+                <span className="text-slate-400">/</span>
+                <h1 className="text-lg sm:text-xl font-black text-[#1C1917] tracking-tight">
                   {(activeTab === 'OVERVIEW' || activeTab === 'HOME') && 'Overview'}
                   {(activeTab === 'CLIENTS_SITES' || activeTab === 'SITES') && 'Clients & Sites'}
                   {activeTab === 'FIRE_EQUIPMENT' && 'Fire Equipment'}
@@ -796,9 +781,9 @@ export default function AdminDashboardPage() {
                   </span>
                 )}
               </div>
-              <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-0.5">
-                Managing operations for <strong className="text-slate-800 dark:text-slate-200 font-semibold">{agencyName}</strong>
-                {licenseNo && <> &bull; License: <strong className="text-slate-800 dark:text-slate-300 font-semibold">{licenseNo}</strong></>}
+              <p className="text-xs text-[#64748B] mt-0.5">
+                Managing operations for <strong className="text-slate-800 font-semibold">{agencyName}</strong>
+                {licenseNo && <> &bull; License: <strong className="text-slate-800 font-semibold">{licenseNo}</strong></>}
               </p>
             </div>
           </div>
@@ -807,38 +792,37 @@ export default function AdminDashboardPage() {
           <div className="flex items-center gap-2.5 flex-wrap self-end md:self-auto">
             <button
               onClick={() => refreshDashboard({ silent: true })}
-              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 dark:bg-[#172033] dark:hover:bg-slate-700 dark:text-slate-200 dark:border-[#293548] transition-all shadow-xs"
+              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-all shadow-xs"
               title="Sync latest records"
               aria-label="Sync latest records"
             >
-              <RefreshCw className={`w-4 h-4 ${isRevalidating ? 'animate-spin text-[#2563EB]' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${isRevalidating ? 'animate-spin text-[#C2410C]' : ''}`} />
             </button>
 
             <button
               onClick={() => setFeedbackModalOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#EFF6FF] hover:bg-blue-100 text-[#2563EB] border border-[#2563EB]/20 text-xs font-bold transition-all shadow-xs dark:bg-blue-500/10 dark:hover:bg-blue-500/20 dark:text-[#60A5FA] dark:border-blue-500/30"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FFF0E6] hover:bg-[#FED7AA]/60 text-[#C2410C] border border-[#C2410C]/20 text-xs font-bold transition-all shadow-xs"
               title="Give product feedback"
             >
-              <MessageSquare className="w-4 h-4 text-[#2563EB] dark:text-[#60A5FA]" />
+              <MessageSquare className="w-4 h-4 text-[#C2410C]" />
               <span>Give Feedback</span>
             </button>
 
-            {/* Theme Toggle (Light / Dark Mode) */}
             <button
-              onClick={toggleTheme}
-              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 dark:bg-[#172033] dark:hover:bg-slate-700 dark:text-slate-200 dark:border-[#293548] transition-all shadow-xs"
-              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-              aria-label="Toggle Theme"
+              type="button"
+              data-testid="topbar-build-report-btn"
+              onClick={() => setActiveTab('REPORTS')}
+              className="btn-flame flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-white text-xs font-bold shadow-xs"
+              title="Open Build Report Designer"
             >
-              {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
+              <span>Build Report</span>
             </button>
 
             <button
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition-all shadow-xs dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:text-rose-300 dark:border-rose-800/50"
+              onClick={handleLogout} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#FFF0E6] hover:bg-[#FED7AA]/70 text-[#C2410C] border border-[#FED7AA] text-xs font-bold transition-all shadow-xs"
               title="Sign Out"
             >
-              <LogOut className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+              <LogOut className="w-4 h-4 text-[#C2410C]" />
               <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
@@ -851,7 +835,7 @@ export default function AdminDashboardPage() {
               {[1, 2, 3, 4].map((n) => (
                 <div
                   key={n}
-                  className="h-28 rounded-2xl bg-white border border-[#DCE7F2] p-5 space-y-3"
+                  className="h-28 rounded-2xl bg-white border border-[#FED7AA] p-5 space-y-3"
                 >
                   <Skeleton className="h-3.5 w-24" />
                   <Skeleton className="h-7 w-16" />
@@ -859,7 +843,7 @@ export default function AdminDashboardPage() {
                 </div>
               ))}
             </div>
-            <div className="rounded-2xl bg-white border border-[#DCE7F2] p-6 space-y-4">
+            <div className="rounded-2xl bg-white border border-[#FED7AA] p-6 space-y-4">
               <Skeleton className="h-6 w-48" />
               <Skeleton className="h-14 w-full" />
               <Skeleton className="h-14 w-full" />
@@ -938,14 +922,14 @@ export default function AdminDashboardPage() {
             ========================================================================= */}
             {(activeTab === 'CLIENTS_SITES' || activeTab === 'SITES') && (
               <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-xs dark:bg-[#111827] dark:border-[#293548]">
-                  <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs dark:bg-[#0B1220] dark:border-[#293548]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#FED7AA] shadow-xs">
+                  <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs">
                     <button
                       onClick={() => setClientsSitesSubTab('BUILDINGS')}
                       className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
                         clientsSitesSubTab === 'BUILDINGS'
-                          ? 'bg-[#2563EB] text-white shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                          ? 'bg-[#C2410C] text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
                       Buildings &amp; Towers ({buildings.length})
@@ -954,8 +938,8 @@ export default function AdminDashboardPage() {
                       onClick={() => setClientsSitesSubTab('CLIENTS')}
                       className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
                         clientsSitesSubTab === 'CLIENTS'
-                          ? 'bg-[#2563EB] text-white shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                          ? 'bg-[#C2410C] text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
                       Client Societies ({clientsList.length})
@@ -965,7 +949,7 @@ export default function AdminDashboardPage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <button
                       onClick={() => handleOpenImport(clientsSitesSubTab === 'BUILDINGS' ? 'BUILDINGS' : 'CLIENTS')}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#EFF6FF] hover:bg-blue-100 text-[#2563EB] border border-[#2563EB]/20 text-xs font-bold transition-all shadow-xs dark:bg-blue-500/10 dark:hover:bg-blue-500/20 dark:text-[#60A5FA] dark:border-blue-500/30"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#FFF0E6] hover:bg-[#FED7AA]/60 text-[#C2410C] border border-[#C2410C]/20 text-xs font-bold transition-all shadow-xs"
                       title="Import from Excel (.xlsx)"
                     >
                       <FileSpreadsheet className="w-4 h-4" />
@@ -974,7 +958,7 @@ export default function AdminDashboardPage() {
 
                     <button
                       onClick={() => handleOpenExport(clientsSitesSubTab === 'BUILDINGS' ? 'BUILDINGS' : 'CLIENTS')}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-xs dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:text-emerald-300 dark:border-emerald-800"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-xs"
                       title="Export to Excel (.xlsx)"
                     >
                       <FileSpreadsheet className="w-4 h-4" />
@@ -983,7 +967,7 @@ export default function AdminDashboardPage() {
 
                     <button
                       onClick={() => setAddBuildingModalOpen(true)}
-                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold shadow-xs transition-all"
+                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white text-xs font-bold shadow-xs transition-all"
                     >
                       <Plus className="w-4 h-4" />
                       <span>{clientsSitesSubTab === 'BUILDINGS' ? 'Add Building' : 'Add Client'}</span>
@@ -1036,7 +1020,7 @@ export default function AdminDashboardPage() {
                       if (buildings.length > 0) setSingleAddEquipModalOpen(buildings[0]);
                       else setAddBuildingModalOpen(true);
                     }}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold shadow-xs transition-all"
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white text-xs font-bold shadow-xs transition-all"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Add Fire Equipment</span>
@@ -1068,14 +1052,14 @@ export default function AdminDashboardPage() {
             ========================================================================= */}
             {(activeTab === 'INSPECTIONS_WORK' || activeTab === 'INSPECTIONS' || activeTab === 'REPAIRS') && (
               <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-xs dark:bg-[#111827] dark:border-[#293548]">
-                  <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs dark:bg-[#0B1220] dark:border-[#293548]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#FED7AA] shadow-xs">
+                  <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs">
                     <button
                       onClick={() => setInspectionsWorkSubTab('INSPECTIONS')}
                       className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
                         inspectionsWorkSubTab === 'INSPECTIONS'
-                          ? 'bg-[#2563EB] text-white shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                          ? 'bg-[#C2410C] text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
                       Field Inspections ({inspectionsList.length})
@@ -1084,8 +1068,8 @@ export default function AdminDashboardPage() {
                       onClick={() => setInspectionsWorkSubTab('REPAIRS')}
                       className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
                         inspectionsWorkSubTab === 'REPAIRS'
-                          ? 'bg-[#2563EB] text-white shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                          ? 'bg-[#C2410C] text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
                       <span>Repairs &amp; Work Orders</span>
@@ -1104,10 +1088,10 @@ export default function AdminDashboardPage() {
                           inspectionsWorkSubTab === 'INSPECTIONS' ? 'INSPECTIONS' : 'WORK_ORDERS'
                         )
                       }
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-xs dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:text-emerald-300 dark:border-emerald-800"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-xs"
                       title="Export to Excel (.xlsx)"
                     >
-                      <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
                       <span>Export Excel</span>
                     </button>
                   </div>
@@ -1159,10 +1143,10 @@ export default function AdminDashboardPage() {
                 <div className="flex justify-end">
                   <button
                     onClick={() => handleOpenExport('REPORTS')}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-xs dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:text-emerald-300 dark:border-emerald-800"
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-xs"
                     title="Export Report Data to Excel (.xlsx)"
                   >
-                    <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
                     <span>Export Excel</span>
                   </button>
                 </div>
@@ -1219,91 +1203,91 @@ export default function AdminDashboardPage() {
       ========================================================================= */}
       {addBuildingModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-[#E2E8F0] max-h-[90vh] overflow-y-auto text-slate-900 dark:bg-[#172033] dark:border-[#293548] dark:text-white">
+          <div className="glass-dialog rounded-2xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto text-slate-900">
             
-            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3 dark:border-[#293548]">
+            <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3">
               <div className="flex items-center gap-2.5">
-                <Building2 className="w-5 h-5 text-[#2563EB] dark:text-[#60A5FA]" />
-                <h3 className="font-bold text-[#0F172A] text-base dark:text-white">Register Client &amp; Building</h3>
+                <Building2 className="w-5 h-5 text-[#C2410C]" />
+                <h3 className="font-bold text-[#1C1917] text-base">Register Client &amp; Building</h3>
               </div>
               <button
                 onClick={() => setAddBuildingModalOpen(false)}
-                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 dark:hover:text-white dark:hover:bg-slate-800"
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100"
               >
                 ✕
               </button>
             </div>
 
             <form onSubmit={handleCreateBuilding} className="space-y-4 text-xs">
-              <div className="p-3.5 bg-[#F8FAFC] rounded-xl space-y-2.5 border border-[#E2E8F0] dark:bg-[#0B1220] dark:border-[#293548]">
-                <h4 className="font-bold text-[#2563EB] uppercase text-[10px] tracking-wider dark:text-[#60A5FA]">Client &amp; Society Details</h4>
+              <div className="p-3.5 bg-[#FFF8F2] rounded-xl space-y-2.5 border border-[#FED7AA]">
+                <h4 className="font-bold text-[#C2410C] uppercase text-[10px] tracking-wider">Client &amp; Society Details</h4>
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Client / Society Name *</label>
+                  <label className="block text-slate-700 font-semibold mb-1">Client / Society Name *</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. Horizon Co-op Housing Society"
                     value={buildingForm.clientName}
                     onChange={(e) => setBuildingForm({ ...buildingForm, clientName: e.target.value })}
-                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:placeholder-slate-500 dark:focus:border-[#60A5FA]"
+                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Contact Person</label>
+                    <label className="block text-slate-700 font-semibold mb-1">Contact Person</label>
                     <input
                       type="text"
                       placeholder="Secretary / Facility Manager"
                       value={buildingForm.contactPerson}
                       onChange={(e) => setBuildingForm({ ...buildingForm, contactPerson: e.target.value })}
-                      className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:placeholder-slate-500 dark:focus:border-[#60A5FA]"
+                      className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Phone Number *</label>
+                    <label className="block text-slate-700 font-semibold mb-1">Phone Number *</label>
                     <input
                       type="text"
                       required
                       placeholder="+91 98XXX XXXXX"
                       value={buildingForm.phone}
                       onChange={(e) => setBuildingForm({ ...buildingForm, phone: e.target.value })}
-                      className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:placeholder-slate-500 dark:focus:border-[#60A5FA]"
+                      className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="p-3.5 bg-[#F8FAFC] rounded-xl space-y-2.5 border border-[#E2E8F0] dark:bg-[#0B1220] dark:border-[#293548]">
-                <h4 className="font-bold text-[#2563EB] uppercase text-[10px] tracking-wider dark:text-[#60A5FA]">Building &amp; Compliance Cycle</h4>
+              <div className="p-3.5 bg-[#FFF8F2] rounded-xl space-y-2.5 border border-[#FED7AA]">
+                <h4 className="font-bold text-[#C2410C] uppercase text-[10px] tracking-wider">Building &amp; Compliance Cycle</h4>
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Building / Tower Name *</label>
+                  <label className="block text-slate-700 font-semibold mb-1">Building / Tower Name *</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. Horizon Heights Tower C"
                     value={buildingForm.buildingName}
                     onChange={(e) => setBuildingForm({ ...buildingForm, buildingName: e.target.value })}
-                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:placeholder-slate-500 dark:focus:border-[#60A5FA]"
+                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Premises Address *</label>
+                  <label className="block text-slate-700 font-semibold mb-1">Premises Address *</label>
                   <input
                     type="text"
                     required
                     placeholder="Street, Area, City, Pin Code"
                     value={buildingForm.address}
                     onChange={(e) => setBuildingForm({ ...buildingForm, address: e.target.value })}
-                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:placeholder-slate-500 dark:focus:border-[#60A5FA]"
+                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">State / Union Territory *</label>
+                    <label className="block text-slate-700 font-semibold mb-1">State / Union Territory *</label>
                     <select
                       value={buildingForm.state}
                       onChange={(e) => setBuildingForm({ ...buildingForm, state: e.target.value })}
-                      className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
+                      className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C] focus:outline-none"
                     >
                       {INDIAN_STATES_AND_UTS.map((st) => (
                         <option key={st} value={st}>{st}</option>
@@ -1311,7 +1295,7 @@ export default function AdminDashboardPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Reporting Cycle *</label>
+                    <label className="block text-slate-700 font-semibold mb-1">Reporting Cycle *</label>
                     <select
                       value={buildingForm.reportingCycle}
                       onChange={(e) => {
@@ -1319,7 +1303,7 @@ export default function AdminDashboardPage() {
                         const mos = val === 'Monthly' ? 1 : val === 'Quarterly' ? 3 : val === 'Half-Yearly' ? 6 : 12;
                         setBuildingForm({ ...buildingForm, reportingCycle: val, complianceCycle: val, cycleIntervalMos: mos });
                       }}
-                      className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
+                      className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C] focus:outline-none"
                     >
                       {REPORTING_CYCLES.map((rc) => (
                         <option key={rc.value} value={rc.value}>{rc.label}</option>
@@ -1329,13 +1313,13 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Local Fire Rule / Format (Optional)</label>
+                  <label className="block text-slate-700 font-semibold mb-1">Local Fire Rule / Format (Optional)</label>
                   <input
                     type="text"
                     placeholder="e.g. Rule 33, Form-B, NBC 2016, or state mandate"
                     value={buildingForm.complianceRuleName}
                     onChange={(e) => setBuildingForm({ ...buildingForm, complianceRuleName: e.target.value })}
-                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:placeholder-slate-500 dark:focus:border-[#60A5FA]"
+                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
                   />
                 </div>
               </div>
@@ -1344,13 +1328,13 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setAddBuildingModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-[#111827] dark:text-slate-300 dark:hover:text-white"
+                  className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold shadow-xs transition-all"
+                  className="px-5 py-2.5 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white font-bold shadow-xs transition-all"
                 >
                   Create Building
                 </button>
@@ -1365,16 +1349,16 @@ export default function AdminDashboardPage() {
       ========================================================================= */}
       {bulkAddModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-[#E2E8F0] max-h-[90vh] overflow-y-auto text-slate-900 dark:bg-[#172033] dark:border-[#293548] dark:text-white">
+          <div className="glass-dialog rounded-2xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto text-slate-900">
             
-            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3 dark:border-[#293548]">
+            <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3">
               <div>
-                <h3 className="font-bold text-[#0F172A] text-base dark:text-white">Bulk Add Equipment</h3>
-                <p className="text-xs text-[#2563EB] font-semibold mt-0.5 dark:text-[#60A5FA]">{bulkAddModalOpen.name}</p>
+                <h3 className="font-bold text-[#1C1917] text-base">Bulk Add Equipment</h3>
+                <p className="text-xs text-[#C2410C] font-semibold mt-0.5">{bulkAddModalOpen.name}</p>
               </div>
               <button
                 onClick={() => setBulkAddModalOpen(null)}
-                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 dark:hover:text-white dark:hover:bg-slate-800"
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100"
               >
                 ✕
               </button>
@@ -1383,11 +1367,11 @@ export default function AdminDashboardPage() {
             <form onSubmit={handleBulkAddEquipment} className="space-y-4 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Equipment Type</label>
+                  <label className="block text-slate-700 font-semibold mb-1">Equipment Type</label>
                   <select
                     value={equipmentForm.type}
                     onChange={(e) => setEquipmentForm({ ...equipmentForm, type: e.target.value })}
-                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
+                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C] focus:outline-none"
                   >
                     <option value="Fire Extinguisher">Fire Extinguisher</option>
                     <option value="Hydrant Valve">Hydrant Valve</option>
@@ -1398,54 +1382,54 @@ export default function AdminDashboardPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Capacity / Specification</label>
+                  <label className="block text-slate-700 font-semibold mb-1">Capacity / Specification</label>
                   <input
                     type="text"
                     value={equipmentForm.capacity}
                     onChange={(e) => setEquipmentForm({ ...equipmentForm, capacity: e.target.value })}
                     placeholder="e.g. ABC Dry Powder 6kg"
-                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:placeholder-slate-500 dark:focus:border-[#60A5FA]"
+                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Asset ID / Tag Prefix</label>
+                  <label className="block text-slate-700 font-semibold mb-1">Asset ID / Tag Prefix</label>
                   <input
                     type="text"
                     value={equipmentForm.prefix}
                     onChange={(e) => setEquipmentForm({ ...equipmentForm, prefix: e.target.value.toUpperCase() })}
                     placeholder="e.g. EXT or TWR"
-                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 font-mono uppercase focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
+                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 font-mono uppercase focus:border-[#C2410C] focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Quantity to Auto-Generate</label>
+                  <label className="block text-slate-700 font-semibold mb-1">Quantity to Auto-Generate</label>
                   <input
                     type="number"
                     min="1"
                     max="50"
                     value={equipmentForm.count}
                     onChange={(e) => setEquipmentForm({ ...equipmentForm, count: Number(e.target.value) })}
-                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
+                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C] focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Location Pattern</label>
+                <label className="block text-slate-700 font-semibold mb-1">Location Pattern</label>
                 <input
                   type="text"
                   value={equipmentForm.locationBase}
                   onChange={(e) => setEquipmentForm({ ...equipmentForm, locationBase: e.target.value })}
                   placeholder="e.g. Floor Landing Lift Lobby"
-                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:placeholder-slate-500 dark:focus:border-[#60A5FA]"
+                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Refill / Service Interval</label>
+                <label className="block text-slate-700 font-semibold mb-1">Refill / Service Interval</label>
                 <select
                   value={equipmentForm.serviceIntervalMonths}
                   onChange={(e) => {
@@ -1456,7 +1440,7 @@ export default function AdminDashboardPage() {
                       nextDueDate: addMonthsToDateString(equipmentForm.lastServiceDate, mos),
                     });
                   }}
-                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
+                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C] focus:outline-none"
                 >
                   <option value={12}>12 Months (Annual Extinguisher Refill - IS 2190)</option>
                   <option value={6}>6 Months (Half-Yearly Hydrant &amp; Pump Check)</option>
@@ -1464,9 +1448,9 @@ export default function AdminDashboardPage() {
                 </select>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-[#E2E8F0] dark:bg-[#0B1220] dark:border-[#293548]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-[#FED7AA]">
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">
+                  <label className="block text-slate-700 font-semibold mb-1">
                     Last Service / Refill Date
                   </label>
                   <input
@@ -1480,11 +1464,11 @@ export default function AdminDashboardPage() {
                         nextDueDate: addMonthsToDateString(val, equipmentForm.serviceIntervalMonths),
                       });
                     }}
-                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">
+                  <label className="block text-slate-700 font-semibold mb-1">
                     Next Service Due Date *
                   </label>
                   <input
@@ -1492,7 +1476,7 @@ export default function AdminDashboardPage() {
                     required
                     value={equipmentForm.nextDueDate}
                     onChange={(e) => setEquipmentForm({ ...equipmentForm, nextDueDate: e.target.value })}
-                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
                   />
                 </div>
                 <div className="sm:col-span-2 flex flex-wrap items-center gap-1.5 pt-1">
@@ -1505,7 +1489,7 @@ export default function AdminDashboardPage() {
                         nextDueDate: addMonthsToDateString(equipmentForm.lastServiceDate, 12),
                       })
                     }
-                    className="px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                    className="px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors"
                   >
                     +1 Year (Standard)
                   </button>
@@ -1517,7 +1501,7 @@ export default function AdminDashboardPage() {
                         nextDueDate: addDaysToTodayString(15),
                       })
                     }
-                    className="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
+                    className="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors"
                   >
                     Due in 15 Days
                   </button>
@@ -1529,7 +1513,7 @@ export default function AdminDashboardPage() {
                         nextDueDate: addDaysToTodayString(-5),
                       })
                     }
-                    className="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
+                    className="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors"
                   >
                     Overdue (-5 Days)
                   </button>
@@ -1540,13 +1524,13 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setBulkAddModalOpen(null)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-[#111827] dark:text-slate-300 dark:hover:text-white"
+                  className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold shadow-xs transition-all"
+                  className="px-5 py-2.5 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white font-bold shadow-xs transition-all"
                 >
                   Create {equipmentForm.count} Equipment Records
                 </button>
@@ -1561,34 +1545,34 @@ export default function AdminDashboardPage() {
       ========================================================================= */}
       {singleAddEquipModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#E2E8F0] text-slate-900 dark:bg-[#172033] dark:border-[#293548] dark:text-white">
-            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3 dark:border-[#293548]">
+          <div className="glass-dialog rounded-2xl max-w-md w-full p-6 space-y-4 text-slate-900">
+            <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3">
               <div>
-                <h3 className="font-bold text-[#0F172A] text-base dark:text-white">Add Single Fire Equipment</h3>
-                <p className="text-xs text-[#2563EB] font-semibold mt-0.5 dark:text-[#60A5FA]">{singleAddEquipModalOpen.name}</p>
+                <h3 className="font-bold text-[#1C1917] text-base">Add Single Fire Equipment</h3>
+                <p className="text-xs text-[#C2410C] font-semibold mt-0.5">{singleAddEquipModalOpen.name}</p>
               </div>
-              <button onClick={() => setSingleAddEquipModalOpen(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">✕</button>
+              <button onClick={() => setSingleAddEquipModalOpen(null)} className="text-slate-400 hover:text-slate-700">✕</button>
             </div>
 
             <form onSubmit={handleSingleAddEquipment} className="space-y-4 text-xs">
               <div>
-                <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Asset ID / Serial Number *</label>
+                <label className="block text-slate-700 font-semibold mb-1">Asset ID / Serial Number *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. HTP-EXT-05"
                   value={singleEquipForm.qrCode}
                   onChange={(e) => setSingleEquipForm({ ...singleEquipForm, qrCode: e.target.value.toUpperCase() })}
-                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 font-mono uppercase focus:border-[#2563EB] dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
+                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 font-mono uppercase focus:border-[#C2410C]"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Equipment Type</label>
+                <label className="block text-slate-700 font-semibold mb-1">Equipment Type</label>
                 <select
                   value={singleEquipForm.type}
                   onChange={(e) => setSingleEquipForm({ ...singleEquipForm, type: e.target.value })}
-                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
+                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C]"
                 >
                   <option value="Fire Extinguisher">Fire Extinguisher</option>
                   <option value="Hydrant Valve">Hydrant Valve</option>
@@ -1599,31 +1583,31 @@ export default function AdminDashboardPage() {
               </div>
 
               <div>
-                <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Capacity / Specification</label>
+                <label className="block text-slate-700 font-semibold mb-1">Capacity / Specification</label>
                 <input
                   type="text"
                   required
                   value={singleEquipForm.capacity}
                   onChange={(e) => setSingleEquipForm({ ...singleEquipForm, capacity: e.target.value })}
-                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
+                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C]"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">Specific Location in Building *</label>
+                <label className="block text-slate-700 font-semibold mb-1">Specific Location in Building *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Basement 1 - Electric Meter Room"
                   value={singleEquipForm.location}
                   onChange={(e) => setSingleEquipForm({ ...singleEquipForm, location: e.target.value })}
-                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
+                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C]"
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 bg-slate-50 rounded-xl border border-[#E2E8F0] dark:bg-[#0B1220] dark:border-[#293548]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 bg-slate-50 rounded-xl border border-[#FED7AA]">
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">
+                  <label className="block text-slate-700 font-semibold mb-1">
                     Last Service / Refill Date
                   </label>
                   <input
@@ -1637,11 +1621,11 @@ export default function AdminDashboardPage() {
                         nextDueDate: addMonthsToDateString(val, singleEquipForm.serviceIntervalMonths),
                       });
                     }}
-                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">
+                  <label className="block text-slate-700 font-semibold mb-1">
                     Next Service Due Date *
                   </label>
                   <input
@@ -1649,7 +1633,7 @@ export default function AdminDashboardPage() {
                     required
                     value={singleEquipForm.nextDueDate}
                     onChange={(e) => setSingleEquipForm({ ...singleEquipForm, nextDueDate: e.target.value })}
-                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
                   />
                 </div>
                 <div className="sm:col-span-2 flex flex-wrap items-center gap-1.5 pt-1">
@@ -1662,7 +1646,7 @@ export default function AdminDashboardPage() {
                         nextDueDate: addMonthsToDateString(singleEquipForm.lastServiceDate, 12),
                       })
                     }
-                    className="px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                    className="px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors"
                   >
                     +1 Year (Standard)
                   </button>
@@ -1674,7 +1658,7 @@ export default function AdminDashboardPage() {
                         nextDueDate: addDaysToTodayString(15),
                       })
                     }
-                    className="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
+                    className="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors"
                   >
                     Due in 15 Days
                   </button>
@@ -1686,7 +1670,7 @@ export default function AdminDashboardPage() {
                         nextDueDate: addDaysToTodayString(-5),
                       })
                     }
-                    className="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
+                    className="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors"
                   >
                     Overdue (-5 Days)
                   </button>
@@ -1694,12 +1678,12 @@ export default function AdminDashboardPage() {
               </div>
 
               <div>
-                <label className="block text-slate-700 font-semibold mb-1 dark:text-slate-300">
+                <label className="block text-slate-700 font-semibold mb-1">
                   Equipment Photo (Auto-compressed WebP &rarr; Cloudflare R2)
                 </label>
                 <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer border border-slate-200 dark:bg-[#111827] dark:border-[#293548] dark:text-slate-300">
-                    <Camera className="w-3.5 h-3.5 text-[#2563EB]" />
+                  <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer border border-slate-200">
+                    <Camera className="w-3.5 h-3.5 text-[#C2410C]" />
                     <span>{compressingPhoto ? 'Uploading photo...' : 'Select Photo'}</span>
                     <input
                       type="file"
@@ -1728,14 +1712,14 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setSingleAddEquipModalOpen(null)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-[#111827] dark:text-slate-300 dark:hover:text-white"
+                  className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={compressingPhoto}
-                  className="px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 text-white font-bold shadow-xs transition-all"
+                  className="px-5 py-2.5 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] disabled:opacity-50 text-white font-bold shadow-xs transition-all"
                 >
                   Add Equipment
                 </button>
@@ -1750,49 +1734,49 @@ export default function AdminDashboardPage() {
       ========================================================================= */}
       {editClientModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#E2E8F0] text-slate-900 text-xs dark:bg-[#172033] dark:border-[#293548] dark:text-white">
-            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3 dark:border-[#293548]">
-              <h3 className="font-bold text-[#0F172A] text-base dark:text-white">Edit Client</h3>
-              <button onClick={() => setEditClientModal(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">✕</button>
+          <div className="glass-dialog rounded-2xl max-w-md w-full p-6 space-y-4 text-slate-900 text-xs">
+            <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3">
+              <h3 className="font-bold text-[#1C1917] text-base">Edit Client</h3>
+              <button onClick={() => setEditClientModal(null)} className="text-slate-400 hover:text-slate-700">✕</button>
             </div>
 
             <form onSubmit={handleUpdateClient} className="space-y-3">
               <div>
-                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Client Name *</label>
+                <label className="block text-slate-700 font-bold mb-1">Client Name *</label>
                 <input
                   type="text"
                   required
                   value={editClientModal.name}
                   onChange={(e) => setEditClientModal({ ...editClientModal, name: e.target.value })}
-                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
                 />
               </div>
               <div>
-                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Contact Person</label>
+                <label className="block text-slate-700 font-bold mb-1">Contact Person</label>
                 <input
                   type="text"
                   value={editClientModal.contactPerson}
                   onChange={(e) => setEditClientModal({ ...editClientModal, contactPerson: e.target.value })}
-                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
                 />
               </div>
               <div>
-                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Phone Number *</label>
+                <label className="block text-slate-700 font-bold mb-1">Phone Number *</label>
                 <input
                   type="text"
                   required
                   value={editClientModal.phone}
                   onChange={(e) => setEditClientModal({ ...editClientModal, phone: e.target.value })}
-                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
                 />
               </div>
               <div>
-                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Email Address</label>
+                <label className="block text-slate-700 font-bold mb-1">Email Address</label>
                 <input
                   type="email"
                   value={editClientModal.email || ''}
                   onChange={(e) => setEditClientModal({ ...editClientModal, email: e.target.value })}
-                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
                 />
               </div>
 
@@ -1800,13 +1784,13 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setEditClientModal(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-[#111827] dark:text-slate-300"
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold shadow-xs transition-all"
+                  className="px-5 py-2 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white font-bold shadow-xs transition-all"
                 >
                   Save Changes
                 </button>
@@ -1821,40 +1805,40 @@ export default function AdminDashboardPage() {
       ========================================================================= */}
       {editBuildingModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#E2E8F0] text-slate-900 text-xs dark:bg-[#172033] dark:border-[#293548] dark:text-white">
-            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3 dark:border-[#293548]">
-              <h3 className="font-bold text-[#0F172A] text-base dark:text-white">Edit Building</h3>
-              <button onClick={() => setEditBuildingModal(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">✕</button>
+          <div className="glass-dialog rounded-2xl max-w-md w-full p-6 space-y-4 text-slate-900 text-xs">
+            <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3">
+              <h3 className="font-bold text-[#1C1917] text-base">Edit Building</h3>
+              <button onClick={() => setEditBuildingModal(null)} className="text-slate-400 hover:text-slate-700">✕</button>
             </div>
 
             <form onSubmit={handleUpdateBuilding} className="space-y-3">
               <div>
-                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Building Name *</label>
+                <label className="block text-slate-700 font-bold mb-1">Building Name *</label>
                 <input
                   type="text"
                   required
                   value={editBuildingModal.name}
                   onChange={(e) => setEditBuildingModal({ ...editBuildingModal, name: e.target.value })}
-                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
                 />
               </div>
               <div>
-                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Premises Address *</label>
+                <label className="block text-slate-700 font-bold mb-1">Premises Address *</label>
                 <input
                   type="text"
                   required
                   value={editBuildingModal.address}
                   onChange={(e) => setEditBuildingModal({ ...editBuildingModal, address: e.target.value })}
-                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
                 />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">State / UT</label>
+                  <label className="block text-slate-700 font-bold mb-1">State / UT</label>
                   <select
                     value={editBuildingModal.state || 'Delhi'}
                     onChange={(e) => setEditBuildingModal({ ...editBuildingModal, state: e.target.value })}
-                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
                   >
                     {INDIAN_STATES_AND_UTS.map((st) => (
                       <option key={st} value={st}>{st}</option>
@@ -1862,11 +1846,11 @@ export default function AdminDashboardPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Reporting Cycle</label>
+                  <label className="block text-slate-700 font-bold mb-1">Reporting Cycle</label>
                   <select
                     value={editBuildingModal.reportingCycle || 'Quarterly'}
                     onChange={(e) => setEditBuildingModal({ ...editBuildingModal, reportingCycle: e.target.value, complianceCycle: e.target.value })}
-                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
                   >
                     {REPORTING_CYCLES.map((rc) => (
                       <option key={rc.value} value={rc.value}>{rc.label}</option>
@@ -1876,13 +1860,13 @@ export default function AdminDashboardPage() {
               </div>
 
               <div>
-                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Local Fire Rule / Format (Optional)</label>
+                <label className="block text-slate-700 font-bold mb-1">Local Fire Rule / Format (Optional)</label>
                 <input
                   type="text"
                   placeholder="e.g. Rule 33, Form-B, NBC 2016"
                   value={editBuildingModal.complianceRuleName || ''}
                   onChange={(e) => setEditBuildingModal({ ...editBuildingModal, complianceRuleName: e.target.value })}
-                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
                 />
               </div>
 
@@ -1890,13 +1874,13 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setEditBuildingModal(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-[#111827] dark:text-slate-300"
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold shadow-xs transition-all"
+                  className="px-5 py-2 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white font-bold shadow-xs transition-all"
                 >
                   Save Building
                 </button>
@@ -1911,45 +1895,45 @@ export default function AdminDashboardPage() {
       ========================================================================= */}
       {editEquipmentModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#E2E8F0] text-slate-900 text-xs dark:bg-[#172033] dark:border-[#293548] dark:text-white">
-            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3 dark:border-[#293548]">
-              <h3 className="font-bold text-[#0F172A] text-base dark:text-white">Edit Equipment Asset</h3>
-              <button onClick={() => setEditEquipmentModal(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">✕</button>
+          <div className="glass-dialog rounded-2xl max-w-md w-full p-6 space-y-4 text-slate-900 text-xs">
+            <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3">
+              <h3 className="font-bold text-[#1C1917] text-base">Edit Equipment Asset</h3>
+              <button onClick={() => setEditEquipmentModal(null)} className="text-slate-400 hover:text-slate-700">✕</button>
             </div>
 
             <form onSubmit={handleUpdateEquipment} className="space-y-3">
               <div>
-                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Asset ID / Serial Number *</label>
+                <label className="block text-slate-700 font-bold mb-1">Asset ID / Serial Number *</label>
                 <input
                   type="text"
                   required
                   value={editEquipmentModal.qrCode}
                   onChange={(e) => setEditEquipmentModal({ ...editEquipmentModal, qrCode: e.target.value.toUpperCase() })}
-                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 font-mono uppercase dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 font-mono uppercase"
                 />
               </div>
               <div>
-                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Capacity / Specification *</label>
+                <label className="block text-slate-700 font-bold mb-1">Capacity / Specification *</label>
                 <input
                   type="text"
                   required
                   value={editEquipmentModal.capacity}
                   onChange={(e) => setEditEquipmentModal({ ...editEquipmentModal, capacity: e.target.value })}
-                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
                 />
               </div>
               <div>
-                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Location Details *</label>
+                <label className="block text-slate-700 font-bold mb-1">Location Details *</label>
                 <input
                   type="text"
                   required
                   value={editEquipmentModal.location}
                   onChange={(e) => setEditEquipmentModal({ ...editEquipmentModal, location: e.target.value })}
-                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
                 />
               </div>
               <div>
-                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">Refill / Service Interval (Months)</label>
+                <label className="block text-slate-700 font-bold mb-1">Refill / Service Interval (Months)</label>
                 <input
                   type="number"
                   value={editEquipmentModal.serviceIntervalMonths}
@@ -1964,13 +1948,13 @@ export default function AdminDashboardPage() {
                       ),
                     });
                   }}
-                  className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 bg-slate-50 rounded-xl border border-[#E2E8F0] dark:bg-[#0B1220] dark:border-[#293548]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 bg-slate-50 rounded-xl border border-[#FED7AA]">
                 <div>
-                  <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">
+                  <label className="block text-slate-700 font-bold mb-1">
                     Last Service / Refill Date
                   </label>
                   <input
@@ -1984,11 +1968,11 @@ export default function AdminDashboardPage() {
                         nextDueDate: addMonthsToDateString(val, editEquipmentModal.serviceIntervalMonths || 12),
                       });
                     }}
-                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">
+                  <label className="block text-slate-700 font-bold mb-1">
                     Next Service Due Date *
                   </label>
                   <input
@@ -1998,7 +1982,7 @@ export default function AdminDashboardPage() {
                     onChange={(e) =>
                       setEditEquipmentModal({ ...editEquipmentModal, nextDueDate: e.target.value })
                     }
-                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900"
                   />
                 </div>
                 <div className="sm:col-span-2 flex flex-wrap items-center gap-1.5 pt-1">
@@ -2014,7 +1998,7 @@ export default function AdminDashboardPage() {
                         ),
                       })
                     }
-                    className="px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                    className="px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors"
                   >
                     +1 Year (Standard)
                   </button>
@@ -2026,7 +2010,7 @@ export default function AdminDashboardPage() {
                         nextDueDate: addDaysToTodayString(15),
                       })
                     }
-                    className="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
+                    className="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors"
                   >
                     Due in 15 Days
                   </button>
@@ -2038,19 +2022,19 @@ export default function AdminDashboardPage() {
                         nextDueDate: addDaysToTodayString(-5),
                       })
                     }
-                    className="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
+                    className="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors"
                   >
                     Overdue (-5 Days)
                   </button>
                 </div>
               </div>
               <div>
-                <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">
+                <label className="block text-slate-700 font-bold mb-1">
                   Equipment Photo (Auto-compressed WebP &rarr; Cloudflare R2)
                 </label>
                 <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer border border-slate-200 dark:bg-[#111827] dark:border-[#293548] dark:text-slate-300">
-                    <Camera className="w-3.5 h-3.5 text-[#2563EB]" />
+                  <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer border border-slate-200">
+                    <Camera className="w-3.5 h-3.5 text-[#C2410C]" />
                     <span>{compressingPhoto ? 'Uploading photo...' : 'Update Photo'}</span>
                     <input
                       type="file"
@@ -2079,14 +2063,14 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setEditEquipmentModal(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-[#111827] dark:text-slate-300"
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={compressingPhoto}
-                  className="px-5 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 text-white font-bold shadow-xs transition-all"
+                  className="px-5 py-2 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] disabled:opacity-50 text-white font-bold shadow-xs transition-all"
                 >
                   Save Equipment
                 </button>

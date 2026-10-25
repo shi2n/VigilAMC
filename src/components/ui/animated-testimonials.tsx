@@ -27,12 +27,12 @@ export function AnimatedTestimonials({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-[#DCE7F2] bg-white p-6 shadow-sm",
+        "rounded-2xl border border-[#FED7AA] bg-white p-6 shadow-sm",
         className
       )}
     >
       <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-xl bg-[#EAF6FF] border border-[#0077B6]/20 flex items-center justify-center text-[#0077B6] shrink-0">
+        <div className="w-9 h-9 rounded-xl bg-[#FFF0E6] border border-[#C2410C]/20 flex items-center justify-center text-[#C2410C] shrink-0">
           <Quote className="w-4 h-4" />
         </div>
         <div className="flex-1 min-h-[80px]">
@@ -48,7 +48,7 @@ export function AnimatedTestimonials({
                 &ldquo;{current.quote}&rdquo;
               </p>
               <div className="mt-3">
-                <div className="text-xs font-bold text-[#023E8A]">{current.name}</div>
+                <div className="text-xs font-bold text-[#1C1917]">{current.name}</div>
                 <div className="text-[11px] text-slate-500">{current.designation}</div>
               </div>
             </motion.div>
@@ -62,7 +62,7 @@ export function AnimatedTestimonials({
             onClick={() =>
               setActive((prev) => (prev - 1 + testimonials.length) % testimonials.length)
             }
-            className="p-1.5 rounded-lg border border-[#DCE7F2] bg-[#F4F8FB] text-[#023E8A] hover:bg-[#EAF6FF] hover:text-[#0077B6]"
+            className="p-1.5 rounded-lg border border-[#FED7AA] bg-[#FFF8F2] text-[#1C1917] hover:bg-[#FFF0E6] hover:text-[#C2410C]"
             aria-label="Previous testimonial"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -70,7 +70,7 @@ export function AnimatedTestimonials({
           <button
             type="button"
             onClick={() => setActive((prev) => (prev + 1) % testimonials.length)}
-            className="p-1.5 rounded-lg border border-[#DCE7F2] bg-[#F4F8FB] text-[#023E8A] hover:bg-[#EAF6FF] hover:text-[#0077B6]"
+            className="p-1.5 rounded-lg border border-[#FED7AA] bg-[#FFF8F2] text-[#1C1917] hover:bg-[#FFF0E6] hover:text-[#C2410C]"
             aria-label="Next testimonial"
           >
             <ChevronRight className="w-4 h-4" />

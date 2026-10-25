@@ -109,7 +109,7 @@ export function CanvasHero() {
             ctx.beginPath();
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(0, 119, 182, ${lineAlpha})`;
+            ctx.strokeStyle = `rgba(232, 89, 12, ${lineAlpha})`;
             ctx.lineWidth = 1;
             ctx.stroke();
           }
@@ -128,7 +128,7 @@ export function CanvasHero() {
           ctx.beginPath();
           ctx.moveTo(p.x, p.y);
           ctx.lineTo(mouse.x, mouse.y);
-          ctx.strokeStyle = `rgba(2, 62, 138, ${mAlpha})`;
+          ctx.strokeStyle = `rgba(28, 25, 23, ${mAlpha})`;
           ctx.lineWidth = 1.4;
           ctx.stroke();
 
@@ -155,9 +155,9 @@ export function CanvasHero() {
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
 
         if (p.type === 'panel') {
-          ctx.fillStyle = `rgba(2, 62, 138, ${p.alpha})`; // Dark Navy
+          ctx.fillStyle = `rgba(28, 25, 23, ${p.alpha})`; // Dark Navy
         } else if (p.type === 'extinguisher') {
-          ctx.fillStyle = `rgba(0, 119, 182, ${p.alpha})`; // Ocean Blue
+          ctx.fillStyle = `rgba(232, 89, 12, ${p.alpha})`; // Ocean Blue
         } else if (p.type === 'hydrant') {
           ctx.fillStyle = `rgba(0, 150, 199, ${p.alpha})`; // Cyan Accent
         } else {
@@ -170,7 +170,7 @@ export function CanvasHero() {
           const ringRadius = p.radius + 6 + (Math.sin(p.pulsePhase) + 1) * 3;
           ctx.beginPath();
           ctx.arc(p.x, p.y, ringRadius, 0, Math.PI * 2);
-          ctx.strokeStyle = `rgba(0, 119, 182, ${0.18 * (1 - ringRadius / 20)})`;
+          ctx.strokeStyle = `rgba(232, 89, 12, ${0.18 * (1 - ringRadius / 20)})`;
           ctx.lineWidth = 1;
           ctx.stroke();
         }

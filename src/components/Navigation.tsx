@@ -35,9 +35,9 @@ export function Navigation() {
             <div className="flex flex-col justify-center">
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <span className="font-extrabold text-base sm:text-lg tracking-tight text-white whitespace-nowrap leading-none">
-                  Vigil<span className="text-[#0077B6]">AMC</span>
+                  Vigil<span className="text-[#C2410C]">AMC</span>
                 </span>
-                <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider px-1.5 sm:px-2 py-0.5 rounded-full bg-[#0077B6]/20 text-cyan-300 border border-[#0077B6]/40 whitespace-nowrap leading-none shrink-0">
+                <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider px-1.5 sm:px-2 py-0.5 rounded-full bg-[#C2410C]/20 text-cyan-300 border border-[#C2410C]/40 whitespace-nowrap leading-none shrink-0">
                   AMC OS
                 </span>
               </div>

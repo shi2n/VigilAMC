@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import EmberLine from '@/components/home/EmberLine';
 import {
   Printer,
   ArrowLeft,
@@ -189,13 +190,14 @@ export default function SampleReportPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-100 py-6 sm:py-8 px-4 sm:px-6 lg:px-8 text-slate-900">
+    <div className="relative min-h-screen bg-[#FFF8F2] py-6 sm:py-8 px-4 sm:px-6 lg:px-8 text-[#1C1917]">
+      <EmberLine />
       {/* Top Format Switcher & Action Bar (Hidden when printing) */}
       <div className="max-w-4xl mx-auto mb-6 no-print space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-white border border-slate-200 shadow-sm">
+        <div data-testid="sample-report-glass-bar" className="glass-panel-dense flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-[#0077B6] transition-colors"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-[#C2410C] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to VigilAMC Home</span>
@@ -207,7 +209,7 @@ export default function SampleReportPage() {
               onClick={() => setReportFormat('maharashtra')}
               className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
                 reportFormat === 'maharashtra'
-                  ? 'bg-white text-[#023E8A] shadow-xs'
+                  ? 'bg-white text-[#9A3412] shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -217,7 +219,7 @@ export default function SampleReportPage() {
               onClick={() => setReportFormat('nbc')}
               className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
                 reportFormat === 'nbc'
-                  ? 'bg-white text-[#023E8A] shadow-xs'
+                  ? 'bg-white text-[#9A3412] shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -229,7 +231,7 @@ export default function SampleReportPage() {
             <button
               onClick={handlePrint}
               disabled={downloading}
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-[#0077B6] hover:bg-[#023E8A] text-white text-xs font-bold shadow-md transition-all active:scale-[0.98] cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white text-xs font-bold shadow-md transition-all active:scale-[0.98] cursor-pointer"
             >
               <Printer className="w-4 h-4" />
               <span>{downloading ? 'Preparing PDF...' : 'Download / Save as A4 PDF'}</span>
@@ -238,11 +240,11 @@ export default function SampleReportPage() {
         </div>
 
         {/* Transparency Banner */}
-        <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-950 text-xs flex items-start gap-3 leading-relaxed">
-          <AlertCircle className="w-5 h-5 text-[#0077B6] shrink-0 mt-0.5" />
+        <div className="p-4 rounded-xl bg-[#FFF0E6] border border-[#FED7AA] text-[#1C1917] text-xs flex items-start gap-3 leading-relaxed">
+          <AlertCircle className="w-5 h-5 text-[#C2410C] shrink-0 mt-0.5" />
           <div>
             <strong className="font-bold">Authentic Sample Deliverable:</strong>
-            <p className="mt-0.5 text-blue-900 text-[11px]">
+            <p className="mt-0.5 text-[#44403C] text-[11px]">
               This interactive report illustrates how VigilAMC compiles field GPS readings, timestamped photo evidence, and itemized defect quotes into official client certificates ready for licensed contractor signature. Click &ldquo;Download / Save as A4 PDF&rdquo; above to print or save a clean, watermark-free A4 document.
             </p>
           </div>
@@ -329,7 +331,7 @@ export default function SampleReportPage() {
         {/* Audit KPI Status Bar */}
         <div className="p-3.5 rounded-xl border mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50 border-slate-300">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center font-black text-white shrink-0 bg-[#023E8A]">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center font-black text-white shrink-0 bg-[#9A3412]">
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
@@ -393,7 +395,7 @@ export default function SampleReportPage() {
                     <td className="py-2 px-3 text-slate-600 border-r border-slate-200">
                       <div className="font-medium text-slate-800">{eq.location}</div>
                       <div className="text-[10px] text-cyan-800 font-mono flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-[#0077B6]" />
+                        <MapPin className="w-3 h-3 text-[#C2410C]" />
                         <span>{eq.gps}</span>
                       </div>
                     </td>
@@ -436,7 +438,7 @@ export default function SampleReportPage() {
         <div className="mb-8 pt-4 border-t border-slate-200">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
-              <Camera className="w-4 h-4 text-[#0077B6]" />
+              <Camera className="w-4 h-4 text-[#C2410C]" />
               <span>Annexure 1: Field Photographic Evidence &amp; GPS Time-Stamps</span>
             </h3>
             <span className="text-[11px] text-slate-500 font-mono">3 Verified Samples Attached</span>
@@ -515,7 +517,7 @@ export default function SampleReportPage() {
         <div className="mb-8 pt-4 border-t border-slate-200">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
-              <Receipt className="w-4 h-4 text-[#0077B6]" />
+              <Receipt className="w-4 h-4 text-[#C2410C]" />
               <span>Annexure 2: Actionable Defect Remediation &amp; Refill Estimate</span>
             </h3>
             <span className="text-[11px] text-slate-500 font-mono">Estimate Ref: EST-2026-APEX-042</span>
@@ -571,10 +573,10 @@ export default function SampleReportPage() {
                   <td className="py-2 px-3 text-right font-mono text-slate-900">₹4,530.00</td>
                 </tr>
                 <tr className="bg-slate-50 font-bold border-t border-slate-300">
-                  <td colSpan={4} className="py-2 px-3 text-right border-r border-slate-200 text-[#023E8A]">
+                  <td colSpan={4} className="py-2 px-3 text-right border-r border-slate-200 text-[#9A3412]">
                     Total Including 18% GST (CGST 9% + SGST 9%):
                   </td>
-                  <td className="py-2 px-3 text-right font-mono text-[#023E8A] text-xs">₹5,345.40</td>
+                  <td className="py-2 px-3 text-right font-mono text-[#9A3412] text-xs">₹5,345.40</td>
                 </tr>
               </tbody>
             </table>

@@ -16,7 +16,7 @@ export function HeroHighlight({
   return (
     <div
       className={cn(
-        "relative flex items-center justify-center w-full bg-[#F4F8FB]",
+        "relative flex items-center justify-center w-full bg-[#FFF8F2]",
         containerClassName
       )}
     >
@@ -53,7 +53,7 @@ export function Highlight({
         display: "inline",
       }}
       className={cn(
-        "relative inline-block pb-0.5 px-1.5 rounded-lg bg-gradient-to-r from-[#EAF6FF] to-[#D5EEFF] text-[#0077B6] border border-[#0077B6]/20",
+        "relative inline-block pb-0.5 px-1.5 rounded-lg bg-gradient-to-r from-[#FFF0E6] to-[#D5EEFF] text-[#C2410C] border border-[#C2410C]/20",
         className
       )}
     >

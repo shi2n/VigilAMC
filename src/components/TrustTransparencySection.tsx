@@ -26,11 +26,11 @@ export function TrustTransparencySection() {
     <section id="transparency" className="py-24 px-4 sm:px-6 lg:px-8 bg-white border-t border-slate-200 scroll-mt-24">
       <div className="max-w-6xl mx-auto">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-ocean-50 text-[#0077B6] text-xs font-bold border border-ocean-200 mb-3">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-ocean-50 text-[#C2410C] text-xs font-bold border border-ocean-200 mb-3">
             <span>Honest &amp; Transparent Positioning</span>
             <StatusBadge status="LIVE" size="xs" />
           </div>
-          <h2 className="text-3xl sm:text-4xl font-black text-[#023E8A] tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-black text-[#1C1917] tracking-tight">
             Trust &amp; Transparency
           </h2>
           <p className="mt-3 text-base text-slate-600 leading-relaxed">

@@ -19,10 +19,10 @@ export function FounderSection() {
     <section id="founder" className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-50 border-t border-slate-200 scroll-mt-24">
       <div className="max-w-6xl mx-auto">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-ocean-50 text-[#0077B6] text-xs font-bold border border-ocean-200 mb-3">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-ocean-50 text-[#C2410C] text-xs font-bold border border-ocean-200 mb-3">
             <span>Leadership &amp; Mission</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-black text-[#023E8A] tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-black text-[#1C1917] tracking-tight">
             Why I Started VigilAMC
           </h2>
           <p className="mt-3 text-base text-slate-600 leading-relaxed">
@@ -34,14 +34,14 @@ export function FounderSection() {
           {/* Left Column: Founder Story */}
           <div className="lg:col-span-7 space-y-6 text-sm text-slate-700 leading-relaxed">
             <div className="p-4 rounded-xl bg-white border border-ocean-200/80 shadow-2xs space-y-1">
-              <span className="text-xs uppercase font-extrabold text-[#0077B6] tracking-wider block">
+              <span className="text-xs uppercase font-extrabold text-[#C2410C] tracking-wider block">
                 From the Founder
               </span>
-              <h3 className="text-lg font-black text-[#023E8A]">
+              <h3 className="text-lg font-black text-[#1C1917]">
                 {SITE_CONFIG.FOUNDER_NAME} &bull; {SITE_CONFIG.FOUNDER_TITLE}
               </h3>
               <p className="text-xs text-slate-500">
-                {SITE_CONFIG.FOUNDER_CITY} &bull; <a href={SITE_CONFIG.PHONE_TEL} className="text-[#0077B6] font-semibold hover:underline">{SITE_CONFIG.PHONE_DISPLAY}</a> &bull; <a href={SITE_CONFIG.WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="text-emerald-700 font-semibold hover:underline">Direct WhatsApp</a> &bull; <a href={`mailto:${SITE_CONFIG.CONTACT_EMAIL}`} className="text-[#0077B6] hover:underline">{SITE_CONFIG.CONTACT_EMAIL}</a>
+                {SITE_CONFIG.FOUNDER_CITY} &bull; <a href={SITE_CONFIG.PHONE_TEL} className="text-[#C2410C] font-semibold hover:underline">{SITE_CONFIG.PHONE_DISPLAY}</a> &bull; <a href={SITE_CONFIG.WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="text-emerald-700 font-semibold hover:underline">Direct WhatsApp</a> &bull; <a href={`mailto:${SITE_CONFIG.CONTACT_EMAIL}`} className="text-[#C2410C] hover:underline">{SITE_CONFIG.CONTACT_EMAIL}</a>
               </p>
             </div>
 
@@ -60,7 +60,7 @@ export function FounderSection() {
             <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <a
                 href="#pilot-section"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0077B6] hover:bg-[#023E8A] text-white text-xs font-bold shadow-md transition-all active:scale-[0.98] cursor-pointer"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#C2410C] hover:bg-[#1C1917] text-white text-xs font-bold shadow-md transition-all active:scale-[0.98] cursor-pointer"
               >
                 <span>Join Free Testing Phase</span>
                 <ArrowRight className="w-4 h-4" />
@@ -85,8 +85,8 @@ export function FounderSection() {
 
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5 text-[#0077B6]" />
-                  <span className="font-extrabold text-sm text-[#023E8A]">
+                  <ShieldCheck className="w-5 h-5 text-[#C2410C]" />
+                  <span className="font-extrabold text-sm text-[#1C1917]">
                     Founding Agency Onboarding Promise
                   </span>
                 </div>
@@ -98,7 +98,7 @@ export function FounderSection() {
               {/* 3 Core Guarantees */}
               <div className="space-y-4">
                 <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
-                  <div className="w-8 h-8 rounded-lg bg-ocean-50 text-[#0077B6] flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-ocean-50 text-[#C2410C] flex items-center justify-center shrink-0">
                     <FileSpreadsheet className="w-4 h-4" />
                   </div>
                   <div>
@@ -126,7 +126,7 @@ export function FounderSection() {
                 </div>
 
                 <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
-                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#023E8A] flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#1C1917] flex items-center justify-center shrink-0">
                     <Download className="w-4 h-4" />
                   </div>
                   <div>
@@ -153,7 +153,7 @@ export function FounderSection() {
                 <div className="text-right">
                   <a
                     href={SITE_CONFIG.PHONE_TEL}
-                    className="text-xs font-bold text-[#0077B6] hover:underline"
+                    className="text-xs font-bold text-[#C2410C] hover:underline"
                   >
                     {SITE_CONFIG.PHONE_DISPLAY}
                   </a>

@@ -3,7 +3,7 @@
 import React from "react";
 import { motion, useReducedMotion } from "motion/react";
 
-const BRAND_COLORS = ["#0077B6", "#023E8A", "#0E9F6E", "#0096C7", "#EAF6FF"];
+const BRAND_COLORS = ["#C2410C", "#1C1917", "#0E9F6E", "#EA580C", "#FFF0E6"];
 
 export function ConfettiBurst({ active }: { active: boolean }) {
   const prefersReducedMotion = useReducedMotion();

@@ -52,10 +52,10 @@ export function FeedbackModal({ isOpen, onClose, userEmail }: FeedbackModalProps
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-[#0d1424] rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 relative">
+      <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 text-slate-800 relative">
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+          className="absolute right-4 top-4 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
           aria-label="Close feedback modal"
         >
           <X className="w-5 h-5" />
@@ -63,30 +63,30 @@ export function FeedbackModal({ isOpen, onClose, userEmail }: FeedbackModalProps
 
         {submitted ? (
           <div className="py-8 text-center space-y-3">
-            <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
+            <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-6 h-6" />
             </div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Thank You for Your Feedback!</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
+            <h3 className="text-lg font-bold text-slate-900">Thank You for Your Feedback!</h3>
+            <p className="text-xs text-slate-500 max-w-xs mx-auto">
               Your suggestions go directly to our product team to help make VigilAMC simple and fast for every agency in India.
             </p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#0077B6] dark:text-cyan-400">
+              <div className="p-2 rounded-xl bg-[#FFF0E6] text-[#C2410C]">
                 <MessageSquare className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">Give Feedback</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <h3 className="text-base font-bold text-slate-900">Give Feedback</h3>
+                <p className="text-xs text-slate-500">
                   Help us make VigilAMC simpler for your daily operations.
                 </p>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 How easy is the dashboard to use?
               </label>
               <div className="flex items-center gap-2">
@@ -101,7 +101,7 @@ export function FeedbackModal({ isOpen, onClose, userEmail }: FeedbackModalProps
                       className={`w-6 h-6 ${
                         star <= rating
                           ? 'fill-amber-400 text-amber-400'
-                          : 'text-slate-300 dark:text-slate-600'
+                          : 'text-slate-300'
                       }`}
                     />
                   </button>
@@ -110,7 +110,7 @@ export function FeedbackModal({ isOpen, onClose, userEmail }: FeedbackModalProps
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 What is confusing or hard to find?
               </label>
               <textarea
@@ -118,12 +118,12 @@ export function FeedbackModal({ isOpen, onClose, userEmail }: FeedbackModalProps
                 value={confusingText}
                 onChange={(e) => setConfusingText(e.target.value)}
                 placeholder="e.g. It was not clear how to assign a technician..."
-                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:bg-white dark:focus:bg-[#F4F8FB] focus:border-[#0077B6] outline-none transition-all"
+                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#C2410C] outline-none transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 What feature or button is missing?
               </label>
               <textarea
@@ -131,12 +131,12 @@ export function FeedbackModal({ isOpen, onClose, userEmail }: FeedbackModalProps
                 value={missingFeatures}
                 onChange={(e) => setMissingFeatures(e.target.value)}
                 placeholder="e.g. A quick way to print customer AMC quotation..."
-                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:bg-white dark:focus:bg-[#F4F8FB] focus:border-[#0077B6] outline-none transition-all"
+                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#C2410C] outline-none transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Optional: What monthly or yearly price feels fair for your agency?
               </label>
               <input
@@ -144,22 +144,22 @@ export function FeedbackModal({ isOpen, onClose, userEmail }: FeedbackModalProps
                 value={fairPrice}
                 onChange={(e) => setFairPrice(e.target.value)}
                 placeholder="e.g. ₹999/month, ₹5,000/year, or Pay per building"
-                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:bg-white dark:focus:bg-[#F4F8FB] focus:border-[#0077B6] outline-none transition-all"
+                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#C2410C] outline-none transition-all"
               />
             </div>
 
-            <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl"
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-4 py-2 text-xs font-bold text-white bg-[#0077B6] hover:bg-[#023E8A] rounded-xl flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+                className="px-4 py-2 text-xs font-bold text-white bg-[#C2410C] hover:bg-[#1C1917] rounded-xl flex items-center gap-1.5 shadow-sm disabled:opacity-50"
               >
                 {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                 <span>Send feedback</span>

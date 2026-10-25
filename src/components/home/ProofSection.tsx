@@ -4,231 +4,428 @@ import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   FileCheck2,
-  MapPin,
-  WifiOff,
-  Mic,
-  Tag,
-  Award,
   ShieldCheck,
-  ArrowUpRight,
-  ArrowRight
+  MapPin,
+  Lock,
+  ArrowRight,
+  CheckCircle2,
+  Award,
 } from 'lucide-react';
-import { motion, useInView, useReducedMotion } from 'motion/react';
-import { SITE_CONFIG } from '@/lib/siteConfig';
-import { SectorMarquee } from './SectorMarquee';
 
-interface StatCardProps {
+interface StatCardConfig {
+  id: string;
   target: number;
   prefix?: string;
-  suffix?: string;
+  suffix: string;
+  unitLabel: string;
   label: string;
+  sublabel: string;
+  formatLocale?: boolean;
 }
 
-function StatCounterCard({ target, prefix = '', suffix = '', label }: StatCardProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, amount: 0.4 });
-  const prefersReduced = useReducedMotion();
-  const [value, setValue] = useState<number>(target);
+const STATS: StatCardConfig[] = [
+  {
+    id: 'stat-hours',
+    target: 190,
+    suffix: '+',
+    unitLabel: ' hrs/yr',
+    label: 'Saved on Manual Paperwork',
+    sublabel: 'Per AMC agency by eliminating Excel & paper registers',
+  },
+  {
+    id: 'stat-savings',
+    target: 96000,
+    prefix: '₹',
+    suffix: '',
+    unitLabel: '/yr',
+    label: 'Saved on Printing & Stationary',
+    sublabel: 'Digital dual-signed PDF certificates replace triplicate books',
+    formatLocale: true,
+  },
+  {
+    id: 'stat-pages',
+    target: 750,
+    suffix: '+',
+    unitLabel: ' pages',
+    label: 'Paper Registers Eliminated',
+    sublabel: 'Every building log stored safely in cloud & signed R2 proof',
+  },
+  {
+    id: 'stat-speed',
+    target: 10,
+    suffix: '',
+    unitLabel: ' sec',
+    label: 'To Generate Fire-NOC Report',
+    sublabel: 'Instant Annex B / Form-B PDF right after on-site signature',
+  },
+];
+
+const GUARANTEES = [
+  {
+    title: 'NBC 2016 · IS 2190 · State Fire Services Annex B Aligned',
+    description:
+      'Every checklist item and certificate layout matches Indian statutory fire inspection formats out of the box.',
+    icon: Award,
+  },
+  {
+    title: '20-Metre GPS Lock + Live Camera + Dual Signature',
+    description:
+      'Gallery uploads are blocked. Every inspection photo is watermarked with live GPS coordinates, date, time, and technician ID.',
+    icon: MapPin,
+  },
+  {
+    title: 'Tamper-Evident Cloud Storage with Private Signed URLs',
+    description:
+      'All inspection photos and signed certificates are stored in encrypted Cloudflare R2 buckets with time-limited signed access.',
+    icon: Lock,
+  },
+];
+
+function AnimatedStatValue({
+  stat,
+  active,
+  reducedMotion,
+}: {
+  stat: StatCardConfig;
+  active: boolean;
+  reducedMotion: boolean;
+}) {
+  const [val, setVal] = useState<number>(reducedMotion ? stat.target : 0);
 
   useEffect(() => {
-    if (!isInView || prefersReduced) {
-      setValue(target);
+    if (reducedMotion) {
+      setVal(stat.target);
+      return;
+    }
+    if (!active) {
+      setVal(0);
       return;
     }
 
-    let frameId = 0;
-    const duration = 900;
+    let rafId = 0;
+    const duration = 1200; // A4: 1.2s rAF count-up
     const startTime = performance.now();
 
     const step = (now: number) => {
-      const elapsed = Math.min((now - startTime) / duration, 1);
-      const eased = 1 - Math.pow(1 - elapsed, 3);
-      setValue(Math.round(target * eased));
-      if (elapsed < 1) {
-        frameId = requestAnimationFrame(step);
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      // easeOutQuart
+      const eased = 1 - Math.pow(1 - progress, 4);
+      const nextVal = Math.round(stat.target * eased);
+      setVal(nextVal);
+      if (progress < 1) {
+        rafId = window.requestAnimationFrame(step);
       } else {
-        setValue(target);
+        setVal(stat.target);
       }
     };
 
-    frameId = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(frameId);
-  }, [isInView, prefersReduced, target]);
+    rafId = window.requestAnimationFrame(step);
+    return () => {
+      if (rafId) window.cancelAnimationFrame(rafId);
+    };
+  }, [active, reducedMotion, stat.target]);
+
+  const formatted = stat.formatLocale ? val.toLocaleString('en-IN') : String(val);
 
   return (
-    <div
-      ref={ref}
-      className="rounded-2xl bg-white/95 backdrop-blur-xl border border-[#FED7AA] p-4 sm:p-5 shadow-[0_14px_34px_-10px_rgba(234,88,12,0.12)] flex flex-col justify-between"
+    <span
+      data-testid={stat.id}
+      data-target={stat.target}
+      data-current={val}
+      className="tabular-nums"
     >
-      <div className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-[#1C1917] tracking-[-0.02em] tabular-nums">
-        {prefix}
-        {value.toLocaleString('en-IN')}
-        {suffix}
-      </div>
-      <div className="text-xs sm:text-sm font-medium text-[#44403C] mt-1">{label}</div>
-    </div>
+      {stat.prefix || ''}
+      {formatted}
+      {stat.suffix}
+    </span>
   );
 }
 
-const TRUST_CHIPS = [
-  { icon: FileCheck2, label: 'Fire-Ready Reports' },
-  { icon: MapPin, label: 'GPS + Photo Proof' },
-  { icon: WifiOff, label: 'Offline-First' },
-  { icon: Mic, label: 'Works in Any Language' },
-  { icon: Tag, label: 'No QR Stickers (Tag ID + GPS instead)' },
-  { icon: Award, label: 'White-Label Client Reports' },
-] as const;
-
 export function ProofSection() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const statsGridRef = useRef<HTMLDivElement>(null);
+  const ctaBandRef = useRef<HTMLDivElement>(null);
+  const ctaGlowRef = useRef<HTMLDivElement>(null);
+
+  const [sectionVisible, setSectionVisible] = useState(false);
+  const [statsActive, setStatsActive] = useState(false);
+  const [ctaVisible, setCtaVisible] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const applyPref = () => {
+      setReducedMotion(mq.matches);
+      if (mq.matches) {
+        setSectionVisible(true);
+        setStatsActive(true);
+        setCtaVisible(true);
+        if (ctaGlowRef.current) {
+          ctaGlowRef.current.style.transform = 'translate3d(-50%, 0, 0) scale(1)';
+        }
+      }
+    };
+    applyPref();
+    mq.addEventListener('change', applyPref);
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            if (entry.target === sectionRef.current) setSectionVisible(true);
+            if (entry.target === statsGridRef.current) setStatsActive(true);
+            if (entry.target === ctaBandRef.current) setCtaVisible(true);
+          }
+        });
+      },
+      { rootMargin: '0px 0px -12% 0px', threshold: 0.1 }
+    );
+
+    if (sectionRef.current) io.observe(sectionRef.current);
+    if (statsGridRef.current) io.observe(statsGridRef.current);
+    if (ctaBandRef.current) io.observe(ctaBandRef.current);
+
+    // A7: charcoal band's ember glow scales 0.9 -> 1 with scroll progress through the band
+    let rafId = 0;
+    const updateBandGlow = () => {
+      rafId = 0;
+      if (mq.matches || !ctaBandRef.current || !ctaGlowRef.current) return;
+      const rect = ctaBandRef.current.getBoundingClientRect();
+      const vh = Math.max(600, window.innerHeight);
+      const raw = (vh - rect.top) / (vh + rect.height);
+      const clamped = Math.min(1, Math.max(0, raw));
+      const scaleVal = 0.9 + clamped * 0.1;
+      ctaGlowRef.current.style.transform = `translate3d(-50%, 0, 0) scale(${scaleVal.toFixed(3)})`;
+    };
+
+    const onScroll = () => {
+      if (!rafId) {
+        rafId = window.requestAnimationFrame(updateBandGlow);
+      }
+    };
+
+    updateBandGlow();
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    return () => {
+      mq.removeEventListener('change', applyPref);
+      io.disconnect();
+      window.removeEventListener('scroll', onScroll);
+      if (rafId) window.cancelAnimationFrame(rafId);
+    };
+  }, []);
+
   return (
     <section
-      id="proof"
+      id="proof-screen"
+      ref={sectionRef}
       aria-labelledby="proof-heading"
-      className="relative py-12 sm:py-14 px-4 sm:px-6 lg:px-8 scroll-mt-20"
+      className="relative py-14 sm:py-20 lg:py-24 overflow-hidden border-t border-[#FED7AA]/60"
+      style={{
+        background:
+          'linear-gradient(180deg, #FFF8F2 0%, #FFE8D6 45%, #FFF4EC 82%, #FFFFFF 100%)',
+      }}
     >
-      <div className="relative z-10 max-w-6xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="max-w-3xl space-y-2">
-          <div className="font-display text-xs font-bold uppercase tracking-[0.12em] text-[#C2410C]">
-            WHY TEAMS SWITCH
+      {/* Ambient Radial Ember Glow Planes behind Stat Cards & Guarantee Band (Critical Glass Rule) */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute top-[14%] left-[15%] w-[460px] h-[360px] rounded-full"
+        style={{
+          background:
+            'radial-gradient(circle, rgba(232, 89, 12, 0.22) 0%, rgba(255, 140, 66, 0.15) 48%, rgba(255, 248, 242, 0) 74%)',
+          filter: 'blur(90px)',
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute top-[18%] right-[14%] w-[480px] h-[360px] rounded-full"
+        style={{
+          background:
+            'radial-gradient(circle, rgba(255, 140, 66, 0.22) 0%, rgba(232, 89, 12, 0.14) 50%, rgba(255, 248, 242, 0) 74%)',
+          filter: 'blur(90px)',
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute top-[48%] left-1/2 -translate-x-1/2 w-[680px] h-[340px] rounded-full"
+        style={{
+          background:
+            'radial-gradient(ellipse at center, rgba(232, 89, 12, 0.18) 0%, rgba(255, 140, 66, 0.12) 52%, rgba(255, 248, 242, 0) 76%)',
+          filter: 'blur(95px)',
+        }}
+      />
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Heading */}
+        <div
+          className={`sc-reveal ${
+            sectionVisible ? 'is-visible' : ''
+          } text-center max-w-3xl mx-auto mb-10 sm:mb-14`}
+        >
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 border border-[#FED7AA] text-xs font-bold uppercase tracking-wider text-[#C2410C] mb-3 backdrop-blur-sm">
+            Real Numbers · Real Audit Proof
           </div>
           <h2
             id="proof-heading"
-            className="font-display text-[clamp(1.8rem,3.5vw,2.6rem)] font-bold text-[#1C1917] tracking-[-0.02em] leading-[1.1]"
+            className="font-display font-bold tracking-[-0.02em] text-[#1C1917] text-[clamp(1.75rem,3.5vw,2.6rem)] leading-[1.12]"
           >
-            Less paperwork. Fewer arguments. More renewals.
+            Built to Pass Fire Officer &amp; Insurance Audits First Time
           </h2>
-        </div>
-
-        {/* 4 Stat Cards (NumberTicker count-up on scroll, brand shadow) */}
-        <div className="space-y-2">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-            <StatCounterCard target={190} suffix=" hrs" label="saved / year" />
-            <StatCounterCard target={96000} prefix="Rs." label="saved / year" />
-            <StatCounterCard target={750} label="assets tracked live" />
-            <StatCounterCard target={10} label="facilities, 1 dashboard" />
-          </div>
-          <p className="text-xs text-[#44403C]">
-            Based on a typical 10-facility operation moving from manual reporting.
+          <p className="mt-3 text-sm sm:text-base text-[#44403C]">
+            Whether you manage 10 buildings or 500 AMC sites across India, VigilAMC pays for itself from month one.
           </p>
         </div>
 
-        {/* Icon-First Trust Chips */}
-        <div className="flex flex-wrap items-center gap-2">
-          {TRUST_CHIPS.map(({ icon: Icon, label }) => (
+        {/* 4 Outcome Stat Glass Cards (A4: rAF 1.2s count-up) */}
+        <div
+          ref={statsGridRef}
+          data-testid="proof-stats-grid"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-12 sm:mb-16"
+        >
+          {STATS.map((stat, idx) => (
             <div
-              key={label}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#FFF8F2] border border-[#FED7AA] text-xs sm:text-sm font-semibold text-[#1C1917]"
+              key={stat.id}
+              style={{
+                transitionDelay: `${idx * 60}ms`,
+                background: 'rgba(255, 255, 255, 0.45)',
+              }}
+              className={`sc-reveal ${
+                sectionVisible ? 'is-visible' : ''
+              } glass-panel rounded-2xl p-5 sm:p-6 hover:-translate-y-1 transition-transform duration-200`}
             >
-              <Icon className="w-4 h-4 text-[#C2410C] shrink-0" aria-hidden="true" />
-              <span>{label}</span>
+              <div className="font-display font-bold text-3xl sm:text-4xl text-[#C2410C] tracking-tight mb-1.5">
+                <AnimatedStatValue
+                  stat={stat}
+                  active={statsActive}
+                  reducedMotion={reducedMotion}
+                />
+                <span className="text-lg sm:text-xl font-semibold text-[#1C1917]">
+                  {stat.unitLabel}
+                </span>
+              </div>
+              <div className="font-display font-bold text-sm sm:text-base text-[#1C1917] mb-1">
+                {stat.label}
+              </div>
+              <p className="text-xs text-[#44403C] leading-relaxed">{stat.sublabel}</p>
             </div>
           ))}
         </div>
 
-        {/* Sector Marquee (soft ember tint band) */}
-        <SectorMarquee />
-
-        {/* Guarantee Glass Band (Founding Agency Promise + Non-Compete Guarantee condensed) */}
-        <div className="rounded-2xl bg-[#FFF8F2]/90 backdrop-blur-xl border border-[#FED7AA] p-4 sm:p-5 shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <span className="w-9 h-9 rounded-xl bg-[#FFF4EC] border border-[#FED7AA] flex items-center justify-center text-[#0E9F6E] shrink-0 mt-0.5">
-              <ShieldCheck className="w-4 h-4" aria-hidden="true" />
-            </span>
-            <div className="space-y-0.5">
-              <h3 className="font-display text-sm sm:text-base font-bold text-[#1C1917]">
-                Free 1-building pilot &middot; No lock-in, ever &middot; Your data stays yours &middot; No non-compete games
-              </h3>
-              <p className="text-xs sm:text-sm text-[#44403C] leading-relaxed">
-                <strong>Founding Agency Onboarding Promise &amp; Non-Compete Guarantee:</strong> We
-                set up your first building from Excel for free with 1-click data export anytime.
-                VigilAMC is pure software - we never sell fire equipment or contact your clients.
-              </p>
-            </div>
+        {/* 3 Guarantee Rows in Lit-Glass Container */}
+        <div
+          style={{
+            transitionDelay: '180ms',
+            background: 'rgba(255, 255, 255, 0.48)',
+          }}
+          className={`sc-reveal ${
+            sectionVisible ? 'is-visible' : ''
+          } glass-panel rounded-2xl p-6 sm:p-8 mb-12 sm:mb-16`}
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 divide-y lg:divide-y-0 lg:divide-x divide-[#1C1917]/10">
+            {GUARANTEES.map((item, idx) => {
+              const Icon = item.icon;
+              return (
+                <div
+                  key={item.title}
+                  className={idx === 0 ? 'pt-0' : 'pt-5 lg:pt-0 lg:pl-8'}
+                >
+                  <div className="w-10 h-10 rounded-xl bg-[#FFF0E6] border border-[#FED7AA] flex items-center justify-center text-[#C2410C] mb-3.5 shadow-sm">
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-display font-bold text-base text-[#1C1917] mb-1.5">
+                    {item.title}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-[#44403C] leading-relaxed">
+                    {item.description}
+                  </p>
+                </div>
+              );
+            })}
           </div>
-
-          <Link
-            href="/sample-report"
-            className="min-h-[44px] shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-[#FED7AA] hover:border-[#C2410C] text-xs font-display font-bold text-[#C2410C] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C2410C]"
-          >
-            <span>Inspect Sample Report</span>
-            <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-          </Link>
         </div>
 
-        {/* Final CTA Band (Charcoal #1C1917 with subtle ember glow, glass card inside scales 0.98->1 on entry) */}
-        <motion.div
-          initial={{ opacity: 0.96, scale: 0.98 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true, amount: 0.35 }}
-          transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-          className="relative rounded-3xl bg-[#1C1917] text-[#FAFAF9] p-5 sm:p-7 overflow-hidden border border-[#FED7AA]/25 shadow-[0_24px_60px_-15px_rgba(28,25,23,0.35)] motion-reduce:!transform-none"
+        {/* Final Charcoal CTA Band (#1C1917) with A7 scroll-progress ember glow scale (0.9 -> 1) + lifted glass card */}
+        <div
+          ref={ctaBandRef}
+          data-testid="cta-charcoal-band"
+          className="relative rounded-3xl overflow-hidden bg-[#1C1917] text-[#FAFAF9] p-6 sm:p-10 lg:p-12 shadow-[0_28px_64px_-20px_rgba(28,25,23,0.45)]"
         >
-          {/* Sealed Ember Glow from the Ember Line */}
+          {/* Ember radial glow behind CTA card — scales 0.9 -> 1 with scroll progress */}
           <div
+            ref={ctaGlowRef}
             aria-hidden="true"
-            className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[28rem] h-[14rem] rounded-full blur-2xl opacity-35"
+            data-testid="cta-ember-glow"
+            className="pointer-events-none absolute -top-24 left-1/2 w-[540px] h-[300px] rounded-full"
             style={{
               background:
-                'radial-gradient(circle, rgba(255,140,66,0.55) 0%, rgba(234,88,12,0.25) 50%, transparent 75%)',
+                'radial-gradient(ellipse at center, rgba(234, 88, 12, 0.34) 0%, rgba(255, 140, 66, 0.14) 52%, rgba(28, 25, 23, 0) 75%)',
+              filter: 'blur(38px)',
+              transform: 'translate3d(-50%, 0, 0) scale(0.9)',
+              willChange: 'transform',
             }}
           />
 
-          <div className="relative z-10 rounded-2xl bg-white/[0.04] backdrop-blur-md border border-[#FAFAF9]/12 p-5 sm:p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
-            <div className="space-y-1.5 max-w-xl">
-              <h2 className="font-display text-[clamp(1.5rem,2.8vw,2.2rem)] font-bold text-[#FAFAF9] tracking-[-0.02em] leading-[1.1]">
-                See VigilAMC on your own building.
-              </h2>
-              <p className="text-sm sm:text-base text-[#A8A29E] leading-relaxed">
-                Free pilot on 1 building. We set it up. You compare.
+          <div
+            data-testid="cta-lifted-card"
+            className={`relative z-10 rounded-2xl border border-white/15 bg-white/[0.06] backdrop-blur-xl p-6 sm:p-8 transition-all duration-500 ${
+              ctaVisible && !reducedMotion
+                ? '-translate-y-1 shadow-[0_24px_60px_-16px_rgba(234,88,12,0.28)]'
+                : ''
+            }`}
+          >
+            <div className="max-w-3xl mx-auto text-center">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#C2410C]/30 border border-[#EA580C]/50 text-xs font-semibold text-[#FED7AA] mb-4">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#FF8C42]" />
+                <span>Ready in 10 Minutes · No Extra Hardware</span>
+              </div>
+
+              <h3 className="font-display font-bold text-2xl sm:text-3xl lg:text-4xl text-[#FAFAF9] tracking-tight leading-tight">
+                See Exactly What a Fire Officer Sees During an Inspection
+              </h3>
+              <p className="mt-3 text-sm sm:text-base text-[#A8A29E] max-w-xl mx-auto leading-relaxed">
+                Open a real sample Fire Safety Compliance Report right now, or start your 30-day free pilot with your first building in under 10 minutes.
               </p>
-              <div className="pt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#A8A29E] font-medium">
-                <a
-                  href={`mailto:${SITE_CONFIG.CONTACT_EMAIL}`}
-                  className="hover:text-[#FAFAF9] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
+
+              <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3.5">
+                <Link
+                  href="/sample-report"
+                  className="btn-flame inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-base shadow-lg"
                 >
-                  {SITE_CONFIG.CONTACT_EMAIL}
-                </a>
-                <span aria-hidden="true">-</span>
-                <a
-                  href={SITE_CONFIG.PHONE_TEL}
-                  className="hover:text-[#FAFAF9] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
+                  <FileCheck2 className="w-5 h-5" />
+                  <span>See a Live Sample Report</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+                <Link
+                  href="/login"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-white hover:bg-[#FFF8F2] text-[#1C1917] font-semibold text-base transition-all hover:-translate-y-0.5"
                 >
-                  {SITE_CONFIG.PHONE_DISPLAY}
-                </a>
-                <span aria-hidden="true">-</span>
-                <a
-                  href={SITE_CONFIG.SOCIAL.LINKEDIN}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-[#FF8C42] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
-                >
-                  @vigilamc
-                </a>
+                  <span>Start 30-Day Free Pilot</span>
+                </Link>
+              </div>
+
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-[#A8A29E]">
+                <span className="inline-flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#059669]" />
+                  Works on any Android or iPhone
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#059669]" />
+                  Icon-first + Voice-to-Text Mic
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#059669]" />
+                  Instant Printable A4 PDF
+                </span>
               </div>
             </div>
-
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto shrink-0">
-              <a
-                href={SITE_CONFIG.WHATSAPP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="min-h-[48px] inline-flex items-center justify-center gap-2 px-7 py-3 rounded-xl bg-[#C2410C] hover:bg-[#EA580C] text-white font-display font-bold text-base shadow-[0_10px_28px_-6px_rgba(234,88,12,0.5)] transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8C42]"
-              >
-                <span>Book a Free Demo</span>
-                <ArrowUpRight className="w-4 h-4" aria-hidden="true" />
-              </a>
-
-              <Link
-                href="/login"
-                className="min-h-[48px] inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-white/10 hover:bg-white/15 border border-[#FAFAF9]/20 text-[#FAFAF9] font-display font-semibold text-sm transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8C42]"
-              >
-                <span>Agency Login</span>
-              </Link>
-            </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );
 }
+
+export default ProofSection;

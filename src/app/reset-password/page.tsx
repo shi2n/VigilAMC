@@ -202,7 +202,7 @@ function ResetPasswordContent() {
               className="h-16 w-auto object-contain mx-auto rounded-2xl shadow-sm"
             />
           </Link>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-ocean-50 text-[#0077B6] text-xs font-bold border border-ocean-200">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-ocean-50 text-[#C2410C] text-xs font-bold border border-ocean-200">
             <KeyRound className="w-3.5 h-3.5" />
             <span>Account Security</span>
           </div>
@@ -221,7 +221,7 @@ function ResetPasswordContent() {
         {/* State 1: Checking Session */}
         {checkingSession && (
           <div className="py-10 text-center space-y-3">
-            <RefreshCw className="w-8 h-8 animate-spin text-[#0077B6] mx-auto" />
+            <RefreshCw className="w-8 h-8 animate-spin text-[#C2410C] mx-auto" />
             <p className="text-sm font-semibold text-slate-700">
               Verifying your reset link...
             </p>
@@ -246,7 +246,7 @@ function ResetPasswordContent() {
             <div className="pt-2">
               <Link
                 href="/login?reset=success"
-                className="w-full py-3 px-4 bg-[#0077B6] hover:bg-[#023E8A] text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                className="w-full py-3 px-4 bg-[#C2410C] hover:bg-[#1C1917] text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
               >
                 <span>Proceed to Sign In</span>
                 <ArrowRight className="w-4 h-4" />
@@ -285,7 +285,7 @@ function ResetPasswordContent() {
                   placeholder="Minimum 6 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-9 pr-10 py-2.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
+                  className="w-full pl-9 pr-10 py-2.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#C2410C]"
                 />
                 <button
                   type="button"
@@ -319,7 +319,7 @@ function ResetPasswordContent() {
                   placeholder="Re-enter your new password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full pl-9 pr-10 py-2.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
+                  className="w-full pl-9 pr-10 py-2.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#C2410C]"
                 />
                 <button
                   type="button"
@@ -340,7 +340,7 @@ function ResetPasswordContent() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-[#0077B6] hover:bg-[#023E8A] disabled:opacity-60 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer mt-2"
+              className="w-full py-3 bg-[#C2410C] hover:bg-[#1C1917] disabled:opacity-60 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer mt-2"
             >
               {loading ? (
                 <>
@@ -374,7 +374,7 @@ function ResetPasswordContent() {
             <div className="space-y-2 pt-2">
               <Link
                 href="/login"
-                className="w-full py-3 px-4 bg-[#0077B6] hover:bg-[#023E8A] text-white font-bold text-xs rounded-xl shadow text-center block transition-colors"
+                className="w-full py-3 px-4 bg-[#C2410C] hover:bg-[#1C1917] text-white font-bold text-xs rounded-xl shadow text-center block transition-colors"
               >
                 Request a New Reset Link
               </Link>
@@ -390,7 +390,7 @@ function ResetPasswordContent() {
 
         {/* Security Notice */}
         <div className="pt-2 border-t border-slate-100 flex items-center justify-center gap-1.5 text-slate-400 text-xs">
-          <ShieldCheck className="w-4 h-4 text-[#0077B6]" />
+          <ShieldCheck className="w-4 h-4 text-[#C2410C]" />
           <span>Secured with 256-bit Supabase Cloud Authentication</span>
         </div>
       </div>
@@ -404,7 +404,7 @@ export default function ResetPasswordPage() {
       fallback={
         <div className="min-h-[85vh] flex items-center justify-center p-4 bg-slate-50">
           <div className="text-center space-y-3">
-            <RefreshCw className="w-8 h-8 animate-spin text-[#0077B6] mx-auto" />
+            <RefreshCw className="w-8 h-8 animate-spin text-[#C2410C] mx-auto" />
             <p className="text-sm font-semibold text-slate-700">
               Loading security portal...
             </p>

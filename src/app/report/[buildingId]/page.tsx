@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import EmberLine from '@/components/home/EmberLine';
 import { useParams, useRouter } from 'next/navigation';
 import {
   Printer,
@@ -218,9 +219,9 @@ export default function ComplianceReportPage() {
 
   if (loading) {
     return (
-      <div className="bg-slate-100 min-h-screen py-10 px-4 flex items-center justify-center">
+      <div className="bg-[#FFF8F2] min-h-screen py-10 px-4 flex items-center justify-center">
         <div className="bg-white border border-slate-200 rounded-2xl shadow-lg p-8 max-w-md w-full flex flex-col items-center gap-3 text-slate-700 text-center">
-          <RefreshCw className="w-8 h-8 animate-spin text-[#0077B6]" />
+          <RefreshCw className="w-8 h-8 animate-spin text-[#C2410C]" />
           <p className="text-sm font-bold text-slate-900">Generating Official Form-B Certificate...</p>
           <p className="text-xs text-slate-500">Compiling verified equipment schedule &amp; agency seal</p>
         </div>
@@ -230,7 +231,7 @@ export default function ComplianceReportPage() {
 
   if (error || !data || !data.building || !data.summary) {
     return (
-      <div className="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+      <div className="bg-[#FFF8F2] min-h-screen flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white border border-slate-200 rounded-2xl p-6 text-center space-y-4 shadow-xl text-slate-900">
           <div className="w-12 h-12 rounded-2xl bg-red-50 border border-red-200 flex items-center justify-center mx-auto text-red-600">
             <AlertTriangle className="w-6 h-6" />
@@ -242,7 +243,7 @@ export default function ComplianceReportPage() {
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2.5">
             <button
               onClick={fetchReport}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#0077B6] hover:bg-[#023E8A] text-white font-bold text-xs transition-all cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#C2410C] hover:bg-[#1C1917] text-white font-bold text-xs transition-all cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               <span>Retry</span>
@@ -275,7 +276,8 @@ export default function ComplianceReportPage() {
     (summary?.overallStatus === 'COMPLIANT' || summary?.overallStatus === 'VERIFIED');
 
   return (
-    <div className="bg-slate-100 min-h-screen py-6 sm:py-10 px-3 sm:px-6 print:bg-white print:p-0 text-slate-900">
+    <div className="relative bg-[#FFF8F2] min-h-screen py-6 sm:py-10 px-3 sm:px-6 print:bg-white print:p-0 text-[#1C1917]">
+      <EmberLine />
       {/* Dedicated @page A4 Portrait Print Rules */}
       <style jsx global>{`
         @media print {
@@ -305,7 +307,7 @@ export default function ComplianceReportPage() {
       )}
 
       {/* Sticky Top Document Action Bar (Hidden Completely on Print/PDF) */}
-      <div className="no-print print:hidden max-w-[210mm] mx-auto mb-5 sticky top-3 z-40 bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-xl p-3 sm:px-4 shadow-lg space-y-3">
+      <div data-testid="report-glass-action-bar" className="no-print print:hidden max-w-[210mm] mx-auto mb-5 sticky top-3 z-40 glass-panel-dense rounded-xl p-3 sm:px-4 space-y-3">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           {/* Left: Close / Back to Dashboard + Document Badge */}
           <div className="flex items-center gap-2.5 flex-wrap">
@@ -318,8 +320,8 @@ export default function ComplianceReportPage() {
               <span>Close / Back to Dashboard</span>
             </button>
 
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 text-[#023E8A] border border-blue-200/80 text-[11px] font-bold tracking-tight">
-              <FileText className="w-3.5 h-3.5 text-[#0077B6]" />
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#FFF0E6] text-[#1C1917] border border-[#FED7AA] text-[11px] font-bold tracking-tight">
+              <FileText className="w-3.5 h-3.5 text-[#C2410C]" />
               <span>Official Form-B Certificate Preview</span>
             </span>
           </div>
@@ -339,7 +341,7 @@ export default function ComplianceReportPage() {
             <button
               type="button"
               onClick={handleSendEmail}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#C2410C] hover:bg-[#9A3412] text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
               title="Email Form-B Report link to Client"
             >
               <Mail className="w-3.5 h-3.5" />
@@ -369,7 +371,7 @@ export default function ComplianceReportPage() {
             <button
               type="button"
               onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-gradient-to-r from-[#023E8A] to-[#0077B6] hover:from-[#03045E] hover:to-[#023E8A] text-white font-extrabold text-xs shadow-md transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-gradient-to-r from-[#1C1917] to-[#C2410C] hover:from-[#1C1917] hover:to-[#1C1917] text-white font-extrabold text-xs shadow-md transition-all cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5 stroke-[2.2]" />
               <span>Download / Print A4 PDF</span>
@@ -609,7 +611,7 @@ export default function ComplianceReportPage() {
                               href={eq.photoUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-[#0077B6] hover:underline font-semibold text-[10px]"
+                              className="inline-flex items-center gap-1 text-[#C2410C] hover:underline font-semibold text-[10px]"
                             >
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
@@ -645,7 +647,7 @@ export default function ComplianceReportPage() {
         <div className="pt-6 border-t border-slate-300 flex flex-col sm:flex-row items-center justify-between gap-6">
           {/* Digital GPS & Timestamp Verification Badge */}
           <div className="flex items-start gap-3.5 p-3.5 bg-slate-50 rounded-xl border border-slate-200 max-w-md w-full sm:w-auto">
-            <div className="w-12 h-12 rounded-xl bg-[#023E8A] text-white flex flex-col items-center justify-center shrink-0 shadow-xs border border-blue-900">
+            <div className="w-12 h-12 rounded-xl bg-[#1C1917] text-white flex flex-col items-center justify-center shrink-0 shadow-xs border border-blue-900">
               <MapPin className="w-5 h-5 text-cyan-300" />
               <span className="text-[8px] font-black uppercase tracking-wider text-cyan-100 mt-0.5">GPS STAMP</span>
             </div>

@@ -24,7 +24,7 @@ export function SiteLayout({ children }: SiteLayoutProps) {
 
   if (isProductOrStandaloneSurface) {
     return (
-      <div className="min-h-screen font-sans selection:bg-[#0077B6] selection:text-white print:bg-white">
+      <div className="min-h-screen font-sans selection:bg-[#C2410C] selection:text-white print:bg-white">
         {children}
       </div>
     );

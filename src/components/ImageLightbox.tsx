@@ -120,14 +120,14 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose }: Ima
             <>
               <button
                 onClick={handlePrev}
-                className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-slate-900/80 hover:bg-[#0077B6] text-white transition-colors shadow-lg cursor-pointer"
+                className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-slate-900/80 hover:bg-[#C2410C] text-white transition-colors shadow-lg cursor-pointer"
                 aria-label="Previous"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <button
                 onClick={handleNext}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-slate-900/80 hover:bg-[#0077B6] text-white transition-colors shadow-lg cursor-pointer"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-slate-900/80 hover:bg-[#C2410C] text-white transition-colors shadow-lg cursor-pointer"
                 aria-label="Next"
               >
                 <ChevronRight className="w-5 h-5" />
@@ -144,7 +144,7 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose }: Ima
         <div className="md:w-2/5 p-6 sm:p-8 flex flex-col justify-between overflow-y-auto">
           <div className="space-y-4">
             <div>
-              <span className="text-xs uppercase font-extrabold text-[#0077B6] tracking-wider">
+              <span className="text-xs uppercase font-extrabold text-[#C2410C] tracking-wider">
                 {current.category}
               </span>
               <h3 className="font-display text-xl font-bold text-slate-900 mt-1">
@@ -158,11 +158,11 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose }: Ima
 
             <div className="pt-2 border-t border-slate-100 space-y-2 text-xs">
               <div className="flex items-center gap-2 text-slate-600">
-                <MapPin className="w-4 h-4 text-[#0077B6] shrink-0" />
+                <MapPin className="w-4 h-4 text-[#C2410C] shrink-0" />
                 <span>{current.building}</span>
               </div>
               <div className="flex items-center gap-2 text-slate-600">
-                <Clock className="w-4 h-4 text-[#0077B6] shrink-0" />
+                <Clock className="w-4 h-4 text-[#C2410C] shrink-0" />
                 <span>{current.auditDate}</span>
               </div>
             </div>

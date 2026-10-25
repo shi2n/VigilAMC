@@ -10,17 +10,17 @@ export default function PrivacyPolicyPage() {
       <div className="max-w-4xl mx-auto space-y-8">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-[#0077B6] transition-colors"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-[#C2410C] transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Home</span>
         </Link>
 
         <div className="border-b border-slate-200 pb-6">
-          <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-ocean-50 px-3 py-1 rounded-full border border-ocean-200">
+          <span className="text-xs uppercase font-extrabold tracking-widest text-[#C2410C] bg-ocean-50 px-3 py-1 rounded-full border border-ocean-200">
             Legal &amp; Transparency
           </span>
-          <h1 className="text-3xl sm:text-4xl font-black text-[#023E8A] mt-3">
+          <h1 className="text-3xl sm:text-4xl font-black text-[#1C1917] mt-3">
             Privacy Policy
           </h1>
           <p className="text-xs text-slate-500 mt-2">

@@ -34,10 +34,10 @@ export default function HowItWorksPage() {
       {/* Page Header Banner */}
       <section className="bg-gradient-to-b from-ocean-50 to-white py-20 px-4 sm:px-6 lg:px-8 border-b border-slate-200">
         <div className="max-w-4xl mx-auto text-center">
-          <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-white px-3.5 py-1.5 rounded-full border border-ocean-200 shadow-sm">
+          <span className="text-xs uppercase font-extrabold tracking-widest text-[#C2410C] bg-white px-3.5 py-1.5 rounded-full border border-ocean-200 shadow-sm">
             Operational Blueprint
           </span>
-          <h1 className="font-display text-4xl sm:text-5xl font-black text-[#023E8A] tracking-[-0.03em] mt-4 text-balance">
+          <h1 className="font-display text-4xl sm:text-5xl font-black text-[#1C1917] tracking-[-0.03em] mt-4 text-balance">
             How VigilAMC Works in the Field
           </h1>
           <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto text-pretty">
@@ -65,14 +65,14 @@ export default function HowItWorksPage() {
                 <div className="mt-4 space-y-2 text-xs">
                   <div className="p-3 bg-white rounded-lg border border-slate-200 flex justify-between items-center shadow-xs">
                     <div>
-                      <p className="font-bold text-[#023E8A]">Tower B — Floor 04</p>
+                      <p className="font-bold text-[#1C1917]">Tower B — Floor 04</p>
                       <p className="text-slate-500">6kg ABC Powder #EXT-401 to #EXT-408</p>
                     </div>
                     <span className="text-emerald-600 font-bold">✓ Registered</span>
                   </div>
                   <div className="p-3 bg-white rounded-lg border border-slate-200 flex justify-between items-center shadow-xs">
                     <div>
-                      <p className="font-bold text-[#023E8A]">Basement 2 Pump Room</p>
+                      <p className="font-bold text-[#1C1917]">Basement 2 Pump Room</p>
                       <p className="text-slate-500">Wet Riser Landing Valves &amp; Jockey Pump</p>
                     </div>
                     <span className="text-emerald-600 font-bold">✓ Registered</span>
@@ -82,10 +82,10 @@ export default function HowItWorksPage() {
             </div>
 
             <div className="lg:col-span-7 order-1 lg:order-2 space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ocean-50 text-[#0077B6] text-xs font-extrabold border border-ocean-200">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ocean-50 text-[#C2410C] text-xs font-extrabold border border-ocean-200">
                 Phase 01 &bull; Register Assets
               </div>
-              <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-[#023E8A] tracking-tight">
+              <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-[#1C1917] tracking-tight">
                 Register Equipment &amp; Location Details
               </h2>
               <p className="text-sm sm:text-base text-slate-600 leading-relaxed text-pretty">
@@ -110,10 +110,10 @@ export default function HowItWorksPage() {
           {/* Step 2 */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-7 space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-navy-50 text-[#023E8A] text-xs font-extrabold border border-navy-200">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-navy-50 text-[#1C1917] text-xs font-extrabold border border-navy-200">
                 Phase 02 &bull; Scheduled Maintenance
               </div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#023E8A] tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1C1917] tracking-tight">
                 Statutory Inspection Schedules &amp; Renewal Reminders
               </h2>
               <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
@@ -137,11 +137,11 @@ export default function HowItWorksPage() {
             <div className="lg:col-span-5">
               <div className="corp-card p-6 bg-white border-navy-200 shadow-md">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <span className="text-xs font-bold text-[#023E8A] flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-[#0077B6]" />
+                  <span className="text-xs font-bold text-[#1C1917] flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-[#C2410C]" />
                     Compliance Schedule [Sample View]
                   </span>
-                  <span className="text-[10px] bg-ocean-50 text-[#0077B6] px-2 py-0.5 rounded font-bold">
+                  <span className="text-[10px] bg-ocean-50 text-[#C2410C] px-2 py-0.5 rounded font-bold">
                     ACTIVE CADENCE
                   </span>
                 </div>
@@ -216,10 +216,10 @@ export default function HowItWorksPage() {
             </div>
 
             <div className="lg:col-span-7 order-1 lg:order-2 space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ocean-50 text-[#0077B6] text-xs font-extrabold border border-ocean-200">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ocean-50 text-[#C2410C] text-xs font-extrabold border border-ocean-200">
                 Phase 03 &bull; Record on Site
               </div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#023E8A] tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1C1917] tracking-tight">
                 GPS-Verified Inspections &amp; Photo Proof
               </h2>
               <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
@@ -237,7 +237,7 @@ export default function HowItWorksPage() {
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-extrabold border border-emerald-200">
                 Phase 04 &bull; Form-B Certification
               </div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#023E8A] tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1C1917] tracking-tight">
                 Automated Form-B Generation &amp; Client Reporting
               </h2>
               <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
@@ -306,10 +306,10 @@ export default function HowItWorksPage() {
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-50 border-y border-slate-200">
         <div className="max-w-4xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-12">
-            <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-white px-3 py-1 rounded-full border border-slate-200">
+            <span className="text-xs uppercase font-extrabold tracking-widest text-[#C2410C] bg-white px-3 py-1 rounded-full border border-slate-200">
               Interactive Test Drive
             </span>
-            <h3 className="text-2xl sm:text-3xl font-extrabold text-[#023E8A] tracking-tight mt-3">
+            <h3 className="text-2xl sm:text-3xl font-extrabold text-[#1C1917] tracking-tight mt-3">
               Simulate a Live Field Asset Audit
             </h3>
             <p className="text-sm text-slate-600 mt-2">
@@ -324,7 +324,7 @@ export default function HowItWorksPage() {
                 onClick={() => setActiveAssetType('extinguisher')}
                 className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                   activeAssetType === 'extinguisher'
-                    ? 'bg-[#0077B6] text-white shadow'
+                    ? 'bg-[#C2410C] text-white shadow'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
               >
@@ -334,7 +334,7 @@ export default function HowItWorksPage() {
                 onClick={() => setActiveAssetType('hydrant')}
                 className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                   activeAssetType === 'hydrant'
-                    ? 'bg-[#0077B6] text-white shadow'
+                    ? 'bg-[#C2410C] text-white shadow'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
               >
@@ -344,7 +344,7 @@ export default function HowItWorksPage() {
                 onClick={() => setActiveAssetType('panel')}
                 className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                   activeAssetType === 'panel'
-                    ? 'bg-[#0077B6] text-white shadow'
+                    ? 'bg-[#C2410C] text-white shadow'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
               >
@@ -490,7 +490,7 @@ export default function HowItWorksPage() {
 
               <Link
                 href="/sample-report"
-                className="px-5 py-2.5 bg-[#0077B6] hover:bg-[#023E8A] text-white text-xs font-bold rounded-lg transition-colors whitespace-nowrap shadow cursor-pointer"
+                className="px-5 py-2.5 bg-[#C2410C] hover:bg-[#1C1917] text-white text-xs font-bold rounded-lg transition-colors whitespace-nowrap shadow cursor-pointer"
               >
                 Inspect Sample Form-B
               </Link>
@@ -502,7 +502,7 @@ export default function HowItWorksPage() {
       {/* Bottom CTA Banner */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white text-center">
         <div className="max-w-3xl mx-auto space-y-4">
-          <h2 className="text-3xl font-extrabold text-[#023E8A]">
+          <h2 className="text-3xl font-extrabold text-[#1C1917]">
             Ready to Put Your Operations on Autopilot?
           </h2>
           <p className="text-slate-600 text-sm leading-relaxed">
@@ -511,13 +511,13 @@ export default function HowItWorksPage() {
           <div className="pt-4 flex flex-col sm:flex-row justify-center gap-4">
             <Link
               href="/#pilot-section"
-              className="px-8 py-3.5 bg-[#0077B6] hover:bg-[#023E8A] text-white font-bold text-sm rounded-xl shadow-lg transition-colors"
+              className="px-8 py-3.5 bg-[#C2410C] hover:bg-[#1C1917] text-white font-bold text-sm rounded-xl shadow-lg transition-colors"
             >
               Join the free testing
             </Link>
             <Link
               href="/sample-report"
-              className="px-8 py-3.5 bg-slate-100 hover:bg-slate-200 text-[#023E8A] font-bold text-sm rounded-xl transition-colors"
+              className="px-8 py-3.5 bg-slate-100 hover:bg-slate-200 text-[#1C1917] font-bold text-sm rounded-xl transition-colors"
             >
               Download Sample Form-B PDF
             </Link>

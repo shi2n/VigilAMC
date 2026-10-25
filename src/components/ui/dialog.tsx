@@ -34,13 +34,13 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-[#DCE7F2] bg-white p-6 shadow-[0_16px_48px_rgba(2,62,138,0.16)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 rounded-2xl",
+        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-[#FED7AA] bg-white p-6 shadow-[0_16px_48px_rgba(28, 25, 23,0.16)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 rounded-2xl",
         className
       )}
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-lg p-1 text-slate-400 opacity-80 transition-opacity hover:opacity-100 hover:bg-[#EAF6FF] hover:text-[#0077B6] focus:outline-none focus:ring-2 focus:ring-[#0077B6]">
+      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-lg p-1 text-slate-400 opacity-80 transition-opacity hover:opacity-100 hover:bg-[#FFF0E6] hover:text-[#C2410C] focus:outline-none focus:ring-2 focus:ring-[#C2410C]">
         <X className="h-4 w-4" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
@@ -80,7 +80,7 @@ const DialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn("text-lg font-bold leading-none tracking-tight text-[#023E8A]", className)}
+    className={cn("text-lg font-bold leading-none tracking-tight text-[#1C1917]", className)}
     {...props}
   />
 ));

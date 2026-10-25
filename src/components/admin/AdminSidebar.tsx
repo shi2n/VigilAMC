@@ -85,7 +85,7 @@ export function AdminSidebar({
       label: 'Inspections & Work',
       icon: CheckCircle2,
       badge: openRepairsCount > 0 ? openRepairsCount : undefined,
-      badgeColor: 'bg-[#B91C1C] text-white',
+      badgeColor: 'bg-[#DC2626] text-white',
     },
     { id: 'FIELD_TEAM', label: 'Field Team', icon: Users },
     { id: 'REPORTS', label: 'Reports', icon: FileText },
@@ -115,11 +115,14 @@ export function AdminSidebar({
       .join('') || 'A';
 
   const renderNavList = (layoutGroupId: string) => (
-    <div className="flex flex-col h-full bg-white border-r border-[#DCE7F2] text-slate-700 w-64 select-none shadow-xs">
+    <div
+      data-testid="admin-glass-sidebar"
+      className="flex flex-col h-full glass-panel-dense border-y-0 border-l-0 text-[#1C1917] w-64 select-none"
+    >
       {/* Brand Header */}
-      <div className="p-4 sm:p-5 border-b border-[#DCE7F2] flex items-center justify-between">
+      <div className="p-4 sm:p-5 border-b border-[#1C1917]/10 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 group shrink-0 min-w-0">
-          <div className="bg-white p-1 rounded-xl border border-[#DCE7F2] shadow-xs transition-transform duration-200 group-hover:scale-105 shrink-0">
+          <div className="bg-white/85 p-1 rounded-xl border border-[#FED7AA] shadow-xs transition-transform duration-200 group-hover:scale-105 shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/logo.jpg"
@@ -132,14 +135,14 @@ export function AdminSidebar({
           </div>
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="font-extrabold text-base tracking-tight text-[#023E8A]">
-                Vigil<span className="text-[#0077B6]">AMC</span>
+              <span className="font-display font-extrabold text-base tracking-tight text-[#1C1917]">
+                Vigil<span className="text-[#C2410C]">AMC</span>
               </span>
-              <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-[#EAF6FF] text-[#0077B6] border border-[#0077B6]/30">
-                Testing
+              <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA]">
+                LIVE
               </span>
             </div>
-            <p className="text-[11px] text-slate-500 truncate max-w-[130px]">
+            <p className="text-[11px] text-[#44403C] truncate max-w-[130px]">
               {company?.name || 'Fire AMC Agency'}
             </p>
           </div>
@@ -148,14 +151,14 @@ export function AdminSidebar({
         {/* Close button on mobile */}
         <button
           onClick={onCloseMobile}
-          className="lg:hidden p-1.5 rounded-lg bg-[#F4F8FB] hover:bg-[#EAF6FF] text-slate-600 hover:text-[#023E8A]"
+          className="lg:hidden p-1.5 rounded-lg bg-[#FFF4EC] hover:bg-[#FFF0E6] text-[#44403C] hover:text-[#1C1917]"
           aria-label="Close navigation"
         >
           <X className="w-5 h-5" />
         </button>
       </div>
 
-      {/* Navigation List with layoutId sliding pill + hover micro-bounce */}
+      {/* Navigation List with layoutId sliding pill + C1 active item (#EA580C at 10% + 3px #C2410C left border) */}
       <div className="flex-1 overflow-y-auto p-3 space-y-1.5 scrollbar-thin">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -170,21 +173,22 @@ export function AdminSidebar({
               }}
               className={`group relative w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-colors ${
                 isActive
-                  ? 'text-[#0077B6] font-bold'
-                  : 'text-slate-600 hover:text-[#023E8A] hover:bg-[#F4F8FB] font-medium'
+                  ? 'text-[#C2410C] font-bold'
+                  : 'text-[#1C1917] hover:text-[#C2410C] hover:bg-[#FFF0E6]/70 font-medium'
               }`}
             >
               {isActive && (
                 <motion.div
                   layoutId={prefersReducedMotion ? undefined : layoutGroupId}
                   transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                  className="absolute inset-0 rounded-xl bg-[#EAF6FF] border border-[#0077B6]/30 shadow-xs"
+                  className="absolute inset-0 rounded-xl border border-[#EA580C]/25 border-l-[3px] border-l-[#C2410C] shadow-xs"
+                  style={{ backgroundColor: 'rgba(234, 88, 12, 0.10)' }}
                 />
               )}
               <div className="relative z-10 flex items-center gap-2.5 truncate">
                 <Icon
                   className={`w-4 h-4 shrink-0 transition-transform duration-150 group-hover:scale-110 ${
-                    isActive ? 'text-[#0077B6]' : 'text-slate-400 group-hover:text-[#0077B6]'
+                    isActive ? 'text-[#C2410C]' : 'text-[#44403C] group-hover:text-[#C2410C]'
                   }`}
                 />
                 <span className="truncate">{item.label}</span>
@@ -193,7 +197,7 @@ export function AdminSidebar({
               {item.badge && (
                 <span
                   className={`relative z-10 px-1.5 py-0.5 rounded-full text-[10px] font-extrabold shrink-0 ${
-                    item.badgeColor || 'bg-[#EAF6FF] text-[#0077B6]'
+                    item.badgeColor || 'bg-[#FFF0E6] text-[#C2410C]'
                   }`}
                 >
                   {item.badge}
@@ -204,31 +208,31 @@ export function AdminSidebar({
         })}
 
         {/* Launch Mobile Field App Button */}
-        <div className="pt-2 mt-2 border-t border-[#DCE7F2]">
+        <div className="pt-2 mt-2 border-t border-[#1C1917]/10">
           <Link
             href="/technician"
-            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-[#023E8A] to-[#0077B6] hover:from-[#03045E] hover:to-[#023E8A] text-white shadow-xs transition-all active:scale-[0.98]"
+            className="btn-flame w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold text-white shadow-xs transition-all active:scale-[0.98]"
           >
             <div className="flex items-center gap-2 truncate">
-              <Smartphone className="w-4 h-4 shrink-0 text-[#EAF6FF]" />
-              <span className="truncate">📱 Open Mobile Field App</span>
+              <Smartphone className="w-4 h-4 shrink-0 text-[#FFF8F2]" />
+              <span className="truncate">Open Mobile Field App</span>
             </div>
           </Link>
         </div>
       </div>
 
       {/* Admin User Profile & Sign Out Footer */}
-      <div className="p-3.5 border-t border-[#DCE7F2] bg-[#F4F8FB] space-y-2">
+      <div className="p-3.5 border-t border-[#1C1917]/10 bg-white/45 space-y-2">
         <div className="flex items-center justify-between gap-2 min-w-0">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#0077B6] to-[#023E8A] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#EA580C] to-[#C2410C] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
               {userInitials}
             </div>
             <div className="min-w-0">
-              <div className="text-xs font-bold text-[#023E8A] truncate">
+              <div className="text-xs font-bold text-[#1C1917] truncate">
                 {displayName}
               </div>
-              <div className="text-[10px] text-slate-500 truncate">
+              <div className="text-[10px] text-[#44403C] truncate">
                 {roleName}
               </div>
             </div>
@@ -237,7 +241,7 @@ export function AdminSidebar({
           <div className="flex items-center gap-1 shrink-0">
             <button
               onClick={onLogout}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-[#B91C1C] hover:bg-rose-50 transition-colors"
+              className="p-1.5 rounded-lg text-[#C2410C] hover:text-[#9A3412] hover:bg-[#FFF0E6] transition-colors"
               title="Sign out of agency dashboard"
               aria-label="Sign out"
             >
@@ -260,7 +264,7 @@ export function AdminSidebar({
       {isMobile && (
         <div className="fixed inset-0 z-50 lg:hidden flex">
           <div
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs"
+            className="fixed inset-0 bg-[#1C1917]/40 backdrop-blur-xs"
             onClick={onCloseMobile}
           />
           <div className="relative z-10 h-full">

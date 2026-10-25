@@ -98,12 +98,12 @@ export function FreePilotForm() {
   return (
     <div id="pilot-form" className="w-full max-w-2xl mx-auto bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden scroll-mt-24">
       {/* Form Header */}
-      <div className="bg-gradient-to-r from-[#023E8A] to-[#0077B6] p-6 sm:p-8 text-white">
+      <div className="bg-gradient-to-r from-[#1C1917] to-[#C2410C] p-6 sm:p-8 text-white">
         <div className="flex items-center justify-between gap-3 mb-2">
           <span className="text-xs uppercase font-extrabold tracking-widest text-cyan-200">
             Testing Phase &bull; Free Founding Access
           </span>
-          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-400 text-[#023E8A]">
+          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-400 text-[#1C1917]">
             60 Days Free
           </span>
         </div>
@@ -121,13 +121,13 @@ export function FreePilotForm() {
             <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
               <CheckCircle2 className="w-8 h-8" />
             </div>
-            <h4 className="text-xl font-black text-[#023E8A]">
+            <h4 className="text-xl font-black text-[#1C1917]">
               Testing Application Received!
             </h4>
             <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
               Thank you, <strong>{formData.name}</strong> from <strong>{formData.company}</strong>. Our team will review your fleet profile and contact you within 1 business day to set up your testing workspace.
             </p>
-            <div className="p-4 bg-ocean-50 rounded-xl border border-ocean-200 text-xs text-[#023E8A] max-w-md mx-auto text-left space-y-1">
+            <div className="p-4 bg-ocean-50 rounded-xl border border-ocean-200 text-xs text-[#1C1917] max-w-md mx-auto text-left space-y-1">
               <p className="font-bold">What happens next:</p>
               <ul className="list-disc pl-4 space-y-0.5 text-slate-600 text-[11px]">
                 <li>We schedule a 15-minute onboarding walkthrough.</li>
@@ -162,7 +162,7 @@ export function FreePilotForm() {
                     message: '',
                   });
                 }}
-                className="w-full sm:w-auto px-5 py-2.5 bg-[#0077B6] hover:bg-[#023E8A] text-white text-xs font-bold rounded-xl transition-colors"
+                className="w-full sm:w-auto px-5 py-2.5 bg-[#C2410C] hover:bg-[#1C1917] text-white text-xs font-bold rounded-xl transition-colors"
               >
                 Submit Another Facility
               </button>
@@ -202,7 +202,7 @@ export function FreePilotForm() {
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className={`w-full pl-9 pr-3 py-2 text-xs rounded-lg border ${
                       errors.name ? 'border-red-500 bg-red-50/40' : 'border-slate-300'
-                    } focus:outline-none focus:ring-2 focus:ring-[#0077B6]`}
+                    } focus:outline-none focus:ring-2 focus:ring-[#C2410C]`}
                   />
                 </div>
                 {errors.name && <p className="text-[11px] text-red-600 mt-1">{errors.name}</p>}
@@ -222,7 +222,7 @@ export function FreePilotForm() {
                     onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                     className={`w-full pl-9 pr-3 py-2 text-xs rounded-lg border ${
                       errors.company ? 'border-red-500 bg-red-50/40' : 'border-slate-300'
-                    } focus:outline-none focus:ring-2 focus:ring-[#0077B6]`}
+                    } focus:outline-none focus:ring-2 focus:ring-[#C2410C]`}
                   />
                 </div>
                 {errors.company && <p className="text-[11px] text-red-600 mt-1">{errors.company}</p>}
@@ -241,7 +241,7 @@ export function FreePilotForm() {
                   onChange={(e) => setFormData({ ...formData, state: e.target.value })}
                   className={`w-full px-3 py-2 text-xs rounded-lg border ${
                     errors.state ? 'border-red-500 bg-red-50/40' : 'border-slate-300'
-                  } focus:outline-none focus:ring-2 focus:ring-[#0077B6] bg-white text-slate-900`}
+                  } focus:outline-none focus:ring-2 focus:ring-[#C2410C] bg-white text-slate-900`}
                 >
                   <option value="">Select State / Union Territory</option>
                   <option value="Delhi">Delhi</option>
@@ -283,7 +283,7 @@ export function FreePilotForm() {
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                   className={`w-full px-3 py-2 text-xs rounded-lg border ${
                     errors.city ? 'border-red-500 bg-red-50/40' : 'border-slate-300'
-                  } focus:outline-none focus:ring-2 focus:ring-[#0077B6]`}
+                  } focus:outline-none focus:ring-2 focus:ring-[#C2410C]`}
                 />
                 {errors.city && <p className="text-[11px] text-red-600 mt-1">{errors.city}</p>}
               </div>
@@ -304,7 +304,7 @@ export function FreePilotForm() {
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className={`w-full pl-9 pr-3 py-2 text-xs rounded-lg border ${
                       errors.phone ? 'border-red-500 bg-red-50/40' : 'border-slate-300'
-                    } focus:outline-none focus:ring-2 focus:ring-[#0077B6]`}
+                    } focus:outline-none focus:ring-2 focus:ring-[#C2410C]`}
                   />
                 </div>
                 {errors.phone && <p className="text-[11px] text-red-600 mt-1">{errors.phone}</p>}
@@ -324,7 +324,7 @@ export function FreePilotForm() {
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className={`w-full pl-9 pr-3 py-2 text-xs rounded-lg border ${
                       errors.email ? 'border-red-500 bg-red-50/40' : 'border-slate-300'
-                    } focus:outline-none focus:ring-2 focus:ring-[#0077B6]`}
+                    } focus:outline-none focus:ring-2 focus:ring-[#C2410C]`}
                   />
                 </div>
                 {errors.email && <p className="text-[11px] text-red-600 mt-1">{errors.email}</p>}
@@ -339,7 +339,7 @@ export function FreePilotForm() {
                 <select
                   value={formData.technicianCount}
                   onChange={(e) => setFormData({ ...formData, technicianCount: e.target.value })}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
+                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#C2410C]"
                 >
                   <option value="1-5">1 to 5 Technicians</option>
                   <option value="6-15">6 to 15 Technicians</option>
@@ -355,7 +355,7 @@ export function FreePilotForm() {
                 <select
                   value={formData.assetCount}
                   onChange={(e) => setFormData({ ...formData, assetCount: e.target.value })}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
+                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#C2410C]"
                 >
                   <option value="Under 100">Under 100 Assets</option>
                   <option value="100-500">100 - 500 Assets</option>
@@ -371,7 +371,7 @@ export function FreePilotForm() {
                 <select
                   value={formData.trackingMethod}
                   onChange={(e) => setFormData({ ...formData, trackingMethod: e.target.value })}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
+                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#C2410C]"
                 >
                   <option value="Excel Spreadsheets">Excel Spreadsheets</option>
                   <option value="Paper Checklists">Paper Checklists / Tags</option>
@@ -390,7 +390,7 @@ export function FreePilotForm() {
                 placeholder="e.g. Need to track 200 extinguishers and 2 alarm panels across 3 commercial buildings."
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
+                className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#C2410C]"
               />
             </div>
 
@@ -404,7 +404,7 @@ export function FreePilotForm() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3 px-6 bg-[#0077B6] hover:bg-[#023E8A] disabled:bg-slate-400 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 active:scale-[0.98] cursor-pointer"
+                className="w-full py-3 px-6 bg-[#C2410C] hover:bg-[#1C1917] disabled:bg-slate-400 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 active:scale-[0.98] cursor-pointer"
               >
                 {isSubmitting ? (
                   <span>Submitting Application...</span>

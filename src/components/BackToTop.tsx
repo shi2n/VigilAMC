@@ -43,7 +43,7 @@ export function BackToTop() {
   return (
     <button
       onClick={scrollToTop}
-      className="fixed bottom-20 right-6 z-40 p-3 rounded-full bg-white text-[#0077B6] shadow-xl border border-slate-200 hover:border-[#0077B6] hover:text-[#023E8A] transition-all transform hover:-translate-y-1 active:translate-y-0 group focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
+      className="fixed bottom-20 right-6 z-40 p-3 rounded-full bg-white text-[#C2410C] shadow-xl border border-slate-200 hover:border-[#C2410C] hover:text-[#1C1917] transition-all transform hover:-translate-y-1 active:translate-y-0 group focus:outline-none focus:ring-2 focus:ring-[#C2410C]"
       aria-label="Scroll back to top"
       title="Back to top"
     >
@@ -62,7 +62,7 @@ export function BackToTop() {
           cx="22"
           cy="22"
           r={circleRadius}
-          className="text-[#0077B6] transition-all duration-150"
+          className="text-[#C2410C] transition-all duration-150"
           strokeWidth="2.5"
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}

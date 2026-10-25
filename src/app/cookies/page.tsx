@@ -18,7 +18,7 @@ export default function CookiePolicyPage() {
       <div className="max-w-4xl mx-auto space-y-8">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-[#0077B6] transition-colors"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-[#C2410C] transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Home</span>
@@ -26,10 +26,10 @@ export default function CookiePolicyPage() {
 
         {/* Page Header */}
         <div className="border-b border-slate-200 pb-6">
-          <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-ocean-50 px-3 py-1 rounded-full border border-ocean-200">
+          <span className="text-xs uppercase font-extrabold tracking-widest text-[#C2410C] bg-ocean-50 px-3 py-1 rounded-full border border-ocean-200">
             Privacy &amp; Data Transparency
           </span>
-          <h1 className="text-3xl sm:text-4xl font-black text-[#023E8A] mt-3">
+          <h1 className="text-3xl sm:text-4xl font-black text-[#1C1917] mt-3">
             Cookie Policy
           </h1>
           <p className="text-xs text-slate-500 mt-2">
@@ -59,13 +59,13 @@ export default function CookiePolicyPage() {
             Table of Contents
           </h2>
           <nav className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-            <a href="#what-are-cookies" className="text-[#0077B6] hover:underline">1. What Are Cookies &amp; Local Storage?</a>
-            <a href="#categories" className="text-[#0077B6] hover:underline">2. Categories of Cookies We Use</a>
-            <a href="#cookie-inventory" className="text-[#0077B6] hover:underline">3. Complete Cookie &amp; Storage Inventory</a>
-            <a href="#third-parties" className="text-[#0077B6] hover:underline">4. Third-Party Services &amp; Embeds</a>
-            <a href="#browser-controls" className="text-[#0077B6] hover:underline">5. How to Manage or Clear Cookies in Browsers</a>
-            <a href="#essential-notice" className="text-[#0077B6] hover:underline">6. Why Essential Cookies Cannot Be Disabled</a>
-            <a href="#updates-contact" className="text-[#0077B6] hover:underline">7. Policy Updates &amp; Contact Details</a>
+            <a href="#what-are-cookies" className="text-[#C2410C] hover:underline">1. What Are Cookies &amp; Local Storage?</a>
+            <a href="#categories" className="text-[#C2410C] hover:underline">2. Categories of Cookies We Use</a>
+            <a href="#cookie-inventory" className="text-[#C2410C] hover:underline">3. Complete Cookie &amp; Storage Inventory</a>
+            <a href="#third-parties" className="text-[#C2410C] hover:underline">4. Third-Party Services &amp; Embeds</a>
+            <a href="#browser-controls" className="text-[#C2410C] hover:underline">5. How to Manage or Clear Cookies in Browsers</a>
+            <a href="#essential-notice" className="text-[#C2410C] hover:underline">6. Why Essential Cookies Cannot Be Disabled</a>
+            <a href="#updates-contact" className="text-[#C2410C] hover:underline">7. Policy Updates &amp; Contact Details</a>
           </nav>
         </div>
 
@@ -282,10 +282,10 @@ export default function CookiePolicyPage() {
               <p className="text-slate-600">Founder: Shaizan</p>
               <p className="text-slate-600">Location: New Delhi 110092, India</p>
               <p className="text-slate-600">
-                Email: <a href="mailto:support@vigilamc.com" className="text-[#0077B6] font-semibold hover:underline">support@vigilamc.com</a>
+                Email: <a href="mailto:support@vigilamc.com" className="text-[#C2410C] font-semibold hover:underline">support@vigilamc.com</a>
               </p>
               <p className="text-slate-600">
-                Phone / WhatsApp: <a href="tel:+918383890483" className="text-[#0077B6] font-semibold hover:underline">+91 83838 90483</a>
+                Phone / WhatsApp: <a href="tel:+918383890483" className="text-[#C2410C] font-semibold hover:underline">+91 83838 90483</a>
               </p>
             </div>
           </section>

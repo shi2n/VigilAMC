@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 export function Ripple({
   className,
-  color = "rgba(0, 119, 182, 0.14)",
+  color = "rgba(232, 89, 12, 0.14)",
 }: {
   className?: string;
   color?: string;

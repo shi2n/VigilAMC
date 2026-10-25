@@ -60,7 +60,7 @@ export function ProductInterfacePreview() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                   isActive
-                    ? 'bg-[#0077B6] text-white shadow-sm'
+                    ? 'bg-[#C2410C] text-white shadow-sm'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800'
                 }`}
               >
@@ -82,7 +82,7 @@ export function ProductInterfacePreview() {
           <div className="space-y-4 animate-in fade-in duration-200">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200">
               <div>
-                <h4 className="font-bold text-sm text-[#023E8A]">Operations Control Radar</h4>
+                <h4 className="font-bold text-sm text-[#1C1917]">Operations Control Radar</h4>
                 <p className="text-[11px] text-slate-500">Demo Organization: Apex Safety Works (Sample Fleet)</p>
               </div>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-200 text-slate-700">
@@ -94,7 +94,7 @@ export function ProductInterfacePreview() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
                 <div className="text-[11px] font-bold text-slate-500 uppercase">Total Fire Assets</div>
-                <div className="text-2xl font-black text-[#023E8A] mt-1">142</div>
+                <div className="text-2xl font-black text-[#1C1917] mt-1">142</div>
                 <div className="text-[10px] text-slate-400 mt-0.5">Across 4 Sample Buildings</div>
               </div>
               <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
@@ -155,7 +155,7 @@ export function ProductInterfacePreview() {
           <div className="space-y-4 animate-in fade-in duration-200">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200">
               <div>
-                <h4 className="font-bold text-sm text-[#023E8A]">Equipment Registry &amp; Tag Manager</h4>
+                <h4 className="font-bold text-sm text-[#1C1917]">Equipment Registry &amp; Tag Manager</h4>
                 <p className="text-[11px] text-slate-500">Filter by location, equipment type, and hydrostatic test deadlines</p>
               </div>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-200 text-slate-700">
@@ -238,7 +238,7 @@ export function ProductInterfacePreview() {
           <div className="space-y-4 animate-in fade-in duration-200">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200">
               <div>
-                <h4 className="font-bold text-sm text-[#023E8A]">Simple Mobile Form for Technicians</h4>
+                <h4 className="font-bold text-sm text-[#1C1917]">Simple Mobile Form for Technicians</h4>
                 <p className="text-[11px] text-slate-500">Record asset details, floor and location notes, GPS position, and photo proof</p>
               </div>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-200 text-slate-700">
@@ -313,7 +313,7 @@ export function ProductInterfacePreview() {
           <div className="space-y-4 animate-in fade-in duration-200">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200">
               <div>
-                <h4 className="font-bold text-sm text-[#023E8A]">Defect Audit &amp; Repair Dispatch</h4>
+                <h4 className="font-bold text-sm text-[#1C1917]">Defect Audit &amp; Repair Dispatch</h4>
                 <p className="text-[11px] text-slate-500">Capture photo proof of issues, generate repair quotes, and track closures</p>
               </div>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-200 text-slate-700">
@@ -338,7 +338,7 @@ export function ProductInterfacePreview() {
                 </div>
                 <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                   <span className="text-[11px] text-slate-500">Status: <strong>Quote Dispatched</strong></span>
-                  <span className="text-xs font-bold text-[#0077B6]">View Evidence Photo &rarr;</span>
+                  <span className="text-xs font-bold text-[#C2410C]">View Evidence Photo &rarr;</span>
                 </div>
               </div>
 
@@ -358,7 +358,7 @@ export function ProductInterfacePreview() {
                 </div>
                 <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                   <span className="text-[11px] text-slate-500">Status: <strong>Repair Assigned</strong></span>
-                  <span className="text-xs font-bold text-[#0077B6]">View Evidence Photo &rarr;</span>
+                  <span className="text-xs font-bold text-[#C2410C]">View Evidence Photo &rarr;</span>
                 </div>
               </div>
             </div>
@@ -370,13 +370,13 @@ export function ProductInterfacePreview() {
           <div className="space-y-4 animate-in fade-in duration-200">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200">
               <div>
-                <h4 className="font-bold text-sm text-[#023E8A]">Client-Facing Compliance Report</h4>
+                <h4 className="font-bold text-sm text-[#1C1917]">Client-Facing Compliance Report</h4>
                 <p className="text-[11px] text-slate-500">Aggregates verified field inspection logs into statutory model Form-B format</p>
               </div>
               <div className="flex items-center gap-2">
                 <Link
                   href="/sample-report"
-                  className="px-3 py-1 rounded bg-[#0077B6] text-white font-bold text-[11px] hover:bg-[#023E8A] transition-colors"
+                  className="px-3 py-1 rounded bg-[#C2410C] text-white font-bold text-[11px] hover:bg-[#1C1917] transition-colors"
                 >
                   View Full Sample PDF
                 </Link>

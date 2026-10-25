@@ -94,10 +94,10 @@ export default function FeaturesPage() {
       {/* Header Banner */}
       <section className="bg-gradient-to-b from-ocean-50 to-white py-20 px-4 sm:px-6 lg:px-8 border-b border-slate-200">
         <div className="max-w-4xl mx-auto text-center">
-          <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-white px-3.5 py-1.5 rounded-full border border-ocean-200 shadow-sm">
+          <span className="text-xs uppercase font-extrabold tracking-widest text-[#C2410C] bg-white px-3.5 py-1.5 rounded-full border border-ocean-200 shadow-sm">
             Platform Capabilities &amp; Architecture
           </span>
-          <h1 className="text-4xl sm:text-5xl font-black text-[#023E8A] tracking-tight mt-4">
+          <h1 className="text-4xl sm:text-5xl font-black text-[#1C1917] tracking-tight mt-4">
             Engineered Specifically for Fire Safety AMC Operations
           </h1>
           <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
@@ -109,7 +109,7 @@ export default function FeaturesPage() {
       {/* Persona Customizer Tabs */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
         <div className="text-center mb-10">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#023E8A]">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1C1917]">
             Tailored Experiences for Every Stakeholder
           </h2>
           <p className="text-sm text-slate-500 mt-2">
@@ -121,8 +121,8 @@ export default function FeaturesPage() {
               onClick={() => setActivePersona('contractor')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activePersona === 'contractor'
-                  ? 'bg-[#0077B6] text-white shadow'
-                  : 'text-slate-700 hover:text-[#0077B6]'
+                  ? 'bg-[#C2410C] text-white shadow'
+                  : 'text-slate-700 hover:text-[#C2410C]'
               }`}
             >
               AMC Agency Owners
@@ -131,8 +131,8 @@ export default function FeaturesPage() {
               onClick={() => setActivePersona('technician')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activePersona === 'technician'
-                  ? 'bg-[#0077B6] text-white shadow'
-                  : 'text-slate-700 hover:text-[#0077B6]'
+                  ? 'bg-[#C2410C] text-white shadow'
+                  : 'text-slate-700 hover:text-[#C2410C]'
               }`}
             >
               Field Service Technicians
@@ -141,8 +141,8 @@ export default function FeaturesPage() {
               onClick={() => setActivePersona('facility')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activePersona === 'facility'
-                  ? 'bg-[#0077B6] text-white shadow'
-                  : 'text-slate-700 hover:text-[#0077B6]'
+                  ? 'bg-[#C2410C] text-white shadow'
+                  : 'text-slate-700 hover:text-[#C2410C]'
               }`}
             >
               Client Facility Heads
@@ -151,8 +151,8 @@ export default function FeaturesPage() {
               onClick={() => setActivePersona('auditor')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activePersona === 'auditor'
-                  ? 'bg-[#0077B6] text-white shadow'
-                  : 'text-slate-700 hover:text-[#0077B6]'
+                  ? 'bg-[#C2410C] text-white shadow'
+                  : 'text-slate-700 hover:text-[#C2410C]'
               }`}
             >
               Fire Directorate &amp; Surveyors
@@ -165,10 +165,10 @@ export default function FeaturesPage() {
           {activePersona === 'contractor' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
               <div className="space-y-4">
-                <span className="text-xs font-bold text-[#0077B6] uppercase tracking-wider">
+                <span className="text-xs font-bold text-[#C2410C] uppercase tracking-wider">
                   For Fire AMC Business Owners &amp; Operations Heads
                 </span>
-                <h3 className="text-2xl font-bold text-[#023E8A]">
+                <h3 className="text-2xl font-bold text-[#1C1917]">
                   Protect Contracts &amp; Scale From 3 to 30+ Facilities
                 </h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
@@ -191,8 +191,8 @@ export default function FeaturesPage() {
                 </h4>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center p-2.5 rounded bg-ocean-50 text-xs">
-                    <span className="font-bold text-[#023E8A]">Form-B Generation</span>
-                    <span className="font-bold text-[#0077B6]">PDF Export in Minutes</span>
+                    <span className="font-bold text-[#1C1917]">Form-B Generation</span>
+                    <span className="font-bold text-[#C2410C]">PDF Export in Minutes</span>
                   </div>
                   <div className="flex justify-between items-center p-2.5 rounded bg-slate-50 text-xs">
                     <span className="font-bold text-slate-700">Asset Defect Tracking</span>
@@ -210,10 +210,10 @@ export default function FeaturesPage() {
           {activePersona === 'technician' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
               <div className="space-y-4">
-                <span className="text-xs font-bold text-[#0077B6] uppercase tracking-wider">
+                <span className="text-xs font-bold text-[#C2410C] uppercase tracking-wider">
                   For On-Site Field Technicians
                 </span>
-                <h3 className="text-2xl font-bold text-[#023E8A]">
+                <h3 className="text-2xl font-bold text-[#1C1917]">
                   Zero Paper Clipboards, Simple Mobile Inspection Forms
                 </h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
@@ -245,10 +245,10 @@ export default function FeaturesPage() {
           {activePersona === 'facility' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
               <div className="space-y-4">
-                <span className="text-xs font-bold text-[#0077B6] uppercase tracking-wider">
+                <span className="text-xs font-bold text-[#C2410C] uppercase tracking-wider">
                   For Facility Managers &amp; Society Committees
                 </span>
-                <h3 className="text-2xl font-bold text-[#023E8A]">
+                <h3 className="text-2xl font-bold text-[#1C1917]">
                   Clear Equipment Health Records Without Frantic Pre-Audit Rushes
                 </h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
@@ -271,7 +271,7 @@ export default function FeaturesPage() {
                   <span className="text-xs font-bold text-emerald-600">44 Operational / 4 Pending Refill</span>
                 </div>
                 <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                  <div className="bg-[#0077B6] h-full rounded-full" style={{ width: '92%' }} />
+                  <div className="bg-[#C2410C] h-full rounded-full" style={{ width: '92%' }} />
                 </div>
                 <p className="text-[11px] text-slate-500">
                   Representative commercial facility schedule. Biannual Form-B cycle active.
@@ -283,10 +283,10 @@ export default function FeaturesPage() {
           {activePersona === 'auditor' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
               <div className="space-y-4">
-                <span className="text-xs font-bold text-[#0077B6] uppercase tracking-wider">
+                <span className="text-xs font-bold text-[#C2410C] uppercase tracking-wider">
                   For Fire Directorate &amp; Insurance Surveyors
                 </span>
-                <h3 className="text-2xl font-bold text-[#023E8A]">
+                <h3 className="text-2xl font-bold text-[#1C1917]">
                   Verifiable Audit Trails &amp; Standardized Inspection Schedules
                 </h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
@@ -327,10 +327,10 @@ export default function FeaturesPage() {
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-50 border-y border-slate-200">
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <span className="text-xs uppercase font-extrabold tracking-widest text-[#0077B6] bg-white px-3.5 py-1.5 rounded-full border border-slate-200">
+            <span className="text-xs uppercase font-extrabold tracking-widest text-[#C2410C] bg-white px-3.5 py-1.5 rounded-full border border-slate-200">
               Platform Modules
             </span>
-            <h2 className="text-3xl font-extrabold text-[#023E8A] mt-3">
+            <h2 className="text-3xl font-extrabold text-[#1C1917] mt-3">
               Six Pillars of the VigilAMC Platform
             </h2>
             <p className="text-sm text-slate-600 mt-2">
@@ -341,7 +341,7 @@ export default function FeaturesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="corp-card p-6 bg-white border border-slate-200">
               <div className="flex items-center justify-between mb-4">
-                <div className="w-10 h-10 rounded-lg bg-ocean-50 text-[#0077B6] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg bg-ocean-50 text-[#C2410C] flex items-center justify-center">
                   <MapPin className="w-5 h-5" />
                 </div>
                 <StatusBadge status="BETA" />
@@ -354,7 +354,7 @@ export default function FeaturesPage() {
 
             <div className="corp-card p-6 bg-white border border-slate-200">
               <div className="flex items-center justify-between mb-4">
-                <div className="w-10 h-10 rounded-lg bg-navy-50 text-[#023E8A] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg bg-navy-50 text-[#1C1917] flex items-center justify-center">
                   <FileCheck2 className="w-5 h-5" />
                 </div>
                 <StatusBadge status="LIVE" />
@@ -367,7 +367,7 @@ export default function FeaturesPage() {
 
             <div className="corp-card p-6 bg-white border border-slate-200">
               <div className="flex items-center justify-between mb-4">
-                <div className="w-10 h-10 rounded-lg bg-ocean-50 text-[#0077B6] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg bg-ocean-50 text-[#C2410C] flex items-center justify-center">
                   <Smartphone className="w-5 h-5" />
                 </div>
                 <StatusBadge status="BETA" />
@@ -380,7 +380,7 @@ export default function FeaturesPage() {
 
             <div className="corp-card p-6 bg-white border border-slate-200">
               <div className="flex items-center justify-between mb-4">
-                <div className="w-10 h-10 rounded-lg bg-navy-50 text-[#023E8A] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg bg-navy-50 text-[#1C1917] flex items-center justify-center">
                   <Wrench className="w-5 h-5" />
                 </div>
                 <StatusBadge status="SAMPLE" />
@@ -393,7 +393,7 @@ export default function FeaturesPage() {
 
             <div className="corp-card p-6 bg-white border border-slate-200">
               <div className="flex items-center justify-between mb-4">
-                <div className="w-10 h-10 rounded-lg bg-ocean-50 text-[#0077B6] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg bg-ocean-50 text-[#C2410C] flex items-center justify-center">
                   <BellRing className="w-5 h-5" />
                 </div>
                 <StatusBadge status="LIVE" />
@@ -406,7 +406,7 @@ export default function FeaturesPage() {
 
             <div className="corp-card p-6 bg-white border border-slate-200">
               <div className="flex items-center justify-between mb-4">
-                <div className="w-10 h-10 rounded-lg bg-navy-50 text-[#023E8A] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg bg-navy-50 text-[#1C1917] flex items-center justify-center">
                   <Users className="w-5 h-5" />
                 </div>
                 <StatusBadge status="COMING SOON" />
@@ -423,7 +423,7 @@ export default function FeaturesPage() {
       {/* Feature Comparison Matrix */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#023E8A]">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1C1917]">
             Why Modern AMC Fleets Choose VigilAMC
           </h2>
           <p className="text-sm text-slate-600 mt-2">
@@ -433,10 +433,10 @@ export default function FeaturesPage() {
 
         <div className="overflow-x-auto corp-card border-slate-200">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#023E8A] text-white">
+            <thead className="bg-[#1C1917] text-white">
               <tr>
                 <th className="py-4 px-6 font-bold text-sm">Platform Capability</th>
-                <th className="py-4 px-6 font-black text-sm text-cyan-200 bg-[#0077B6]">VigilAMC</th>
+                <th className="py-4 px-6 font-black text-sm text-cyan-200 bg-[#C2410C]">VigilAMC</th>
                 <th className="py-4 px-6 font-semibold">Manual Excel &amp; Paper</th>
                 <th className="py-4 px-6 font-semibold">Generic Field ERP</th>
               </tr>
@@ -475,7 +475,7 @@ export default function FeaturesPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 px-4 bg-[#023E8A] text-white text-center">
+      <section className="py-16 px-4 bg-[#1C1917] text-white text-center">
         <div className="max-w-3xl mx-auto space-y-4">
           <h2 className="text-3xl font-extrabold">Ready to Join the Free Testing Program?</h2>
           <p className="text-cyan-100 text-sm max-w-xl mx-auto leading-relaxed">
@@ -484,7 +484,7 @@ export default function FeaturesPage() {
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/#pilot-section"
-              className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#0077B6] hover:bg-white hover:text-[#023E8A] font-bold text-sm rounded-xl transition-all shadow-lg"
+              className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#C2410C] hover:bg-white hover:text-[#1C1917] font-bold text-sm rounded-xl transition-all shadow-lg"
             >
               <span>Join the free testing</span>
               <ArrowRight className="w-4 h-4" />
