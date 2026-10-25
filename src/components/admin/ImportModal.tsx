@@ -488,7 +488,7 @@ export function ImportModal({
                       <span
                         className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[11px] transition-colors ${
                           isActive
-                            ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                            ? 'bg-amber-500 text-slate-900 shadow-md shadow-amber-500/20'
                             : isCompleted
                             ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
                             : 'bg-slate-800 text-slate-500'
@@ -546,7 +546,7 @@ export function ImportModal({
                         title: 'Field Technicians',
                         desc: 'Technician accounts, employee badge codes, and assigned territories.',
                         icon: Wrench,
-                        color: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
+                        color: 'text-[#0077B6] bg-[#EAF6FF] border-[#0077B6]/20',
                       },
                       {
                         type: 'INSPECTIONS' as ImportType,
@@ -782,7 +782,7 @@ export function ImportModal({
                     <button
                       onClick={handleProceedToValidation}
                       disabled={isValidating}
-                      className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 flex items-center gap-2 transition-all hover:scale-[1.01]"
+                      className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-900 font-black text-xs shadow-lg shadow-amber-500/20 flex items-center gap-2 transition-all hover:scale-[1.01]"
                     >
                       {isValidating ? (
                         <>
@@ -962,7 +962,7 @@ export function ImportModal({
 
                     <button
                       onClick={handleExecuteBatch}
-                      className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/20 flex items-center gap-2 transition-all hover:scale-[1.01]"
+                      className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-900 font-black text-xs shadow-lg shadow-emerald-500/20 flex items-center gap-2 transition-all hover:scale-[1.01]"
                     >
                       <Check className="w-4 h-4 stroke-[3]" />
                       <span>Start Bulk Import ({validationResult.totalRows} Rows)</span>
@@ -1065,7 +1065,7 @@ export function ImportModal({
                     </button>
                     <button
                       onClick={onClose}
-                      className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20"
+                      className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-900 font-black text-xs shadow-lg shadow-amber-500/20"
                     >
                       Done &amp; View Dashboard
                     </button>

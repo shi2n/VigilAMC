@@ -295,7 +295,7 @@ export function SettingsView({
                   onClick={() => onOpenImport?.('TECHNICIANS')}
                   className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all border border-[#E2E8F0] shadow-xs flex items-center justify-center gap-1.5 dark:bg-[#111827] dark:hover:bg-slate-800 dark:text-slate-200 dark:border-[#293548]"
                 >
-                  <Upload className="w-3.5 h-3.5 text-purple-500" />
+                  <Upload className="w-3.5 h-3.5 text-[#0077B6]" />
                   <span>Technicians</span>
                 </button>
               </div>

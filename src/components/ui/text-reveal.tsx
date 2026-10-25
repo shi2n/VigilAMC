@@ -15,11 +15,15 @@ export function TextReveal({
   const words = text.split(" ");
 
   if (prefersReducedMotion) {
-    return <span className={cn("inline", className)}>{text}</span>;
+    return (
+      <span data-slot="TextReveal" className={cn("TextReveal inline", className)}>
+        {text}
+      </span>
+    );
   }
 
   return (
-    <span className={cn("inline", className)}>
+    <span data-slot="TextReveal" className={cn("TextReveal inline", className)}>
       {words.map((word, idx) => (
         <motion.span
           key={`${word}-${idx}`}

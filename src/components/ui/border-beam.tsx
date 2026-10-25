@@ -23,8 +23,9 @@ export function BorderBeam({
     return (
       <div
         aria-hidden="true"
+        data-slot="border-beam"
         className={cn(
-          "pointer-events-none absolute inset-0 rounded-[inherit] border border-[#0077B6]/35",
+          "border-beam pointer-events-none absolute inset-0 rounded-[inherit] border border-[#0077B6]/35",
           className
         )}
       />
@@ -34,8 +35,9 @@ export function BorderBeam({
   return (
     <div
       aria-hidden="true"
+      data-slot="border-beam"
       className={cn(
-        "pointer-events-none absolute inset-0 rounded-[inherit] overflow-hidden",
+        "border-beam pointer-events-none absolute inset-0 rounded-[inherit] overflow-hidden",
         className
       )}
     >
@@ -46,7 +48,7 @@ export function BorderBeam({
         style={{
           borderImage: `linear-gradient(135deg, ${colorFrom}, ${colorTo}, #0096C7) 1`,
         }}
-        className="absolute inset-0 rounded-[inherit] border-2 border-[#0077B6]/40"
+        className="border-beam-track absolute inset-0 rounded-[inherit] border-2 border-[#0077B6]/40"
       />
     </div>
   );

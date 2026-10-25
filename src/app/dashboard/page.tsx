@@ -735,7 +735,7 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F8FB] flex flex-col lg:flex-row text-slate-900 selection:bg-[#EAF6FF] selection:text-[#023E8A]">
+    <div className="min-h-screen bg-[#F4F8FB] flex flex-col lg:flex-row text-slate-900 selection:bg-[#EAF6FF] selection:text-[#073F8F]">
       
       {/* Toast Alert */}
       {toastMessage && (

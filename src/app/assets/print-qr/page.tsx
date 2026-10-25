@@ -103,7 +103,7 @@ function PrintQrContent() {
         <div className="tactile-card rounded-2xl bg-slate-900/90 border border-slate-800 p-5 sm:p-6 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-slate-950 font-black shadow-md">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-slate-900 font-black shadow-md">
                 <QrIcon className="w-5 h-5 stroke-[2.5]" />
               </div>
               <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
@@ -121,7 +121,7 @@ function PrintQrContent() {
           <div className="flex items-center gap-2.5">
             <button
               onClick={handlePrint}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-orange-500 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-orange-500 text-slate-900 font-black text-xs shadow-lg shadow-amber-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               <Printer className="w-4 h-4 stroke-[2.5]" />
               <span>Print Sticker Sheet</span>
@@ -154,7 +154,7 @@ function PrintQrContent() {
               onClick={() => setSheetLayout('A4_GRID')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 sheetLayout === 'A4_GRID'
-                  ? 'bg-amber-500 text-slate-950 shadow-sm'
+                  ? 'bg-amber-500 text-slate-900 shadow-sm'
                   : 'bg-slate-800 text-slate-400 hover:text-white'
               }`}
             >
@@ -164,7 +164,7 @@ function PrintQrContent() {
               onClick={() => setSheetLayout('THERMAL_ROLL')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 sheetLayout === 'THERMAL_ROLL'
-                  ? 'bg-amber-500 text-slate-950 shadow-sm'
+                  ? 'bg-amber-500 text-slate-900 shadow-sm'
                   : 'bg-slate-800 text-slate-400 hover:text-white'
               }`}
             >
@@ -213,7 +213,7 @@ function PrintQrContent() {
                   {/* Sticker Header */}
                   <div className="border-b-2 border-slate-900 pb-1 mb-2 flex items-center justify-between">
                     <div>
-                      <div className="font-black text-[11px] text-slate-950 uppercase tracking-tight">
+                      <div className="font-black text-[11px] text-slate-900 uppercase tracking-tight">
                         {company?.name || 'FIRE SAFETY AMC SERVICES'}
                       </div>
                       <div className="text-[8px] font-semibold text-slate-600">
@@ -222,7 +222,7 @@ function PrintQrContent() {
                     </div>
                     <div className="text-right">
                       <span className="text-[8px] font-bold text-red-600 uppercase block">Emergency</span>
-                      <span className="text-[9px] font-black text-slate-950">{company?.phone || '101 / 112'}</span>
+                      <span className="text-[9px] font-black text-slate-900">{company?.phone || '101 / 112'}</span>
                     </div>
                   </div>
 
@@ -266,7 +266,7 @@ function PrintQrContent() {
                   {/* Footer */}
                   <div className="mt-2 pt-1 border-t border-dashed border-slate-400 flex items-center justify-between text-[7px] text-slate-600 font-medium">
                     <span>Scan with mobile to log service</span>
-                    <span className="font-bold text-slate-950">+91 98201 54321</span>
+                    <span className="font-bold text-slate-900">+91 98201 54321</span>
                   </div>
                 </div>
               );

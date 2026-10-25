@@ -45,7 +45,7 @@ interface InvestorLead {
 const STATUS_CONFIGS: { [key: string]: { label: string; color: string; bg: string; border: string } } = {
   NEW: { label: 'New Lead', color: 'text-cyan-300', bg: 'bg-cyan-500/10', border: 'border-cyan-500/30' },
   CONTACTED: { label: 'Contacted', color: 'text-amber-300', bg: 'bg-amber-500/10', border: 'border-amber-500/30' },
-  IN_DISCUSSION: { label: 'In Discussion', color: 'text-purple-300', bg: 'bg-purple-500/10', border: 'border-purple-500/30' },
+  IN_DISCUSSION: { label: 'In Discussion', color: 'text-[#0077B6]', bg: 'bg-[#EAF6FF]', border: 'border-[#0077B6]/30' },
   QUALIFIED: { label: 'Qualified', color: 'text-emerald-300', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30' },
   CLOSED: { label: 'Closed / Committed', color: 'text-green-300', bg: 'bg-green-500/20', border: 'border-green-500/40' },
   NOT_SUITABLE: { label: 'Not Suitable', color: 'text-slate-400', bg: 'bg-slate-800/40', border: 'border-slate-700/50' },
@@ -164,7 +164,7 @@ export function InvestorLeadsView() {
               onClick={() => setStatusFilter(st)}
               className={`px-3 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all ${
                 statusFilter === st
-                  ? 'bg-amber-500 text-slate-950'
+                  ? 'bg-amber-500 text-slate-900'
                   : 'bg-[#F4F8FB] text-slate-400 hover:text-white border border-slate-800'
               }`}
             >

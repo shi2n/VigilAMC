@@ -21,6 +21,7 @@ import {
   BadgeAlert,
   ChevronRight,
 } from 'lucide-react';
+import { BorderBeam } from '@/components/ui/border-beam';
 
 interface HeroProductPreviewProps {
   onOpenModal?: () => void;
@@ -53,7 +54,8 @@ export function HeroProductPreview({ onOpenModal }: HeroProductPreviewProps) {
   return (
     <div className="w-full max-w-5xl mx-auto mt-10 sm:mt-14 text-left">
       {/* Outer Browser Mockup Window */}
-      <div className="rounded-2xl bg-white border border-slate-200/90 shadow-xl shadow-slate-200/50 overflow-hidden transition-all duration-300 hover:border-slate-300">
+      <div className="relative rounded-2xl bg-white border border-[#DCE7F2] shadow-xl shadow-slate-200/50 overflow-hidden transition-all duration-300 hover:border-[#0077B6]/40">
+        <BorderBeam colorFrom="#0077B6" colorTo="#023E8A" />
         {/* Top Window Bar */}
         <div className="px-4 py-3 bg-slate-900 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">

@@ -233,7 +233,7 @@ export default function FounderConsolePage() {
               onClick={() => setActiveTab('LEADS')}
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
                 activeTab === 'LEADS'
-                  ? 'bg-amber-500 text-slate-950 shadow-md'
+                  ? 'bg-amber-500 text-slate-900 shadow-md'
                   : 'bg-slate-900 text-slate-300 hover:text-white border border-slate-800'
               }`}
             >
@@ -250,7 +250,7 @@ export default function FounderConsolePage() {
               onClick={() => setActiveTab('INVESTORS')}
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
                 activeTab === 'INVESTORS'
-                  ? 'bg-amber-500 text-slate-950 shadow-md'
+                  ? 'bg-amber-500 text-slate-900 shadow-md'
                   : 'bg-slate-900 text-slate-300 hover:text-white border border-slate-800'
               }`}
             >
@@ -262,7 +262,7 @@ export default function FounderConsolePage() {
               onClick={() => setActiveTab('TOOLS')}
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
                 activeTab === 'TOOLS'
-                  ? 'bg-amber-500 text-slate-950 shadow-md'
+                  ? 'bg-amber-500 text-slate-900 shadow-md'
                   : 'bg-slate-900 text-slate-300 hover:text-white border border-slate-800'
               }`}
             >
@@ -293,7 +293,7 @@ export default function FounderConsolePage() {
                       }}
                       className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                         enquiryStatusFilter === st
-                          ? 'bg-amber-500 text-slate-950 shadow-sm'
+                          ? 'bg-amber-500 text-slate-900 shadow-sm'
                           : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
                       }`}
                     >

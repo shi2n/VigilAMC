@@ -340,7 +340,7 @@ export default function HomePage() {
 
           {/* Interactive SaaS Browser + Mobile Mockup Showcase */}
           <div className="relative rounded-3xl">
-            <BorderBeam />
+            <BorderBeam colorFrom="#0077B6" colorTo="#023E8A" />
             <HeroProductPreview onOpenModal={() => setWorkflowModalOpen(true)} />
           </div>
         </div>
@@ -499,11 +499,11 @@ export default function HomePage() {
                 <div className="mt-3 space-y-1.5 text-[11px] font-mono">
                   <div className="p-2 rounded bg-navy-900/70 border border-navy-700/60 text-cyan-100 flex items-center justify-between">
                     <span>Admin &amp; Excel Time:</span>
-                    <strong className="text-white">₹{adminCostSaved.toLocaleString('en-IN')}</strong>
+                    <strong className="text-white tabular-nums"><NumberTicker value={adminCostSaved} prefix="₹" /></strong>
                   </div>
                   <div className="p-2 rounded bg-navy-900/70 border border-navy-700/60 text-emerald-200 flex items-center justify-between">
                     <span>Photo-Approved Refills &amp; Spares:</span>
-                    <strong className="text-emerald-300">+ ₹{recoveredBilling.toLocaleString('en-IN')}</strong>
+                    <strong className="text-emerald-300 tabular-nums"><NumberTicker value={recoveredBilling} prefix="+ ₹" /></strong>
                   </div>
                 </div>
 

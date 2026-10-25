@@ -12,13 +12,16 @@ export function Ripple({
   color?: string;
 }) {
   const prefersReducedMotion = useReducedMotion();
-  if (prefersReducedMotion) return null;
+  if (prefersReducedMotion) {
+    return <div aria-hidden="true" data-slot="ripple" className="ripple-effect pointer-events-none hidden" />;
+  }
 
   return (
     <div
       aria-hidden="true"
+      data-slot="ripple"
       className={cn(
-        "pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]",
+        "ripple-effect pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]",
         className
       )}
     >
@@ -27,7 +30,7 @@ export function Ripple({
         animate={{ scale: 1.85, opacity: 0 }}
         transition={{ duration: 0.55, ease: "easeOut" }}
         style={{ backgroundColor: color }}
-        className="absolute inset-0 m-auto h-24 w-24 rounded-full"
+        className="animate-ripple absolute inset-0 m-auto h-24 w-24 rounded-full"
       />
     </div>
   );

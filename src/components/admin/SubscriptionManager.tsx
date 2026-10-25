@@ -229,7 +229,7 @@ export function SubscriptionManager({ showToast, onPlanChanged }: SubscriptionMa
             <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
               <div
                 className={`h-full rounded-full ${
-                  usage?.assets?.isAtLimit ? 'bg-red-500' : 'bg-purple-500'
+                  usage?.assets?.isAtLimit ? 'bg-[#B91C1C]' : 'bg-[#0077B6]'
                 }`}
                 style={{ width: `${Math.min(100, usage?.assets?.percentUsed || 0)}%` }}
               />
@@ -274,7 +274,7 @@ export function SubscriptionManager({ showToast, onPlanChanged }: SubscriptionMa
               }`}
             >
               <span>Annual Billing</span>
-              <span className="px-1.5 py-0.2 rounded text-[10px] bg-emerald-400 text-slate-950 font-black">
+              <span className="px-1.5 py-0.2 rounded text-[10px] bg-emerald-400 text-slate-900 font-black">
                 SAVE 20%
               </span>
             </button>

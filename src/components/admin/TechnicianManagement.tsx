@@ -904,7 +904,7 @@ export function TechnicianManagement({
                 <button
                   type="submit"
                   disabled={formSubmitting}
-                  className="px-5 py-2.5 rounded-xl font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-900 shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
                 >
                   {formSubmitting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                   <span>Create Technician &amp; Get WhatsApp Link</span>
@@ -969,9 +969,9 @@ export function TechnicianManagement({
                 onClick={() =>
                   handleSendWhatsAppCredentials(createdSuccessTech, createdSuccessTech.tempPassword)
                 }
-                className="w-full py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs shadow-lg transition-all flex items-center justify-center gap-2"
+                className="w-full py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-black text-xs shadow-lg transition-all flex items-center justify-center gap-2"
               >
-                <MessageCircle className="w-4 h-4 fill-slate-950" />
+                <MessageCircle className="w-4 h-4 fill-slate-900" />
                 <span>📲 Send App &amp; Login ID on WhatsApp</span>
               </button>
 
@@ -1127,7 +1127,7 @@ export function TechnicianManagement({
                 <button
                   type="submit"
                   disabled={formSubmitting}
-                  className="px-5 py-2.5 rounded-xl font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl font-bold bg-amber-500 hover:bg-amber-400 text-slate-900 shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
                 >
                   {formSubmitting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                   <span>Save Changes</span>
@@ -1203,7 +1203,7 @@ export function TechnicianManagement({
                 <button
                   type="submit"
                   disabled={resetSubmitting}
-                  className="px-4 py-2 rounded-xl font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition-all disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl font-bold bg-amber-500 hover:bg-amber-400 text-slate-900 transition-all disabled:opacity-50"
                 >
                   {resetSubmitting ? 'Updating...' : 'Save New PIN'}
                 </button>

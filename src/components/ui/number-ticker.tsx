@@ -79,7 +79,8 @@ export function NumberTicker({
 
   return (
     <span
-      className={cn("inline-block tabular-nums tracking-tight", className)}
+      data-slot="NumberTicker"
+      className={cn("NumberTicker inline-block tabular-nums tracking-tight", className)}
       {...props}
     >
       {prefix}
