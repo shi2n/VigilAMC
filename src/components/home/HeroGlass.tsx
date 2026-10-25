@@ -72,7 +72,7 @@ export function HeroGlass() {
     <section
       ref={heroRef}
       aria-labelledby="hero-heading"
-      className="relative min-h-[calc(100vh-4rem)] lg:max-h-[115vh] flex flex-col justify-between pt-6 pb-6 sm:pt-8 sm:pb-10 px-4 sm:px-6 lg:px-8 bg-[#FFFFFF] overflow-hidden border-b border-[#FED7AA]/50"
+      className="relative min-h-[calc(100vh-4rem)] lg:max-h-[115vh] flex flex-col justify-between pt-6 pb-6 sm:pt-8 sm:pb-10 px-4 sm:px-6 lg:px-8 overflow-hidden border-b border-[#FED7AA]/50"
     >
       {/* =====================================================================
           BACK PLANE: Soft radial ember glow field + thin gradient hairline

@@ -74,7 +74,7 @@ export function HowItWorks() {
       id="how-it-works"
       ref={sectionRef}
       aria-labelledby="how-it-works-heading"
-      className="relative py-12 sm:py-14 px-4 sm:px-6 lg:px-8 bg-[#FFF8F2] border-b border-[#FED7AA]/60 scroll-mt-16"
+      className="relative py-12 sm:py-14 px-4 sm:px-6 lg:px-8 bg-[#FFF8F2]/85 border-b border-[#FED7AA]/60 scroll-mt-16"
     >
       <div className="relative z-10 max-w-6xl mx-auto space-y-6">
         {/* Section Header */}

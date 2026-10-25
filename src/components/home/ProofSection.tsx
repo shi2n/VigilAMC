@@ -84,7 +84,7 @@ export function ProofSection() {
     <section
       id="proof"
       aria-labelledby="proof-heading"
-      className="relative py-12 sm:py-14 px-4 sm:px-6 lg:px-8 bg-[#FFFFFF]"
+      className="relative py-12 sm:py-14 px-4 sm:px-6 lg:px-8 scroll-mt-16"
     >
       <div className="relative z-10 max-w-6xl mx-auto space-y-6">
         {/* Header */}
