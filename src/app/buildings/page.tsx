@@ -234,12 +234,6 @@ export default function BuildingsPage() {
 
                 {/* Card Actions */}
                 <div className="mt-5 pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
-                  <Link
-                    href={`/assets/print-qr?buildingId=${building.id}`}
-                    className="text-xs text-slate-400 hover:text-white font-medium"
-                  >
-                    Print Stickers
-                  </Link>
 
                   <Link
                     href={`/buildings/${building.id}`}

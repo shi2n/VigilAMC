@@ -29,11 +29,6 @@ const nextConfig = {
         destination: '/technician',
         permanent: false,
       },
-      {
-        source: '/assets/print-qr',
-        destination: '/assets',
-        permanent: false,
-      },
     ];
   },
 };

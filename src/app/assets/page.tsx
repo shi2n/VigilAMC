@@ -67,7 +67,7 @@ export default function AssetsPage() {
             </span>
           </div>
           <p className="text-sm text-slate-400 mt-1">
-            Real-time compliance monitoring per IS 2190 standards with direct QR audit workflows.
+            Real-time compliance monitoring per IS 2190 standards with GPS + Asset Tag ID audit workflows.
           </p>
         </div>
 
@@ -78,13 +78,6 @@ export default function AssetsPage() {
           >
             <MapPin className="w-4 h-4" />
             <span>Inspect Extinguisher</span>
-          </Link>
-          <Link
-            href="/assets/print-qr"
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-sm font-medium transition-colors"
-          >
-            <Printer className="w-4 h-4 text-slate-400" />
-            <span>Print All QR Stickers</span>
           </Link>
         </div>
       </div>

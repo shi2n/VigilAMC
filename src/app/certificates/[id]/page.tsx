@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import QRCode from 'qrcode';
 import {
   FileCheck2,
   Printer,
@@ -23,7 +22,6 @@ export default function CertificateDetailPage() {
   const params = useParams();
   const [cert, setCert] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [qrDataUrl, setQrDataUrl] = useState('');
 
   useEffect(() => {
     const fetchCertificate = async () => {
@@ -32,17 +30,6 @@ export default function CertificateDetailPage() {
         const res = await fetch(`/api/certificates/${params.id}`);
         const data = await res.json();
         setCert(data.certificate);
-
-        if (data.certificate) {
-          const origin = typeof window !== 'undefined' ? window.location.origin : 'https://vigilfire.in';
-          const verifyUrl = `${origin}/buildings/${data.certificate.buildingId}`;
-          const qr = await QRCode.toDataURL(verifyUrl, {
-            width: 150,
-            margin: 1,
-            color: { dark: '#000000', light: '#ffffff' },
-          });
-          setQrDataUrl(qr);
-        }
       } catch (e) {
         console.error(e);
       } finally {
@@ -235,9 +222,7 @@ export default function CertificateDetailPage() {
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-6">
           {/* Municipal Authenticator */}
           <div className="flex items-center gap-3 p-2.5 rounded-xl border border-slate-300 bg-slate-50">
-            {qrDataUrl && (
-              <img src={qrDataUrl} alt="Verification Stamp" className="w-20 h-20 object-contain" />
-            )}
+            <ShieldCheck className="w-10 h-10 text-emerald-700 shrink-0" />
             <div className="text-[10px] text-slate-600 space-y-0.5">
               <div className="font-bold text-slate-900 uppercase">Verification Stamp</div>
               <div>Verified equipment schedule and inspection record on VigilAMC compliance server.</div>

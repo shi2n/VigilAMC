@@ -161,14 +161,6 @@ export default function BuildingDetailPage() {
             </button>
 
             <Link
-              href={`/assets/print-qr?buildingId=${building.id}`}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium text-xs transition-colors"
-            >
-              <Printer className="w-3.5 h-3.5 text-slate-400" />
-              <span>Print Stickers</span>
-            </Link>
-
-            <Link
               href={`/certificates`}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-md transition-colors"
             >
