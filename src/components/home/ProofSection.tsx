@@ -10,6 +10,10 @@ import {
   ArrowRight,
   CheckCircle2,
   Award,
+  ShieldAlert,
+  Download,
+  Users2,
+  Sparkles,
 } from 'lucide-react';
 
 interface StatCardConfig {
@@ -223,13 +227,13 @@ export function ProofSection() {
       id="proof-screen"
       ref={sectionRef}
       aria-labelledby="proof-heading"
-      className="relative py-14 sm:py-20 lg:py-24 overflow-hidden border-t border-[#FED7AA]/60"
+      className="relative py-12 sm:py-16 lg:py-20 overflow-hidden border-t border-[#FED7AA]/60"
       style={{
         background:
           'linear-gradient(180deg, #FFF8F2 0%, #FFE8D6 45%, #FFF4EC 82%, #FFFFFF 100%)',
       }}
     >
-      {/* Ambient Radial Ember Glow Planes behind Stat Cards & Guarantee Band (Critical Glass Rule) */}
+      {/* Ambient Radial Ember Glow Planes behind Stat Cards & Guarantee Band */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute top-[14%] left-[15%] w-[460px] h-[360px] rounded-full"
@@ -248,29 +252,20 @@ export function ProofSection() {
           filter: 'blur(90px)',
         }}
       />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute top-[48%] left-1/2 -translate-x-1/2 w-[680px] h-[340px] rounded-full"
-        style={{
-          background:
-            'radial-gradient(ellipse at center, rgba(232, 89, 12, 0.18) 0%, rgba(255, 140, 66, 0.12) 52%, rgba(255, 248, 242, 0) 76%)',
-          filter: 'blur(95px)',
-        }}
-      />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Heading */}
         <div
           className={`sc-reveal ${
             sectionVisible ? 'is-visible' : ''
-          } text-center max-w-3xl mx-auto mb-10 sm:mb-14`}
+          } text-center max-w-3xl mx-auto mb-10 sm:mb-12`}
         >
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 border border-[#FED7AA] text-xs font-bold uppercase tracking-wider text-[#C2410C] mb-3 backdrop-blur-sm">
             Real Numbers · Real Audit Proof
           </div>
           <h2
             id="proof-heading"
-            className="font-display font-bold tracking-[-0.02em] text-[#1C1917] text-[clamp(1.75rem,3.5vw,2.6rem)] leading-[1.12]"
+            className="font-display font-bold tracking-[-0.02em] text-[#1C1917] text-[clamp(1.75rem,3.5vw,2.5rem)] leading-[1.12]"
           >
             Built to Pass Fire Officer &amp; Insurance Audits First Time
           </h2>
@@ -283,14 +278,14 @@ export function ProofSection() {
         <div
           ref={statsGridRef}
           data-testid="proof-stats-grid"
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-12 sm:mb-16"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-10 sm:mb-14"
         >
           {STATS.map((stat, idx) => (
             <div
               key={stat.id}
               style={{
                 transitionDelay: `${idx * 60}ms`,
-                background: 'rgba(255, 255, 255, 0.45)',
+                background: 'rgba(255, 255, 255, 0.65)',
               }}
               className={`sc-reveal ${
                 sectionVisible ? 'is-visible' : ''
@@ -318,11 +313,11 @@ export function ProofSection() {
         <div
           style={{
             transitionDelay: '180ms',
-            background: 'rgba(255, 255, 255, 0.48)',
+            background: 'rgba(255, 255, 255, 0.65)',
           }}
           className={`sc-reveal ${
             sectionVisible ? 'is-visible' : ''
-          } glass-panel rounded-2xl p-6 sm:p-8 mb-12 sm:mb-16`}
+          } glass-panel rounded-2xl p-6 sm:p-8 mb-8 sm:mb-10`}
         >
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 divide-y lg:divide-y-0 lg:divide-x divide-[#1C1917]/10">
             {GUARANTEES.map((item, idx) => {
@@ -344,6 +339,59 @@ export function ProofSection() {
                 </div>
               );
             })}
+          </div>
+        </div>
+
+        {/* E2: Guarantees band before final CTA (glass, ember border) + Founding Agency Promise */}
+        <div
+          data-testid="guarantees-promise-band"
+          style={{
+            transitionDelay: '220ms',
+            background: 'rgba(255, 255, 255, 0.75)',
+          }}
+          className={`sc-reveal ${
+            sectionVisible ? 'is-visible' : ''
+          } glass-panel border border-[#FED7AA] rounded-2xl p-6 sm:p-7 mb-10 sm:mb-12 shadow-[0_12px_36px_-12px_rgba(232,89,12,0.14)]`}
+        >
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs sm:text-sm font-semibold text-[#1C1917] pb-4 mb-4 border-b border-[#FED7AA]/80 text-center">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFF0E6] border border-[#FED7AA] text-[#C2410C]">
+              <Sparkles className="w-3.5 h-3.5 text-[#EA580C]" />
+              Free 1-building pilot
+            </span>
+            <span className="text-[#C2410C] font-bold">·</span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFF0E6] border border-[#FED7AA] text-[#C2410C]">
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#059669]" />
+              No lock-in, ever
+            </span>
+            <span className="text-[#C2410C] font-bold">·</span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFF0E6] border border-[#FED7AA] text-[#C2410C]">
+              <Download className="w-3.5 h-3.5 text-[#C2410C]" />
+              Your data stays yours
+            </span>
+            <span className="text-[#C2410C] font-bold">·</span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFF0E6] border border-[#FED7AA] text-[#C2410C]">
+              <ShieldAlert className="w-3.5 h-3.5 text-[#C2410C]" />
+              No non-compete games
+            </span>
+          </div>
+
+          <div className="max-w-3xl mx-auto text-center">
+            <h4 className="font-display font-bold text-sm sm:text-base text-[#1C1917] mb-2 flex items-center justify-center gap-2">
+              <Users2 className="w-4 h-4 text-[#EA580C]" />
+              <span>Founding Agency Promise</span>
+            </h4>
+            <p className="text-xs sm:text-[13px] text-[#44403C] leading-relaxed">
+              We provide 1-click full data export anytime. We build software exclusively for fire safety service agencies — we never sell fire equipment, and we never contact your clients or buildings directly.
+            </p>
+            <div className="mt-3.5">
+              <Link
+                href="/sample-report"
+                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#C2410C] hover:text-[#9A3412] hover:underline"
+              >
+                <span>Inspect Sample Report</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
           </div>
         </div>
 

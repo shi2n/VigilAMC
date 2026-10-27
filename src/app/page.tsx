@@ -3,7 +3,9 @@ import type { Metadata } from 'next';
 import { SITE_CONFIG } from '@/lib/siteConfig';
 import { EmberLine } from '@/components/home/EmberLine';
 import { HeroGlass } from '@/components/home/HeroGlass';
+import { PainScene } from '@/components/home/PainScene';
 import { HowItWorks } from '@/components/home/HowItWorks';
+import { SectorMarquee } from '@/components/home/SectorMarquee';
 import { ProofSection } from '@/components/home/ProofSection';
 
 export const metadata: Metadata = {
@@ -85,7 +87,7 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="relative w-full bg-[#FFFFFF] text-[#1C1917] overflow-hidden">
+    <div className="relative w-full bg-[#FFFFFF] text-[#1C1917] overflow-x-hidden">
       {/* Structured Data: Organization + SoftwareApplication */}
       <script
         type="application/ld+json"
@@ -95,13 +97,21 @@ export default function HomePage() {
       {/* Signature Move: The Ember Line travelling down the page seam */}
       <EmberLine />
 
-      {/* Screen 1: Opening Hero State (~100vh) */}
+      {/* Screen 1: Hero State with Flying Product Moments */}
       <HeroGlass />
 
-      {/* Screen 2: Midpoint How It Works State */}
+      {/* Screen 2: Pain Scene Drama (Replaces old/new strip) */}
+      <PainScene />
+
+      {/* Screen 3: 3 Steps With Real Indian Inspection Imagery */}
       <HowItWorks />
 
-      {/* Screen 3: Exit Proof + Final CTA State */}
+      {/* Building-Type Industry Photo Strip Marquee */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+        <SectorMarquee />
+      </div>
+
+      {/* Screen 4: Real Numbers + Guarantees + Founding Agency Promise + Final CTA */}
       <ProofSection />
     </div>
   );
