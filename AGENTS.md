@@ -22,11 +22,13 @@ Stack: Next.js App Router + TypeScript + Tailwind CSS + Prisma + Supabase Auth +
 Work Order status: OPEN | ASSIGNED | IN_PROGRESS | COMPLETED | CANCELLED.
 Equipment status: VERIFIED | DUE_SOON | OVERDUE | SERVICE_REQUIRED | REPLACEMENT_REQUIRED.
 
-## Live Verified Surface Screenshots (Up-to-Date — VIGILAMC FIRE + Lit-Glass)
+## Live Verified Surface Screenshots (Up-to-Date — VIGILAMC FIRE + Lit-Glass + V-Flame Brand Logo)
 - **Homepage Hero (Desktop 1440×900 — Up-to-Date):** `docs/screenshots/hero-desktop-1440x900.png`
   ![VigilAMC FIRE Homepage Hero Desktop 1440x900](docs/screenshots/hero-desktop-1440x900.png)
 - **Homepage Hero (Mobile 375×812 — Up-to-Date):** `docs/screenshots/hero-mobile-375x812.png`
   ![VigilAMC FIRE Homepage Hero Mobile 375x812](docs/screenshots/hero-mobile-375x812.png)
+- **Login Agency Card (`/login` 1440×900 — Up-to-Date V-Tile):** `docs/screenshots/login-fire-1440x900.png`
+  ![VigilAMC Agency Login Card V-Tile](docs/screenshots/login-fire-1440x900.png)
 - **Admin Dashboard (`/dashboard` — Up-to-Date FIRE + Glass Theme):** `docs/screenshots/dashboard-fire-1440x900.png`
   ![VigilAMC Admin Dashboard FIRE Theme](docs/screenshots/dashboard-fire-1440x900.png)
 - **Field Technician App (`/technician` — Up-to-Date FIRE + Glass Theme):** `docs/screenshots/technician-fire-375x812.png`
