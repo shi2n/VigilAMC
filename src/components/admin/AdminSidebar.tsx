@@ -160,15 +160,14 @@ export function AdminSidebar({
           }`}
           title={collapsed ? 'VigilAMC Home' : undefined}
         >
-          <div className="bg-white/85 p-1 rounded-xl border border-[#FED7AA] shadow-xs transition-transform duration-200 group-hover:scale-105 shrink-0">
+          <div className="shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/logo.jpg"
+              src="/brand/logo-tile-192.png"
               alt="VigilAMC Logo"
-              className="h-8 w-auto object-contain rounded-md"
-              onError={(e) => {
-                (e.target as HTMLElement).style.display = 'none';
-              }}
+              width={32}
+              height={32}
+              className="w-8 h-8 rounded-xl object-cover shadow-xs transition-transform duration-200 group-hover:scale-105"
             />
           </div>
           {!collapsed && (

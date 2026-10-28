@@ -7,15 +7,19 @@ export function CorporateFooter() {
     <footer className="bg-[#1C1917] text-[#FAFAF9] border-t border-[#FED7AA]/15 py-8 px-4 sm:px-6 lg:px-8 no-print">
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pb-6 border-b border-[#FAFAF9]/10">
-          {/* Brand Wordmark + One-Liner */}
+          {/* Brand Mark + Wordmark Lockup + One-Liner */}
           <div className="md:col-span-6 space-y-3">
             <Link
               href="/"
-              className="inline-flex items-center gap-2.5 min-h-[44px] rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8C42]"
+              className="inline-flex items-center gap-2.5 min-h-[44px] rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8C42] group"
             >
-              <span
-                aria-hidden="true"
-                className="h-3 w-3 rounded-full bg-gradient-to-br from-[#FF8C42] via-[#EA580C] to-[#C2410C] shadow-[0_0_10px_rgba(255,140,66,0.5)]"
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/brand/logo-tile-192.png"
+                alt="VigilAMC Logo"
+                width={36}
+                height={36}
+                className="w-9 h-9 rounded-xl object-cover ring-1 ring-white/20 shadow-sm shrink-0 transition-transform duration-200 group-hover:scale-105"
               />
               <span className="font-display text-xl font-bold tracking-[-0.02em] text-[#FAFAF9]">
                 Vigil<span className="text-[#FF8C42]">AMC</span>

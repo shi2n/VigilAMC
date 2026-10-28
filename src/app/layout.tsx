@@ -58,13 +58,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
-      { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icon-512x512.png", sizes: "512x512", type: "image/png" },
-      { url: "/favicon.ico", sizes: "any" },
+      { url: "/brand/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/brand/logo-tile-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/brand/logo-tile-512.png", sizes: "512x512", type: "image/png" },
     ],
-    shortcut: "/favicon.svg",
-    apple: "/icon-192x192.png",
+    shortcut: "/brand/favicon-32.png",
+    apple: "/brand/apple-touch-icon-180.png",
   },
   openGraph: {
     title: "VigilAMC - Fire Safety AMC & Compliance Software | India",

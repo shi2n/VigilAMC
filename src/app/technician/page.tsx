@@ -731,9 +731,11 @@ export default function TechnicianPWA() {
         <div className="text-center space-y-3 glass-panel p-6 rounded-2xl max-w-xs w-full">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/logo.jpg"
+            src="/brand/logo-tile-192.png"
             alt="VigilAMC Logo"
-            className="h-10 w-auto mx-auto rounded-lg shadow-sm border border-[#FED7AA]"
+            width={40}
+            height={40}
+            className="w-10 h-10 object-cover mx-auto rounded-xl shadow-sm"
           />
           <RefreshCw className="w-6 h-6 animate-spin text-[#C2410C] mx-auto" />
           <p className="text-xs font-bold text-slate-700">Initializing VigilAMC Field App...</p>
@@ -751,9 +753,11 @@ export default function TechnicianPWA() {
           <div className="text-center space-y-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/logo.jpg"
-              alt="VigilAMC"
-              className="h-12 w-auto mx-auto rounded-xl shadow-md border border-[#FED7AA]"
+              src="/brand/logo-tile-192.png"
+              alt="VigilAMC Logo"
+              width={48}
+              height={48}
+              className="w-12 h-12 object-cover mx-auto rounded-xl shadow-md"
             />
             <h1 className="text-2xl font-black tracking-tight text-slate-900">VigilAMC Field Operations</h1>
             <p className="text-xs text-slate-500 font-medium">
@@ -908,9 +912,11 @@ export default function TechnicianPWA() {
               ) : (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
-                  src="/logo.jpg"
-                  alt="VigilAMC"
-                  className="h-8 w-auto rounded-lg border border-[#FED7AA] shadow-xs"
+                  src="/brand/logo-tile-192.png"
+                  alt="VigilAMC Logo"
+                  width={40}
+                  height={40}
+                  className="w-10 h-10 object-cover rounded-xl shadow-xs shrink-0"
                 />
               )}
               <div className="truncate">

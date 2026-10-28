@@ -24,12 +24,14 @@ export function Navigation() {
         {/* Brand */}
         <div className="flex items-center gap-4">
           <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group shrink-0">
-            <div className="bg-white p-1 rounded-lg shrink-0 shadow-sm transition-transform group-hover:scale-105">
+            <div className="shrink-0 transition-transform group-hover:scale-105">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/logo.jpg"
+                src="/brand/logo-tile-192.png"
                 alt="VigilAMC"
-                className="h-8 w-auto object-contain"
+                width={32}
+                height={32}
+                className="w-8 h-8 rounded-xl object-cover shadow-sm"
               />
             </div>
             <div className="flex flex-col justify-center">

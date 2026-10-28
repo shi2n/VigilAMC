@@ -454,6 +454,15 @@ export function ProofSection() {
                 </Link>
               </div>
 
+              <div className="mt-4">
+                <Link
+                  href="/login"
+                  className="inline-flex items-center gap-1.5 text-xs text-white/80 hover:text-[#FF8C42] hover:underline transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
+                >
+                  <span>Already a customer? Login &rarr;</span>
+                </Link>
+              </div>
+
               <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-[#A8A29E]">
                 <span className="inline-flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-[#059669]" />

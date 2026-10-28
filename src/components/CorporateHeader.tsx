@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, ArrowUpRight } from 'lucide-react';
+import { Menu, X, ArrowUpRight, LogIn } from 'lucide-react';
 import { SITE_CONFIG } from '@/lib/siteConfig';
 
 interface CorporateHeaderProps {
@@ -30,17 +30,19 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
       className="sticky top-0 z-50 w-full glass-panel-dense border-t-0 border-x-0 transition-colors"
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-        {/* Wordmark "VigilAMC" with small ember-dot logo mark */}
+        {/* Mark + Wordmark Lockup: V-tile (36px) + gap 10px + VigilAMC */}
         <Link
           href="/"
           className="inline-flex items-center gap-2.5 min-h-[44px] px-1 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C] group"
         >
-          <span
-            aria-hidden="true"
-            className="relative flex h-3.5 w-3.5 items-center justify-center"
-          >
-            <span className="h-3 w-3 rounded-full bg-gradient-to-br from-[#FF8C42] via-[#EA580C] to-[#C2410C] shadow-[0_0_10px_rgba(234,88,12,0.45)] transition-transform duration-200 group-hover:scale-110" />
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/logo-tile-192.png"
+            alt="VigilAMC Logo"
+            width={36}
+            height={36}
+            className="w-9 h-9 rounded-xl object-cover shadow-sm shrink-0 transition-transform duration-200 group-hover:scale-105"
+          />
           <span className="font-display text-lg sm:text-xl font-bold tracking-[-0.02em] text-[#1C1917]">
             Vigil<span className="text-[#C2410C]">AMC</span>
           </span>
@@ -64,16 +66,17 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
               </Link>
             );
           })}
-          <Link
-            href="/login"
-            className="min-h-[44px] inline-flex items-center px-3.5 py-2 rounded-xl text-sm font-medium text-[#44403C] hover:text-[#1C1917] hover:bg-[#FFF8F2] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C]"
-          >
-            Login
-          </Link>
         </nav>
 
-        {/* Desktop CTA Button */}
+        {/* Desktop CTA Button Group: [ Login ] [ Book a Free Demo ↗ ] */}
         <div className="hidden md:flex items-center gap-3">
+          <Link
+            href="/login"
+            className="min-h-[44px] h-[44px] px-5 rounded-xl border border-[#C2410C] text-[#C2410C] hover:bg-[#FFF0E6] font-bold text-sm inline-flex items-center justify-center gap-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C] transition-colors"
+          >
+            <LogIn className="w-4 h-4" aria-hidden="true" />
+            <span>Login</span>
+          </Link>
           <a
             href={SITE_CONFIG.WHATSAPP_URL}
             target="_blank"
@@ -110,24 +113,42 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
 
       {/* Mobile Glass Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden glass-dialog border-t-0 border-x-0 px-4 pt-2 pb-5 space-y-1.5">
-          {navLinks.map((link) => (
+        <div className="md:hidden glass-dialog border-t-0 border-x-0 px-4 pt-3 pb-5 space-y-3">
+          {/* Mobile CTA Stack: Login (outline) first, Book a Free Demo (solid) second, both 48px tall */}
+          <div className="flex flex-col gap-2.5 pb-2 border-b border-[#FED7AA]/40">
             <Link
-              key={link.name}
-              href={link.href}
+              href="/login"
               onClick={() => setMobileMenuOpen(false)}
-              className="min-h-[44px] flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-[#1C1917] hover:bg-[#FFF4EC] hover:text-[#C2410C] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#EA580C]"
+              className="min-h-[48px] h-12 w-full rounded-xl border border-[#C2410C] text-[#C2410C] hover:bg-[#FFF0E6] font-bold text-sm inline-flex items-center justify-center gap-2 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C]"
             >
-              <span>{link.name}</span>
+              <LogIn className="w-4 h-4" aria-hidden="true" />
+              <span>Login</span>
             </Link>
-          ))}
-          <Link
-            href="/login"
-            onClick={() => setMobileMenuOpen(false)}
-            className="min-h-[44px] flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-[#44403C] hover:bg-[#FFF4EC] hover:text-[#C2410C] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#EA580C]"
-          >
-            <span>Agency Login</span>
-          </Link>
+            <a
+              href={SITE_CONFIG.WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setMobileMenuOpen(false)}
+              className="btn-flame min-h-[48px] h-12 w-full rounded-xl text-white font-bold text-sm inline-flex items-center justify-center gap-1.5 shadow-[0_6px_20px_-4px_rgba(194,65,12,0.38)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C]"
+            >
+              <span>Book a Free Demo</span>
+              <ArrowUpRight className="w-4 h-4" aria-hidden="true" />
+            </a>
+          </div>
+
+          {/* Navigation Links */}
+          <div className="space-y-1">
+            {navLinks.map((link) => (
+              <Link
+                key={link.name}
+                href={link.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className="min-h-[44px] flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-[#1C1917] hover:bg-[#FFF4EC] hover:text-[#C2410C] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C]"
+              >
+                <span>{link.name}</span>
+              </Link>
+            ))}
+          </div>
         </div>
       )}
     </header>

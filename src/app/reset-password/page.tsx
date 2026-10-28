@@ -194,12 +194,17 @@ function ResetPasswordContent() {
       <div className="max-w-md w-full bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <Link href="/" className="inline-block">
+          <Link
+            href="/"
+            className="inline-block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C] rounded-xl group"
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/logo.jpg"
-              alt="VigilAMC"
-              className="h-16 w-auto object-contain mx-auto rounded-2xl shadow-sm"
+              src="/brand/logo-tile-192.png"
+              alt="VigilAMC Logo"
+              width={64}
+              height={64}
+              className="w-16 h-16 object-cover mx-auto rounded-xl shadow-md transition-transform duration-200 group-hover:scale-105"
             />
           </Link>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-ocean-50 text-[#C2410C] text-xs font-bold border border-ocean-200">
