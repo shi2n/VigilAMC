@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { createClient } from '@/lib/supabase/client';
@@ -17,6 +17,15 @@ import {
   Moon,
   MessageSquare,
   Camera,
+  Users,
+  ClipboardList,
+  Calendar,
+  UserCheck,
+  Flame,
+  FileText,
+  X,
+  Wrench,
+  AlertTriangle,
 } from 'lucide-react';
 import { AdminSidebar, AdminNavTab } from '@/components/admin/AdminSidebar';
 import { DashboardOverview } from '@/components/admin/DashboardOverview';
@@ -59,6 +68,58 @@ function addDaysToTodayString(days: number): string {
   const dt = new Date();
   dt.setDate(dt.getDate() + days);
   return toDateInputString(dt);
+}
+
+
+function getEquipmentLiveStatus(eq: any) {
+  if (!eq) return { text: 'Not Inspected', cls: 'bg-[#FFF8F2] text-slate-700 border border-[#FED7AA]' };
+  const diffDays = eq.nextDueDate
+    ? Math.ceil((new Date(eq.nextDueDate).getTime() - new Date().setHours(0, 0, 0, 0)) / (1000 * 60 * 60 * 24))
+    : null;
+  const isOverdue = (diffDays !== null && diffDays < 0) || eq.status === 'OVERDUE' || eq.liveStatus === 'OVERDUE';
+  const isDueSoon = !isOverdue && ((diffDays !== null && diffDays <= 30) || eq.status === 'DUE_SOON' || eq.liveStatus === 'DUE_SOON');
+  const isVerified = !isOverdue && !isDueSoon && (eq.status === 'VERIFIED' || eq.status === 'COMPLIANT' || eq.liveStatus === 'COMPLIANT' || eq.liveStatus === 'VERIFIED');
+
+  if (isOverdue) {
+    return { text: 'OVERDUE', cls: 'bg-rose-50 text-[#B91C1C] border border-[#B91C1C]/30' };
+  }
+  if (isDueSoon) {
+    return { text: 'DUE SOON', cls: 'bg-amber-50 text-amber-800 border border-amber-300' };
+  }
+  if (isVerified) {
+    return { text: 'Verified', cls: 'bg-emerald-50 text-[#0E9F6E] border border-[#0E9F6E]/30' };
+  }
+  return { text: 'Not Inspected', cls: 'bg-[#FFF8F2] text-slate-700 border border-[#FED7AA]' };
+}
+
+function getTaskStatusChip(status: string) {
+  switch (status) {
+    case 'COMPLETED':
+      return {
+        label: 'COMPLETED',
+        cls: 'bg-emerald-50 text-[#059669] border border-emerald-300',
+      };
+    case 'IN_PROGRESS':
+      return {
+        label: 'IN_PROGRESS',
+        cls: 'bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA]',
+      };
+    case 'ASSIGNED':
+      return {
+        label: 'ASSIGNED',
+        cls: 'bg-amber-50 text-amber-800 border border-amber-300',
+      };
+    case 'CANCELLED':
+      return {
+        label: 'CANCELLED',
+        cls: 'bg-rose-50 text-[#DC2626] border border-rose-200 opacity-60',
+      };
+    default:
+      return {
+        label: 'OPEN',
+        cls: 'bg-slate-100 text-[#64748B] border border-slate-300',
+      };
+  }
 }
 
 export default function AdminDashboardPage() {
@@ -128,6 +189,98 @@ export default function AdminDashboardPage() {
   const [editEquipmentModal, setEditEquipmentModal] = useState<any>(null);
   const [compressingPhoto, setCompressingPhoto] = useState(false);
 
+  const prefersReducedMotion = useReducedMotion();
+
+  // Assign task inside Edit Equipment state
+  const [assignTaskOpen, setAssignTaskOpen] = useState(false);
+  const [assigningTask, setAssigningTask] = useState(false);
+  const [assignTaskForm, setAssignTaskForm] = useState({
+    technicianId: '',
+    type: 'Routine Inspection',
+    dueDate: addDaysToTodayString(7),
+    notes: '',
+  });
+
+  const ensureTechniciansLoaded = useCallback(async () => {
+    if (techniciansList.length > 0) return;
+    try {
+      const res = await fetch('/api/admin/technicians');
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && Array.isArray(data.technicians)) {
+        setTechniciansList(data.technicians);
+      }
+    } catch {}
+  }, [techniciansList.length]);
+
+  const recentTasksForAsset = useMemo(() => {
+    if (!editEquipmentModal) return [];
+    return workOrdersList
+      .filter((wo) => wo.equipmentId === editEquipmentModal.id || wo.equipment?.id === editEquipmentModal.id)
+      .slice(0, 3);
+  }, [workOrdersList, editEquipmentModal]);
+
+  const handleAssignTaskInsideModal = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!editEquipmentModal) return;
+    if (!assignTaskForm.technicianId) {
+      toast.error('Please select a technician');
+      showToast('Please select a technician');
+      return;
+    }
+    setAssigningTask(true);
+    try {
+      const selectedTech = techniciansList.find((t) => t.id === assignTaskForm.technicianId);
+      const techName = selectedTech?.fullName || selectedTech?.email || 'Technician';
+
+      const payload = {
+        equipmentId: editEquipmentModal.id,
+        buildingId: editEquipmentModal.buildingId || editEquipmentModal.building?.id,
+        technicianId: assignTaskForm.technicianId,
+        type: assignTaskForm.type,
+        dueDate: assignTaskForm.dueDate,
+        notes: assignTaskForm.notes,
+        status: 'OPEN', // Non-negotiable Rule 5
+      };
+
+      const res = await fetch('/api/work-orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json.error || 'Failed to assign task');
+      }
+
+      if (json.workOrder) {
+        const enriched = {
+          ...json.workOrder,
+          assignedTo: json.workOrder.assignedTo || (selectedTech ? { id: selectedTech.id, fullName: selectedTech.fullName, email: selectedTech.email } : undefined),
+        };
+        setWorkOrdersList((prev) => [enriched, ...prev]);
+      }
+
+      toast.success(`Task assigned to ${techName} for ${editEquipmentModal.qrCode}`);
+      showToast(`Task assigned to ${techName} for ${editEquipmentModal.qrCode}`);
+
+      // Reset form fields
+      setAssignTaskForm({
+        technicianId: '',
+        type: 'Routine Inspection',
+        dueDate: addDaysToTodayString(7),
+        notes: '',
+      });
+      refreshDashboard({ silent: true });
+    } catch (err: any) {
+      console.error(err);
+      const msg = err.message || 'Failed to assign task';
+      toast.error(msg);
+      showToast(msg);
+    } finally {
+      setAssigningTask(false);
+    }
+  };
   // Notification / Toast message
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -988,13 +1141,21 @@ export default function AdminDashboardPage() {
                     onSingleAdd={(b) => setSingleAddEquipModalOpen(b)}
                     onOpenExport={() => handleOpenExport('BUILDINGS')}
                     onOpenImport={() => handleOpenImport('BUILDINGS')}
-                    onEditEquipment={(eq) =>
+                    onEditEquipment={(eq) => {
+                      ensureTechniciansLoaded();
+                      setAssignTaskOpen(false);
+                      setAssignTaskForm({
+                        technicianId: '',
+                        type: 'Routine Inspection',
+                        dueDate: addDaysToTodayString(7),
+                        notes: '',
+                      });
                       setEditEquipmentModal({
                         ...eq,
                         lastServiceDate: toDateInputString(eq.lastServiceDate),
                         nextDueDate: toDateInputString(eq.nextDueDate),
-                      })
-                    }
+                      });
+                    }}
                   />
                 ) : (
                   <ClientsView
@@ -1033,13 +1194,21 @@ export default function AdminDashboardPage() {
                   setEquipFilterBuilding={setEquipFilterBuilding}
                   equipSearch={equipSearch}
                   setEquipSearch={setEquipSearch}
-                  onEditEquipment={(eq) =>
-                    setEditEquipmentModal({
-                      ...eq,
-                      lastServiceDate: toDateInputString(eq.lastServiceDate),
-                      nextDueDate: toDateInputString(eq.nextDueDate),
-                    })
-                  }
+                  onEditEquipment={(eq) => {
+                      ensureTechniciansLoaded();
+                      setAssignTaskOpen(false);
+                      setAssignTaskForm({
+                        technicianId: '',
+                        type: 'Routine Inspection',
+                        dueDate: addDaysToTodayString(7),
+                        notes: '',
+                      });
+                      setEditEquipmentModal({
+                        ...eq,
+                        lastServiceDate: toDateInputString(eq.lastServiceDate),
+                        nextDueDate: toDateInputString(eq.nextDueDate),
+                      });
+                    }}
                   onDeleteEquipment={handleDeleteEquipment}
                   onOpenExport={() => handleOpenExport('FIRE_ASSETS')}
                   onOpenImport={() => handleOpenImport('FIRE_ASSETS')}
@@ -1201,89 +1370,112 @@ export default function AdminDashboardPage() {
       {/* =========================================================================
           MODAL 1: ADD CLIENT & BUILDING
       ========================================================================= */}
-      {addBuildingModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass-dialog rounded-2xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto text-slate-900">
-            
-            <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3">
-              <div className="flex items-center gap-2.5">
-                <Building2 className="w-5 h-5 text-[#C2410C]" />
-                <h3 className="font-bold text-[#1C1917] text-base">Register Client &amp; Building</h3>
-              </div>
-              <button
-                onClick={() => setAddBuildingModalOpen(false)}
-                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateBuilding} className="space-y-4 text-xs">
-              <div className="p-3.5 bg-[#FFF8F2] rounded-xl space-y-2.5 border border-[#FED7AA]">
-                <h4 className="font-bold text-[#C2410C] uppercase text-[10px] tracking-wider">Client &amp; Society Details</h4>
-                <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Client / Society Name *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Horizon Co-op Housing Society"
-                    value={buildingForm.clientName}
-                    onChange={(e) => setBuildingForm({ ...buildingForm, clientName: e.target.value })}
-                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
-                  />
+      <AnimatePresence>
+        {addBuildingModalOpen && (
+          <motion.div
+            key="modal-add-building"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: prefersReducedMotion ? 0.05 : 0.2 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+          >
+            <motion.div
+              initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
+              transition={prefersReducedMotion ? { duration: 0.1 } : { type: 'spring', stiffness: 300, damping: 28 }}
+              className="glass-dialog rounded-2xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto text-slate-900 my-auto shadow-2xl"
+            >
+              <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3">
+                <div className="flex items-center gap-2.5">
+                  <Building2 className="w-5 h-5 text-[#C2410C]" />
+                  <h3 className="font-bold text-[#1C1917] text-base">Register Client &amp; Building</h3>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setAddBuildingModalOpen(false)}
+                  className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100"
+                  aria-label="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateBuilding} className="space-y-4 text-xs">
+                <div className="p-3.5 bg-[#FFF8F2] rounded-xl space-y-2.5 border border-[#FED7AA]">
+                  <h4 className="font-bold text-[#C2410C] uppercase text-[10px] tracking-wider">Client &amp; Society Details</h4>
                   <div>
-                    <label className="block text-slate-700 font-semibold mb-1">Contact Person</label>
-                    <input
-                      type="text"
-                      placeholder="Secretary / Facility Manager"
-                      value={buildingForm.contactPerson}
-                      onChange={(e) => setBuildingForm({ ...buildingForm, contactPerson: e.target.value })}
-                      className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-700 font-semibold mb-1">Phone Number *</label>
+                    <label className="block text-slate-700 font-semibold mb-1">Client / Society Name *</label>
                     <input
                       type="text"
                       required
-                      placeholder="+91 98XXX XXXXX"
-                      value={buildingForm.phone}
-                      onChange={(e) => setBuildingForm({ ...buildingForm, phone: e.target.value })}
+                      placeholder="e.g. Horizon Co-op Housing Society"
+                      value={buildingForm.clientName}
+                      onChange={(e) => setBuildingForm({ ...buildingForm, clientName: e.target.value })}
+                      className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-slate-700 font-semibold mb-1">Contact Person</label>
+                      <input
+                        type="text"
+                        placeholder="Secretary / Facility Manager"
+                        value={buildingForm.contactPerson}
+                        onChange={(e) => setBuildingForm({ ...buildingForm, contactPerson: e.target.value })}
+                        className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 font-semibold mb-1">Phone Number *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="+91 98765 43210"
+                        value={buildingForm.phone}
+                        onChange={(e) => setBuildingForm({ ...buildingForm, phone: e.target.value })}
+                        className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Billing / Official Email</label>
+                    <input
+                      type="email"
+                      placeholder="accounts@society.com"
+                      value={buildingForm.email}
+                      onChange={(e) => setBuildingForm({ ...buildingForm, email: e.target.value })}
                       className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
                     />
                   </div>
                 </div>
-              </div>
 
-              <div className="p-3.5 bg-[#FFF8F2] rounded-xl space-y-2.5 border border-[#FED7AA]">
-                <h4 className="font-bold text-[#C2410C] uppercase text-[10px] tracking-wider">Building &amp; Compliance Cycle</h4>
-                <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Building / Tower Name *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Horizon Heights Tower C"
-                    value={buildingForm.buildingName}
-                    onChange={(e) => setBuildingForm({ ...buildingForm, buildingName: e.target.value })}
-                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Premises Address *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Street, Area, City, Pin Code"
-                    value={buildingForm.address}
-                    onChange={(e) => setBuildingForm({ ...buildingForm, address: e.target.value })}
-                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="p-3.5 bg-slate-50 rounded-xl space-y-2.5 border border-[#FED7AA]">
+                  <h4 className="font-bold text-[#C2410C] uppercase text-[10px] tracking-wider">Building Premises Info</h4>
                   <div>
-                    <label className="block text-slate-700 font-semibold mb-1">State / Union Territory *</label>
+                    <label className="block text-slate-700 font-semibold mb-1">Premises / Wing Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Tower A &amp; Clubhouse"
+                      value={buildingForm.buildingName}
+                      onChange={(e) => setBuildingForm({ ...buildingForm, buildingName: e.target.value })}
+                      className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Premises Address *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Plot No., Road, Sector / Area"
+                      value={buildingForm.address}
+                      onChange={(e) => setBuildingForm({ ...buildingForm, address: e.target.value })}
+                      className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">State / UT *</label>
                     <select
                       value={buildingForm.state}
                       onChange={(e) => setBuildingForm({ ...buildingForm, state: e.target.value })}
@@ -1294,802 +1486,1111 @@ export default function AdminDashboardPage() {
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-slate-700 font-semibold mb-1">Reporting Cycle *</label>
-                    <select
-                      value={buildingForm.reportingCycle}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const mos = val === 'Monthly' ? 1 : val === 'Quarterly' ? 3 : val === 'Half-Yearly' ? 6 : 12;
-                        setBuildingForm({ ...buildingForm, reportingCycle: val, complianceCycle: val, cycleIntervalMos: mos });
-                      }}
-                      className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C] focus:outline-none"
-                    >
-                      {REPORTING_CYCLES.map((rc) => (
-                        <option key={rc.value} value={rc.value}>{rc.label}</option>
-                      ))}
-                    </select>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-slate-700 font-semibold mb-1">Reporting Cycle</label>
+                      <select
+                        value={buildingForm.reportingCycle}
+                        onChange={(e) => setBuildingForm({ ...buildingForm, reportingCycle: e.target.value })}
+                        className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C] focus:outline-none"
+                      >
+                        {REPORTING_CYCLES.map((rc) => (
+                          <option key={rc.value} value={rc.value}>{rc.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 font-semibold mb-1">Local Rule (Optional)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Rule 33 / Form-B"
+                        value={buildingForm.complianceRuleName}
+                        onChange={(e) => setBuildingForm({ ...buildingForm, complianceRuleName: e.target.value })}
+                        className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Local Fire Rule / Format (Optional)</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Rule 33, Form-B, NBC 2016, or state mandate"
-                    value={buildingForm.complianceRuleName}
-                    onChange={(e) => setBuildingForm({ ...buildingForm, complianceRuleName: e.target.value })}
-                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
-                  />
+                <div className="pt-2 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setAddBuildingModalOpen(false)}
+                    className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 font-semibold transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white font-bold shadow-xs transition-all"
+                  >
+                    Register Building
+                  </button>
                 </div>
-              </div>
-
-              <div className="pt-2 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setAddBuildingModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white font-bold shadow-xs transition-all"
-                >
-                  Create Building
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* =========================================================================
           MODAL 2: BULK ADD EQUIPMENT
       ========================================================================= */}
-      {bulkAddModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass-dialog rounded-2xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto text-slate-900">
-            
-            <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3">
-              <div>
-                <h3 className="font-bold text-[#1C1917] text-base">Bulk Add Equipment</h3>
-                <p className="text-xs text-[#C2410C] font-semibold mt-0.5">{bulkAddModalOpen.name}</p>
-              </div>
-              <button
-                onClick={() => setBulkAddModalOpen(null)}
-                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleBulkAddEquipment} className="space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-3">
+      <AnimatePresence>
+        {bulkAddModalOpen && (
+          <motion.div
+            key="modal-bulk-add"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: prefersReducedMotion ? 0.05 : 0.2 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+          >
+            <motion.div
+              initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
+              transition={prefersReducedMotion ? { duration: 0.1 } : { type: 'spring', stiffness: 300, damping: 28 }}
+              className="glass-dialog rounded-2xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto text-slate-900 my-auto shadow-2xl"
+            >
+              <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3">
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Equipment Type</label>
-                  <select
-                    value={equipmentForm.type}
-                    onChange={(e) => setEquipmentForm({ ...equipmentForm, type: e.target.value })}
-                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C] focus:outline-none"
-                  >
-                    <option value="Fire Extinguisher">Fire Extinguisher</option>
-                    <option value="Hydrant Valve">Hydrant Valve</option>
-                    <option value="Hose Reel">Hose Reel</option>
-                    <option value="Alarm Panel">Alarm Panel</option>
-                    <option value="Smoke Detector">Smoke Detector</option>
-                    <option value="Sprinkler Control Valve">Sprinkler Control Valve</option>
-                  </select>
+                  <h3 className="font-bold text-[#1C1917] text-base">Bulk Add Equipment</h3>
+                  <p className="text-xs text-[#C2410C] font-semibold mt-0.5">{bulkAddModalOpen.name}</p>
                 </div>
-                <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Capacity / Specification</label>
-                  <input
-                    type="text"
-                    value={equipmentForm.capacity}
-                    onChange={(e) => setEquipmentForm({ ...equipmentForm, capacity: e.target.value })}
-                    placeholder="e.g. ABC Dry Powder 6kg"
-                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Asset ID / Tag Prefix</label>
-                  <input
-                    type="text"
-                    value={equipmentForm.prefix}
-                    onChange={(e) => setEquipmentForm({ ...equipmentForm, prefix: e.target.value.toUpperCase() })}
-                    placeholder="e.g. EXT or TWR"
-                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 font-mono uppercase focus:border-[#C2410C] focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Quantity to Auto-Generate</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="50"
-                    value={equipmentForm.count}
-                    onChange={(e) => setEquipmentForm({ ...equipmentForm, count: Number(e.target.value) })}
-                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C] focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">Location Pattern</label>
-                <input
-                  type="text"
-                  value={equipmentForm.locationBase}
-                  onChange={(e) => setEquipmentForm({ ...equipmentForm, locationBase: e.target.value })}
-                  placeholder="e.g. Floor Landing Lift Lobby"
-                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">Refill / Service Interval</label>
-                <select
-                  value={equipmentForm.serviceIntervalMonths}
-                  onChange={(e) => {
-                    const mos = Number(e.target.value);
-                    setEquipmentForm({
-                      ...equipmentForm,
-                      serviceIntervalMonths: mos,
-                      nextDueDate: addMonthsToDateString(equipmentForm.lastServiceDate, mos),
-                    });
-                  }}
-                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C] focus:outline-none"
-                >
-                  <option value={12}>12 Months (Annual Extinguisher Refill - IS 2190)</option>
-                  <option value={6}>6 Months (Half-Yearly Hydrant &amp; Pump Check)</option>
-                  <option value={3}>3 Months (Quarterly Fire Alarm &amp; Smoke Check)</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-[#FED7AA]">
-                <div>
-                  <label className="block text-slate-700 font-semibold mb-1">
-                    Last Service / Refill Date
-                  </label>
-                  <input
-                    type="date"
-                    value={equipmentForm.lastServiceDate}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setEquipmentForm({
-                        ...equipmentForm,
-                        lastServiceDate: val,
-                        nextDueDate: addMonthsToDateString(val, equipmentForm.serviceIntervalMonths),
-                      });
-                    }}
-                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-700 font-semibold mb-1">
-                    Next Service Due Date *
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={equipmentForm.nextDueDate}
-                    onChange={(e) => setEquipmentForm({ ...equipmentForm, nextDueDate: e.target.value })}
-                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
-                  />
-                </div>
-                <div className="sm:col-span-2 flex flex-wrap items-center gap-1.5 pt-1">
-                  <span className="text-[10px] font-bold uppercase text-slate-400 mr-1">Quick Presets:</span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setEquipmentForm({
-                        ...equipmentForm,
-                        nextDueDate: addMonthsToDateString(equipmentForm.lastServiceDate, 12),
-                      })
-                    }
-                    className="px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors"
-                  >
-                    +1 Year (Standard)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setEquipmentForm({
-                        ...equipmentForm,
-                        nextDueDate: addDaysToTodayString(15),
-                      })
-                    }
-                    className="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors"
-                  >
-                    Due in 15 Days
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setEquipmentForm({
-                        ...equipmentForm,
-                        nextDueDate: addDaysToTodayString(-5),
-                      })
-                    }
-                    className="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors"
-                  >
-                    Overdue (-5 Days)
-                  </button>
-                </div>
-              </div>
-
-              <div className="pt-2 flex justify-end gap-2">
                 <button
-                  type="button"
                   onClick={() => setBulkAddModalOpen(null)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100"
+                  aria-label="Close"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white font-bold shadow-xs transition-all"
-                >
-                  Create {equipmentForm.count} Equipment Records
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+
+              <form onSubmit={handleBulkAddEquipment} className="space-y-4 text-xs">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Equipment Type</label>
+                    <select
+                      value={equipmentForm.type}
+                      onChange={(e) => setEquipmentForm({ ...equipmentForm, type: e.target.value })}
+                      className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C] focus:outline-none"
+                    >
+                      <option value="Fire Extinguisher">Fire Extinguisher</option>
+                      <option value="Hydrant Valve">Hydrant Valve</option>
+                      <option value="Hose Reel">Hose Reel</option>
+                      <option value="Alarm Panel">Alarm Panel</option>
+                      <option value="Smoke Detector">Smoke Detector</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Prefix / Code Format</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. EXT-ABC"
+                      value={equipmentForm.prefix}
+                      onChange={(e) => setEquipmentForm({ ...equipmentForm, prefix: e.target.value.toUpperCase() })}
+                      className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 font-mono uppercase focus:border-[#C2410C] focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Capacity / Specification</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. 6 Kg ABC Powder"
+                      value={equipmentForm.capacity}
+                      onChange={(e) => setEquipmentForm({ ...equipmentForm, capacity: e.target.value })}
+                      className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C] focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Quantity (1 - 50)</label>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      max={50}
+                      value={equipmentForm.count}
+                      onChange={(e) => setEquipmentForm({ ...equipmentForm, count: Number(e.target.value) })}
+                      className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C] focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">Location Blueprint / Prefix</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Tower Floor Corridor"
+                    value={equipmentForm.locationBase}
+                    onChange={(e) => setEquipmentForm({ ...equipmentForm, locationBase: e.target.value })}
+                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C] focus:outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 bg-slate-50 rounded-xl border border-[#FED7AA]">
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">
+                      Last Service / Refill Date
+                    </label>
+                    <input
+                      type="date"
+                      value={equipmentForm.lastServiceDate}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setEquipmentForm({
+                          ...equipmentForm,
+                          lastServiceDate: val,
+                          nextDueDate: addMonthsToDateString(val, equipmentForm.serviceIntervalMonths),
+                        });
+                      }}
+                      className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">
+                      Next Service Due Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={equipmentForm.nextDueDate}
+                      onChange={(e) => setEquipmentForm({ ...equipmentForm, nextDueDate: e.target.value })}
+                      className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
+                    />
+                  </div>
+                  <div className="sm:col-span-2 flex flex-wrap items-center gap-1.5 pt-1">
+                    <span className="text-[10px] font-bold uppercase text-slate-400 mr-1">Quick Presets:</span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEquipmentForm({
+                          ...equipmentForm,
+                          nextDueDate: addMonthsToDateString(equipmentForm.lastServiceDate, 12),
+                        })
+                      }
+                      className="px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors"
+                    >
+                      +1 Year (Standard)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEquipmentForm({
+                          ...equipmentForm,
+                          nextDueDate: addDaysToTodayString(15),
+                        })
+                      }
+                      className="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors"
+                    >
+                      Due in 15 Days
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEquipmentForm({
+                          ...equipmentForm,
+                          nextDueDate: addDaysToTodayString(-5),
+                        })
+                      }
+                      className="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors"
+                    >
+                      Overdue (-5 Days)
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setBulkAddModalOpen(null)}
+                    className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 font-semibold transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white font-bold shadow-xs transition-all"
+                  >
+                    Generate {equipmentForm.count} Assets
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* =========================================================================
-          MODAL 3: SINGLE ADD EQUIPMENT (WITH AUTOMATIC WEBP PHOTO COMPRESSION)
+          MODAL 3: SINGLE ADD EQUIPMENT (WIDE 2-COLUMN HORIZONTAL)
       ========================================================================= */}
-      {singleAddEquipModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass-dialog rounded-2xl max-w-md w-full p-6 space-y-4 text-slate-900">
-            <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3">
-              <div>
-                <h3 className="font-bold text-[#1C1917] text-base">Add Single Fire Equipment</h3>
-                <p className="text-xs text-[#C2410C] font-semibold mt-0.5">{singleAddEquipModalOpen.name}</p>
-              </div>
-              <button onClick={() => setSingleAddEquipModalOpen(null)} className="text-slate-400 hover:text-slate-700">✕</button>
-            </div>
-
-            <form onSubmit={handleSingleAddEquipment} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">Asset ID / Serial Number *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. HTP-EXT-05"
-                  value={singleEquipForm.qrCode}
-                  onChange={(e) => setSingleEquipForm({ ...singleEquipForm, qrCode: e.target.value.toUpperCase() })}
-                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 font-mono uppercase focus:border-[#C2410C]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">Equipment Type</label>
-                <select
-                  value={singleEquipForm.type}
-                  onChange={(e) => setSingleEquipForm({ ...singleEquipForm, type: e.target.value })}
-                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C]"
-                >
-                  <option value="Fire Extinguisher">Fire Extinguisher</option>
-                  <option value="Hydrant Valve">Hydrant Valve</option>
-                  <option value="Hose Reel">Hose Reel</option>
-                  <option value="Alarm Panel">Alarm Panel</option>
-                  <option value="Smoke Detector">Smoke Detector</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">Capacity / Specification</label>
-                <input
-                  type="text"
-                  required
-                  value={singleEquipForm.capacity}
-                  onChange={(e) => setSingleEquipForm({ ...singleEquipForm, capacity: e.target.value })}
-                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">Specific Location in Building *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Basement 1 - Electric Meter Room"
-                  value={singleEquipForm.location}
-                  onChange={(e) => setSingleEquipForm({ ...singleEquipForm, location: e.target.value })}
-                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C]"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 bg-slate-50 rounded-xl border border-[#FED7AA]">
-                <div>
-                  <label className="block text-slate-700 font-semibold mb-1">
-                    Last Service / Refill Date
-                  </label>
-                  <input
-                    type="date"
-                    value={singleEquipForm.lastServiceDate}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setSingleEquipForm({
-                        ...singleEquipForm,
-                        lastServiceDate: val,
-                        nextDueDate: addMonthsToDateString(val, singleEquipForm.serviceIntervalMonths),
-                      });
-                    }}
-                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
-                  />
+      <AnimatePresence>
+        {singleAddEquipModalOpen && (
+          <motion.div
+            key="modal-single-add"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: prefersReducedMotion ? 0.05 : 0.2 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+          >
+            <motion.div
+              initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
+              transition={prefersReducedMotion ? { duration: 0.1 } : { type: 'spring', stiffness: 300, damping: 28 }}
+              className="glass-dialog rounded-2xl max-w-4xl w-full p-5 sm:p-6 text-slate-900 text-xs shadow-2xl my-auto max-h-[95vh] flex flex-col"
+            >
+              <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3 shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <Flame className="w-5 h-5 text-[#C2410C]" />
+                  <div>
+                    <h3 className="font-bold text-[#1C1917] text-base">Add Single Fire Equipment</h3>
+                    <p className="text-xs text-[#C2410C] font-semibold mt-0.5">{singleAddEquipModalOpen.name}</p>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-slate-700 font-semibold mb-1">
-                    Next Service Due Date *
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={singleEquipForm.nextDueDate}
-                    onChange={(e) => setSingleEquipForm({ ...singleEquipForm, nextDueDate: e.target.value })}
-                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
-                  />
-                </div>
-                <div className="sm:col-span-2 flex flex-wrap items-center gap-1.5 pt-1">
-                  <span className="text-[10px] font-bold uppercase text-slate-400 mr-1">Quick Presets:</span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setSingleEquipForm({
-                        ...singleEquipForm,
-                        nextDueDate: addMonthsToDateString(singleEquipForm.lastServiceDate, 12),
-                      })
-                    }
-                    className="px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors"
-                  >
-                    +1 Year (Standard)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setSingleEquipForm({
-                        ...singleEquipForm,
-                        nextDueDate: addDaysToTodayString(15),
-                      })
-                    }
-                    className="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors"
-                  >
-                    Due in 15 Days
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setSingleEquipForm({
-                        ...singleEquipForm,
-                        nextDueDate: addDaysToTodayString(-5),
-                      })
-                    }
-                    className="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors"
-                  >
-                    Overdue (-5 Days)
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  Equipment Photo (Auto-compressed WebP &rarr; Cloudflare R2)
-                </label>
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer border border-slate-200">
-                    <Camera className="w-3.5 h-3.5 text-[#C2410C]" />
-                    <span>{compressingPhoto ? 'Uploading photo...' : 'Select Photo'}</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handlePhotoFileChange(e, 'SINGLE_ADD')}
-                      className="hidden"
-                    />
-                  </label>
-                  {singleEquipForm.photoUrl && (
-                    <div className="flex items-center gap-2">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={singleEquipForm.photoUrl}
-                        alt="Equipment preview"
-                        className="w-9 h-9 rounded-lg object-cover border border-slate-300 shadow-xs"
-                      />
-                      <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> {compressingPhoto ? 'Uploading...' : 'R2 CDN Ready'}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="pt-2 flex justify-end gap-2">
                 <button
-                  type="button"
                   onClick={() => setSingleAddEquipModalOpen(null)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100"
+                  aria-label="Close"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={compressingPhoto}
-                  className="px-5 py-2.5 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] disabled:opacity-50 text-white font-bold shadow-xs transition-all"
-                >
-                  Add Equipment
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+
+              <form onSubmit={handleSingleAddEquipment} className="space-y-4 pt-4 flex-1 flex flex-col">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 flex-1">
+                  {/* Left Column: Core Specs */}
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Asset ID / Serial Number *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. HTP-EXT-05"
+                        value={singleEquipForm.qrCode}
+                        onChange={(e) => setSingleEquipForm({ ...singleEquipForm, qrCode: e.target.value.toUpperCase() })}
+                        className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 font-mono uppercase focus:border-[#C2410C] focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Equipment Type</label>
+                      <select
+                        value={singleEquipForm.type}
+                        onChange={(e) => setSingleEquipForm({ ...singleEquipForm, type: e.target.value })}
+                        className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C] focus:outline-none"
+                      >
+                        <option value="Fire Extinguisher">Fire Extinguisher</option>
+                        <option value="Hydrant Valve">Hydrant Valve</option>
+                        <option value="Hose Reel">Hose Reel</option>
+                        <option value="Alarm Panel">Alarm Panel</option>
+                        <option value="Smoke Detector">Smoke Detector</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Capacity / Specification</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. 6 Kg ABC Powder"
+                        value={singleEquipForm.capacity}
+                        onChange={(e) => setSingleEquipForm({ ...singleEquipForm, capacity: e.target.value })}
+                        className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C] focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Specific Location in Building *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Basement 1 - Electric Meter Room"
+                        value={singleEquipForm.location}
+                        onChange={(e) => setSingleEquipForm({ ...singleEquipForm, location: e.target.value })}
+                        className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Right Column: Service Dates & Photo */}
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 bg-slate-50 rounded-xl border border-[#FED7AA]">
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Last Service / Refill Date</label>
+                        <input
+                          type="date"
+                          value={singleEquipForm.lastServiceDate}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setSingleEquipForm({
+                              ...singleEquipForm,
+                              lastServiceDate: val,
+                              nextDueDate: addMonthsToDateString(val, singleEquipForm.serviceIntervalMonths),
+                            });
+                          }}
+                          className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Next Service Due Date *</label>
+                        <input
+                          type="date"
+                          required
+                          value={singleEquipForm.nextDueDate}
+                          onChange={(e) => setSingleEquipForm({ ...singleEquipForm, nextDueDate: e.target.value })}
+                          className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
+                        />
+                      </div>
+                      <div className="sm:col-span-2 flex flex-wrap items-center gap-1.5 pt-1">
+                        <span className="text-[10px] font-bold uppercase text-slate-400 mr-1">Quick Presets:</span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSingleEquipForm({
+                              ...singleEquipForm,
+                              nextDueDate: addMonthsToDateString(singleEquipForm.lastServiceDate, 12),
+                            })
+                          }
+                          className="px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors"
+                        >
+                          +1 Year (Standard)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSingleEquipForm({
+                              ...singleEquipForm,
+                              nextDueDate: addDaysToTodayString(15),
+                            })
+                          }
+                          className="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors"
+                        >
+                          Due in 15 Days
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSingleEquipForm({
+                              ...singleEquipForm,
+                              nextDueDate: addDaysToTodayString(-5),
+                            })
+                          }
+                          className="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors"
+                        >
+                          Overdue (-5 Days)
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">
+                        Equipment Photo (Auto-compressed WebP &rarr; Cloudflare R2)
+                      </label>
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer border border-slate-200 transition-colors">
+                          <Camera className="w-3.5 h-3.5 text-[#C2410C]" />
+                          <span>{compressingPhoto ? 'Uploading photo...' : 'Select Photo'}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handlePhotoFileChange(e, 'SINGLE_ADD')}
+                            className="hidden"
+                          />
+                        </label>
+                        {singleEquipForm.photoUrl && (
+                          <div className="flex items-center gap-2">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={singleEquipForm.photoUrl}
+                              alt="Equipment preview"
+                              className="w-9 h-9 rounded-lg object-cover border border-slate-300 shadow-xs"
+                            />
+                            <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5" /> {compressingPhoto ? 'Uploading...' : 'R2 CDN Ready'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-[#FED7AA] flex justify-end gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setSingleAddEquipModalOpen(null)}
+                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 font-semibold transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={compressingPhoto}
+                    className="px-5 py-2 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] disabled:opacity-50 text-white font-bold shadow-xs transition-all"
+                  >
+                    Add Equipment
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* =========================================================================
           MODAL 4: EDIT CLIENT
       ========================================================================= */}
-      {editClientModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass-dialog rounded-2xl max-w-md w-full p-6 space-y-4 text-slate-900 text-xs">
-            <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3">
-              <h3 className="font-bold text-[#1C1917] text-base">Edit Client</h3>
-              <button onClick={() => setEditClientModal(null)} className="text-slate-400 hover:text-slate-700">✕</button>
-            </div>
-
-            <form onSubmit={handleUpdateClient} className="space-y-3">
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Client Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={editClientModal.name}
-                  onChange={(e) => setEditClientModal({ ...editClientModal, name: e.target.value })}
-                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Contact Person</label>
-                <input
-                  type="text"
-                  value={editClientModal.contactPerson}
-                  onChange={(e) => setEditClientModal({ ...editClientModal, contactPerson: e.target.value })}
-                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Phone Number *</label>
-                <input
-                  type="text"
-                  required
-                  value={editClientModal.phone}
-                  onChange={(e) => setEditClientModal({ ...editClientModal, phone: e.target.value })}
-                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Email Address</label>
-                <input
-                  type="email"
-                  value={editClientModal.email || ''}
-                  onChange={(e) => setEditClientModal({ ...editClientModal, email: e.target.value })}
-                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
-                />
-              </div>
-
-              <div className="pt-2 flex justify-end gap-2">
+      <AnimatePresence>
+        {editClientModal && (
+          <motion.div
+            key="modal-edit-client"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: prefersReducedMotion ? 0.05 : 0.2 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+          >
+            <motion.div
+              initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
+              transition={prefersReducedMotion ? { duration: 0.1 } : { type: 'spring', stiffness: 300, damping: 28 }}
+              className="glass-dialog rounded-2xl max-w-md w-full p-6 space-y-4 text-slate-900 text-xs my-auto shadow-2xl"
+            >
+              <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3">
+                <h3 className="font-bold text-[#1C1917] text-base">Edit Client</h3>
                 <button
-                  type="button"
                   onClick={() => setEditClientModal(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100"
+                  aria-label="Close"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white font-bold shadow-xs transition-all"
-                >
-                  Save Changes
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
 
-      {/* =========================================================================
-          MODAL 5: EDIT BUILDING
-      ========================================================================= */}
-      {editBuildingModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass-dialog rounded-2xl max-w-md w-full p-6 space-y-4 text-slate-900 text-xs">
-            <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3">
-              <h3 className="font-bold text-[#1C1917] text-base">Edit Building</h3>
-              <button onClick={() => setEditBuildingModal(null)} className="text-slate-400 hover:text-slate-700">✕</button>
-            </div>
-
-            <form onSubmit={handleUpdateBuilding} className="space-y-3">
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Building Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={editBuildingModal.name}
-                  onChange={(e) => setEditBuildingModal({ ...editBuildingModal, name: e.target.value })}
-                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Premises Address *</label>
-                <input
-                  type="text"
-                  required
-                  value={editBuildingModal.address}
-                  onChange={(e) => setEditBuildingModal({ ...editBuildingModal, address: e.target.value })}
-                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
+              <form onSubmit={handleUpdateClient} className="space-y-3">
                 <div>
-                  <label className="block text-slate-700 font-bold mb-1">State / UT</label>
-                  <select
-                    value={editBuildingModal.state || 'Delhi'}
-                    onChange={(e) => setEditBuildingModal({ ...editBuildingModal, state: e.target.value })}
-                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
-                  >
-                    {INDIAN_STATES_AND_UTS.map((st) => (
-                      <option key={st} value={st}>{st}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Reporting Cycle</label>
-                  <select
-                    value={editBuildingModal.reportingCycle || 'Quarterly'}
-                    onChange={(e) => setEditBuildingModal({ ...editBuildingModal, reportingCycle: e.target.value, complianceCycle: e.target.value })}
-                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
-                  >
-                    {REPORTING_CYCLES.map((rc) => (
-                      <option key={rc.value} value={rc.value}>{rc.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Local Fire Rule / Format (Optional)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Rule 33, Form-B, NBC 2016"
-                  value={editBuildingModal.complianceRuleName || ''}
-                  onChange={(e) => setEditBuildingModal({ ...editBuildingModal, complianceRuleName: e.target.value })}
-                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
-                />
-              </div>
-
-              <div className="pt-2 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setEditBuildingModal(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white font-bold shadow-xs transition-all"
-                >
-                  Save Building
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* =========================================================================
-          MODAL 6: EDIT EQUIPMENT (WITH AUTOMATIC WEBP PHOTO COMPRESSION)
-      ========================================================================= */}
-      {editEquipmentModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass-dialog rounded-2xl max-w-md w-full p-6 space-y-4 text-slate-900 text-xs">
-            <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3">
-              <h3 className="font-bold text-[#1C1917] text-base">Edit Equipment Asset</h3>
-              <button onClick={() => setEditEquipmentModal(null)} className="text-slate-400 hover:text-slate-700">✕</button>
-            </div>
-
-            <form onSubmit={handleUpdateEquipment} className="space-y-3">
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Asset ID / Serial Number *</label>
-                <input
-                  type="text"
-                  required
-                  value={editEquipmentModal.qrCode}
-                  onChange={(e) => setEditEquipmentModal({ ...editEquipmentModal, qrCode: e.target.value.toUpperCase() })}
-                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 font-mono uppercase"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Capacity / Specification *</label>
-                <input
-                  type="text"
-                  required
-                  value={editEquipmentModal.capacity}
-                  onChange={(e) => setEditEquipmentModal({ ...editEquipmentModal, capacity: e.target.value })}
-                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Location Details *</label>
-                <input
-                  type="text"
-                  required
-                  value={editEquipmentModal.location}
-                  onChange={(e) => setEditEquipmentModal({ ...editEquipmentModal, location: e.target.value })}
-                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Refill / Service Interval (Months)</label>
-                <input
-                  type="number"
-                  value={editEquipmentModal.serviceIntervalMonths}
-                  onChange={(e) => {
-                    const mos = Number(e.target.value);
-                    setEditEquipmentModal({
-                      ...editEquipmentModal,
-                      serviceIntervalMonths: mos,
-                      nextDueDate: addMonthsToDateString(
-                        editEquipmentModal.lastServiceDate || toDateInputString(new Date()),
-                        mos
-                      ),
-                    });
-                  }}
-                  className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 bg-slate-50 rounded-xl border border-[#FED7AA]">
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">
-                    Last Service / Refill Date
-                  </label>
+                  <label className="block text-slate-700 font-bold mb-1">Client Name *</label>
                   <input
-                    type="date"
-                    value={editEquipmentModal.lastServiceDate || toDateInputString(new Date())}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setEditEquipmentModal({
-                        ...editEquipmentModal,
-                        lastServiceDate: val,
-                        nextDueDate: addMonthsToDateString(val, editEquipmentModal.serviceIntervalMonths || 12),
-                      });
-                    }}
-                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">
-                    Next Service Due Date *
-                  </label>
-                  <input
-                    type="date"
+                    type="text"
                     required
-                    value={editEquipmentModal.nextDueDate || toDateInputString(new Date())}
-                    onChange={(e) =>
-                      setEditEquipmentModal({ ...editEquipmentModal, nextDueDate: e.target.value })
-                    }
-                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900"
+                    value={editClientModal.name}
+                    onChange={(e) => setEditClientModal({ ...editClientModal, name: e.target.value })}
+                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
                   />
                 </div>
-                <div className="sm:col-span-2 flex flex-wrap items-center gap-1.5 pt-1">
-                  <span className="text-[10px] font-bold uppercase text-slate-400 mr-1">Quick Presets:</span>
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Contact Person</label>
+                  <input
+                    type="text"
+                    value={editClientModal.contactPerson || ''}
+                    onChange={(e) => setEditClientModal({ ...editClientModal, contactPerson: e.target.value })}
+                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Phone Number *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editClientModal.phone}
+                    onChange={(e) => setEditClientModal({ ...editClientModal, phone: e.target.value })}
+                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    value={editClientModal.email || ''}
+                    onChange={(e) => setEditClientModal({ ...editClientModal, email: e.target.value })}
+                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
+                  />
+                </div>
+
+                <div className="pt-2 flex justify-end gap-2">
                   <button
                     type="button"
-                    onClick={() =>
-                      setEditEquipmentModal({
-                        ...editEquipmentModal,
-                        nextDueDate: addMonthsToDateString(
-                          editEquipmentModal.lastServiceDate || toDateInputString(new Date()),
-                          12
-                        ),
-                      })
-                    }
-                    className="px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors"
+                    onClick={() => setEditClientModal(null)}
+                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
                   >
-                    +1 Year (Standard)
+                    Cancel
                   </button>
                   <button
-                    type="button"
-                    onClick={() =>
-                      setEditEquipmentModal({
-                        ...editEquipmentModal,
-                        nextDueDate: addDaysToTodayString(15),
-                      })
-                    }
-                    className="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors"
+                    type="submit"
+                    className="px-5 py-2 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white font-bold shadow-xs transition-all"
                   >
-                    Due in 15 Days
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setEditEquipmentModal({
-                        ...editEquipmentModal,
-                        nextDueDate: addDaysToTodayString(-5),
-                      })
-                    }
-                    className="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors"
-                  >
-                    Overdue (-5 Days)
+                    Save Changes
                   </button>
                 </div>
-              </div>
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">
-                  Equipment Photo (Auto-compressed WebP &rarr; Cloudflare R2)
-                </label>
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer border border-slate-200">
-                    <Camera className="w-3.5 h-3.5 text-[#C2410C]" />
-                    <span>{compressingPhoto ? 'Uploading photo...' : 'Update Photo'}</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handlePhotoFileChange(e, 'EDIT')}
-                      className="hidden"
-                    />
-                  </label>
-                  {editEquipmentModal.photoUrl && (
-                    <div className="flex items-center gap-2">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={editEquipmentModal.photoUrl}
-                        alt="Equipment preview"
-                        className="w-9 h-9 rounded-lg object-cover border border-slate-300 shadow-xs"
-                      />
-                      <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> {compressingPhoto ? 'Uploading...' : 'Photo attached'}
-                      </span>
-                    </div>
-                  )}
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* =========================================================================
+          MODAL 5: EDIT BUILDING (WIDE 2-COLUMN HORIZONTAL)
+      ========================================================================= */}
+      <AnimatePresence>
+        {editBuildingModal && (
+          <motion.div
+            key="modal-edit-building"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: prefersReducedMotion ? 0.05 : 0.2 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+          >
+            <motion.div
+              initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
+              transition={prefersReducedMotion ? { duration: 0.1 } : { type: 'spring', stiffness: 300, damping: 28 }}
+              className="glass-dialog rounded-2xl max-w-3xl w-full p-5 sm:p-6 text-slate-900 text-xs shadow-2xl my-auto max-h-[95vh] flex flex-col"
+            >
+              <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3 shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <Building2 className="w-5 h-5 text-[#C2410C]" />
+                  <h3 className="font-bold text-[#1C1917] text-base">Edit Building</h3>
                 </div>
+                <button
+                  onClick={() => setEditBuildingModal(null)}
+                  className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100"
+                  aria-label="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              <div className="pt-2 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setEditEquipmentModal(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={compressingPhoto}
-                  className="px-5 py-2 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] disabled:opacity-50 text-white font-bold shadow-xs transition-all"
-                >
-                  Save Equipment
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+              <form onSubmit={handleUpdateBuilding} className="space-y-4 pt-4 flex-1 flex flex-col">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+                  {/* Left Column: Name & Address */}
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Building Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={editBuildingModal.name}
+                        onChange={(e) => setEditBuildingModal({ ...editBuildingModal, name: e.target.value })}
+                        className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Premises Address *</label>
+                      <input
+                        type="text"
+                        required
+                        value={editBuildingModal.address}
+                        onChange={(e) => setEditBuildingModal({ ...editBuildingModal, address: e.target.value })}
+                        className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Right Column: Jurisdiction & Reporting */}
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">State / UT</label>
+                        <select
+                          value={editBuildingModal.state || 'Delhi'}
+                          onChange={(e) => setEditBuildingModal({ ...editBuildingModal, state: e.target.value })}
+                          className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
+                        >
+                          {INDIAN_STATES_AND_UTS.map((st) => (
+                            <option key={st} value={st}>{st}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Reporting Cycle</label>
+                        <select
+                          value={editBuildingModal.reportingCycle || 'Quarterly'}
+                          onChange={(e) => setEditBuildingModal({ ...editBuildingModal, reportingCycle: e.target.value, complianceCycle: e.target.value })}
+                          className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
+                        >
+                          {REPORTING_CYCLES.map((rc) => (
+                            <option key={rc.value} value={rc.value}>{rc.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Local Fire Rule / Format (Optional)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Rule 33, Form-B, NBC 2016"
+                        value={editBuildingModal.complianceRuleName || ''}
+                        onChange={(e) => setEditBuildingModal({ ...editBuildingModal, complianceRuleName: e.target.value })}
+                        className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-[#FED7AA] flex justify-end gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setEditBuildingModal(null)}
+                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white font-bold shadow-xs transition-all"
+                  >
+                    Save Building
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* =========================================================================
+          MODAL 6: EDIT EQUIPMENT (WIDE HORIZONTAL + ASSIGN TASK TO TECHNICIAN)
+      ========================================================================= */}
+      <AnimatePresence>
+        {editEquipmentModal && (() => {
+          const liveStatus = getEquipmentLiveStatus(editEquipmentModal);
+
+          return (
+            <motion.div
+              key="modal-edit-equipment"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: prefersReducedMotion ? 0.05 : 0.2 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+            >
+              <motion.div
+                initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
+                transition={prefersReducedMotion ? { duration: 0.1 } : { type: 'spring', stiffness: 300, damping: 28 }}
+                className="glass-dialog rounded-2xl max-w-5xl 2xl:max-w-6xl w-full p-5 sm:p-6 text-slate-900 text-xs shadow-2xl relative my-auto max-h-[95vh] flex flex-col"
+              >
+                {/* HEADER ROW: Title + Live Status Pill + Asset ID Badge + Close Button */}
+                <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3 shrink-0">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <Flame className="w-5 h-5 text-[#C2410C]" />
+                      <h3 className="font-bold text-[#1C1917] text-base">Edit Equipment Asset</h3>
+                    </div>
+
+                    {/* Live Status Pill */}
+                    <span
+                      data-testid="equipment-modal-status-pill"
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${liveStatus.cls}`}
+                    >
+                      {liveStatus.text}
+                    </span>
+
+                    {/* Asset ID in Mono Font */}
+                    <span className="font-mono font-bold text-xs px-2.5 py-0.5 rounded-md bg-white border border-[#FED7AA] text-[#1C1917]">
+                      {editEquipmentModal.qrCode || 'NO-ID'}
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setEditEquipmentModal(null);
+                      setAssignTaskOpen(false);
+                    }}
+                    className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+                    aria-label="Close modal"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* FORM BODY: Wide 2-Zone Horizontal Grid */}
+                <form onSubmit={handleUpdateEquipment} className="space-y-4 pt-3.5 flex-1 flex flex-col overflow-y-auto pr-1">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+                    {/* LEFT ZONE: Asset ID, Capacity, Location, Refill Interval */}
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Asset ID / Serial Number *</label>
+                        <input
+                          type="text"
+                          required
+                          value={editEquipmentModal.qrCode}
+                          onChange={(e) => setEditEquipmentModal({ ...editEquipmentModal, qrCode: e.target.value.toUpperCase() })}
+                          className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 font-mono uppercase focus:border-[#C2410C] focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Capacity / Specification *</label>
+                        <input
+                          type="text"
+                          required
+                          value={editEquipmentModal.capacity}
+                          onChange={(e) => setEditEquipmentModal({ ...editEquipmentModal, capacity: e.target.value })}
+                          className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C] focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Location Details *</label>
+                        <input
+                          type="text"
+                          required
+                          value={editEquipmentModal.location}
+                          onChange={(e) => setEditEquipmentModal({ ...editEquipmentModal, location: e.target.value })}
+                          className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C] focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Refill / Service Interval (Months)</label>
+                        <input
+                          type="number"
+                          value={editEquipmentModal.serviceIntervalMonths || 12}
+                          onChange={(e) => {
+                            const mos = Number(e.target.value);
+                            setEditEquipmentModal({
+                              ...editEquipmentModal,
+                              serviceIntervalMonths: mos,
+                              nextDueDate: addMonthsToDateString(
+                                editEquipmentModal.lastServiceDate || toDateInputString(new Date()),
+                                mos
+                              ),
+                            });
+                          }}
+                          className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C] focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* RIGHT ZONE: Service Dates side-by-side + Quick Presets + Equipment Photo */}
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 bg-slate-50 rounded-xl border border-[#FED7AA]">
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Last Service / Refill Date</label>
+                          <input
+                            type="date"
+                            value={editEquipmentModal.lastServiceDate || toDateInputString(new Date())}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setEditEquipmentModal({
+                                ...editEquipmentModal,
+                                lastServiceDate: val,
+                                nextDueDate: addMonthsToDateString(val, editEquipmentModal.serviceIntervalMonths || 12),
+                              });
+                            }}
+                            className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Next Service Due Date *</label>
+                          <input
+                            type="date"
+                            required
+                            value={editEquipmentModal.nextDueDate || toDateInputString(new Date())}
+                            onChange={(e) => setEditEquipmentModal({ ...editEquipmentModal, nextDueDate: e.target.value })}
+                            className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
+                          />
+                        </div>
+
+                        {/* Quick Presets Row */}
+                        <div className="sm:col-span-2 flex flex-wrap items-center gap-1.5 pt-1">
+                          <span className="text-[10px] font-bold uppercase text-slate-400 mr-1">Quick Presets:</span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setEditEquipmentModal({
+                                ...editEquipmentModal,
+                                nextDueDate: addMonthsToDateString(
+                                  editEquipmentModal.lastServiceDate || toDateInputString(new Date()),
+                                  12
+                                ),
+                              })
+                            }
+                            className="px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors"
+                          >
+                            +1 Year (Standard)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setEditEquipmentModal({
+                                ...editEquipmentModal,
+                                nextDueDate: addDaysToTodayString(15),
+                              })
+                            }
+                            className="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors"
+                          >
+                            Due in 15 Days
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setEditEquipmentModal({
+                                ...editEquipmentModal,
+                                nextDueDate: addDaysToTodayString(-5),
+                              })
+                            }
+                            className="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors"
+                          >
+                            Overdue (-5 Days)
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Equipment Photo Block */}
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">
+                          Equipment Photo (Auto-compressed WebP &rarr; Cloudflare R2)
+                        </label>
+                        <div className="flex items-center gap-3">
+                          <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer border border-slate-200 transition-colors">
+                            <Camera className="w-3.5 h-3.5 text-[#C2410C]" />
+                            <span>{compressingPhoto ? 'Uploading photo...' : 'Update Photo'}</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handlePhotoFileChange(e, 'EDIT')}
+                              className="hidden"
+                            />
+                          </label>
+                          {editEquipmentModal.photoUrl && (
+                            <div className="flex items-center gap-2">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={editEquipmentModal.photoUrl}
+                                alt="Equipment preview"
+                                className="w-9 h-9 rounded-lg object-cover border border-slate-300 shadow-xs"
+                              />
+                              <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                                <CheckCircle2 className="w-3.5 h-3.5" /> {compressingPhoto ? 'Uploading...' : 'Photo attached'}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* PART C: EXPANDABLE ASSIGN TASK TO TECHNICIAN SECTION */}
+                  <AnimatePresence>
+                    {assignTaskOpen && (
+                      <motion.div
+                        key="assign-task-panel"
+                        initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
+                        animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, height: 'auto' }}
+                        exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden border-t border-[#FED7AA] pt-3 mt-1"
+                      >
+                        <div className="glass-panel-dense rounded-xl p-4 border border-[#FED7AA] border-l-4 border-l-[#EA580C] space-y-3 shadow-xs">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-[#C2410C]">
+                              <ClipboardList className="w-4 h-4" />
+                              <h4 className="font-bold text-sm text-[#1C1917]">Assign Task to Technician</h4>
+                            </div>
+                            <span className="text-[10px] text-slate-500 font-medium">Status created as OPEN</span>
+                          </div>
+
+                          {techniciansList.length === 0 ? (
+                            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-xs flex items-center justify-between">
+                              <span>No technicians yet — add one in Field Team</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditEquipmentModal(null);
+                                  setAssignTaskOpen(false);
+                                  setActiveTab('FIELD_TEAM');
+                                }}
+                                className="text-[#C2410C] font-bold underline hover:text-[#9A3412]"
+                              >
+                                Go to Field Team &rarr;
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                                {/* Technician select */}
+                                <div>
+                                  <label className="block text-slate-700 font-bold mb-1 flex items-center gap-1.5">
+                                    <Users className="w-3.5 h-3.5 text-[#C2410C]" /> Technician *
+                                  </label>
+                                  <select
+                                    value={assignTaskForm.technicianId}
+                                    onChange={(e) => setAssignTaskForm({ ...assignTaskForm, technicianId: e.target.value })}
+                                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
+                                  >
+                                    <option value="">Choose technician...</option>
+                                    {techniciansList.map((t) => (
+                                      <option key={t.id} value={t.id}>
+                                        {t.employeeId ? `${t.employeeId} · ` : ''}{t.fullName || t.email}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                {/* Task type select */}
+                                <div>
+                                  <label className="block text-slate-700 font-bold mb-1 flex items-center gap-1.5">
+                                    <ClipboardList className="w-3.5 h-3.5 text-[#C2410C]" /> Task Type *
+                                  </label>
+                                  <select
+                                    value={assignTaskForm.type}
+                                    onChange={(e) => setAssignTaskForm({ ...assignTaskForm, type: e.target.value })}
+                                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
+                                  >
+                                    <option value="Routine Inspection">Routine Inspection</option>
+                                    <option value="Refill / Service">Refill / Service</option>
+                                    <option value="Repair Check">Repair Check</option>
+                                    <option value="Compliance Audit">Compliance Audit</option>
+                                  </select>
+                                </div>
+
+                                {/* Due Date input */}
+                                <div>
+                                  <label className="block text-slate-700 font-bold mb-1 flex items-center gap-1.5">
+                                    <Calendar className="w-3.5 h-3.5 text-[#C2410C]" /> Due Date *
+                                  </label>
+                                  <input
+                                    type="date"
+                                    required
+                                    value={assignTaskForm.dueDate}
+                                    onChange={(e) => setAssignTaskForm({ ...assignTaskForm, dueDate: e.target.value })}
+                                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
+                                  />
+                                </div>
+
+                                {/* Notes input */}
+                                <div>
+                                  <label className="block text-slate-700 font-bold mb-1 flex items-center gap-1.5">
+                                    <FileText className="w-3.5 h-3.5 text-[#C2410C]" /> Notes (Optional)
+                                  </label>
+                                  <input
+                                    type="text"
+                                    placeholder="e.g. Carry 6kg ABC refills"
+                                    value={assignTaskForm.notes}
+                                    onChange={(e) => setAssignTaskForm({ ...assignTaskForm, notes: e.target.value })}
+                                    className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="flex justify-end pt-1">
+                                <button
+                                  type="button"
+                                  onClick={handleAssignTaskInsideModal}
+                                  disabled={assigningTask || !assignTaskForm.technicianId}
+                                  className="px-4 py-2 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] disabled:opacity-50 text-white font-bold shadow-xs transition-all text-xs flex items-center gap-1.5"
+                                >
+                                  <UserCheck className="w-3.5 h-3.5" />
+                                  <span>{assigningTask ? 'Assigning...' : 'Assign Task'}</span>
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Recent tasks for this asset list */}
+                          {recentTasksForAsset.length > 0 && (
+                            <div className="pt-2 border-t border-[#FED7AA]/60 space-y-1.5">
+                              <div className="text-[10px] font-bold uppercase text-slate-400">
+                                Recent Tasks for this Asset ({recentTasksForAsset.length})
+                              </div>
+                              <div className="space-y-1">
+                                {recentTasksForAsset.map((wo) => {
+                                  const chip = getTaskStatusChip(wo.status);
+                                  return (
+                                    <div
+                                      key={wo.id}
+                                      className="flex items-center justify-between p-2 rounded-lg bg-white/70 border border-[#FED7AA]/50 text-[11px]"
+                                    >
+                                      <div className="flex items-center gap-2 truncate">
+                                        <span className="font-semibold text-[#1C1917] truncate">{wo.title}</span>
+                                        <span className="text-slate-400">·</span>
+                                        <span className="text-slate-600 truncate">{wo.assignedTo?.fullName || 'Technician'}</span>
+                                        <span className="text-slate-400">·</span>
+                                        <span className="text-slate-500 font-mono text-[10px]">
+                                          {wo.dueDate ? toDateInputString(wo.dueDate) : 'No due date'}
+                                        </span>
+                                      </div>
+                                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${chip.cls}`}>
+                                        {chip.label}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* STICKY FOOTER BAR: Cancel | Assign Task to Technician toggle | Save Equipment */}
+                  <div className="pt-3 border-t border-[#FED7AA] flex flex-col sm:flex-row items-center justify-between gap-2.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditEquipmentModal(null);
+                        setAssignTaskOpen(false);
+                      }}
+                      className="w-full sm:w-auto px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors font-semibold"
+                    >
+                      Cancel
+                    </button>
+
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setAssignTaskOpen((prev) => !prev)}
+                        className={`px-4 py-2 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 ${
+                          assignTaskOpen
+                            ? 'bg-[#FFF0E6] text-[#C2410C] border-[#C2410C]/40 shadow-xs'
+                            : 'bg-white text-slate-700 border-[#FED7AA] hover:bg-[#FFF8F2] hover:text-[#C2410C]'
+                        }`}
+                      >
+                        <Users className="w-3.5 h-3.5 text-[#EA580C]" />
+                        <span>{assignTaskOpen ? 'Hide Assignment' : 'Assign Task to Technician'}</span>
+                      </button>
+
+                      <button
+                        type="submit"
+                        disabled={compressingPhoto}
+                        className="w-full sm:w-auto px-5 py-2 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] disabled:opacity-50 text-white font-bold shadow-xs transition-all"
+                      >
+                        Save Equipment
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </motion.div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
 
       {/* =========================================================================
           MODAL 7: FEEDBACK
       ========================================================================= */}
-      {feedbackModalOpen && (
-        <FeedbackModal
-          isOpen={feedbackModalOpen}
-          onClose={() => setFeedbackModalOpen(false)}
-          userEmail={data?.user?.email}
-        />
-      )}
+      <AnimatePresence>
+        {feedbackModalOpen && (
+          <FeedbackModal
+            isOpen={feedbackModalOpen}
+            onClose={() => setFeedbackModalOpen(false)}
+            userEmail={data?.user?.email}
+          />
+        )}
+      </AnimatePresence>
 
       </main>
     </div>

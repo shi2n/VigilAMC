@@ -51,27 +51,65 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const {
+    let {
       buildingId,
       equipmentId,
       defectId,
       assignedToId,
+      technicianId,
+      type,
       title,
       description,
+      notes,
       priority,
       dueDate,
     } = body;
 
-    if (!buildingId || !title) {
-      return NextResponse.json({ error: 'Building ID and title are required' }, { status: 400 });
-    }
-
     const cleanEquipmentId =
       equipmentId && String(equipmentId).trim() !== '' ? String(equipmentId).trim() : null;
+
+    let targetBuildingId = buildingId ? String(buildingId).trim() : null;
+    let equipmentQr = '';
+
+    if (cleanEquipmentId) {
+      const eq = await (db as any).equipment.findFirst({
+        where: { id: cleanEquipmentId, organizationId: auth.organization.id },
+        select: { id: true, buildingId: true, qrCode: true },
+      });
+      if (eq) {
+        equipmentQr = eq.qrCode || '';
+        if (!targetBuildingId) {
+          targetBuildingId = eq.buildingId;
+        }
+      }
+    }
+
+    if (!targetBuildingId) {
+      return NextResponse.json({ error: 'Building ID is required' }, { status: 400 });
+    }
+
+    const resolvedTitle = (
+      title ||
+      (type ? `${type} · ${equipmentQr || 'Asset'}` : 'Equipment Task')
+    ).trim();
+
+    if (!resolvedTitle) {
+      return NextResponse.json({ error: 'Task title or type is required' }, { status: 400 });
+    }
+
+    const resolvedAssignedToId =
+      (assignedToId || technicianId) && String(assignedToId || technicianId).trim() !== ''
+        ? String(assignedToId || technicianId).trim()
+        : null;
+
     const cleanDefectId =
       defectId && String(defectId).trim() !== '' ? String(defectId).trim() : null;
-    const cleanAssignedToId =
-      assignedToId && String(assignedToId).trim() !== '' ? String(assignedToId).trim() : null;
+
+    const resolvedDescription = (
+      description ||
+      notes ||
+      (type ? `Task type: ${type}` : '')
+    ).trim();
 
     let parsedDueDate: Date | null = null;
     if (dueDate && String(dueDate).trim() !== '') {
@@ -81,18 +119,20 @@ export async function POST(request: Request) {
       }
     }
 
+    // NON-NEGOTIABLE RULE 5: Work order creation status is ALWAYS 'OPEN'
     const workOrder = await (db as any).workOrder.create({
       data: {
         organizationId: auth.organization.id,
-        buildingId,
+        buildingId: targetBuildingId,
         equipmentId: cleanEquipmentId,
         defectId: cleanDefectId,
-        assignedToId: cleanAssignedToId,
-        title: title.trim(),
-        description: (description || '').trim(),
+        assignedToId: resolvedAssignedToId,
+        title: resolvedTitle,
+        description: resolvedDescription,
         priority: priority || 'MEDIUM',
         status: 'OPEN',
         dueDate: parsedDueDate,
+        notes: (notes || '').trim() || null,
       },
       include: WORK_ORDER_INCLUDE,
     });
