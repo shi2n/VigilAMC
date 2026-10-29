@@ -3077,6 +3077,13 @@ export default function AdminDashboardPage() {
       </AnimatePresence>
 
       </main>
+
+      {/* Minimized Items Floating Tray (bottom-4 right-4 z-40) */}
+      <MinimizeTray
+        items={minimizedTrayItems}
+        onRestore={handleRestoreMinimizedItem}
+        onClose={handleCloseMinimizedItem}
+      />
     </div>
   );
 }
