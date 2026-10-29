@@ -165,6 +165,7 @@ export function HowItWorks() {
                     alt={step.photoAlt}
                     fill
                     placeholder="blur"
+                    quality={90}
                     sizes="(min-width: 1024px) 400px, 92vw"
                     className={`object-cover ${step.photoPosition} transition-transform duration-700 ease-out group-hover:scale-[1.04]`}
                   />

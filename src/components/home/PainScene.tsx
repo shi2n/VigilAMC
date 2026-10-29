@@ -110,6 +110,7 @@ export function PainScene() {
                   alt="Stressed building owner on a phone call at a desk covered in paper registers and inspection files"
                   fill
                   placeholder="blur"
+                  quality={90}
                   sizes="(min-width: 1024px) 520px, 92vw"
                   className="object-cover object-[50%_40%]"
                 />

@@ -89,10 +89,12 @@ function AnimatedStatValue({
   stat,
   active,
   reducedMotion,
+  delayMs = 0,
 }: {
   stat: StatCardConfig;
   active: boolean;
   reducedMotion: boolean;
+  delayMs?: number;
 }) {
   const [val, setVal] = useState<number>(reducedMotion ? stat.target : 0);
 
@@ -107,28 +109,36 @@ function AnimatedStatValue({
     }
 
     let rafId = 0;
-    const duration = 1200; // A4: 1.2s rAF count-up
-    const startTime = performance.now();
+    let timerId = 0;
+    const duration = 2600; // C1: 2.6s count-up duration (2.4-2.8s) for readable climbing numbers
 
-    const step = (now: number) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(1, elapsed / duration);
-      // easeOutQuart
-      const eased = 1 - Math.pow(1 - progress, 4);
-      const nextVal = Math.round(stat.target * eased);
-      setVal(nextVal);
-      if (progress < 1) {
-        rafId = window.requestAnimationFrame(step);
-      } else {
-        setVal(stat.target);
-      }
-    };
+    // C2: Stagger start by 150ms left -> right
+    timerId = window.setTimeout(() => {
+      const startTime = performance.now();
 
-    rafId = window.requestAnimationFrame(step);
+      const step = (now: number) => {
+        const elapsed = now - startTime;
+        const progress = Math.min(1, elapsed / duration);
+        // C1: smooth ease-out (power2.out style)
+        const eased = 1 - Math.pow(1 - progress, 2);
+        const nextVal = Math.round(stat.target * eased);
+        setVal(nextVal);
+        if (progress < 1) {
+          rafId = window.requestAnimationFrame(step);
+        } else {
+          // C3: Strictly enforce exact final target
+          setVal(stat.target);
+        }
+      };
+
+      rafId = window.requestAnimationFrame(step);
+    }, delayMs);
+
     return () => {
+      if (timerId) window.clearTimeout(timerId);
       if (rafId) window.cancelAnimationFrame(rafId);
     };
-  }, [active, reducedMotion, stat.target]);
+  }, [active, reducedMotion, stat.target, delayMs]);
 
   const formatted = stat.formatLocale ? val.toLocaleString('en-IN') : String(val);
 
@@ -296,6 +306,7 @@ export function ProofSection() {
                   stat={stat}
                   active={statsActive}
                   reducedMotion={reducedMotion}
+                  delayMs={idx * 150}
                 />
                 <span className="text-lg sm:text-xl font-semibold text-[#1C1917]">
                   {stat.unitLabel}

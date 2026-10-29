@@ -16,7 +16,7 @@ import {
   ScanLine,
   Award,
 } from 'lucide-react';
-import heroTechnician from '../../../public/images/hero-technician.jpg';
+import heroTechnician from '../../../public/images/hero-technician-v2.jpg';
 import { subscribeScroll } from '@/lib/scrollEngine';
 
 /* ------------------------------------------------------------------ */
@@ -319,17 +319,18 @@ export function HeroGlass() {
             {/* Photo card (parallax layer) */}
             <div data-sc-parallax="0.05" data-testid="hero-photo-card" className="relative z-10">
               <div
-                className="photo-tilt relative aspect-[4/3] lg:aspect-[4/5] rounded-[28px] overflow-hidden border-[6px] border-white shadow-[0_40px_80px_-30px_rgba(28,25,23,0.40),0_0_80px_rgba(232,89,12,0.14)]"
+                className="photo-tilt relative aspect-[4/3] lg:aspect-[4/5] rounded-[28px] overflow-hidden border-[6px] border-white shadow-[0_40px_80px_-30px_rgba(28,25,23,0.40),0_0_80px_rgba(232,89,12,0.14)] bg-[#FFF8F2]"
                 style={{ '--photo-rot': '-2deg' } as React.CSSProperties}
               >
                 <Image
                   src={heroTechnician}
-                  alt="Fire safety technician checking the pressure gauge of a red fire extinguisher while holding a tablet in a modern office corridor"
+                  alt="Fire safety technician checking the pressure gauge of a red fire extinguisher in a modern Indian office building"
                   fill
                   priority
-                  placeholder="blur"
-                  sizes="(min-width: 1280px) 500px, (min-width: 1024px) 40vw, 92vw"
-                  className="object-cover object-[72%_50%]"
+                  fetchPriority="high"
+                  quality={90}
+                  sizes="(min-width: 1440px) 1280px, (min-width: 1024px) 50vw, 100vw"
+                  className="object-cover object-[70%_40%]"
                 />
                 <div
                   aria-hidden="true"
@@ -369,7 +370,7 @@ export function HeroGlass() {
             {/* 2. GPS LOCKED — overlaps photo top-left, lower (mobile: inside top-right) */}
             <FlyCard
               testId="hero-fly-gps"
-              slotClass="right-2 top-[38%] lg:right-auto lg:-left-20 lg:top-[30%]"
+              slotClass="left-2 top-[44%] lg:right-auto lg:-left-20 lg:top-[30%]"
               rate={0.08}
               rot={3}
               dur={6.1}
@@ -389,7 +390,7 @@ export function HeroGlass() {
             {/* 3. PHOTO PROOF — right edge (desktop only) */}
             <FlyCard
               testId="hero-fly-photo"
-              slotClass="hidden lg:block -right-10 top-[14%]"
+              slotClass="hidden lg:block -right-12 top-[8%]"
               rate={0.16}
               rot={5}
               dur={4.6}
@@ -409,7 +410,7 @@ export function HeroGlass() {
             {/* 4. SIGNED — right edge, lower (desktop only) */}
             <FlyCard
               testId="hero-fly-signed"
-              slotClass="hidden lg:block -right-14 top-[54%]"
+              slotClass="hidden lg:block -right-12 top-[68%]"
               rate={-0.05}
               rot={-3}
               dur={6.8}

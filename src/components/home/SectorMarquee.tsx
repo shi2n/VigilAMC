@@ -11,20 +11,21 @@ import {
   Hotel,
   Server,
   Warehouse,
-  ShieldCheck,
 } from 'lucide-react';
-import heroTechnician from '../../../public/images/hero-technician.jpg';
-import problemOwner from '../../../public/images/problem-owner.jpg';
-import sceneGps from '../../../public/images/scene-gps.jpg';
-import sceneSignoff from '../../../public/images/scene-signoff.jpg';
-import scenePump from '../../../public/images/scene-pump.jpg';
+import sectorHospitals from '../../../public/images/sector-hospitals.jpg';
+import sectorItParks from '../../../public/images/sector-itparks.jpg';
+import sectorSocieties from '../../../public/images/sector-societies.jpg';
+import sectorFactories from '../../../public/images/sector-factories.jpg';
+import sectorSchools from '../../../public/images/sector-schools.jpg';
+import sectorHotels from '../../../public/images/sector-hotels.jpg';
+import sectorMalls from '../../../public/images/sector-malls.jpg';
+import sectorDataCentres from '../../../public/images/sector-datacentres.jpg';
 
 interface SectorTile {
   label: string;
   sub: string;
   icon: typeof Building2;
-  photo?: StaticImageData;
-  gradient?: string;
+  photo: StaticImageData;
 }
 
 const SECTORS: SectorTile[] = [
@@ -32,67 +33,49 @@ const SECTORS: SectorTile[] = [
     label: 'Hospitals & NABH Clinics',
     sub: 'ICU & OT Fire Protocols',
     icon: Stethoscope,
-    photo: sceneSignoff,
+    photo: sectorHospitals,
   },
   {
     label: 'IT Parks & Commercial Towers',
     sub: 'High-Rise Hydrant Banks',
     icon: Building2,
-    gradient: 'linear-gradient(135deg, #FF8C42 0%, #EA580C 100%)',
+    photo: sectorItParks,
   },
   {
-    label: 'Industrial & Pump Rooms',
-    sub: 'Diesel & Jockey Pumps',
-    icon: Factory,
-    photo: scenePump,
-  },
-  {
-    label: 'Warehouses & Logistics Hubs',
-    sub: 'Early Suppression Sprinklers',
-    icon: Warehouse,
-    gradient: 'linear-gradient(135deg, #C2410C 0%, #9A3412 100%)',
-  },
-  {
-    label: 'Rooftop & Utility Risers',
-    sub: '20m GPS Verified Check',
+    label: 'Residential Societies & RWAs',
+    sub: 'Multi-Tower Evacuation & Pumps',
     icon: Building2,
-    photo: sceneGps,
+    photo: sectorSocieties,
+  },
+  {
+    label: 'Factories & Warehouses',
+    sub: 'Early Suppression Sprinklers',
+    icon: Factory,
+    photo: sectorFactories,
   },
   {
     label: 'Schools & Universities',
     sub: 'Campus Evacuation Routes',
     icon: GraduationCap,
-    gradient: 'linear-gradient(135deg, #EA580C 0%, #C2410C 100%)',
-  },
-  {
-    label: 'Office Towers & Co-Working',
-    sub: 'Cylinder Banks & Alarms',
-    icon: Building2,
-    photo: heroTechnician,
+    photo: sectorSchools,
   },
   {
     label: 'Hotels & Hospitality',
     sub: 'Kitchen Hood Suppression',
     icon: Hotel,
-    gradient: 'linear-gradient(135deg, #D97706 0%, #EA580C 100%)',
-  },
-  {
-    label: 'Audited Facility Operations',
-    sub: 'Form-B Certification',
-    icon: ShieldCheck,
-    photo: problemOwner,
+    photo: sectorHotels,
   },
   {
     label: 'Malls & Multiplexes',
     sub: 'Public Zone Sprinklers',
     icon: ShoppingBag,
-    gradient: 'linear-gradient(135deg, #FF8C42 0%, #C2410C 100%)',
+    photo: sectorMalls,
   },
   {
-    label: 'Data Centres & Server Labs',
+    label: 'Data Centres & Labs',
     sub: 'Clean Agent Gas Flooding',
     icon: Server,
-    gradient: 'linear-gradient(135deg, #9A3412 0%, #1C1917 100%)',
+    photo: sectorDataCentres,
   },
 ];
 
@@ -157,13 +140,13 @@ export function SectorMarquee() {
         }
       } else if (!isHovered && trackRef.current) {
         const basePxPerSec = 36;
-        const halfWidth = Math.max(400, trackRef.current.scrollWidth / 2);
+        const oneRepeatWidth = Math.max(400, trackRef.current.scrollWidth / 3);
         currentOffset += direction * basePxPerSec * clampedMult * dt;
 
-        if (currentOffset <= -halfWidth) {
-          currentOffset += halfWidth;
+        if (currentOffset <= -oneRepeatWidth) {
+          currentOffset += oneRepeatWidth;
         } else if (currentOffset > 0) {
-          currentOffset -= halfWidth;
+          currentOffset -= oneRepeatWidth;
         }
 
         trackRef.current.style.transform = `translate3d(${currentOffset.toFixed(2)}px, 0, 0)`;
@@ -192,52 +175,35 @@ export function SectorMarquee() {
     return (
       <div
         key={key}
-        className="group relative flex flex-col justify-end w-[220px] sm:w-[240px] h-[100px] sm:h-[110px] rounded-2xl overflow-hidden border border-white/80 shadow-[0_12px_30px_-12px_rgba(28,25,23,0.18)] shrink-0 transition-transform duration-300 hover:-translate-y-1"
-        style={{
-          background: sector.gradient || 'rgba(255, 255, 255, 0.8)',
-        }}
+        className="group relative flex flex-col justify-end w-[220px] sm:w-[240px] h-24 sm:h-28 rounded-2xl overflow-hidden border border-white/80 shadow-[0_12px_30px_-12px_rgba(28,25,23,0.18)] shrink-0 transition-transform duration-300 hover:-translate-y-1 bg-[#1C1917]"
       >
-        {sector.photo ? (
-          <>
-            <Image
-              src={sector.photo}
-              alt={sector.label}
-              fill
-              placeholder="blur"
-              sizes="240px"
-              className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
-            />
-            <div
-              aria-hidden="true"
-              className="absolute inset-0 bg-gradient-to-t from-[#1C1917]/90 via-[#1C1917]/45 to-transparent"
-            />
-            <div className="relative z-10 p-3 text-white">
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <Icon className="w-3.5 h-3.5 text-[#FF8C42]" />
-                <span className="text-xs font-bold leading-tight truncate drop-shadow-sm">
-                  {sector.label}
-                </span>
-              </div>
-              <div className="text-[10px] text-[#FED7AA] font-medium truncate drop-shadow-sm">
-                {sector.sub}
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="relative z-10 p-3.5 h-full flex flex-col justify-between text-white">
-            <div className="w-7 h-7 rounded-lg bg-white/20 backdrop-blur-md flex items-center justify-center">
-              <Icon className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <div className="text-xs font-bold leading-tight truncate">
-                {sector.label}
-              </div>
-              <div className="text-[10px] text-white/85 font-medium truncate mt-0.5">
-                {sector.sub}
-              </div>
-            </div>
+        <Image
+          src={sector.photo}
+          alt={sector.label}
+          fill
+          loading="lazy"
+          quality={85}
+          sizes="240px"
+          className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-gradient-to-t from-[#1C1917]/90 via-[#1C1917]/40 to-black/10"
+        />
+        <div className="relative z-10 p-3 text-white flex flex-col justify-end h-full">
+          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-md border border-white/25 w-fit mb-1 shadow-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#EA580C] shadow-[0_0_6px_#FF8C42]" />
+            <span className="text-[10px] font-bold text-white uppercase tracking-wider">
+              {sector.sub}
+            </span>
           </div>
-        )}
+          <div className="flex items-center gap-1.5">
+            <Icon className="w-3.5 h-3.5 text-[#FF8C42] shrink-0" />
+            <span className="text-xs font-bold leading-tight truncate drop-shadow-sm text-white">
+              {sector.label}
+            </span>
+          </div>
+        </div>
       </div>
     );
   };
@@ -248,26 +214,41 @@ export function SectorMarquee() {
         <div className="text-xs font-bold uppercase tracking-wider text-[#C2410C]">
           Built for every building type under Indian fire safety norms
         </div>
-        {/* D3: Small flying stat chip overlapping marquee edge */}
+        {/* Small flying stat chip overlapping marquee edge */}
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/85 border border-[#FED7AA] text-[11px] font-semibold text-[#1C1917] shadow-sm backdrop-blur-sm">
           <span className="w-2 h-2 rounded-full bg-[#059669] animate-pulse" />
           <span>Active in 500+ commercial sites</span>
         </div>
       </div>
 
-      {/* Mobile (<640px): 2-column scrollable grid */}
+      {/* Mobile (<640px): 2-column photo grid */}
       <div className="grid grid-cols-2 gap-2.5 sm:hidden">
-        {SECTORS.slice(0, 6).map((sector) => {
+        {SECTORS.map((sector) => {
           const Icon = sector.icon;
           return (
             <div
               key={sector.label}
-              className="flex items-center gap-2 rounded-xl bg-white/90 border border-[#FED7AA] p-2.5 text-xs font-semibold text-[#1C1917] shadow-sm"
+              className="group relative rounded-xl overflow-hidden border border-[#FED7AA] h-20 shadow-sm flex flex-col justify-end p-2 bg-[#1C1917]"
             >
-              <div className="w-7 h-7 rounded-lg bg-[#FFF0E6] flex items-center justify-center shrink-0">
-                <Icon className="w-3.5 h-3.5 text-[#C2410C]" />
+              <Image
+                src={sector.photo}
+                alt={sector.label}
+                fill
+                loading="lazy"
+                quality={85}
+                sizes="180px"
+                className="object-cover object-center"
+              />
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 bg-gradient-to-t from-[#1C1917]/90 via-[#1C1917]/50 to-transparent"
+              />
+              <div className="relative z-10 text-white">
+                <div className="flex items-center gap-1">
+                  <Icon className="w-3 h-3 text-[#FF8C42] shrink-0" />
+                  <span className="truncate text-[11px] font-bold leading-tight drop-shadow-sm">{sector.label}</span>
+                </div>
               </div>
-              <span className="truncate text-[11px] leading-tight">{sector.label}</span>
             </div>
           );
         })}
@@ -296,7 +277,7 @@ export function SectorMarquee() {
             willChange: reducedMotion ? 'auto' : 'transform',
           }}
         >
-          {(reducedMotion ? SECTORS : [...SECTORS, ...SECTORS]).map((sector, idx) =>
+          {(reducedMotion ? SECTORS : [...SECTORS, ...SECTORS, ...SECTORS]).map((sector, idx) =>
             renderTile(sector, `${sector.label}-${idx}`)
           )}
         </div>
