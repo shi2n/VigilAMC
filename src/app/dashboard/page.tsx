@@ -1646,11 +1646,14 @@ export default function AdminDashboardPage() {
                         dueDate: addDaysToTodayString(7),
                         notes: '',
                       });
-                      setEditEquipmentModal({
+                      const normalizedEq = {
                         ...eq,
                         lastServiceDate: toDateInputString(eq.lastServiceDate),
                         nextDueDate: toDateInputString(eq.nextDueDate),
-                      });
+                      };
+                      initialEquipmentRef.current = { ...normalizedEq };
+                      setEditEquipmentModal(normalizedEq);
+                      setMinimizedModals((prev) => prev.filter((m) => m !== 'EDIT_EQUIPMENT'));
                     }}
                   />
                 ) : (
@@ -1699,11 +1702,14 @@ export default function AdminDashboardPage() {
                         dueDate: addDaysToTodayString(7),
                         notes: '',
                       });
-                      setEditEquipmentModal({
+                      const normalizedEq = {
                         ...eq,
                         lastServiceDate: toDateInputString(eq.lastServiceDate),
                         nextDueDate: toDateInputString(eq.nextDueDate),
-                      });
+                      };
+                      initialEquipmentRef.current = { ...normalizedEq };
+                      setEditEquipmentModal(normalizedEq);
+                      setMinimizedModals((prev) => prev.filter((m) => m !== 'EDIT_EQUIPMENT'));
                     }}
                   onDeleteEquipment={handleDeleteEquipment}
                   onOpenExport={() => handleOpenExport('FIRE_ASSETS')}
@@ -1890,13 +1896,26 @@ export default function AdminDashboardPage() {
                   <Building2 className="w-5 h-5 text-[#C2410C]" />
                   <h3 className="font-bold text-[#1C1917] text-base">Register Client &amp; Building</h3>
                 </div>
-                <button
-                  onClick={() => setAddBuildingModalOpen(false)}
-                  className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100"
-                  aria-label="Close"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleMinimizeModal('ADD_BUILDING')}
+                    className="p-1 rounded-lg text-slate-400 hover:text-[#C2410C] hover:bg-[#FFF0E6] transition-colors"
+                    title="Minimize (keep my work)"
+                    aria-label="Minimize (keep my work)"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCloseModal('ADD_BUILDING')}
+                    className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition-colors"
+                    title="Close"
+                    aria-label="Close"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               <form onSubmit={handleCreateBuilding} className="space-y-4 text-xs">
@@ -2013,7 +2032,7 @@ export default function AdminDashboardPage() {
                 <div className="pt-2 flex justify-end gap-2">
                   <button
                     type="button"
-                    onClick={() => setAddBuildingModalOpen(false)}
+                    onClick={() => handleCloseModal('ADD_BUILDING')}
                     className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 font-semibold transition-colors"
                   >
                     Cancel
@@ -2035,7 +2054,7 @@ export default function AdminDashboardPage() {
           MODAL 2: BULK ADD EQUIPMENT
       ========================================================================= */}
       <AnimatePresence>
-        {bulkAddModalOpen && (
+        {bulkAddModalOpen && !minimizedModals.includes('BULK_ADD') && (
           <motion.div
             key="modal-bulk-add"
             initial={{ opacity: 0 }}
@@ -2056,13 +2075,26 @@ export default function AdminDashboardPage() {
                   <h3 className="font-bold text-[#1C1917] text-base">Bulk Add Equipment</h3>
                   <p className="text-xs text-[#C2410C] font-semibold mt-0.5">{bulkAddModalOpen.name}</p>
                 </div>
-                <button
-                  onClick={() => setBulkAddModalOpen(null)}
-                  className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100"
-                  aria-label="Close"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleMinimizeModal('BULK_ADD')}
+                    className="p-1 rounded-lg text-slate-400 hover:text-[#C2410C] hover:bg-[#FFF0E6] transition-colors"
+                    title="Minimize (keep my work)"
+                    aria-label="Minimize (keep my work)"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCloseModal('BULK_ADD')}
+                    className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition-colors"
+                    title="Close"
+                    aria-label="Close"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               <form onSubmit={handleBulkAddEquipment} className="space-y-4 text-xs">
@@ -2207,7 +2239,7 @@ export default function AdminDashboardPage() {
                 <div className="pt-2 flex justify-end gap-2">
                   <button
                     type="button"
-                    onClick={() => setBulkAddModalOpen(null)}
+                    onClick={() => handleCloseModal('BULK_ADD')}
                     className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 font-semibold transition-colors"
                   >
                     Cancel
@@ -2253,13 +2285,26 @@ export default function AdminDashboardPage() {
                     <p className="text-xs text-[#C2410C] font-semibold mt-0.5">{singleAddEquipModalOpen.name}</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => setSingleAddEquipModalOpen(null)}
-                  className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100"
-                  aria-label="Close"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleMinimizeModal('ADD_SINGLE_EQUIP')}
+                    className="p-1 rounded-lg text-slate-400 hover:text-[#C2410C] hover:bg-[#FFF0E6] transition-colors"
+                    title="Minimize (keep my work)"
+                    aria-label="Minimize (keep my work)"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCloseModal('ADD_SINGLE_EQUIP')}
+                    className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition-colors"
+                    title="Close"
+                    aria-label="Close"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               <form onSubmit={handleSingleAddEquipment} className="space-y-4 pt-4 flex-1 flex flex-col">
@@ -2424,7 +2469,7 @@ export default function AdminDashboardPage() {
                 <div className="pt-3 border-t border-[#FED7AA] flex justify-end gap-2 shrink-0">
                   <button
                     type="button"
-                    onClick={() => setSingleAddEquipModalOpen(null)}
+                    onClick={() => handleCloseModal('ADD_SINGLE_EQUIP')}
                     className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 font-semibold transition-colors"
                   >
                     Cancel
@@ -2465,13 +2510,26 @@ export default function AdminDashboardPage() {
             >
               <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3">
                 <h3 className="font-bold text-[#1C1917] text-base">Edit Client</h3>
-                <button
-                  onClick={() => setEditClientModal(null)}
-                  className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100"
-                  aria-label="Close"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleMinimizeModal('EDIT_CLIENT')}
+                    className="p-1 rounded-lg text-slate-400 hover:text-[#C2410C] hover:bg-[#FFF0E6] transition-colors"
+                    title="Minimize (keep my work)"
+                    aria-label="Minimize (keep my work)"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCloseModal('EDIT_CLIENT')}
+                    className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition-colors"
+                    title="Close"
+                    aria-label="Close"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               <form onSubmit={handleUpdateClient} className="space-y-3">
@@ -2517,7 +2575,7 @@ export default function AdminDashboardPage() {
                 <div className="pt-2 flex justify-end gap-2">
                   <button
                     type="button"
-                    onClick={() => setEditClientModal(null)}
+                    onClick={() => handleCloseModal('EDIT_CLIENT')}
                     className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
                   >
                     Cancel
@@ -2560,13 +2618,26 @@ export default function AdminDashboardPage() {
                   <Building2 className="w-5 h-5 text-[#C2410C]" />
                   <h3 className="font-bold text-[#1C1917] text-base">Edit Building</h3>
                 </div>
-                <button
-                  onClick={() => setEditBuildingModal(null)}
-                  className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100"
-                  aria-label="Close"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleMinimizeModal('EDIT_BUILDING')}
+                    className="p-1 rounded-lg text-slate-400 hover:text-[#C2410C] hover:bg-[#FFF0E6] transition-colors"
+                    title="Minimize (keep my work)"
+                    aria-label="Minimize (keep my work)"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCloseModal('EDIT_BUILDING')}
+                    className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition-colors"
+                    title="Close"
+                    aria-label="Close"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               <form onSubmit={handleUpdateBuilding} className="space-y-4 pt-4 flex-1 flex flex-col">
@@ -2640,7 +2711,7 @@ export default function AdminDashboardPage() {
                 <div className="pt-3 border-t border-[#FED7AA] flex justify-end gap-2 shrink-0">
                   <button
                     type="button"
-                    onClick={() => setEditBuildingModal(null)}
+                    onClick={() => handleCloseModal('EDIT_BUILDING')}
                     className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
                   >
                     Cancel
@@ -2703,16 +2774,26 @@ export default function AdminDashboardPage() {
                     </span>
                   </div>
 
-                  <button
-                    onClick={() => {
-                      setEditEquipmentModal(null);
-                      setAssignTaskOpen(false);
-                    }}
-                    className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
-                    aria-label="Close modal"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleMinimizeModal('EDIT_EQUIPMENT')}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-[#C2410C] hover:bg-[#FFF0E6] transition-colors"
+                      title="Minimize (keep my work)"
+                      aria-label="Minimize (keep my work)"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleCloseModal('EDIT_EQUIPMENT')}
+                      className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+                      title="Close"
+                      aria-label="Close modal"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* FORM BODY: Wide 2-Zone Horizontal Grid */}
@@ -3038,10 +3119,7 @@ export default function AdminDashboardPage() {
                   <div className="pt-3 border-t border-[#FED7AA] flex flex-col sm:flex-row items-center justify-between gap-2.5 shrink-0">
                     <button
                       type="button"
-                      onClick={() => {
-                        setEditEquipmentModal(null);
-                        setAssignTaskOpen(false);
-                      }}
+                      onClick={() => handleCloseModal('EDIT_EQUIPMENT')}
                       className="w-full sm:w-auto px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors font-semibold"
                     >
                       Cancel
