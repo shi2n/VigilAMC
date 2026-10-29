@@ -31,5 +31,7 @@ Equipment status: VERIFIED | DUE_SOON | OVERDUE | SERVICE_REQUIRED | REPLACEMENT
   ![VigilAMC Agency Login Card V-Tile](docs/screenshots/login-fire-1440x900.png)
 - **Admin Dashboard (`/dashboard` — Up-to-Date FIRE + Glass Theme):** `docs/screenshots/dashboard-fire-1440x900.png`
   ![VigilAMC Admin Dashboard FIRE Theme](docs/screenshots/dashboard-fire-1440x900.png)
+- **Admin Dashboard Multi-Tasking Workspace (Tabs & Tray — Up-to-Date):** `docs/screenshots/dashboard-workspace-multitask.png`
+  ![VigilAMC Admin Dashboard Multi-Tasking Workspace](docs/screenshots/dashboard-workspace-multitask.png)
 - **Field Technician App (`/technician` — Up-to-Date FIRE + Glass Theme):** `docs/screenshots/technician-fire-375x812.png`
   ![VigilAMC Field Technician App FIRE Theme](docs/screenshots/technician-fire-375x812.png)
