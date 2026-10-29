@@ -2,12 +2,14 @@
 import { toast } from 'sonner';
 
 import React, { useState, useEffect } from 'react';
-import { FileSpreadsheet, X, Check, Calendar, Filter, Download } from 'lucide-react';
+import { FileSpreadsheet, X, Check, Calendar, Filter, Download, Minus } from 'lucide-react';
 import { EXPORT_CONFIGS, exportToExcel } from '@/lib/excelExport';
 
 interface ExportModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onMinimize?: () => void;
+  isMinimized?: boolean;
   defaultConfigKey?: string;
   initialDataType?: string;
   dataMap: {
@@ -25,6 +27,8 @@ interface ExportModalProps {
 export function ExportModal({
   isOpen,
   onClose,
+  onMinimize,
+  isMinimized,
   defaultConfigKey = 'FIRE_ASSETS',
   initialDataType,
   dataMap,
@@ -98,9 +102,13 @@ export function ExportModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div
+      data-testid="export-excel-modal"
+      className={`fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 ${
+        isMinimized ? 'hidden' : ''
+      }`}
+    >
       <div className="bg-white border border-[#FED7AA] rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl text-slate-800 space-y-5 animate-in fade-in zoom-in-95 duration-200">
-        
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3">
           <div className="flex items-center gap-2.5">
@@ -109,20 +117,40 @@ export function ExportModal({
             </div>
             <div>
               <h3 className="text-base font-bold text-[#1C1917]">Export to Excel (.xlsx)</h3>
-              <p className="text-xs text-[#475569]">Generate a structured spreadsheet from live database records</p>
+              <p className="text-xs text-[#475569]">
+                Generate a structured spreadsheet from live database records
+              </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+
+          <div className="flex items-center gap-1">
+            {onMinimize && (
+              <button
+                type="button"
+                data-testid="export-modal-minimize-btn"
+                onClick={onMinimize}
+                title="Minimize (keep my work)"
+                aria-label="Minimize (keep my work)"
+                className="text-slate-400 hover:text-[#C2410C] p-1.5 rounded-lg hover:bg-[#FFF0E6] transition-colors"
+              >
+                <Minus className="w-5 h-5" />
+              </button>
+            )}
+            <button
+              type="button"
+              data-testid="export-modal-close-btn"
+              onClick={onClose}
+              title="Close"
+              aria-label="Close"
+              className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Form Body */}
         <div className="space-y-4 text-xs">
-          
           {/* Data Type Selector */}
           <div>
             <label className="block text-slate-700 font-semibold mb-1.5">Data Category</label>
@@ -188,7 +216,9 @@ export function ExportModal({
           {/* Column Checkboxes */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-slate-700 font-semibold">Columns to Include ({selectedCols.length})</label>
+              <label className="text-slate-700 font-semibold">
+                Columns to Include ({selectedCols.length})
+              </label>
               <button
                 type="button"
                 onClick={handleSelectAllCols}
@@ -218,7 +248,6 @@ export function ExportModal({
               })}
             </div>
           </div>
-
         </div>
 
         {/* Footer Actions */}
@@ -238,10 +267,11 @@ export function ExportModal({
             className="flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs shadow-md transition-all"
           >
             <Download className="w-4 h-4" />
-            <span>{exporting ? 'Generating XLSX...' : `Export Excel (${currentDataset.length})`}</span>
+            <span>
+              {exporting ? 'Generating XLSX...' : `Export Excel (${currentDataset.length})`}
+            </span>
           </button>
         </div>
-
       </div>
     </div>
   );

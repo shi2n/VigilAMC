@@ -7,6 +7,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { createClient } from '@/lib/supabase/client';
 import {
   Building2,
+  Settings as SettingsIcon,
+  LayoutDashboard,
+  Minus,
   Plus,
   CheckCircle2,
   RefreshCw,
@@ -28,6 +31,8 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { AdminSidebar, AdminNavTab } from '@/components/admin/AdminSidebar';
+import { WorkspaceTabs, WorkspaceTabItem } from '@/components/admin/WorkspaceTabs';
+import { MinimizeTray, MinimizedItem } from '@/components/admin/MinimizeTray';
 import { DashboardOverview } from '@/components/admin/DashboardOverview';
 import { ExportModal } from '@/components/admin/ExportModal';
 import { ImportModal } from '@/components/admin/ImportModal';
@@ -872,6 +877,493 @@ export default function AdminDashboardPage() {
     INSPECTIONS: inspectionsList,
   };
 
+  // Workspace Multi-Tasking & Minimized State
+  const [openTabs, setOpenTabs] = useState<WorkspaceTabItem[]>([
+    { id: 'OVERVIEW', minimized: false, lastAccessed: Date.now() },
+  ]);
+  const [minimizedModals, setMinimizedModals] = useState<string[]>([]);
+  const mainRef = React.useRef<HTMLElement>(null);
+  const scrollTopMapRef = React.useRef<Record<string, number>>({});
+  const initialEquipmentRef = React.useRef<any>(null);
+  const initialBuildingRef = React.useRef<any>(null);
+
+  // Restore workspace layout from localStorage on initial mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('vigilamc:workspace-tabs');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const validIds: AdminNavTab[] = [
+            'OVERVIEW',
+            'CLIENTS_SITES',
+            'FIRE_EQUIPMENT',
+            'INSPECTIONS_WORK',
+            'FIELD_TEAM',
+            'REPORTS',
+            'SETTINGS',
+          ];
+          const valid = parsed.filter((t: any) => validIds.includes(t.id));
+          if (valid.length > 0) {
+            setOpenTabs(
+              valid.map((t: any) => ({
+                id: t.id,
+                minimized: !!t.minimized,
+                lastAccessed: Date.now(),
+              }))
+            );
+            const firstActive = valid.find((t: any) => !t.minimized);
+            if (firstActive) {
+              setActiveTab(firstActive.id);
+            } else {
+              setActiveTab(valid[0].id);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to restore workspace tabs', e);
+    }
+  }, []);
+
+  // Persist workspace tabs layout to localStorage (layout only, never form data)
+  useEffect(() => {
+    try {
+      const toSave = openTabs.map((t) => ({ id: t.id, minimized: t.minimized }));
+      localStorage.setItem('vigilamc:workspace-tabs', JSON.stringify(toSave));
+    } catch {}
+  }, [openTabs]);
+
+  // Tab definitions & metadata
+  const TAB_CONFIG: Record<string, { label: string; icon: any; badge?: number | string }> = useMemo(
+    () => ({
+      OVERVIEW: { label: 'Overview', icon: LayoutDashboard },
+      CLIENTS_SITES: { label: 'Clients & Sites', icon: Building2 },
+      FIRE_EQUIPMENT: { label: 'Fire Equipment', icon: Flame },
+      INSPECTIONS_WORK: {
+        label: 'Inspections & Work',
+        icon: CheckCircle2,
+        badge: liveOpenRepairsCount > 0 ? liveOpenRepairsCount : undefined,
+      },
+      FIELD_TEAM: { label: 'Field Team', icon: Users },
+      REPORTS: { label: 'Reports', icon: FileText },
+      SETTINGS: { label: 'Settings', icon: SettingsIcon },
+      // Legacy alias mappings
+      HOME: { label: 'Overview', icon: LayoutDashboard },
+      SITES: { label: 'Clients & Sites', icon: Building2 },
+      INSPECTIONS: { label: 'Inspections', icon: CheckCircle2 },
+      REPAIRS: { label: 'Repairs', icon: CheckCircle2 },
+    }),
+    [liveOpenRepairsCount]
+  );
+
+  // Open or switch to a section tab (A2 & A3: 6-tab cap with LRU eviction)
+  const handleOpenTab = useCallback(
+    (rawTab: AdminNavTab | string) => {
+      const normalized: AdminNavTab =
+        rawTab === 'HOME'
+          ? 'OVERVIEW'
+          : rawTab === 'SITES'
+          ? 'CLIENTS_SITES'
+          : rawTab === 'INSPECTIONS' || rawTab === 'REPAIRS'
+          ? 'INSPECTIONS_WORK'
+          : (rawTab as AdminNavTab);
+
+      if (rawTab === 'REPAIRS') {
+        setInspectionsWorkSubTab('REPAIRS');
+      } else if (rawTab === 'INSPECTIONS') {
+        setInspectionsWorkSubTab('INSPECTIONS');
+      }
+
+      // Save scroll position for currently active tab
+      if (mainRef.current) {
+        scrollTopMapRef.current[activeTab] = mainRef.current.scrollTop;
+      }
+
+      setOpenTabs((prev) => {
+        const existingIdx = prev.findIndex((t) => t.id === normalized);
+        if (existingIdx !== -1) {
+          // Unminimize and focus
+          return prev.map((t) =>
+            t.id === normalized ? { ...t, minimized: false, lastAccessed: Date.now() } : t
+          );
+        }
+
+        // Cap check: max 6 tabs open at once
+        let nextTabs = [...prev];
+        if (nextTabs.length >= 6) {
+          const backgroundTabs = nextTabs.filter((t) => t.id !== activeTab);
+          const lruTab = backgroundTabs.reduce((oldest, current) => {
+            const oldestTime = oldest.lastAccessed || 0;
+            const currentTime = current.lastAccessed || 0;
+            return currentTime < oldestTime ? current : oldest;
+          }, backgroundTabs[0]);
+
+          if (lruTab) {
+            nextTabs = nextTabs.filter((t) => t.id !== lruTab.id);
+            const lruLabel = TAB_CONFIG[lruTab.id]?.label || 'tab';
+            toast.info(`Closed ${lruLabel} to free memory`);
+          }
+        }
+
+        nextTabs.push({ id: normalized, minimized: false, lastAccessed: Date.now() });
+        return nextTabs;
+      });
+
+      setActiveTab(normalized);
+    },
+    [activeTab, TAB_CONFIG]
+  );
+
+  const handleSelectTab = (tabId: AdminNavTab) => {
+    if (tabId === activeTab) return;
+    if (mainRef.current) {
+      scrollTopMapRef.current[activeTab] = mainRef.current.scrollTop;
+    }
+    setOpenTabs((prev) =>
+      prev.map((t) => (t.id === tabId ? { ...t, minimized: false, lastAccessed: Date.now() } : t))
+    );
+    setActiveTab(tabId);
+  };
+
+  const handleMinimizeTab = (tabId: AdminNavTab) => {
+    if (mainRef.current) {
+      scrollTopMapRef.current[tabId] = mainRef.current.scrollTop;
+    }
+
+    setOpenTabs((prev) =>
+      prev.map((t) => (t.id === tabId ? { ...t, minimized: true } : t))
+    );
+
+    if (activeTab === tabId) {
+      const remaining = openTabs.filter((t) => t.id !== tabId && !t.minimized);
+      if (remaining.length > 0) {
+        const nextActive = remaining.reduce((latest, cur) => {
+          return (cur.lastAccessed || 0) > (latest.lastAccessed || 0) ? cur : latest;
+        }, remaining[0]);
+        setActiveTab(nextActive.id);
+      } else {
+        handleOpenTab('OVERVIEW');
+      }
+    }
+  };
+
+  const handleCloseTab = (tabId: AdminNavTab) => {
+    setOpenTabs((prev) => {
+      const filtered = prev.filter((t) => t.id !== tabId);
+      if (filtered.length === 0) {
+        return [{ id: 'OVERVIEW', minimized: false, lastAccessed: Date.now() }];
+      }
+      return filtered;
+    });
+
+    if (activeTab === tabId) {
+      const remaining = openTabs.filter((t) => t.id !== tabId && !t.minimized);
+      if (remaining.length > 0) {
+        setActiveTab(remaining[0].id);
+      } else {
+        setActiveTab('OVERVIEW');
+      }
+    }
+  };
+
+  const handleCloseOtherTabs = (currentTabId: AdminNavTab) => {
+    setOpenTabs((prev) => prev.filter((t) => t.id === currentTabId));
+    setActiveTab(currentTabId);
+  };
+
+  const handleCloseAllTabs = () => {
+    setOpenTabs([{ id: 'OVERVIEW', minimized: false, lastAccessed: Date.now() }]);
+    setActiveTab('OVERVIEW');
+  };
+
+  const handleResetWorkspace = () => {
+    try {
+      localStorage.removeItem('vigilamc:workspace-tabs');
+    } catch {}
+    setOpenTabs([{ id: 'OVERVIEW', minimized: false, lastAccessed: Date.now() }]);
+    setActiveTab('OVERVIEW');
+    toast.success('Workspace layout reset');
+  };
+
+  // Keyboard shortcuts: Ctrl+1..6 quick-switch, Ctrl+W closes active tab
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey) {
+        const unminimized = openTabs.filter((t) => !t.minimized);
+        if (e.key >= '1' && e.key <= '6') {
+          const idx = parseInt(e.key, 10) - 1;
+          if (idx < unminimized.length) {
+            e.preventDefault();
+            handleSelectTab(unminimized[idx].id);
+          }
+        } else if (e.key.toLowerCase() === 'w') {
+          e.preventDefault();
+          if (unminimized.length > 1) {
+            handleCloseTab(activeTab);
+          }
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [openTabs, activeTab]);
+
+  // Restore scroll position when activeTab changes
+  useEffect(() => {
+    const saved = scrollTopMapRef.current[activeTab] || 0;
+    if (mainRef.current) {
+      mainRef.current.scrollTop = saved;
+    }
+    const timer = requestAnimationFrame(() => {
+      if (mainRef.current) {
+        mainRef.current.scrollTop = saved;
+      }
+    });
+    return () => cancelAnimationFrame(timer);
+  }, [activeTab]);
+
+  // Dirty dot detection for tab chips (D2)
+  const isDirtyTab = useCallback(
+    (tabId: AdminNavTab): boolean => {
+      if (tabId === 'FIRE_EQUIPMENT') {
+        return (
+          equipSearch.trim() !== '' ||
+          equipFilterBuilding !== 'ALL' ||
+          minimizedModals.includes('EDIT_EQUIPMENT') ||
+          minimizedModals.includes('ADD_SINGLE_EQUIP')
+        );
+      }
+      if (tabId === 'CLIENTS_SITES') {
+        return (
+          clientsSitesSubTab !== 'BUILDINGS' ||
+          minimizedModals.includes('EDIT_BUILDING') ||
+          minimizedModals.includes('ADD_BUILDING')
+        );
+      }
+      if (tabId === 'INSPECTIONS_WORK') {
+        return inspectionsWorkSubTab !== 'INSPECTIONS';
+      }
+      return false;
+    },
+    [equipSearch, equipFilterBuilding, clientsSitesSubTab, inspectionsWorkSubTab, minimizedModals]
+  );
+
+  // Modal minimize and close handlers
+  const handleMinimizeModal = (modalKey: string) => {
+    setMinimizedModals((prev) => (prev.includes(modalKey) ? prev : [...prev, modalKey]));
+  };
+
+  const handleCloseModal = (modalKey: string) => {
+    if (modalKey === 'EDIT_EQUIPMENT') {
+      const isDirty = Boolean(
+        editEquipmentModal &&
+          initialEquipmentRef.current &&
+          (editEquipmentModal.location !== initialEquipmentRef.current.location ||
+            editEquipmentModal.qrCode !== initialEquipmentRef.current.qrCode ||
+            editEquipmentModal.type !== initialEquipmentRef.current.type ||
+            editEquipmentModal.capacity !== initialEquipmentRef.current.capacity ||
+            assignTaskForm.notes !== '' ||
+            assignTaskForm.technicianId !== '')
+      );
+      if (isDirty) {
+        if (
+          !window.confirm(
+            "You have unsaved changes in this equipment draft. Discard them? (You can use 'Minimize' to keep your work.)"
+          )
+        ) {
+          return;
+        }
+      }
+      setEditEquipmentModal(null);
+      setAssignTaskOpen(false);
+      setMinimizedModals((prev) => prev.filter((m) => m !== 'EDIT_EQUIPMENT'));
+    } else if (modalKey === 'EDIT_BUILDING') {
+      const isDirty = Boolean(
+        editBuildingModal &&
+          initialBuildingRef.current &&
+          (editBuildingModal.name !== initialBuildingRef.current.name ||
+            editBuildingModal.address !== initialBuildingRef.current.address)
+      );
+      if (isDirty) {
+        if (
+          !window.confirm(
+            "You have unsaved changes in this building draft. Discard them? (You can use 'Minimize' to keep your work.)"
+          )
+        ) {
+          return;
+        }
+      }
+      setEditBuildingModal(null);
+      setMinimizedModals((prev) => prev.filter((m) => m !== 'EDIT_BUILDING'));
+    } else if (modalKey === 'ADD_SINGLE_EQUIP') {
+      const isDirty = Boolean(singleEquipForm.qrCode || singleEquipForm.location);
+      if (isDirty) {
+        if (
+          !window.confirm(
+            "You have unsaved equipment details. Discard them? (You can use 'Minimize' to keep your work.)"
+          )
+        ) {
+          return;
+        }
+      }
+      setSingleAddEquipModalOpen(null);
+      setSingleEquipForm({
+        qrCode: '',
+        type: 'Fire Extinguisher',
+        capacity: 'ABC Dry Powder 6kg',
+        location: '',
+        serviceIntervalMonths: 12,
+        lastServiceDate: toDateInputString(new Date()),
+        nextDueDate: addMonthsToDateString(toDateInputString(new Date()), 12),
+        photoUrl: '',
+      });
+      setMinimizedModals((prev) => prev.filter((m) => m !== 'ADD_SINGLE_EQUIP'));
+    } else if (modalKey === 'ADD_BUILDING') {
+      const isDirty = Boolean(buildingForm.clientName || buildingForm.buildingName);
+      if (isDirty) {
+        if (
+          !window.confirm(
+            "You have unsaved registration details. Discard them? (You can use 'Minimize' to keep your work.)"
+          )
+        ) {
+          return;
+        }
+      }
+      setAddBuildingModalOpen(false);
+      setMinimizedModals((prev) => prev.filter((m) => m !== 'ADD_BUILDING'));
+    } else if (modalKey === 'BULK_ADD') {
+      setBulkAddModalOpen(null);
+      setMinimizedModals((prev) => prev.filter((m) => m !== 'BULK_ADD'));
+    } else if (modalKey === 'IMPORT') {
+      setImportModalOpen(false);
+      setMinimizedModals((prev) => prev.filter((m) => m !== 'IMPORT'));
+    } else if (modalKey === 'EXPORT') {
+      setExportModalOpen(false);
+      setMinimizedModals((prev) => prev.filter((m) => m !== 'EXPORT'));
+    } else if (modalKey === 'EDIT_CLIENT') {
+      setEditClientModal(null);
+      setMinimizedModals((prev) => prev.filter((m) => m !== 'EDIT_CLIENT'));
+    }
+  };
+
+  // Minimized tray items aggregation
+  const minimizedTrayItems: MinimizedItem[] = useMemo(() => {
+    const list: MinimizedItem[] = [];
+
+    // Minimized tabs
+    openTabs
+      .filter((t) => t.minimized)
+      .forEach((t) => {
+        const cfg = TAB_CONFIG[t.id];
+        if (cfg) {
+          list.push({
+            id: `tab-${t.id}`,
+            type: 'TAB',
+            tabId: t.id,
+            label: cfg.label,
+            icon: cfg.icon,
+            badge: cfg.badge,
+          });
+        }
+      });
+
+    // Minimized modals
+    if (minimizedModals.includes('EDIT_EQUIPMENT') && editEquipmentModal) {
+      list.push({
+        id: 'modal-edit-equipment',
+        type: 'MODAL',
+        modalKey: 'EDIT_EQUIPMENT',
+        label: `Edit ${editEquipmentModal.qrCode || 'Asset'}`,
+        icon: Flame,
+      });
+    }
+    if (minimizedModals.includes('EDIT_BUILDING') && editBuildingModal) {
+      list.push({
+        id: 'modal-edit-building',
+        type: 'MODAL',
+        modalKey: 'EDIT_BUILDING',
+        label: `Edit ${editBuildingModal.name || 'Building'}`,
+        icon: Building2,
+      });
+    }
+    if (minimizedModals.includes('ADD_SINGLE_EQUIP') && singleAddEquipModalOpen) {
+      list.push({
+        id: 'modal-add-single-equip',
+        type: 'MODAL',
+        modalKey: 'ADD_SINGLE_EQUIP',
+        label: `Add ${singleEquipForm.qrCode || 'Equipment'}`,
+        icon: Plus,
+      });
+    }
+    if (minimizedModals.includes('IMPORT') && importModalOpen) {
+      list.push({
+        id: 'modal-import',
+        type: 'MODAL',
+        modalKey: 'IMPORT',
+        label: 'Import Excel',
+        icon: FileSpreadsheet,
+      });
+    }
+    if (minimizedModals.includes('EXPORT') && exportModalOpen) {
+      list.push({
+        id: 'modal-export',
+        type: 'MODAL',
+        modalKey: 'EXPORT',
+        label: 'Export Excel',
+        icon: FileSpreadsheet,
+      });
+    }
+    if (minimizedModals.includes('ADD_BUILDING') && addBuildingModalOpen) {
+      list.push({
+        id: 'modal-add-building',
+        type: 'MODAL',
+        modalKey: 'ADD_BUILDING',
+        label: 'Register Building',
+        icon: Building2,
+      });
+    }
+    if (minimizedModals.includes('BULK_ADD') && bulkAddModalOpen) {
+      list.push({
+        id: 'modal-bulk-add',
+        type: 'MODAL',
+        modalKey: 'BULK_ADD',
+        label: 'Bulk Add Equipment',
+        icon: Plus,
+      });
+    }
+
+    return list;
+  }, [
+    openTabs,
+    minimizedModals,
+    editEquipmentModal,
+    editBuildingModal,
+    singleAddEquipModalOpen,
+    singleEquipForm.qrCode,
+    importModalOpen,
+    exportModalOpen,
+    addBuildingModalOpen,
+    bulkAddModalOpen,
+    TAB_CONFIG,
+  ]);
+
+  const handleRestoreMinimizedItem = (item: MinimizedItem) => {
+    if (item.type === 'TAB' && item.tabId) {
+      handleOpenTab(item.tabId);
+    } else if (item.type === 'MODAL' && item.modalKey) {
+      setMinimizedModals((prev) => prev.filter((m) => m !== item.modalKey));
+    }
+  };
+
+  const handleCloseMinimizedItem = (item: MinimizedItem) => {
+    if (item.type === 'TAB' && item.tabId) {
+      handleCloseTab(item.tabId);
+    } else if (item.type === 'MODAL' && item.modalKey) {
+      handleCloseModal(item.modalKey);
+    }
+  };
+
   return (
     <div className="relative min-h-screen bg-[#FFF8F2] flex flex-col lg:flex-row text-[#1C1917] selection:bg-[#FFF0E6] selection:text-[#C2410C]" style={{ backgroundImage: "radial-gradient(circle at 12% 8%, rgba(232, 89, 12, 0.18) 0%, rgba(255, 140, 66, 0.12) 28%, rgba(255, 248, 242, 0) 60%), radial-gradient(circle at 86% 24%, rgba(255, 140, 66, 0.16) 0%, rgba(255, 248, 242, 0) 55%)" }}>
       
@@ -902,7 +1394,7 @@ export default function AdminDashboardPage() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-6 overflow-y-auto">
+      <main ref={mainRef} className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-6 overflow-y-auto">
         
         {/* Top Header Bar permanently mounted */}
         <div data-testid="dashboard-glass-topbar" className="glass-panel-dense rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -964,7 +1456,7 @@ export default function AdminDashboardPage() {
             <button
               type="button"
               data-testid="topbar-build-report-btn"
-              onClick={() => setActiveTab('REPORTS')}
+              onClick={() => handleOpenTab('REPORTS')}
               className="btn-flame flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-white text-xs font-bold shadow-xs"
               title="Open Build Report Designer"
             >
@@ -1004,19 +1496,21 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         ) : (
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 2 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -2 }}
-              transition={{ duration: 0.15, ease: 'easeOut' }}
-              className="space-y-6"
-            >
+          <div className="space-y-6">
+            {openTabs.map((tab) => {
+              const isCurrentActive = tab.id === activeTab && !tab.minimized;
+              return (
+                <div
+                  key={tab.id}
+                  id={`workspace-view-${tab.id}`}
+                  data-testid={`workspace-view-${tab.id}`}
+                  className={`space-y-6 ${isCurrentActive ? 'block' : 'hidden'}`}
+                  aria-hidden={!isCurrentActive}
+                >
             {/* =========================================================================
                 GROUP 1: OVERVIEW SCREEN
             ========================================================================= */}
-            {(activeTab === 'OVERVIEW' || activeTab === 'HOME') && (
+            {tab.id === 'OVERVIEW' && (
               <DashboardOverview
                 kpis={{
                   totalClients: clientsList.length || kpis.totalClients || 0,
@@ -1040,20 +1534,7 @@ export default function AdminDashboardPage() {
                 }}
                 company={company}
                 buildings={buildings}
-                onNavigateTab={(tab: any) => {
-                  if (tab === 'OVERVIEW' || tab === 'HOME') setActiveTab('OVERVIEW');
-                  else if (tab === 'CLIENTS_SITES' || tab === 'SITES') setActiveTab('CLIENTS_SITES');
-                  else if (tab === 'FIRE_EQUIPMENT') setActiveTab('FIRE_EQUIPMENT');
-                  else if (tab === 'INSPECTIONS_WORK' || tab === 'INSPECTIONS') {
-                    setActiveTab('INSPECTIONS_WORK');
-                    setInspectionsWorkSubTab('INSPECTIONS');
-                  } else if (tab === 'REPAIRS') {
-                    setActiveTab('INSPECTIONS_WORK');
-                    setInspectionsWorkSubTab('REPAIRS');
-                  } else if (tab === 'FIELD_TEAM') setActiveTab('FIELD_TEAM');
-                  else if (tab === 'REPORTS') setActiveTab('REPORTS');
-                  else if (tab === 'SETTINGS') setActiveTab('SETTINGS');
-                }}
+                onNavigateTab={handleOpenTab}
                 onAddEquipment={() => {
                   if (buildings.length > 0) {
                     setSingleAddEquipModalOpen(buildings[0]);
@@ -1061,10 +1542,7 @@ export default function AdminDashboardPage() {
                     setAddBuildingModalOpen(true);
                   }
                 }}
-                onCreateRepairJob={() => {
-                  setActiveTab('INSPECTIONS_WORK');
-                  setInspectionsWorkSubTab('REPAIRS');
-                }}
+                onCreateRepairJob={() => handleOpenTab('REPAIRS')}
                 onOpenFeedback={() => setFeedbackModalOpen(true)}
                 onOpenImport={() => handleOpenImport('FIRE_ASSETS')}
               />
@@ -1073,7 +1551,7 @@ export default function AdminDashboardPage() {
             {/* =========================================================================
                 GROUP 2: CLIENTS & SITES
             ========================================================================= */}
-            {(activeTab === 'CLIENTS_SITES' || activeTab === 'SITES') && (
+            {tab.id === 'CLIENTS_SITES' && (
               <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#FED7AA] shadow-xs">
                   <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs">
@@ -1135,7 +1613,11 @@ export default function AdminDashboardPage() {
                     expandedBuildingId={expandedBuildingId}
                     setExpandedBuildingId={setExpandedBuildingId}
                     onAddBuilding={() => setAddBuildingModalOpen(true)}
-                    onEditBuilding={(b) => setEditBuildingModal(b)}
+                    onEditBuilding={(b) => {
+                      initialBuildingRef.current = { ...b };
+                      setEditBuildingModal(b);
+                      setMinimizedModals((prev) => prev.filter((m) => m !== 'EDIT_BUILDING'));
+                    }}
                     onDeleteBuilding={handleDeleteBuilding}
                     onBulkAdd={(b) => setBulkAddModalOpen(b)}
                     onSingleAdd={(b) => setSingleAddEquipModalOpen(b)}
@@ -1173,7 +1655,7 @@ export default function AdminDashboardPage() {
             {/* =========================================================================
                 GROUP 3: FIRE EQUIPMENT
             ========================================================================= */}
-            {activeTab === 'FIRE_EQUIPMENT' && (
+            {tab.id === 'FIRE_EQUIPMENT' && (
               <div className="space-y-6">
                 <div className="flex justify-end gap-2">
                   <button
@@ -1219,7 +1701,7 @@ export default function AdminDashboardPage() {
             {/* =========================================================================
                 GROUP 4: INSPECTIONS & WORK
             ========================================================================= */}
-            {(activeTab === 'INSPECTIONS_WORK' || activeTab === 'INSPECTIONS' || activeTab === 'REPAIRS') && (
+            {tab.id === 'INSPECTIONS_WORK' && (
               <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#FED7AA] shadow-xs">
                   <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs">
@@ -1291,7 +1773,7 @@ export default function AdminDashboardPage() {
             {/* =========================================================================
                 GROUP 4B: FIELD TEAM & TECHNICIAN MANAGEMENT
             ========================================================================= */}
-            {activeTab === 'FIELD_TEAM' && (
+            {tab.id === 'FIELD_TEAM' && (
               <TechnicianManagement
                 showToast={showToast}
                 onOpenImport={() => handleOpenImport('TECHNICIANS')}
@@ -1307,7 +1789,7 @@ export default function AdminDashboardPage() {
             {/* =========================================================================
                 GROUP 5: COMPLIANCE REPORTS
             ========================================================================= */}
-            {activeTab === 'REPORTS' && (
+            {tab.id === 'REPORTS' && (
               <div className="space-y-4">
                 <div className="flex justify-end">
                   <button
@@ -1326,7 +1808,7 @@ export default function AdminDashboardPage() {
             {/* =========================================================================
                 GROUP 6: SETTINGS
             ========================================================================= */}
-            {activeTab === 'SETTINGS' && (
+            {tab.id === 'SETTINGS' && (
               <SettingsView
                 companyForm={companyForm}
                 setCompanyForm={setCompanyForm}
@@ -1344,8 +1826,10 @@ export default function AdminDashboardPage() {
                 onRefreshDashboard={() => refreshDashboard({ silent: true })}
               />
             )}
-            </motion.div>
-          </AnimatePresence>
+                </div>
+              );
+            })}
+          </div>
         )}
 
         {/* Excel Export Dialog */}
@@ -1371,7 +1855,7 @@ export default function AdminDashboardPage() {
           MODAL 1: ADD CLIENT & BUILDING
       ========================================================================= */}
       <AnimatePresence>
-        {addBuildingModalOpen && (
+        {addBuildingModalOpen && !minimizedModals.includes('ADD_BUILDING') && (
           <motion.div
             key="modal-add-building"
             initial={{ opacity: 0 }}
@@ -1731,7 +2215,7 @@ export default function AdminDashboardPage() {
           MODAL 3: SINGLE ADD EQUIPMENT (WIDE 2-COLUMN HORIZONTAL)
       ========================================================================= */}
       <AnimatePresence>
-        {singleAddEquipModalOpen && (
+        {singleAddEquipModalOpen && !minimizedModals.includes('ADD_SINGLE_EQUIP') && (
           <motion.div
             key="modal-single-add"
             initial={{ opacity: 0 }}
@@ -1949,7 +2433,7 @@ export default function AdminDashboardPage() {
           MODAL 4: EDIT CLIENT
       ========================================================================= */}
       <AnimatePresence>
-        {editClientModal && (
+        {editClientModal && !minimizedModals.includes('EDIT_CLIENT') && (
           <motion.div
             key="modal-edit-client"
             initial={{ opacity: 0 }}
@@ -2041,7 +2525,7 @@ export default function AdminDashboardPage() {
           MODAL 5: EDIT BUILDING (WIDE 2-COLUMN HORIZONTAL)
       ========================================================================= */}
       <AnimatePresence>
-        {editBuildingModal && (
+        {editBuildingModal && !minimizedModals.includes('EDIT_BUILDING') && (
           <motion.div
             key="modal-edit-building"
             initial={{ opacity: 0 }}
@@ -2164,7 +2648,7 @@ export default function AdminDashboardPage() {
           MODAL 6: EDIT EQUIPMENT (WIDE HORIZONTAL + ASSIGN TASK TO TECHNICIAN)
       ========================================================================= */}
       <AnimatePresence>
-        {editEquipmentModal && (() => {
+        {editEquipmentModal && !minimizedModals.includes('EDIT_EQUIPMENT') && (() => {
           const liveStatus = getEquipmentLiveStatus(editEquipmentModal);
 
           return (

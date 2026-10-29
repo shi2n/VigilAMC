@@ -23,7 +23,8 @@ import {
   HelpCircle,
   Check,
   History,
-  FileDown
+  FileDown,
+  Minus,
 } from 'lucide-react';
 import {
   IMPORT_CONFIGS,
@@ -35,8 +36,10 @@ import {
 
 interface ImportModalProps {
   isOpen: boolean;
+  isMinimized?: boolean;
   initialType?: ImportType;
   onClose: () => void;
+  onMinimize?: () => void;
   onSuccess?: () => void;
 }
 
@@ -44,10 +47,21 @@ type WizardStep = 'CHOOSE_TYPE' | 'UPLOAD_FILE' | 'MAP_COLUMNS' | 'PREVIEW_STRAT
 
 export function ImportModal({
   isOpen,
+  isMinimized,
   initialType = 'FIRE_ASSETS',
   onClose,
+  onMinimize,
   onSuccess,
 }: ImportModalProps) {
+  const handleSafeClose = () => {
+    const isDirty = file !== null || currentStep === 'MAP_COLUMNS' || currentStep === 'PREVIEW_STRATEGY' || currentStep === 'PROCESSING';
+    if (isDirty) {
+      if (!window.confirm("You have an import draft in progress. Discard it? (You can use 'Minimize' to keep your work.)")) {
+        return;
+      }
+    }
+    onClose();
+  };
   const [activeTab, setActiveTab] = useState<'WIZARD' | 'HISTORY'>('WIZARD');
   const [currentStep, setCurrentStep] = useState<WizardStep>('CHOOSE_TYPE');
   const [selectedType, setSelectedType] = useState<ImportType>(initialType);
@@ -335,7 +349,7 @@ export function ImportModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+    <div data-testid="import-excel-modal" className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 ${isMinimized ? 'hidden' : ''}`}>
       <div className="relative w-full max-w-4xl bg-white border border-[#FED7AA] rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-slate-800">
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#FED7AA] bg-[#F8FAFC] shrink-0 ">
@@ -357,7 +371,7 @@ export function ImportModal({
           </div>
 
           <div className="flex items-center gap-2">
-            <button
+                        <button
               onClick={() => setActiveTab(activeTab === 'WIZARD' ? 'HISTORY' : 'WIZARD')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === 'HISTORY'
@@ -368,9 +382,24 @@ export function ImportModal({
               <History className="w-3.5 h-3.5" />
               <span>Audit History</span>
             </button>
-
+            {onMinimize && (
+              <button
+                type="button"
+                data-testid="import-modal-minimize-btn"
+                onClick={onMinimize}
+                title="Minimize (keep my work)"
+                aria-label="Minimize (keep my work)"
+                className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-[#FFF0E6] text-slate-500 hover:text-[#C2410C] flex items-center justify-center transition-colors"
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+            )}
             <button
-              onClick={onClose}
+              type="button"
+              data-testid="import-modal-close-btn"
+              onClick={handleSafeClose}
+              title="Close"
+              aria-label="Close"
               className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors"
             >
               <X className="w-4 h-4" />
