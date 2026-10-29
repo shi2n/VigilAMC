@@ -1379,7 +1379,7 @@ export default function AdminDashboardPage() {
       <AdminSidebar
         activeTab={activeTab}
         onSelectTab={(tab) => {
-          setActiveTab(tab);
+          handleOpenTab(tab);
           setMobileSidebarOpen(false);
         }}
         isMobileOpen={mobileSidebarOpen}
@@ -1472,6 +1472,20 @@ export default function AdminDashboardPage() {
             </button>
           </div>
         </div>
+
+        {/* Workspace Tab Strip */}
+        <WorkspaceTabs
+          openTabs={openTabs}
+          activeTab={activeTab}
+          onSelectTab={handleSelectTab}
+          onCloseTab={handleCloseTab}
+          onMinimizeTab={handleMinimizeTab}
+          onCloseOtherTabs={handleCloseOtherTabs}
+          onCloseAllTabs={handleCloseAllTabs}
+          onResetWorkspace={handleResetWorkspace}
+          tabConfig={TAB_CONFIG}
+          isDirtyTab={isDirtyTab}
+        />
 
         {/* Skeleton placeholders ONLY on the very first cold visit when data === null */}
         {loading && !data ? (
