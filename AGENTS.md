@@ -23,10 +23,12 @@ Work Order status: OPEN | ASSIGNED | IN_PROGRESS | COMPLETED | CANCELLED.
 Equipment status: VERIFIED | DUE_SOON | OVERDUE | SERVICE_REQUIRED | REPLACEMENT_REQUIRED.
 
 ## Live Verified Surface Screenshots (Up-to-Date — VIGILAMC FIRE + Lit-Glass + V-Flame Brand Logo)
-- **Homepage Hero (Desktop 1440×900 — Up-to-Date):** `docs/screenshots/hero-desktop-1440x900.png`
+- **Homepage Hero (Desktop 1440×900 — Technician Checking Extinguisher Gauge Action — Up-to-Date):** `docs/screenshots/hero-desktop-1440x900.png`
   ![VigilAMC FIRE Homepage Hero Desktop 1440x900](docs/screenshots/hero-desktop-1440x900.png)
-- **Homepage Hero (Mobile 375×812 — Up-to-Date):** `docs/screenshots/hero-mobile-375x812.png`
+- **Homepage Hero (Mobile 375×812 — Technician Checking Extinguisher Action — Up-to-Date):** `docs/screenshots/hero-mobile-375x812.png`
   ![VigilAMC FIRE Homepage Hero Mobile 375x812](docs/screenshots/hero-mobile-375x812.png)
+- **Sector Marquee Strip (8 Real Photo Tiles — Up-to-Date):** `docs/screenshots/sector-marquee-strip.png`
+  ![VigilAMC Sector Marquee Strip 8 Photo Tiles](docs/screenshots/sector-marquee-strip.png)
 - **Login Agency Card (`/login` 1440×900 — Up-to-Date V-Tile):** `docs/screenshots/login-fire-1440x900.png`
   ![VigilAMC Agency Login Card V-Tile](docs/screenshots/login-fire-1440x900.png)
 - **Admin Dashboard (`/dashboard` — Up-to-Date FIRE + Glass Theme):** `docs/screenshots/dashboard-fire-1440x900.png`
