@@ -14,6 +14,7 @@ import {
   ChevronDown,
   Sparkles,
   ScanLine,
+  Award,
 } from 'lucide-react';
 import heroTechnician from '../../../public/images/hero-technician.jpg';
 import { subscribeScroll } from '@/lib/scrollEngine';
@@ -264,6 +265,13 @@ export function HeroGlass() {
               style={stagger(4)}
               className="mt-5 sm:mt-6 flex flex-wrap items-center justify-center lg:justify-start gap-2 text-xs sm:text-[13px] font-medium text-[#44403C]"
             >
+              <span
+                data-testid="trust-chip-dpiit"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 border border-[#FED7AA]/90 backdrop-blur-sm"
+              >
+                <Award className="w-3.5 h-3.5 text-[#EA580C]" />
+                DPIIT Recognized Startup
+              </span>
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 border border-[#FED7AA]/90 backdrop-blur-sm">
                 <MapPin className="w-3.5 h-3.5 text-[#C2410C]" />
                 GPS + Camera Proof

@@ -554,9 +554,14 @@ export default function LoginPage() {
         )}
 
         {/* Security Notice */}
-        <div className="pt-2 border-t border-slate-100 flex items-center justify-center gap-1.5 text-slate-400 text-xs">
-          <ShieldCheck className="w-4 h-4 text-[#C2410C]" />
-          <span>Secure sign-in</span>
+        <div className="pt-2 border-t border-slate-100 flex flex-col items-center justify-center gap-1 text-slate-400 text-xs">
+          <div className="flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4 text-[#C2410C]" />
+            <span>Secure sign-in</span>
+          </div>
+          <span className="text-[11px] text-[#78716C] font-medium">
+            DPIIT-recognized startup · Made in India
+          </span>
         </div>
       </div>
     </div>

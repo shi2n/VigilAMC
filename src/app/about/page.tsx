@@ -67,6 +67,37 @@ export default function AboutUsPage() {
           <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
             VigilAMC is dedicated to helping fire protection contractors eliminate forgotten inspection cycles, replace broken paper logbooks, and deliver transparent compliance records to their clients.
           </p>
+
+          {/* Startup India DPIIT Credibility Block */}
+          <div className="mt-8 max-w-2xl mx-auto p-4 sm:p-5 rounded-2xl bg-white border border-[#FED7AA] shadow-xs text-left flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-[#FFF8F2] border border-[#FED7AA] flex items-center justify-center shrink-0 text-[#EA580C]">
+              <Award className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-bold text-[#1C1917]">
+                  Recognized by Startup India (DPIIT)
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#FFF8F2] text-[#C2410C] border border-[#FED7AA]">
+                  DPIIT-recognized startup
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-[#44403C] leading-relaxed">
+                DPIIT recognition for eligible Indian startups: tax benefits, IP support, and access to the Startup India ecosystem.
+              </p>
+              <div className="mt-2">
+                <a
+                  href="https://www.startupindia.gov.in"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-[#EA580C] hover:text-[#C2410C] transition-colors"
+                >
+                  <span>Look us up on startupindia.gov.in</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

@@ -151,9 +151,14 @@ export function CorporateFooter() {
 
         {/* Bottom Legal Line */}
         <div className="pt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-[#A8A29E]">
-          <p>
-            VigilAMC is software for fire-safety service companies. We do not sell firefighting equipment.
-          </p>
+          <div className="space-y-1">
+            <p>
+              VigilAMC is software for fire-safety service companies. We do not sell firefighting equipment.
+            </p>
+            <p className="text-[11px] text-white/65">
+              DPIIT-recognized startup · Recognized under Startup India
+            </p>
+          </div>
           <p className="shrink-0 font-medium text-[#FAFAF9]/90">
             (c) 2026 VigilAMC - Made in India
           </p>
