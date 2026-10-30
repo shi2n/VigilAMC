@@ -196,6 +196,8 @@ export async function GET(request: Request) {
         address: b.address,
         city: b.city,
         state: b.state,
+        latitude: b.latitude || null,
+        longitude: b.longitude || null,
         clientName: b.client?.name || 'Client Facility',
         clientPhone: b.client?.phone || '',
         totalAssets: enrichedEquipments.length,
@@ -213,6 +215,11 @@ export async function GET(request: Request) {
       completedJobsCount: jobs.filter((j: any) => j.status === 'COMPLETED').length,
       openWorkOrdersCount: workOrders.filter((w: any) => w.status === 'OPEN' || w.status === 'IN_PROGRESS').length,
       totalServicesLogged: recentInspections.length,
+      todayCounters: {
+        overdueCount: evaluatedBuildings.reduce((acc: number, b: any) => acc + (b.overdueCount || 0), 0),
+        dueSoonCount: evaluatedBuildings.reduce((acc: number, b: any) => acc + (b.dueSoonCount || 0), 0),
+        okCount: evaluatedBuildings.reduce((acc: number, b: any) => acc + (b.compliantCount || 0), 0),
+      },
     };
 
     return NextResponse.json({
@@ -225,7 +232,9 @@ export async function GET(request: Request) {
         employeeId: auth.profile.employeeId,
         role: auth.profile.role,
         agencyName: auth.organization.name,
+        preferredLanguage: auth.profile.preferredLanguage || 'en',
       },
+      todayCounters: stats.todayCounters,
       stats,
       assignedBuildings: evaluatedBuildings,
       jobs,

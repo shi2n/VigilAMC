@@ -147,6 +147,33 @@ export async function POST(request: Request) {
       },
     });
 
+    // Persist InspectionPhoto records with full geo/time metadata (Section 6.2)
+    if (resolvedPhotoArray.length > 0) {
+      const captureTime = body.capturedAt ? new Date(body.capturedAt) : inspection.date;
+      const dayStr =
+        body.dayOfWeek ||
+        ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][captureTime.getDay()];
+      for (const pUrl of resolvedPhotoArray) {
+        await (db as any).inspectionPhoto
+          .create({
+            data: {
+              inspectionId: inspection.id,
+              equipmentId: equipmentId || null,
+              category: body.photoCategory || 'GAUGE',
+              photoUrl: pUrl,
+              caption: body.caption || remarks || null,
+              capturedAt: captureTime,
+              dayOfWeek: dayStr,
+              latitude: latitude !== undefined && latitude !== null ? Number(latitude) : null,
+              longitude: longitude !== undefined && longitude !== null ? Number(longitude) : null,
+              gpsAccuracy: gpsAccuracy !== undefined && gpsAccuracy !== null ? Number(gpsAccuracy) : null,
+              gpsSource: body.gpsSource || (body.isBasementCached ? 'BASEMENT_CACHED' : 'LIVE'),
+            },
+          })
+          .catch((err: any) => console.warn('Failed to save inspectionPhoto:', err));
+      }
+    }
+
     if (equipmentId) {
       const eq = await (db as any).equipment.findUnique({
         where: { id: equipmentId },

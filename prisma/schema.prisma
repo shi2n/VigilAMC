@@ -66,6 +66,7 @@ model UserProfile {
   passwordHash      String?
   assignedRegion    String?
   avatarUrl         String?
+  preferredLanguage String?                        @default("en")
   organizationId    String?
   organization      Organization?                  @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   inspections       Inspection[]
@@ -152,6 +153,8 @@ model Building {
   complianceRuleName    String?
   cycleIntervalMos      Int                            @default(6)
   nextFilingDueDate     DateTime?
+  latitude              Float?
+  longitude             Float?
   equipments            Equipment[]
   jobs                  Job[]
   inspections           Inspection[]
@@ -322,6 +325,12 @@ model InspectionPhoto {
   category     String      @default("OTHER") // FRONT, GAUGE, SEAL, SERIAL, DAMAGE, LOCATION, OTHER
   photoUrl     String      // Base64 data URL or remote URL
   caption      String?
+  capturedAt   DateTime?   // device capture time (authoritative)
+  dayOfWeek    String?     // "MON".."SUN" derived at capture
+  latitude     Float?
+  longitude    Float?
+  gpsAccuracy  Float?
+  gpsSource    String?     // "LIVE" | "BASEMENT_CACHED"
   createdAt    DateTime    @default(now())
 
   @@index([inspectionId])
@@ -455,7 +464,7 @@ model SyncQueue {
   technicianId   String
   technician     UserProfile  @relation(fields: [technicianId], references: [id], onDelete: Cascade)
   clientSyncId   String       @unique
-  actionType     String       // COMPLETE_INSPECTION, UPDATE_STATUS, UPLOAD_PHOTO
+  actionType     String       // COMPLETE_INSPECTION, UPDATE_STATUS, UPLOAD_PHOTO, COMPLETE_WORK_ORDER
   payload        String       // JSON data of the action
   status         String       @default("PENDING") // PENDING, SYNCED, FAILED
   errorMessage   String?
