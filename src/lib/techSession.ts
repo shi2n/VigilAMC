@@ -166,8 +166,29 @@ export interface AuthenticatedActor {
  */
 export async function getAuthenticatedActor(req?: Request): Promise<AuthenticatedActor | null> {
   try {
-    // --- METHOD 1: Check vigil_tech_session cookie ---
-    const sessionToken = extractCookie(req, TECH_SESSION_COOKIE);
+    // --- METHOD 1: Check vigil_tech_session cookie OR Bearer header token ---
+    let sessionToken = extractCookie(req, TECH_SESSION_COOKIE);
+
+    let authHeader = req?.headers?.get('authorization') || req?.headers?.get('Authorization');
+    if (!authHeader) {
+      try {
+        const headerStore = headers();
+        authHeader = headerStore.get('authorization') || headerStore.get('Authorization');
+      } catch {
+        // ignore
+      }
+    }
+
+    if (!sessionToken && authHeader?.startsWith('Bearer ')) {
+      const candidate = authHeader.substring(7).trim();
+      if (candidate.includes('.')) {
+        const testPayload = verifyTechSessionToken(candidate);
+        if (testPayload) {
+          sessionToken = candidate;
+        }
+      }
+    }
+
     if (sessionToken) {
       const payload = verifyTechSessionToken(sessionToken);
       if (payload && payload.userId) {
@@ -226,13 +247,15 @@ export async function getAuthenticatedActor(req?: Request): Promise<Authenticate
     const supabase = createServerSupabaseClient();
     let authUser: any = null;
 
-    let authHeader = req?.headers?.get('authorization') || req?.headers?.get('Authorization');
     if (!authHeader) {
-      try {
-        const headerStore = headers();
-        authHeader = headerStore.get('authorization') || headerStore.get('Authorization');
-      } catch {
-        // ignore
+      authHeader = req?.headers?.get('authorization') || req?.headers?.get('Authorization');
+      if (!authHeader) {
+        try {
+          const headerStore = headers();
+          authHeader = headerStore.get('authorization') || headerStore.get('Authorization');
+        } catch {
+          // ignore
+        }
       }
     }
 

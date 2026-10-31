@@ -42,6 +42,10 @@ import {
   FileCheck2,
   Info,
   X,
+  ChevronDown,
+  ChevronUp,
+  Trash2,
+  Copy,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import {
@@ -60,7 +64,10 @@ import {
   getLocalCache,
   drainOutbox,
   migrateLegacyLocalStorageQueue,
+  discardOutboxItem,
+  getSyncDiagnosticLogs,
   OutboxItem,
+  SyncDiagnosticLog,
 } from '@/lib/offline/techOutbox';
 
 interface GPSCoordinates {
@@ -159,6 +166,11 @@ export default function TechnicianPWA() {
   const [isOnline, setIsOnline] = useState(true);
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
   const [failedSyncCount, setFailedSyncCount] = useState(0);
+  const [failedItemsList, setFailedItemsList] = useState<OutboxItem[]>([]);
+  const [showFailedDetails, setShowFailedDetails] = useState(false);
+  const [showSyncDiagnostics, setShowSyncDiagnostics] = useState(false);
+  const [diagnosticLogs, setDiagnosticLogs] = useState<SyncDiagnosticLog[]>([]);
+  const [sessionExpiredAlert, setSessionExpiredAlert] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncedTime, setLastSyncedTime] = useState<string | null>(null);
   const [cachedDataNotice, setCachedDataNotice] = useState(false);
@@ -245,6 +257,8 @@ export default function TechnicianPWA() {
     const counts = await getOutboxCount();
     setPendingSyncCount(counts.pending);
     setFailedSyncCount(counts.failed);
+    const pending = await getPendingOutboxItems();
+    setFailedItemsList(pending.filter((i) => i.status === 'FAILED'));
   }, []);
 
   // ----------------------------------------------------------------------------------
@@ -406,34 +420,44 @@ export default function TechnicianPWA() {
   }, [loadDashboardData]);
 
   // ----------------------------------------------------------------------------------
-  // 4. SYNC ENGINE: DRAIN OUTBOX IDEMPOTENTLY (Section 5.3)
+  // 4. SYNC ENGINE: DRAIN OUTBOX IDEMPOTENTLY (Section 5.3 & Sections 2 & 4)
   // ----------------------------------------------------------------------------------
-  const handleTriggerSync = useCallback(async () => {
-    if (!navigator.onLine) {
-      triggerToast(t.offlineSavedToast);
-      return;
-    }
-    if (isSyncing) return;
-
-    setIsSyncing(true);
-    try {
-      const result = await drainOutbox();
-      const nowStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-      setLastSyncedTime(nowStr);
-
-      if (result.syncedCount > 0) {
-        triggerToast(t.allSyncedToast);
-        await loadDashboardData();
-      } else if (result.failedCount > 0) {
-        triggerToast(`⚠ ${result.failedCount} item(s) failed sync — tap retry.`);
+  const handleTriggerSync = useCallback(
+    async (opts?: { force?: boolean; targetSyncId?: string }) => {
+      if (!navigator.onLine) {
+        triggerToast(t.offlineSavedToast);
+        return;
       }
-    } catch (err: any) {
-      triggerToast(`Sync failed: ${err.message || 'Network error'}`);
-    } finally {
-      setIsSyncing(false);
-      await refreshOutboxCounts();
-    }
-  }, [isSyncing, t, loadDashboardData, refreshOutboxCounts]);
+      if (isSyncing) return;
+
+      setIsSyncing(true);
+      try {
+        const result = await drainOutbox({
+          force: opts?.force ?? true,
+          targetSyncId: opts?.targetSyncId,
+        });
+        const nowStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+        setLastSyncedTime(nowStr);
+
+        if (result.authRequired) {
+          setSessionExpiredAlert(true);
+          triggerToast('⚠️ Session expired — sign in to send your saved items.');
+        } else if (result.syncedCount > 0) {
+          setSessionExpiredAlert(false);
+          triggerToast(t.allSyncedToast);
+          await loadDashboardData();
+        } else if (result.failedCount > 0) {
+          triggerToast(`⚠ ${result.failedCount} item(s) failed sync — tap to view details.`);
+        }
+      } catch (err: any) {
+        triggerToast(`Sync failed: ${err.message || 'Network error'}`);
+      } finally {
+        setIsSyncing(false);
+        await refreshOutboxCounts();
+      }
+    },
+    [isSyncing, t, loadDashboardData, refreshOutboxCounts]
+  );
 
   // Network Online / Visibility / Interval Auto-Sync Triggers
   useEffect(() => {
@@ -442,7 +466,7 @@ export default function TechnicianPWA() {
     const onOnline = () => {
       setIsOnline(true);
       triggerToast(t.networkRestoredToast);
-      handleTriggerSync();
+      handleTriggerSync({ force: true });
     };
     const onOffline = () => {
       setIsOnline(false);
@@ -451,7 +475,7 @@ export default function TechnicianPWA() {
     const onVisibility = () => {
       if (document.visibilityState === 'visible' && navigator.onLine) {
         refreshOutboxCounts();
-        handleTriggerSync();
+        handleTriggerSync({ force: false });
       }
     };
 
@@ -459,12 +483,12 @@ export default function TechnicianPWA() {
     window.addEventListener('offline', onOffline);
     document.addEventListener('visibilitychange', onVisibility);
 
-    // 60-second gentle retry interval when online with pending items
+    // 30-second gentle retry interval when online with pending items (respecting backoff)
     const interval = setInterval(() => {
       if (navigator.onLine && pendingSyncCount > 0 && !isSyncing) {
-        handleTriggerSync();
+        handleTriggerSync({ force: false });
       }
-    }, 60000);
+    }, 30000);
 
     return () => {
       window.removeEventListener('online', onOnline);
@@ -519,8 +543,13 @@ export default function TechnicianPWA() {
       const techData = await techRes.json().catch(() => ({}));
 
       if (techRes.ok && techData.success) {
+        if (techData.token) {
+          localStorage.setItem('vigil_tech_token', techData.token);
+        }
+        setSessionExpiredAlert(false);
         triggerToast('✅ Signed in successfully!');
         await loadDashboardData();
+        handleTriggerSync({ force: true });
         return;
       } else if (techRes.status === 403) {
         throw new Error(techData.error || 'This staff account has been deactivated.');
@@ -551,8 +580,10 @@ export default function TechnicianPWA() {
       }
 
       if (authData.session) {
+        setSessionExpiredAlert(false);
         triggerToast('✅ Signed in successfully!');
         await loadDashboardData();
+        handleTriggerSync({ force: true });
       }
     } catch (err: any) {
       setLoginError(err.message || 'Login failed. Please check your credentials.');
@@ -563,6 +594,7 @@ export default function TechnicianPWA() {
 
   const handleSignOut = async () => {
     try {
+      localStorage.removeItem('vigil_tech_token');
       await fetch('/api/technician/logout', { method: 'POST' }).catch(() => {});
       await supabase.auth.signOut().catch(() => {});
     } finally {
@@ -689,7 +721,22 @@ export default function TechnicianPWA() {
       ctx.fillText(`📍 ${line3}`, 20, height - barHeight * 0.12);
 
       // Export WebP at quality 0.8
-      const watermarkedWebP = canvas.toDataURL('image/webp', 0.8);
+      let watermarkedWebP = canvas.toDataURL('image/webp', 0.8);
+
+      // Section 2 [B] & Section 4.4: Enforce max 800KB size budget per photo
+      if (watermarkedWebP.length > 800 * 1024 * 1.33) {
+        watermarkedWebP = canvas.toDataURL('image/jpeg', 0.75);
+      }
+      if (watermarkedWebP.length > 800 * 1024 * 1.33) {
+        const halfCanvas = document.createElement('canvas');
+        halfCanvas.width = Math.round(canvas.width * 0.75);
+        halfCanvas.height = Math.round(canvas.height * 0.75);
+        const hctx = halfCanvas.getContext('2d');
+        if (hctx) {
+          hctx.drawImage(canvas, 0, 0, halfCanvas.width, halfCanvas.height);
+          watermarkedWebP = halfCanvas.toDataURL('image/jpeg', 0.7);
+        }
+      }
       setCapturedPhotoUrl(watermarkedWebP);
 
       // Section 6.2: Save STORED metadata
@@ -877,7 +924,7 @@ export default function TechnicianPWA() {
         triggerToast(t.offlineSavedToast);
       } else {
         triggerToast(t.allSyncedToast);
-        handleTriggerSync();
+        handleTriggerSync({ force: true });
       }
     } catch (err: any) {
       console.error('Failed to enqueue inspection:', err);
@@ -1009,7 +1056,7 @@ export default function TechnicianPWA() {
     triggerToast('✍️ Site Guard sign-off submitted!');
     setShowSignatureModal(false);
     clearSignature();
-    if (navigator.onLine) handleTriggerSync();
+    if (navigator.onLine) handleTriggerSync({ force: true });
   };
 
   // ----------------------------------------------------------------------------------
@@ -1413,7 +1460,7 @@ export default function TechnicianPWA() {
               <button
                 type="button"
                 disabled={isSyncing}
-                onClick={handleTriggerSync}
+                onClick={() => handleTriggerSync({ force: true })}
                 className="px-2 py-1 rounded-lg bg-[#FFF0E6] hover:bg-[#FED7AA] text-[#C2410C] font-bold text-[10px] flex items-center gap-1 border border-[#FED7AA] active:scale-95 transition-all"
                 title={t.syncNow}
               >
@@ -1423,20 +1470,146 @@ export default function TechnicianPWA() {
             </div>
           </div>
 
-          {/* Failed Sync Attention Strip if any items failed */}
-          {failedSyncCount > 0 && (
-            <div className="px-3 py-1.5 rounded-xl bg-red-50 border border-red-200 text-[11px] text-red-800 flex items-center justify-between gap-2">
-              <span className="font-bold flex items-center gap-1">
-                <AlertTriangle className="w-3.5 h-3.5 text-red-600 shrink-0" />
-                <span>{t.syncFailed.replace('{n}', String(failedSyncCount))}</span>
-              </span>
+          {/* Section 2 [A] & 4.3: Session Expired Alert with Re-Auth */}
+          {sessionExpiredAlert && (
+            <div className="px-3.5 py-3 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-900 flex items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                <div>
+                  <p className="font-bold text-xs">Session expired</p>
+                  <p className="text-[11px] text-amber-800">
+                    Sign in to send your {pendingSyncCount} saved field items.
+                  </p>
+                </div>
+              </div>
               <button
                 type="button"
-                onClick={handleTriggerSync}
-                className="font-black text-[10px] underline hover:text-red-900"
+                onClick={() => setUserProfile(null)}
+                className="px-3 py-1.5 rounded-xl bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold text-xs shrink-0 shadow-xs active:scale-95 transition-all"
               >
-                {t.retry}
+                Sign In
               </button>
+            </div>
+          )}
+
+          {/* Section 4.5: Failed Sync Attention Strip with Expandable Error Details */}
+          {failedSyncCount > 0 && (
+            <div className="space-y-2">
+              <div className="px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-[11px] text-red-800 flex items-center justify-between gap-2 shadow-xs">
+                <span className="font-bold flex items-center gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                  <span>{t.syncFailed.replace('{n}', String(failedSyncCount))}</span>
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowFailedDetails((prev) => !prev)}
+                    className="font-bold text-[10px] text-red-700 underline hover:text-red-900 flex items-center gap-0.5"
+                  >
+                    <span>{showFailedDetails ? 'Hide' : 'Details'}</span>
+                    {showFailedDetails ? (
+                      <ChevronUp className="w-3 h-3" />
+                    ) : (
+                      <ChevronDown className="w-3 h-3" />
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isSyncing}
+                    onClick={() => handleTriggerSync({ force: true })}
+                    className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white font-black text-[10px] active:scale-95 transition-all"
+                  >
+                    {t.retry} all
+                  </button>
+                </div>
+              </div>
+
+              {/* Expandable Per-Item Failure Cards (§4.5) */}
+              {showFailedDetails && (
+                <div className="glass-panel p-3 rounded-2xl border border-red-200 bg-white/95 space-y-2 shadow-xs text-xs">
+                  <div className="flex items-center justify-between pb-1 border-b border-red-100">
+                    <span className="font-bold text-[11px] text-slate-800">
+                      Sync Outbox Queue ({failedItemsList.length} failed)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const logs = await getSyncDiagnosticLogs();
+                        setDiagnosticLogs(logs);
+                        setShowSyncDiagnostics(true);
+                      }}
+                      className="text-[10px] text-[#EA580C] hover:text-[#C2410C] font-bold underline"
+                    >
+                      View Diagnostics Log
+                    </button>
+                  </div>
+
+                  {failedItemsList.length === 0 ? (
+                    <p className="text-[11px] text-slate-500 py-1">No failed items in outbox.</p>
+                  ) : (
+                    failedItemsList.map((item) => (
+                      <div
+                        key={item.clientSyncId}
+                        className="p-2.5 rounded-xl bg-red-50/70 border border-red-100 space-y-1.5"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-white text-slate-800 border border-slate-200">
+                            {item.actionType}
+                          </span>
+                          <span className="text-[10px] text-slate-500">
+                            {new Date(item.createdAt).toLocaleTimeString('en-IN', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                        </div>
+
+                        {/* Error Message + HTTP Status (§4.5) */}
+                        <div className="text-[11px] text-red-900 font-medium break-words">
+                          <span className="font-bold">Error: </span>
+                          <span>{item.lastError || 'Unknown processing error'}</span>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-1 border-t border-red-100/60 text-[10px]">
+                          <span className="text-slate-500 font-mono">
+                            {item.httpStatus ? `HTTP ${item.httpStatus}` : 'Net Dropped'} • {item.attempts}{' '}
+                            {item.attempts === 1 ? 'try' : 'tries'}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                if (
+                                  window.confirm(
+                                    'Discard this unsynced item permanently? This cannot be undone.'
+                                  )
+                                ) {
+                                  await discardOutboxItem(item.clientSyncId);
+                                  await refreshOutboxCounts();
+                                  triggerToast('Item discarded');
+                                }
+                              }}
+                              className="text-slate-500 hover:text-red-700 underline text-[10px] font-semibold"
+                            >
+                              Discard
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isSyncing}
+                              onClick={() =>
+                                handleTriggerSync({ force: true, targetSyncId: item.clientSyncId })
+                              }
+                              className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] active:scale-95 transition-all"
+                            >
+                              Retry
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -2475,6 +2648,94 @@ export default function TechnicianPWA() {
               >
                 SIGN & LOCK • Submit Verified Site Sign-Off
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL: SYNC DIAGNOSTICS BREADCRUMBS (Section 4.6)
+      ========================================================================= */}
+      {showSyncDiagnostics && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white border border-[#FED7AA] rounded-t-3xl sm:rounded-3xl max-w-lg w-full p-5 space-y-4 shadow-2xl max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3 shrink-0">
+              <div className="flex items-center gap-2">
+                <FileCheck2 className="w-5 h-5 text-[#C2410C]" />
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">Sync Diagnostics</h3>
+                  <p className="text-[11px] text-slate-500">Last 20 outbox drain attempts (audit trail)</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSyncDiagnostics(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between shrink-0 text-xs">
+              <span className="text-slate-500 font-mono text-[11px]">
+                {diagnosticLogs.length} diagnostic records
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  const txt = diagnosticLogs
+                    .map(
+                      (l) =>
+                        `[${new Date(l.timestamp).toISOString()}] [${l.actionType}] [${l.status}] HTTP ${
+                          l.httpStatus || 0
+                        } - ${l.message} (${l.clientSyncId})`
+                    )
+                    .join('\n');
+                  navigator.clipboard.writeText(txt);
+                  triggerToast('📋 Diagnostics copied to clipboard');
+                }}
+                className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] flex items-center gap-1"
+              >
+                <Copy className="w-3 h-3" />
+                <span>Copy Logs</span>
+              </button>
+            </div>
+
+            <div className="space-y-2 overflow-y-auto flex-1 pr-1">
+              {diagnosticLogs.length === 0 ? (
+                <div className="text-center py-8 text-slate-400 text-xs">
+                  No sync attempts logged yet in this session.
+                </div>
+              ) : (
+                diagnosticLogs.map((log, idx) => (
+                  <div
+                    key={idx}
+                    className={`p-3 rounded-xl border text-xs space-y-1 ${
+                      log.status === 'SYNCED'
+                        ? 'bg-emerald-50/60 border-emerald-200 text-emerald-950'
+                        : 'bg-red-50/60 border-red-200 text-red-950'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-[10px]">
+                      <span className="font-mono font-bold px-1.5 py-0.5 rounded bg-white/80 border border-current/20">
+                        {log.actionType}
+                      </span>
+                      <span className="text-slate-500 font-mono">
+                        {new Date(log.timestamp).toLocaleTimeString('en-IN', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                    <p className="font-medium text-[11px] break-words">{log.message}</p>
+                    <div className="flex items-center justify-between pt-0.5 text-[10px] text-slate-500 font-mono">
+                      <span>HTTP {log.httpStatus || 0}</span>
+                      <span className="truncate max-w-[200px]">{log.clientSyncId}</span>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
