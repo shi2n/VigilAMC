@@ -1348,25 +1348,66 @@ export function TechnicianManagement({
               </div>
             </div>
 
-            {/* Recent Activity Log */}
+            {/* Recent Activity Log & Visit Stamps */}
             <div className="space-y-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300">Recent Activity Trail</h4>
-              <div className="max-h-48 overflow-y-auto bg-[#FFF8F2] p-3 rounded-xl border border-slate-800 space-y-2 text-xs">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">Recent Activity Trail &amp; Visit Stamps</h4>
+              <div className="max-h-56 overflow-y-auto bg-white p-3 rounded-xl border border-slate-200 space-y-2.5 text-xs">
                 {viewDetailTech.activity?.length > 0 ? (
-                  viewDetailTech.activity.map((act: any) => (
-                    <div
-                      key={act.id}
-                      className="flex items-start justify-between text-slate-300 pb-1.5 border-b border-slate-900/80"
-                    >
-                      <div>
-                        <span className="font-semibold text-amber-400">{act.action}</span>
-                        <p className="text-[11px] text-slate-400">{act.details}</p>
+                  viewDetailTech.activity.map((act: any) => {
+                    let parsed: any = null;
+                    if (typeof act.details === 'string' && act.details.trim().startsWith('{')) {
+                      try {
+                        parsed = JSON.parse(act.details);
+                      } catch {
+                        parsed = null;
+                      }
+                    }
+
+                    const isVisit = act.action === 'VISIT_STAMP';
+
+                    return (
+                      <div
+                        key={act.id}
+                        className="flex items-start justify-between text-slate-800 pb-2 border-b border-slate-100 last:border-b-0"
+                      >
+                        <div className="flex-1 pr-2">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span
+                              className={`font-semibold px-2 py-0.5 rounded text-[11px] ${
+                                isVisit
+                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                  : 'bg-amber-100 text-amber-900 border border-amber-200'
+                              }`}
+                            >
+                              {isVisit ? '📍 VISIT STAMP' : act.action}
+                            </span>
+                            {isVisit && parsed?.buildingName && (
+                              <span className="font-bold text-slate-900 text-xs">
+                                {parsed.buildingName}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-600 mt-1">
+                            {isVisit && parsed
+                              ? `Arrived • GPS (±${parsed.accuracy ?? 8}m)${
+                                  parsed.latitude && parsed.longitude
+                                    ? ` [${Number(parsed.latitude).toFixed(4)}, ${Number(parsed.longitude).toFixed(4)}]`
+                                    : ''
+                                }`
+                              : (typeof act.details === 'string' ? act.details : JSON.stringify(act.details))}
+                          </p>
+                        </div>
+                        <span className="text-[10px] text-slate-400 shrink-0 font-medium">
+                          {new Date(act.createdAt).toLocaleString('en-IN', {
+                            day: 'numeric',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
                       </div>
-                      <span className="text-[10px] text-slate-500 shrink-0">
-                        {new Date(act.createdAt).toLocaleDateString('en-IN')}
-                      </span>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <p className="text-slate-500 text-center py-2 text-xs">No activity logged yet.</p>
                 )}

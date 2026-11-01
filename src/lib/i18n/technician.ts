@@ -125,6 +125,19 @@ export interface TranslationDictionary {
   defectAccess: string;
   offlineBannerMsg: string;
   offlineLoginWarning: string;
+  tabHome?: string;
+  tabProfile?: string;
+  waitingToSync?: string;
+  dueSoon48h?: string;
+  upcomingTasks?: string;
+  quickSyncNow?: string;
+  quickProgress?: string;
+  quickSupport?: string;
+  quickSettings?: string;
+  keepUpGoodWork?: string;
+  viewAll?: string;
+  myProgressTitle?: string;
+  supportTitle?: string;
 }
 
 export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {

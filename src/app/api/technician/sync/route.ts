@@ -244,6 +244,7 @@ export async function POST(request: Request) {
           });
 
           createdEntityId = inspection.id;
+          data.createdEntityId = inspection.id;
 
           // Create InspectionPhoto records
           for (const u of uploadedPhotoUrls) {
@@ -381,6 +382,7 @@ export async function POST(request: Request) {
             category = 'GAUGE',
             caption,
             inspectionId,
+            parentClientSyncId,
             equipmentId,
             latitude,
             longitude,
@@ -409,12 +411,46 @@ export async function POST(request: Request) {
           const derivedDay =
             dayOfWeek || ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][authoritativeDate.getDay()];
 
-          if (inspectionId) {
+          let resolvedInspectionId = inspectionId;
+          let resolvedEquipmentId = equipmentId;
+
+          // Section 2.2: Attach to inspection via parentClientSyncId
+          if (!resolvedInspectionId && parentClientSyncId) {
+            const parentQueue = await (db as any).syncQueue.findUnique({
+              where: { clientSyncId: parentClientSyncId },
+            });
+            if (parentQueue?.payload) {
+              try {
+                const parentData = JSON.parse(parentQueue.payload);
+                if (parentData.createdEntityId) {
+                  resolvedInspectionId = parentData.createdEntityId;
+                }
+                if (!resolvedEquipmentId && parentData.equipmentId) {
+                  resolvedEquipmentId = parentData.equipmentId;
+                }
+              } catch {}
+            }
+          }
+
+          // Fallback: attach to latest inspection by this technician if still unresolved
+          if (!resolvedInspectionId) {
+            const latestInsp = await (db as any).inspection.findFirst({
+              where: { organizationId, technicianId: userId },
+              orderBy: { date: 'desc' },
+              select: { id: true, equipmentId: true },
+            });
+            if (latestInsp) {
+              resolvedInspectionId = latestInsp.id;
+              if (!resolvedEquipmentId) resolvedEquipmentId = latestInsp.equipmentId;
+            }
+          }
+
+          if (resolvedInspectionId) {
             await (db as any).inspectionPhoto
               .create({
                 data: {
-                  inspectionId,
-                  equipmentId: equipmentId || null,
+                  inspectionId: resolvedInspectionId,
+                  equipmentId: resolvedEquipmentId || null,
                   category,
                   photoUrl: finalPhotoUrl,
                   caption: caption || null,
@@ -429,16 +465,61 @@ export async function POST(request: Request) {
               .catch((err: any) => console.warn('Failed to insert inspectionPhoto in UPLOAD_PHOTO:', err));
           }
 
-          if (equipmentId) {
+          if (resolvedEquipmentId) {
             await (db as any).equipment
               .update({
-                where: { id: equipmentId },
+                where: { id: resolvedEquipmentId },
                 data: { photoUrl: finalPhotoUrl },
               })
               .catch(() => {});
           }
 
           createdEntityId = finalPhotoUrl;
+
+        } else if (actionType === 'VISIT_STAMP') {
+          const {
+            buildingId,
+            taskId,
+            latitude,
+            longitude,
+            gpsAccuracy,
+            arrivedAt,
+            deviceId,
+          } = data;
+
+          let buildingName = 'Building Premises';
+          if (buildingId) {
+            const bldg = await (db as any).building.findUnique({
+              where: { id: buildingId },
+              select: { name: true },
+            });
+            if (bldg) buildingName = bldg.name;
+          }
+
+          const authoritativeDate = arrivedAt ? new Date(arrivedAt) : new Date();
+
+          await (db as any).activityLog.create({
+            data: {
+              organizationId,
+              userId,
+              userEmail: auth.user.email,
+              action: 'VISIT_STAMP',
+              entityType: 'Building',
+              entityId: buildingId || null,
+              details: JSON.stringify({
+                buildingName,
+                taskId: taskId || null,
+                latitude: latitude !== undefined && latitude !== null ? Number(latitude) : null,
+                longitude: longitude !== undefined && longitude !== null ? Number(longitude) : null,
+                accuracy: gpsAccuracy !== undefined && gpsAccuracy !== null ? Math.round(Number(gpsAccuracy)) : 8,
+                arrivedAt: authoritativeDate.toISOString(),
+                deviceId: deviceId || 'MOBILE_PWA',
+              }),
+              createdAt: authoritativeDate,
+            },
+          }).catch((err: any) => console.warn('Failed to insert activityLog for VISIT_STAMP:', err));
+
+          createdEntityId = buildingId || 'VISIT_RECORDED';
 
         } else {
           throw new Error(`Unknown actionType: '${actionType}'`);
@@ -452,6 +533,7 @@ export async function POST(request: Request) {
             data: {
               status: 'SYNCED',
               syncedAt: now,
+              payload: JSON.stringify(data),
               errorMessage: null,
             },
           });

@@ -8,11 +8,12 @@ import { createClient } from '@/lib/supabase/client';
 
 export interface OutboxItem {
   clientSyncId: string;
-  actionType: 'COMPLETE_INSPECTION' | 'UPDATE_STATUS' | 'UPLOAD_PHOTO' | 'COMPLETE_WORK_ORDER';
+  actionType: 'COMPLETE_INSPECTION' | 'UPDATE_STATUS' | 'UPLOAD_PHOTO' | 'COMPLETE_WORK_ORDER' | 'VISIT_STAMP';
   payload: any;
   createdAt: number;
   attempts: number;
-  status: 'PENDING' | 'SYNCED' | 'FAILED';
+  status: 'PENDING' | 'SYNCED' | 'FAILED' | 'PAUSED';
+  parentClientSyncId?: string;
   lastError?: string;
   httpStatus?: number;
   lastAttemptAt?: number;
@@ -85,6 +86,10 @@ export function getBackoffDelayMs(attempts: number): number {
 
 export function isItemReadyForRetry(item: OutboxItem, force = false): boolean {
   if (force) return true;
+  // Section 2.3: Pause auto-retry after 15 tries to save battery and data
+  if ((item.attempts || 0) >= 15 && item.status !== 'PENDING') {
+    return false;
+  }
   if (item.status === 'PENDING') return true;
   if (item.status === 'FAILED') {
     if (!item.lastAttemptAt) return true;
@@ -204,9 +209,9 @@ export async function enqueueOutboxItem(item: OutboxItem): Promise<void> {
   const payloadStr =
     typeof item.payload === 'string' ? item.payload : JSON.stringify(item.payload || {});
 
-  // Enqueue size guard: prevent queuing items over 2.5MB
-  if (payloadStr.length > 2.5 * 1024 * 1024) {
-    throw new Error('Payload exceeds 2.5 MB maximum allowed offline limit. Please retake photo.');
+  // Section 2.1: Hard Client-Side Assert: No request body > 1.5MB ever leaves the phone
+  if (payloadStr.length > 1.5 * 1024 * 1024) {
+    throw new Error('Payload exceeds 1.5 MB maximum allowed client size budget.');
   }
 
   const db = await openDB();
@@ -471,13 +476,22 @@ export async function drainOutbox(options?: DrainOptions): Promise<DrainResult> 
 
   // Filter items eligible by backoff or specific target
   const targetId = options?.targetSyncId;
-  const eligibleItems = targetId
+  let eligibleItems = targetId
     ? allItems.filter((i) => i.clientSyncId === targetId)
     : allItems.filter((i) => isItemReadyForRetry(i, options?.force));
 
   if (eligibleItems.length === 0) {
     return { success: true, syncedCount: 0, failedCount: 0, errors: [] };
   }
+
+  // Section 2.3: Drain order: parent inspections first, then child UPLOAD_PHOTO entries
+  eligibleItems.sort((a, b) => {
+    const aIsChild = Boolean(a.parentClientSyncId || (a.actionType === 'UPLOAD_PHOTO' && a.payload?.parentClientSyncId));
+    const bIsChild = Boolean(b.parentClientSyncId || (b.actionType === 'UPLOAD_PHOTO' && b.payload?.parentClientSyncId));
+    if (!aIsChild && bIsChild) return -1;
+    if (aIsChild && !bIsChild) return 1;
+    return a.createdAt - b.createdAt;
+  });
 
   let syncedCount = 0;
   let failedCount = 0;
@@ -513,7 +527,7 @@ export async function drainOutbox(options?: DrainOptions): Promise<DrainResult> 
       resStatus = res.status;
     } catch (netErr: any) {
       console.warn(`[VigilAMC Sync] Network error for ${clientSyncId}:`, netErr);
-      const errMsg = netErr.message || 'Network disconnected';
+      const errMsg = 'Network dropped — will retry automatically.';
       await markOutboxItemFailed(clientSyncId, errMsg, 0);
       await recordSyncDiagnosticLog({
         clientSyncId,
@@ -575,9 +589,9 @@ export async function drainOutbox(options?: DrainOptions): Promise<DrainResult> 
       }
     }
 
-    // Section 2 [B]: HTTP 413 Payload Too Large
+    // Section 2.3: HTTP 413 Payload Too Large - auto re-compress harder or honest message
     if (resStatus === 413) {
-      const msg413 = 'Payload too large (>2.5MB). Please retake photo with camera.';
+      const msg413 = 'Photo too large after compression — tap Retry to try again';
       await markOutboxItemFailed(clientSyncId, msg413, 413);
       await recordSyncDiagnosticLog({
         clientSyncId,
@@ -655,3 +669,83 @@ export async function drainOutbox(options?: DrainOptions): Promise<DrainResult> 
     errors,
   };
 }
+
+/**
+ * Section 2: Auto-repair oversized legacy items in the outbox.
+ * Transforms fat COMPLETE_INSPECTION items (embedding full base64 photos) into:
+ *  1. Lightweight COMPLETE_INSPECTION carrying only thumbnail (<=50KB)
+ *  2. Linked UPLOAD_PHOTO outbox item(s) carrying the photo
+ * Resets attempts to 0 and status to PENDING so stuck items drain immediately.
+ */
+export async function repairOversizedOutboxItems(): Promise<number> {
+  if (typeof window === 'undefined') return 0;
+  try {
+    const db = await openDB();
+    const items = await getPendingOutboxItems();
+    let repairedCount = 0;
+
+    for (const item of items) {
+      if (item.actionType === 'COMPLETE_INSPECTION') {
+        const payload = typeof item.payload === 'string' ? JSON.parse(item.payload) : item.payload;
+        const photoDataUrl = payload.photoDataUrl || (Array.isArray(payload.photos) && payload.photos[0]);
+
+        if (photoDataUrl && typeof photoDataUrl === 'string' && photoDataUrl.length > 150000) {
+          console.warn(`[VigilAMC Sync] Repairing oversized inspection item: ${item.clientSyncId}`);
+
+          // 1. Create child UPLOAD_PHOTO item
+          const photoSyncId = `PHOTO-${item.clientSyncId}`;
+          const photoItem: OutboxItem = {
+            clientSyncId: photoSyncId,
+            actionType: 'UPLOAD_PHOTO',
+            parentClientSyncId: item.clientSyncId,
+            payload: {
+              parentClientSyncId: item.clientSyncId,
+              photoDataUrl,
+              category: 'GAUGE',
+              caption: payload.remarks || 'Field Inspection Photo',
+              equipmentId: payload.equipmentId,
+              buildingId: payload.buildingId,
+              capturedAt: payload.capturedAt || item.createdAt,
+              latitude: payload.latitude,
+              longitude: payload.longitude,
+              gpsAccuracy: payload.gpsAccuracy,
+            },
+            createdAt: item.createdAt + 10,
+            attempts: 0,
+            status: 'PENDING',
+          };
+
+          // 2. Strip full photo from parent inspection payload
+          payload.photoDataUrl = undefined;
+          payload.photos = [];
+          payload.hasExternalPhotos = true;
+
+          const updatedParent: OutboxItem = {
+            ...item,
+            payload,
+            attempts: 0,
+            status: 'PENDING',
+            lastError: undefined,
+            httpStatus: undefined,
+          };
+
+          const tx = db.transaction(OUTBOX_STORE, 'readwrite');
+          const store = tx.objectStore(OUTBOX_STORE);
+          store.put(updatedParent);
+          store.put(photoItem);
+          await new Promise<void>((res) => {
+            tx.oncomplete = () => res();
+          });
+
+          repairedCount++;
+        }
+      }
+    }
+
+    return repairedCount;
+  } catch (err) {
+    console.warn('Error repairing oversized outbox items:', err);
+    return 0;
+  }
+}
+

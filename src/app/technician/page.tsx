@@ -23,6 +23,11 @@ import {
   WifiOff,
   Download,
   Flame,
+  Sliders,
+  Headphones,
+  TrendingUp,
+  Award,
+  LayoutDashboard,
   Bell,
   Wrench,
   ChevronRight,
@@ -49,6 +54,15 @@ import {
   Copy,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import {
+  compressPhotoToBudget,
+  createInspectionThumbnail,
+  compressSignatureToBudget,
+  estimateDataUrlBytes,
+} from '@/lib/photoPipeline';
+import {
+  repairOversizedOutboxItems,
+} from '@/lib/offline/techOutbox';
 import {
   SupportedLanguage,
   SUPPORTED_LANGUAGES,
@@ -112,7 +126,12 @@ export default function TechnicianPWA() {
   // ----------------------------------------------------------------------------------
   // NAVIGATION TAB STATE (TASKS | CHECKLISTS | HISTORY)
   // ----------------------------------------------------------------------------------
-  const [activeTab, setActiveTab] = useState<'TASKS' | 'CHECKLISTS' | 'HISTORY'>('TASKS');
+  type TechNavTab = 'HOME' | 'TASKS' | 'CHECKLISTS' | 'HISTORY' | 'PROFILE';
+  const [activeTab, setActiveTab] = useState<TechNavTab>('HOME');
+  const [showProgressModal, setShowProgressModal] = useState<boolean>(false);
+  const [showSupportModal, setShowSupportModal] = useState<boolean>(false);
+  const [showSettingsSheet, setShowSettingsSheet] = useState<boolean>(false);
+  const [showLocationPrePrompt, setShowLocationPrePrompt] = useState<boolean>(false);
 
   // ----------------------------------------------------------------------------------
   // AUTHENTICATION & PROFILE STATE
@@ -260,6 +279,14 @@ export default function TechnicianPWA() {
       }
     });
 
+    // Section 2: Auto-repair any oversized legacy items from previous sessions (e.g. 5 stuck items)
+    repairOversizedOutboxItems().then((repaired) => {
+      if (repaired > 0) {
+        console.log(`Auto-repaired ${repaired} oversized outbox items into parent/child items`);
+        refreshOutboxCounts();
+      }
+    });
+
     // Check installed mode
     if (window.matchMedia('(display-mode: standalone)').matches) {
       setIsAppInstalled(true);
@@ -283,6 +310,96 @@ export default function TechnicianPWA() {
     const pending = await getPendingOutboxItems();
     setFailedItemsList(pending.filter((i) => i.status === 'FAILED'));
   }, []);
+
+  // ----------------------------------------------------------------------------------
+  // Section 5: VISIT STAMP RECORDING (Dedupe 30m per building)
+  // ----------------------------------------------------------------------------------
+  const recordVisitStamp = useCallback(
+    async (buildingId: string, taskId?: string) => {
+      if (!buildingId || typeof window === 'undefined') return;
+      const cacheKey = `vigil_visit_stamp_${buildingId}`;
+      const lastStamp = sessionStorage.getItem(cacheKey);
+      const now = Date.now();
+      if (lastStamp && now - Number(lastStamp) < 30 * 60 * 1000) {
+        return; // Dedupe: at most one visit stamp per building per 30 minutes
+      }
+
+      const clientSyncId = `VISIT-${now}-${Math.random().toString(36).slice(2, 6)}`;
+      const visitPayload = {
+        buildingId,
+        taskId: taskId || null,
+        latitude: gpsLocation?.latitude ?? lastKnownGpsRef.current?.latitude ?? null,
+        longitude: gpsLocation?.longitude ?? lastKnownGpsRef.current?.longitude ?? null,
+        gpsAccuracy: gpsLocation?.accuracy ?? lastKnownGpsRef.current?.accuracy ?? 8,
+        arrivedAt: now,
+        deviceId: 'MOBILE_PWA',
+      };
+
+      try {
+        await enqueueOutboxItem({
+          clientSyncId,
+          actionType: 'VISIT_STAMP',
+          payload: visitPayload,
+          createdAt: now,
+          attempts: 0,
+          status: 'PENDING',
+        });
+        sessionStorage.setItem(cacheKey, String(now));
+        await refreshOutboxCounts();
+        // Silent background trigger
+        drainOutbox().catch(() => {});
+      } catch (err) {
+        console.warn('Failed to record visit stamp:', err);
+      }
+    },
+    [gpsLocation, refreshOutboxCounts]
+  );
+
+  // Re-request GPS on open / foreground
+  const requestLiveLocation = useCallback(() => {
+    if (typeof window === 'undefined' || !('geolocation' in navigator)) {
+      setGpsStatus('DENIED');
+      return;
+    }
+    setGpsStatus('LOCKING');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const coords: GPSCoordinates = {
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: Math.round(pos.coords.accuracy || 8),
+          timestamp: pos.timestamp,
+          isBasementCached: false,
+        };
+        setGpsLocation(coords);
+        setGpsStatus('LOCKED');
+        lastKnownGpsRef.current = coords;
+        try {
+          localStorage.setItem('vigil_last_known_gps', JSON.stringify(coords));
+        } catch {}
+      },
+      (err) => {
+        console.warn('Live location error:', err);
+        if (lastKnownGpsRef.current) {
+          setGpsStatus('BASEMENT_CACHED');
+        } else {
+          setGpsStatus('DENIED');
+        }
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+    );
+  }, []);
+
+  // Foreground listener: re-request live location when app comes into view
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        requestLiveLocation();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [requestLiveLocation]);
 
   // ----------------------------------------------------------------------------------
   // 2. CONTINUOUS GPS WATCHER (WITH BASEMENT CACHE PERSISTENCE)
@@ -744,23 +861,9 @@ export default function TechnicianPWA() {
       ctx.font = `bold ${fontSize2}px monospace`;
       ctx.fillText(`📍 ${line3}`, 20, height - barHeight * 0.12);
 
-      // Export WebP at quality 0.8
-      let watermarkedWebP = canvas.toDataURL('image/webp', 0.8);
-
-      // Section 2 [B] & Section 4.4: Enforce max 800KB size budget per photo
-      if (watermarkedWebP.length > 800 * 1024 * 1.33) {
-        watermarkedWebP = canvas.toDataURL('image/jpeg', 0.75);
-      }
-      if (watermarkedWebP.length > 800 * 1024 * 1.33) {
-        const halfCanvas = document.createElement('canvas');
-        halfCanvas.width = Math.round(canvas.width * 0.75);
-        halfCanvas.height = Math.round(canvas.height * 0.75);
-        const hctx = halfCanvas.getContext('2d');
-        if (hctx) {
-          hctx.drawImage(canvas, 0, 0, halfCanvas.width, halfCanvas.height);
-          watermarkedWebP = halfCanvas.toDataURL('image/jpeg', 0.7);
-        }
-      }
+      // Section 2.1: Hard Client-Side Size Budget: Compress photo until <= 300KB
+      const compRes = await compressPhotoToBudget(canvas, 300 * 1024);
+      const watermarkedWebP = compRes.dataUrl;
       setCapturedPhotoUrl(watermarkedWebP);
 
       // Section 6.2: Save STORED metadata
@@ -852,7 +955,7 @@ export default function TechnicianPWA() {
   };
 
   // ----------------------------------------------------------------------------------
-  // 9. SUBMIT CHECK SHEET: ENQUEUE TO OUTBOX & ATTEMPT SYNC (Feature C)
+  // 9. SUBMIT CHECK SHEET: ENQUEUE TO OUTBOX & ATTEMPT SYNC (Section 2 Rework)
   // ----------------------------------------------------------------------------------
   const handleSubmitChecksheet = async () => {
     if (!selectedBuilding || !activeAssetInspection) return;
@@ -862,6 +965,17 @@ export default function TechnicianPWA() {
     const nowTs = Date.now();
     const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
+    // Section 2.1: Generate small thumbnail for instant admin preview (<= 50KB)
+    let thumbnailDataUrl: string | undefined = undefined;
+    if (capturedPhotoUrl) {
+      try {
+        thumbnailDataUrl = await createInspectionThumbnail(capturedPhotoUrl, 50 * 1024);
+      } catch {
+        thumbnailDataUrl = undefined;
+      }
+    }
+
+    // COMPLETE_INSPECTION payload carries NO full photos (only lightweight thumbnail + metadata)
     const inspectionPayload = {
       clientSyncId,
       buildingId: selectedBuilding.id,
@@ -873,8 +987,10 @@ export default function TechnicianPWA() {
         issues: selectedIssues,
       },
       remarks: remarks.trim(),
-      photoDataUrl: capturedPhotoUrl || undefined,
-      photos: capturedPhotoUrl ? [capturedPhotoUrl] : [],
+      photoDataUrl: thumbnailDataUrl || undefined,
+      photos: thumbnailDataUrl ? [thumbnailDataUrl] : [],
+      hasExternalPhotos: Boolean(capturedPhotoUrl),
+      technicianSignature: signatureDataUrl || undefined,
       latitude: photoMeta?.latitude ?? gpsLocation?.latitude,
       longitude: photoMeta?.longitude ?? gpsLocation?.longitude,
       gpsAccuracy: photoMeta?.gpsAccuracy ?? gpsLocation?.accuracy,
@@ -887,7 +1003,7 @@ export default function TechnicianPWA() {
     };
 
     try {
-      // 1. Enqueue to IndexedDB Outbox
+      // 1. Enqueue parent COMPLETE_INSPECTION item (<= 150KB body)
       const outboxItem: OutboxItem = {
         clientSyncId,
         actionType: 'COMPLETE_INSPECTION',
@@ -897,6 +1013,34 @@ export default function TechnicianPWA() {
         status: 'PENDING',
       };
       await enqueueOutboxItem(outboxItem);
+
+      // 2. Enqueue child UPLOAD_PHOTO item carrying the full compressed photo (<= 300KB)
+      if (capturedPhotoUrl) {
+        const photoSyncId = `PHOTO-${clientSyncId}`;
+        const photoItem: OutboxItem = {
+          clientSyncId: photoSyncId,
+          actionType: 'UPLOAD_PHOTO',
+          parentClientSyncId: clientSyncId,
+          payload: {
+            parentClientSyncId: clientSyncId,
+            photoDataUrl: capturedPhotoUrl,
+            category: 'GAUGE',
+            caption: remarks.trim() || 'Field Inspection Photo',
+            equipmentId: activeAssetInspection.id,
+            buildingId: selectedBuilding.id,
+            capturedAt: photoMeta?.capturedAt || nowTs,
+            latitude: inspectionPayload.latitude,
+            longitude: inspectionPayload.longitude,
+            gpsAccuracy: inspectionPayload.gpsAccuracy,
+            gpsSource: inspectionPayload.gpsSource,
+          },
+          createdAt: nowTs + 5,
+          attempts: 0,
+          status: 'PENDING',
+        };
+        await enqueueOutboxItem(photoItem);
+      }
+
       await refreshOutboxCounts();
 
       // 2. Optimistically update local tasks & history
@@ -1040,7 +1184,9 @@ export default function TechnicianPWA() {
   const stopDrawingSig = () => {
     setIsDrawingSignature(false);
     if (sigCanvasRef.current) {
-      setSignatureDataUrl(sigCanvasRef.current.toDataURL('image/png'));
+      // Section 2.1: Compress signature to WebP <= 60KB
+      const sigWebP = compressSignatureToBudget(sigCanvasRef.current, 60 * 1024);
+      setSignatureDataUrl(sigWebP);
     }
   };
 
@@ -1109,6 +1255,18 @@ export default function TechnicianPWA() {
     if (taskFilter === 'OK') return activeTasks.filter((t) => t.dueState === 'OK');
     return taskList; // Show all (including completed at bottom)
   }, [taskList, activeTasks, taskFilter]);
+
+  const filteredAndSortedTasks = useMemo(() => {
+    return [...activeTasks].sort((a: any, b: any) => {
+      const rank = (state: string) => (state === 'EXPIRED' ? 0 : state === 'DUE_SOON' ? 1 : 2);
+      const rA = rank(a.dueState);
+      const rB = rank(b.dueState);
+      if (rA !== rB) return rA - rB;
+      const dueA = a.dueDate ? new Date(a.dueDate).getTime() : 0;
+      const dueB = b.dueDate ? new Date(b.dueDate).getTime() : 0;
+      return dueA - dueB;
+    });
+  }, [activeTasks]);
 
   // ----------------------------------------------------------------------------------
   // COMPUTED HISTORY LIST
@@ -1362,89 +1520,104 @@ export default function TechnicianPWA() {
       {/* Main Container constrained to mobile max-w-md */}
       <div className="max-w-md w-full mx-auto flex-1 flex flex-col pb-24">
         {/* =========================================================================
-            TOP APP HEADER & WELCOME BACK BAR (Feature F + C.5 Sync Confidence UI)
+            TOP APP HEADER (Section 3.1: Logo tile + wordmark + circular buttons + avatar)
         ========================================================================= */}
-        <header className="sticky top-0 z-40 glass-panel-dense border-t-0 border-x-0 p-3 space-y-2.5">
-          {/* Top Bar: Logo/Back, Welcome Back, Language & SignOut */}
+        <header className="sticky top-0 z-40 glass-panel-dense border-t-0 border-x-0 p-3 space-y-2.5 bg-white/95 backdrop-blur-md">
+          {/* Top Bar: Logo, Wordmark, and Circular Actions */}
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5 truncate">
+            <div className="flex items-center gap-2.5">
               {selectedBuilding ? (
                 <button
                   type="button"
                   onClick={() => setSelectedBuilding(null)}
-                  className="p-2 rounded-xl bg-slate-100 border border-[#FED7AA] text-slate-700 hover:text-slate-900 shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                  className="w-10 h-10 rounded-full bg-slate-100 border border-[#FED7AA] text-slate-700 hover:text-slate-900 flex items-center justify-center shrink-0 active:scale-95 transition-transform"
                 >
                   <ArrowLeft className="w-4 h-4" />
                 </button>
               ) : (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src="/brand/logo-tile-192.png"
-                  alt="VigilAMC Logo"
-                  width={38}
-                  height={38}
-                  className="w-9 h-9 object-cover rounded-xl shadow-xs shrink-0"
-                />
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#EA580C] to-[#C2410C] p-2 flex items-center justify-center shadow-xs shrink-0">
+                  <Flame className="w-6 h-6 text-white stroke-[2.5]" />
+                </div>
               )}
 
-              <div className="truncate">
-                {/* Feature F: Welcome back, <technician name> */}
-                <h1 className="font-extrabold text-sm text-slate-900 truncate leading-tight">
-                  {t.welcomeBack}, {userProfile?.fullName?.split(' ')[0] || 'Technician'}!
-                </h1>
-                <span className="text-[11px] text-[#C2410C] font-semibold truncate block">
-                  {userProfile?.employeeId || 'TECH-STAFF'} • {userProfile?.agencyName || 'VigilAMC Agency'}
-                </span>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-display font-black text-base text-[#1C1917] tracking-tight">
+                    VigilAMC
+                  </span>
+                  <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.2 rounded-md bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA]">
+                    TECH
+                  </span>
+                </div>
+                <p className="text-[10px] text-[#78716C] font-medium truncate max-w-[140px] sm:max-w-[180px]">
+                  {userProfile?.agencyName || 'Fire AMC Operations'}
+                </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 shrink-0">
-              {/* In-app Notification Bell (Section 8.4) */}
+            {/* Right Circular Buttons (Notification Bell, Language, Logout, Avatar) */}
+            <div className="flex items-center gap-2 shrink-0">
+              {/* Notification Bell */}
               <button
                 type="button"
                 onClick={() => setShowNotificationsDrawer(true)}
-                className="relative p-2 rounded-xl bg-white border border-[#FED7AA] text-slate-700 hover:border-[#EA580C] min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
-                title="Task Notifications"
-                aria-label="Task Notifications"
+                className="relative w-9 h-9 rounded-full bg-white border border-[#FED7AA] text-slate-700 hover:border-[#EA580C] flex items-center justify-center shadow-xs active:scale-95 transition-transform"
+                title="Notifications"
+                aria-label="Notifications"
               >
                 <Bell className="w-4 h-4 text-[#C2410C]" />
                 {notifications.some((n: any) => !n.isRead) && (
-                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#EA580C] text-white text-[10px] font-bold flex items-center justify-center border-2 border-white shadow-xs animate-pulse">
-                    {notifications.filter((n: any) => !n.isRead).length}
-                  </span>
+                  <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#EA580C] border-2 border-white animate-pulse" />
                 )}
               </button>
 
-                            {/* Language Selector Button (Feature D) */}
+              {/* Language Selector */}
               <button
                 type="button"
                 onClick={() => setShowLanguageSheet(true)}
-                className="px-2.5 py-1.5 rounded-xl bg-white border border-[#FED7AA] text-slate-700 hover:border-[#EA580C] text-[11px] font-bold flex items-center gap-1 min-h-[44px]"
+                className="w-9 h-9 rounded-full bg-white border border-[#FED7AA] text-slate-700 hover:border-[#EA580C] flex items-center justify-center shadow-xs active:scale-95 transition-transform"
                 title="Change Language"
+                aria-label="Change Language"
               >
-                <Globe className="w-3.5 h-3.5 text-[#C2410C]" />
-                <span className="hidden sm:inline">
-                  {SUPPORTED_LANGUAGES.find((l) => l.code === currentLang)?.nativeName || 'EN'}
-                </span>
+                <Globe className="w-4 h-4 text-[#C2410C]" />
               </button>
 
+              {/* Admin Portal Link for testers */}
               {isAdminTester && (
                 <Link
                   href="/dashboard"
-                  className="px-2.5 py-1.5 rounded-xl bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA] text-[10px] font-bold hover:bg-[#FED7AA] min-h-[44px] flex items-center"
+                  className="px-2 py-1 rounded-full bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA] text-[10px] font-bold"
                 >
                   Admin
                 </Link>
               )}
 
+              {/* Logout Button */}
               <button
                 type="button"
                 onClick={handleSignOut}
-                className="p-2 rounded-xl bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 border border-[#FED7AA] min-h-[44px] min-w-[44px] flex items-center justify-center"
+                className="w-9 h-9 rounded-full bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200 flex items-center justify-center shadow-xs active:scale-95 transition-transform"
                 title={t.signOut}
+                aria-label="Sign Out"
               >
                 <LogOut className="w-4 h-4" />
               </button>
+
+              {/* Avatar with Online/Offline Dot */}
+              <div
+                onClick={() => setActiveTab('PROFILE')}
+                className="relative cursor-pointer group active:scale-95 transition-transform"
+                title="Technician Profile"
+              >
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#EA580C] to-[#C2410C] text-white flex items-center justify-center font-bold text-xs ring-2 ring-white shadow-xs">
+                  {userProfile?.fullName?.charAt(0).toUpperCase() || 'T'}
+                </div>
+                <span
+                  className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ring-2 ring-white ${
+                    isOnline ? 'bg-emerald-500' : 'bg-slate-400'
+                  }`}
+                />
+              </div>
             </div>
           </div>
 
@@ -1679,6 +1852,309 @@ export default function TechnicianPWA() {
         </header>
 
         {/* =========================================================================
+            TAB: HOME SCREEN (Section 3: Redesign to match design-target.png)
+        ========================================================================= */}
+        {activeTab === 'HOME' && (
+          <div className="p-4 space-y-4">
+            {/* Friendly Location Pre-Prompt if GPS not granted (Section 5.1) */}
+            {gpsStatus === 'DENIED' && (
+              <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-300 text-xs text-amber-950 flex items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-center gap-2 min-w-0">
+                  <MapPin className="w-5 h-5 text-[#EA580C] shrink-0" />
+                  <p className="text-[11px] leading-snug">
+                    VigilAMC uses your location to prove site visits and stamp photos — only while the app is open.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={requestLiveLocation}
+                  className="px-3 py-1.5 rounded-xl bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold text-xs shrink-0 shadow-xs active:scale-95"
+                >
+                  Enable GPS
+                </button>
+              </div>
+            )}
+
+            {/* 3.2 WELCOME BANNER (Owner-approved dark charcoal to fire-orange gradient card) */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1C1917] via-[#292524] to-[#C2410C] p-5 text-white shadow-lg border border-[#EA580C]/20">
+              {/* Subtle embossed logo watermark on right */}
+              <Flame className="w-28 h-28 text-white/10 absolute -right-4 -bottom-4 rotate-12 pointer-events-none" />
+
+              <div className="relative z-10 space-y-1">
+                <span className="text-xs text-slate-300 font-normal">Welcome back,</span>
+                <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-1.5">
+                  <span>{userProfile?.fullName?.split(' ')[0] || 'Technician'}!</span>
+                  <span>👋</span>
+                </h2>
+                <p className="text-xs text-orange-200/90 pt-0.5">
+                  {t.keepUpGoodWork || 'Keep up the great work today.'}
+                </p>
+
+                {/* GPS Status Chip on Banner (Section 5.1) */}
+                <div className="pt-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={requestLiveLocation}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold transition-all border ${
+                      gpsStatus === 'LOCKED'
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                        : gpsStatus === 'BASEMENT_CACHED'
+                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                        : 'bg-rose-500/25 text-rose-300 border-rose-500/40'
+                    }`}
+                  >
+                    <Crosshair className="w-3 h-3" />
+                    <span>
+                      {gpsStatus === 'LOCKED'
+                        ? `GPS ±${gpsLocation?.accuracy || 8}m`
+                        : gpsStatus === 'BASEMENT_CACHED'
+                        ? 'GPS cached 4m ago'
+                        : 'Location off — tap to enable'}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* 3.3 THREE STAT CARDS (White rounded-2xl, tap = deep link) */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              {/* Card 1: Waiting to Sync (Orange tint) */}
+              <button
+                type="button"
+                onClick={() => setShowFailedDetails((prev) => !prev)}
+                className="p-3.5 rounded-2xl bg-white border border-[#FED7AA] shadow-xs text-left hover:border-[#EA580C] transition-all flex flex-col justify-between group active:scale-[0.98]"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-8 h-8 rounded-xl bg-orange-50 border border-orange-200/60 text-[#EA580C] flex items-center justify-center">
+                    <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                  </div>
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#EA580C] transition-colors" />
+                </div>
+                <div className="mt-2">
+                  <span className="text-xl sm:text-2xl font-black text-slate-900 block leading-tight">
+                    {pendingSyncCount}
+                  </span>
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-600 block truncate mt-0.5">
+                    {t.waitingToSync || 'Waiting to Sync'}
+                  </span>
+                </div>
+              </button>
+
+              {/* Card 2: Due soon (48h) (Green tint tile, #D97706 pill semantics) */}
+              <button
+                type="button"
+                onClick={() => {
+                  setTaskFilter('DUE_SOON');
+                  setActiveTab('TASKS');
+                }}
+                className="p-3.5 rounded-2xl bg-white border border-[#FED7AA] shadow-xs text-left hover:border-[#EA580C] transition-all flex flex-col justify-between group active:scale-[0.98]"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200/60 text-emerald-600 flex items-center justify-center">
+                    <Clock className="w-4 h-4" />
+                  </div>
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#EA580C] transition-colors" />
+                </div>
+                <div className="mt-2">
+                  <span className="text-xl sm:text-2xl font-black text-slate-900 block leading-tight">
+                    {dueSoonTasksCount}
+                  </span>
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-600 block truncate mt-0.5">
+                    {t.dueSoon48h || 'Due soon (48h)'}
+                  </span>
+                </div>
+              </button>
+
+              {/* Card 3: Upcoming (Violet tint tile) */}
+              <button
+                type="button"
+                onClick={() => {
+                  setTaskFilter('OK');
+                  setActiveTab('TASKS');
+                }}
+                className="p-3.5 rounded-2xl bg-white border border-[#FED7AA] shadow-xs text-left hover:border-[#EA580C] transition-all flex flex-col justify-between group active:scale-[0.98]"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-8 h-8 rounded-xl bg-purple-50 border border-purple-200/60 text-purple-600 flex items-center justify-center">
+                    <Calendar className="w-4 h-4" />
+                  </div>
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#EA580C] transition-colors" />
+                </div>
+                <div className="mt-2">
+                  <span className="text-xl sm:text-2xl font-black text-slate-900 block leading-tight">
+                    {upcomingTasksCount}
+                  </span>
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-600 block truncate mt-0.5">
+                    {t.upcomingTasks || 'Upcoming'}
+                  </span>
+                </div>
+              </button>
+            </div>
+
+            {/* 3.4 "MY TASKS" SECTION HEADER */}
+            <div className="flex items-center justify-between pt-1">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-5 bg-[#EA580C] rounded-full block" />
+                <h3 className="font-display font-black text-base sm:text-lg text-slate-900">
+                  {t.myTasksTab || 'My Tasks'}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab('TASKS')}
+                className="text-xs font-bold text-[#EA580C] hover:text-[#C2410C] flex items-center gap-1 active:scale-95"
+              >
+                <span>{t.viewAll || 'View All'}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Top Tasks Feed (Sorted overdue first) */}
+            <div className="space-y-3">
+              {filteredAndSortedTasks.slice(0, 4).map((task: any) => {
+                const isOverdue = task.dueState === 'EXPIRED';
+                const isDueSoon = task.dueState === 'DUE_SOON';
+                const diff = task.diffDays ?? 0;
+                const dueText = isOverdue
+                  ? `Overdue by ${Math.abs(diff || 1)}d`
+                  : isDueSoon
+                  ? 'Due tomorrow'
+                  : task.dueDate
+                  ? `Due in ${Math.max(1, diff)} days`
+                  : 'Scheduled';
+
+                return (
+                  <div
+                    key={task.id}
+                    className="p-4 rounded-2xl bg-white border border-[#FED7AA] shadow-xs space-y-3 hover:border-[#EA580C]/40 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-3 min-w-0">
+                        {/* Tinted rounded-square icon tile */}
+                        <div className="w-10 h-10 rounded-xl bg-[#FFF0E6] text-[#EA580C] border border-[#FED7AA] flex items-center justify-center shrink-0 mt-0.5">
+                          <Building2 className="w-5 h-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-sm text-slate-900 truncate">
+                            {task.title}
+                          </h4>
+                          <div className="flex items-center gap-1 text-xs text-slate-500 mt-0.5 truncate">
+                            <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span>{task.buildingName} • {task.floorZone || 'Floor checklist'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Top-right Status Pill */}
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase shrink-0 border ${
+                          isOverdue
+                            ? 'bg-rose-50 text-[#DC2626] border-rose-200'
+                            : isDueSoon
+                            ? 'bg-amber-50 text-[#D97706] border-amber-200'
+                            : 'bg-emerald-50 text-[#059669] border-emerald-200'
+                        }`}
+                      >
+                        {dueText}
+                      </span>
+                    </div>
+
+                    {/* Metadata & Status row */}
+                    <div className="flex items-center justify-between text-xs text-slate-600 pt-1 border-t border-slate-100">
+                      <div className="flex items-center gap-1 font-mono text-[11px] text-slate-500">
+                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                        <span>Due: {new Date(task.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-[11px] font-semibold text-slate-600">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Checklist Pending</span>
+                        <ChevronRight className="w-3 h-3 text-slate-400" />
+                      </div>
+                    </div>
+
+                    {/* Action buttons (Solid orange Open Checklist + White outline Navigate) */}
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const targetBldg = assignedBuildings.find((b: any) => b.id === task.buildingId);
+                          if (targetBldg) {
+                            setSelectedBuilding(targetBldg);
+                            recordVisitStamp(targetBldg.id, task.id);
+                          }
+                          setActiveTab('CHECKLISTS');
+                        }}
+                        className="btn-flame py-2.5 px-3 rounded-xl text-white font-bold text-xs shadow-xs text-center flex items-center justify-center gap-1 active:scale-[0.98]"
+                      >
+                        <FileCheck2 className="w-3.5 h-3.5" />
+                        <span>{t.openChecklist || 'Open Checklist'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const bldg = assignedBuildings.find((b: any) => b.id === task.buildingId);
+                          const addr = bldg?.address || task.buildingName;
+                          window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`, '_blank');
+                        }}
+                        className="py-2.5 px-3 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-[#FED7AA] font-bold text-xs shadow-xs text-center flex items-center justify-center gap-1 active:scale-[0.98]"
+                      >
+                        <Navigation className="w-3.5 h-3.5 text-[#EA580C]" />
+                        <span>{t.navigate || 'Navigate'}</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 3.5 QUICK ACTION BAR (One white rounded-2xl row with 4 equal items) */}
+            <div className="bg-white border border-[#FED7AA] rounded-2xl p-2.5 shadow-xs grid grid-cols-4 divide-x divide-slate-100">
+              {/* 1. Sync Now */}
+              <button
+                type="button"
+                disabled={isSyncing}
+                onClick={() => handleTriggerSync({ force: true })}
+                className="flex flex-col items-center justify-center gap-1 py-1 text-slate-700 hover:text-[#EA580C] active:scale-95 transition-all"
+              >
+                <RefreshCw className={`w-4 h-4 text-[#EA580C] ${isSyncing ? 'animate-spin' : ''}`} />
+                <span className="text-[10px] font-bold">{t.quickSyncNow || 'Sync Now'}</span>
+              </button>
+
+              {/* 2. Progress */}
+              <button
+                type="button"
+                onClick={() => setShowProgressModal(true)}
+                className="flex flex-col items-center justify-center gap-1 py-1 text-slate-700 hover:text-[#EA580C] active:scale-95 transition-all"
+              >
+                <TrendingUp className="w-4 h-4 text-emerald-600" />
+                <span className="text-[10px] font-bold">{t.quickProgress || 'Progress'}</span>
+              </button>
+
+              {/* 3. Support */}
+              <button
+                type="button"
+                onClick={() => setShowSupportModal(true)}
+                className="flex flex-col items-center justify-center gap-1 py-1 text-slate-700 hover:text-[#EA580C] active:scale-95 transition-all"
+              >
+                <Headphones className="w-4 h-4 text-purple-600" />
+                <span className="text-[10px] font-bold">{t.quickSupport || 'Support'}</span>
+              </button>
+
+              {/* 4. Settings */}
+              <button
+                type="button"
+                onClick={() => setShowSettingsSheet(true)}
+                className="flex flex-col items-center justify-center gap-1 py-1 text-slate-700 hover:text-[#EA580C] active:scale-95 transition-all"
+              >
+                <Sliders className="w-4 h-4 text-slate-600" />
+                <span className="text-[10px] font-bold">{t.quickSettings || 'Settings'}</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+                {/* =========================================================================
             TAB 1: "MY TASKS" DASHBOARD (Feature A & Section 3)
         ========================================================================= */}
         {activeTab === 'TASKS' && (
@@ -2308,49 +2784,186 @@ export default function TechnicianPWA() {
         )}
 
         {/* =========================================================================
+            TAB 5: PROFILE SCREEN (Section 6.4)
+        ========================================================================= */}
+        {activeTab === 'PROFILE' && (
+          <div className="p-4 space-y-4">
+            {/* Profile Hero Card */}
+            <div className="p-5 rounded-3xl bg-white border border-[#FED7AA] shadow-xs space-y-4 text-center">
+              <div className="relative w-20 h-20 mx-auto">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#EA580C] to-[#C2410C] text-white flex items-center justify-center font-black text-2xl shadow-md ring-4 ring-orange-50">
+                  {userProfile?.fullName?.charAt(0).toUpperCase() || 'T'}
+                </div>
+                <span className={`absolute bottom-1 right-1 w-4 h-4 rounded-full ring-2 ring-white ${
+                  isOnline ? 'bg-emerald-500' : 'bg-slate-400'
+                }`} />
+              </div>
+
+              <div>
+                <h3 className="font-display font-black text-lg text-slate-900">
+                  {userProfile?.fullName || 'Field Technician'}
+                </h3>
+                <p className="text-xs font-mono font-bold text-[#EA580C] mt-0.5">
+                  {userProfile?.employeeId || 'STAFF-TECH'}
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {userProfile?.agencyName || 'VigilAMC Operations'}
+                </p>
+              </div>
+
+              {/* Performance Mini Stats */}
+              <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-left">
+                <div className="p-2.5 rounded-xl bg-[#FFF8F2] border border-[#FED7AA]/60">
+                  <span className="text-base font-black text-slate-900 block leading-tight">
+                    {historyList.length}
+                  </span>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase">Inspections</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-[#FFF8F2] border border-[#FED7AA]/60">
+                  <span className="text-base font-black text-emerald-600 block leading-tight">
+                    {assignedBuildings.length}
+                  </span>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase">Sites</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-[#FFF8F2] border border-[#FED7AA]/60">
+                  <span className="text-base font-black text-[#EA580C] block leading-tight">
+                    {pendingSyncCount === 0 ? '100%' : `${pendingSyncCount} pend`}
+                  </span>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase">Sync Health</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Settings list */}
+            <div className="bg-white rounded-2xl border border-[#FED7AA] shadow-xs divide-y divide-slate-100 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setShowLanguageSheet(true)}
+                className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+              >
+                <div className="flex items-center gap-2.5 text-slate-800">
+                  <Globe className="w-4 h-4 text-[#EA580C]" />
+                  <span>Language</span>
+                </div>
+                <span className="text-xs text-slate-500">
+                  {SUPPORTED_LANGUAGES.find((l) => l.code === currentLang)?.nativeName || 'English'} ›
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={requestLiveLocation}
+                className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+              >
+                <div className="flex items-center gap-2.5 text-slate-800">
+                  <Crosshair className="w-4 h-4 text-emerald-600" />
+                  <span>GPS Location Status</span>
+                </div>
+                <span className="text-xs text-slate-500">
+                  {gpsStatus === 'LOCKED' ? '±8m Locked' : gpsStatus} ›
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowSupportModal(true)}
+                className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+              >
+                <div className="flex items-center gap-2.5 text-slate-800">
+                  <Headphones className="w-4 h-4 text-purple-600" />
+                  <span>Support &amp; FAQ</span>
+                </div>
+                <span className="text-xs text-slate-500">›</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="w-full p-4 flex items-center justify-between hover:bg-rose-50 text-rose-600 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out</span>
+                </div>
+                <span className="text-xs">›</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* =========================================================================
             BOTTOM NAVIGATION BAR (3 Tabs, ≥ 48px Touch Targets)
         ========================================================================= */}
         <nav className="fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#FED7AA] shadow-lg max-w-md mx-auto">
-          <div className="grid grid-cols-3 h-16">
-            {/* Tab 1: My Tasks (with Section 8.1 Overdue Dot) */}
+          <div className="grid grid-cols-5 h-16 px-1">
+            {/* Tab 1: Home */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('HOME')}
+              className={`flex flex-col items-center justify-center py-1 transition-all ${
+                activeTab === 'HOME' ? 'text-[#EA580C] font-bold' : 'text-slate-500 font-medium hover:text-slate-800'
+              }`}
+            >
+              <LayoutDashboard className="w-5 h-5" />
+              <span className="text-[10px] mt-0.5">{t.tabHome || 'Home'}</span>
+              {activeTab === 'HOME' && <span className="w-8 h-1 bg-[#EA580C] rounded-full block mt-0.5" />}
+            </button>
+
+            {/* Tab 2: Tasks */}
             <button
               type="button"
               onClick={() => setActiveTab('TASKS')}
-              className={`flex flex-col items-center justify-center gap-1 transition-all ${
-                activeTab === 'TASKS' ? 'text-[#C2410C] font-black' : 'text-slate-500 font-semibold hover:text-slate-900'
+              className={`flex flex-col items-center justify-center py-1 transition-all ${
+                activeTab === 'TASKS' ? 'text-[#EA580C] font-bold' : 'text-slate-500 font-medium hover:text-slate-800'
               }`}
             >
               <div className="relative">
                 <ListTodo className="w-5 h-5" />
                 {overdueTasksCount > 0 && (
-                  <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 rounded-full bg-[#DC2626] ring-2 ring-white" />
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#DC2626] ring-2 ring-white" />
                 )}
               </div>
-              <span className="text-[11px]">{t.myTasksTab}</span>
+              <span className="text-[10px] mt-0.5">{t.myTasksTab || 'Tasks'}</span>
+              {activeTab === 'TASKS' && <span className="w-8 h-1 bg-[#EA580C] rounded-full block mt-0.5" />}
             </button>
 
-            {/* Tab 2: Checklists */}
+            {/* Tab 3: Checklists */}
             <button
               type="button"
               onClick={() => setActiveTab('CHECKLISTS')}
-              className={`flex flex-col items-center justify-center gap-1 transition-all ${
-                activeTab === 'CHECKLISTS' ? 'text-[#C2410C] font-black' : 'text-slate-500 font-semibold hover:text-slate-900'
+              className={`flex flex-col items-center justify-center py-1 transition-all ${
+                activeTab === 'CHECKLISTS' ? 'text-[#EA580C] font-bold' : 'text-slate-500 font-medium hover:text-slate-800'
               }`}
             >
               <FileCheck2 className="w-5 h-5" />
-              <span className="text-[11px]">{t.checklistsTab}</span>
+              <span className="text-[10px] mt-0.5">{t.checklistsTab || 'Checklists'}</span>
+              {activeTab === 'CHECKLISTS' && <span className="w-8 h-1 bg-[#EA580C] rounded-full block mt-0.5" />}
             </button>
 
-            {/* Tab 3: History */}
+            {/* Tab 4: History */}
             <button
               type="button"
               onClick={() => setActiveTab('HISTORY')}
-              className={`flex flex-col items-center justify-center gap-1 transition-all ${
-                activeTab === 'HISTORY' ? 'text-[#C2410C] font-black' : 'text-slate-500 font-semibold hover:text-slate-900'
+              className={`flex flex-col items-center justify-center py-1 transition-all ${
+                activeTab === 'HISTORY' ? 'text-[#EA580C] font-bold' : 'text-slate-500 font-medium hover:text-slate-800'
               }`}
             >
               <HistoryIcon className="w-5 h-5" />
-              <span className="text-[11px]">{t.historyTab}</span>
+              <span className="text-[10px] mt-0.5">{t.historyTab || 'History'}</span>
+              {activeTab === 'HISTORY' && <span className="w-8 h-1 bg-[#EA580C] rounded-full block mt-0.5" />}
+            </button>
+
+            {/* Tab 5: Profile */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('PROFILE')}
+              className={`flex flex-col items-center justify-center py-1 transition-all ${
+                activeTab === 'PROFILE' ? 'text-[#EA580C] font-bold' : 'text-slate-500 font-medium hover:text-slate-800'
+              }`}
+            >
+              <User className="w-5 h-5" />
+              <span className="text-[10px] mt-0.5">{t.tabProfile || 'Profile'}</span>
+              {activeTab === 'PROFILE' && <span className="w-8 h-1 bg-[#EA580C] rounded-full block mt-0.5" />}
             </button>
           </div>
         </nav>
