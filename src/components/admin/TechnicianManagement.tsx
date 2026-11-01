@@ -38,6 +38,31 @@ interface TechnicianManagementProps {
   onRefreshDashboard?: () => Promise<void> | void;
 }
 
+
+function slugify(text: string): string {
+  return (text || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function computeSystematicTechId(companyName: string, techName: string, existingList: any[] = []): string {
+  const compSlug = slugify(companyName || 'agency') || 'tech';
+  const nameSlug = slugify(techName || 'member') || 'user';
+  const base = `${compSlug}-${nameSlug}`;
+  
+  const existingSlugs = new Set(
+    existingList.map((t) => (t.employeeId || '').toLowerCase().trim())
+  );
+  if (!existingSlugs.has(base)) return base;
+  let counter = 2;
+  while (existingSlugs.has(`${base}-${counter}`)) {
+    counter++;
+  }
+  return `${base}-${counter}`;
+}
+
 function normalizeWhatsAppPhone(rawPhone: string): string {
   const digits = (rawPhone || '').replace(/\D/g, '');
   if (!digits) return '';
@@ -97,6 +122,12 @@ export function TechnicianManagement({
   const [viewDetailTech, setViewDetailTech] = useState<any | null>(null);
   const [deleteConfirmTech, setDeleteConfirmTech] = useState<any | null>(null);
   const [createdSuccessTech, setCreatedSuccessTech] = useState<any | null>(null);
+  const [selectedTechIds, setSelectedTechIds] = useState<string[]>([]);
+  const [statusConfirmTech, setStatusConfirmTech] = useState<{ tech: any; nextStatus: 'ACTIVE' | 'INACTIVE'; isBulk?: boolean } | null>(null);
+  const [activityDrawerTech, setActivityDrawerTech] = useState<any | null>(null);
+  const [activityMetrics, setActivityMetrics] = useState<any | null>(null);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [activityDateRange, setActivityDateRange] = useState({ startDate: '', endDate: '' });
 
   // Add Form State
   const [addForm, setAddForm] = useState({
@@ -166,7 +197,7 @@ export function TechnicianManagement({
       fullName: '',
       email: '',
       phone: '',
-      employeeId: computeNextTechId(),
+      employeeId: computeSystematicTechId(agencyName, '', technicians),
       password: generateSixDigitPin(),
       assignedBuildingIds: [],
       status: 'ACTIVE',
@@ -176,7 +207,7 @@ export function TechnicianManagement({
 
   const handleGeneratePinAndId = () => {
     const pin = generateSixDigitPin();
-    const empId = addForm.employeeId.trim() || computeNextTechId();
+    const empId = addForm.employeeId.trim() || computeSystematicTechId(agencyName, addForm.fullName, technicians);
     setAddForm((prev) => ({
       ...prev,
       password: pin,
@@ -203,7 +234,7 @@ export function TechnicianManagement({
       ``,
       `🔑 *2. Your Login Details:*`,
       `• *Mobile Number:* ${cleanMobile}`,
-      `• *Staff ID:* ${staffId}`,
+      `• *Technician ID (Username):* ${staffId}`,
       `• *Login PIN / Password:* ${pin}`,
       ``,
       `📍 Tap the link above on your phone, tap *"Install App"*, and sign in with your Mobile Number or Staff ID + PIN.`,
@@ -533,6 +564,39 @@ export function TechnicianManagement({
         </div>
       </div>
 
+      {/* Bulk Action Bar (§8.1) */}
+      {selectedTechIds.length > 0 && (
+        <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#FFF0E6] border border-[#FED7AA] text-xs font-bold text-[#1C1917] shadow-sm animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#EA580C] animate-pulse" />
+            <span>{selectedTechIds.length} technician(s) selected</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setStatusConfirmTech({ tech: null, nextStatus: 'ACTIVE', isBulk: true })}
+              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs transition-all"
+            >
+              Set Active
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusConfirmTech({ tech: null, nextStatus: 'INACTIVE', isBulk: true })}
+              className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-xs transition-all"
+            >
+              Set Blocked
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedTechIds([])}
+              className="px-2.5 py-1.5 rounded-xl text-slate-500 hover:text-slate-800 text-xs font-semibold"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 3. Technicians Table */}
       <div className="bg-white border border-[#FED7AA] rounded-2xl overflow-hidden shadow-sm">
         {loading && technicians.length === 0 ? (
@@ -780,7 +844,7 @@ export function TechnicianManagement({
                     type="text"
                     required
                     value={addForm.fullName}
-                    onChange={(e) => setAddForm({ ...addForm, fullName: e.target.value })}
+                    onChange={(e) => { const val = e.target.value; setAddForm((prev) => ({ ...prev, fullName: val, employeeId: computeSystematicTechId(agencyName, val, technicians) })); }}
                     placeholder="e.g. Ramesh Kumar"
                     className="w-full px-3 py-2.5 rounded-xl bg-white  border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C2410C]"
                   />
@@ -801,12 +865,12 @@ export function TechnicianManagement({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="space-y-1">
-                  <label className="text-slate-700 font-bold">Staff / Employee ID</label>
+                  <div className="flex items-center justify-between"><label className="text-slate-700 font-bold">Technician ID (Username) *</label><button type="button" onClick={() => setAddForm((prev) => ({ ...prev, employeeId: computeSystematicTechId(agencyName, prev.fullName || 'tech', technicians) }))} className="text-[11px] font-bold text-[#C2410C] hover:text-[#9A3412] flex items-center gap-1"><RefreshCw className="w-3 h-3" /><span>Regenerate</span></button></div>
                   <input
                     type="text"
                     value={addForm.employeeId}
-                    onChange={(e) => setAddForm({ ...addForm, employeeId: e.target.value.toUpperCase() })}
-                    placeholder="Auto: TECH-101"
+                    onChange={(e) => setAddForm({ ...addForm, employeeId: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+                    placeholder="e.g. agency-ramesh"
                     className="w-full px-3 py-2.5 rounded-xl bg-[#FFF8F2] border border-slate-800 text-cyan-300 font-mono placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 uppercase"
                   />
                 </div>

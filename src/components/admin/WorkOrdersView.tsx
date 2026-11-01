@@ -14,6 +14,8 @@ import {
   X,
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { HelpCircle, MessageCircle } from 'lucide-react';
+import { isDuplicateSubmission } from '@/lib/submissionGuard';
 import { Ripple } from '@/components/ui/ripple';
 
 interface WorkOrdersViewProps {
@@ -70,6 +72,8 @@ export function WorkOrdersView({
     dueDate: '',
   });
   const [submitting, setSubmitting] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
+  const [lastAssignedWO, setLastAssignedWO] = useState<any | null>(null);
 
   // Sync instantly from parent bootstrap cache
   useEffect(() => {
@@ -251,6 +255,24 @@ export function WorkOrdersView({
 
   return (
     <div className="space-y-6">
+      {/* Plain Language Subtitle & Help (§8.0) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#FED7AA]">
+        <div>
+          <h2 className="text-lg sm:text-xl font-bold text-[#1C1917]">Repairs &amp; Work Orders</h2>
+          <p className="text-xs text-[#44403C]">
+            Jobs raised from failed inspections or maintenance requests — assign, track, and close them.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowHelpModal(true)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#FED7AA] text-slate-700 hover:text-[#C2410C] text-xs font-bold transition-all shadow-xs self-start sm:self-auto"
+        >
+          <HelpCircle className="w-3.5 h-3.5 text-[#C2410C]" />
+          <span>What do these mean?</span>
+        </button>
+      </div>
+
       {/* Top Filter & Action Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 glass-panel-dense p-4 rounded-2xl shadow-xs">
         <div className="flex items-center gap-2.5 flex-1 flex-wrap">

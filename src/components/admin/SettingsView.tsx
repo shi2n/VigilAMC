@@ -14,6 +14,7 @@ import {
 import { AlertsSettingsView } from './AlertsSettingsView';
 import { TechnicianManagement } from './TechnicianManagement';
 import { AdminUsersView } from './AdminUsersView';
+import { ALL_INDIAN_LANGUAGES } from '@/lib/i18n/admin';
 
 export type SettingsSubTab =
   | 'AGENCY'
@@ -63,6 +64,29 @@ export function SettingsView({
   const [whiteLabelEnabled, setWhiteLabelEnabled] = useState<boolean>(true);
   const [quarterlyAmcFee, setQuarterlyAmcFee] = useState<string>('12500');
   const [refillServiceFee, setRefillServiceFee] = useState<string>('650');
+  const [selectedLang, setSelectedLang] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('vigilamc_admin_language') || userProfile?.preferredLanguage || 'en';
+    }
+    return userProfile?.preferredLanguage || 'en';
+  });
+
+  const handleSelectLanguage = async (code: string) => {
+    setSelectedLang(code);
+    try {
+      localStorage.setItem('vigilamc_admin_language', code);
+      await fetch('/api/auth/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ preferredLanguage: code }),
+      });
+      const langName = ALL_INDIAN_LANGUAGES.find((l) => l.code === code)?.name || code;
+      showToast(`Dashboard language updated to ${langName}`);
+      if (onRefreshDashboard) onRefreshDashboard();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update language');
+    }
+  };
 
   const activeSubTab = externalSubTab || internalSubTab;
   const setActiveSubTab = (tab: SettingsSubTab) => {

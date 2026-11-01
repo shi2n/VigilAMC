@@ -146,6 +146,20 @@ export async function POST(request: Request) {
         .catch(() => null);
     }
 
+    if (resolvedAssignedToId) {
+      const dueMsg = parsedDueDate ? ` · Due: ${parsedDueDate.toLocaleDateString('en-IN')}` : '';
+      await (db as any).notification.create({
+        data: {
+          organizationId: auth.organization.id,
+          userId: resolvedAssignedToId,
+          title: 'New Task Assigned',
+          message: `Work Order: "${resolvedTitle}" assigned to you${dueMsg}`,
+          type: 'INFO',
+          link: '/technician',
+        },
+      }).catch(() => null);
+    }
+
     return NextResponse.json({ success: true, workOrder });
   } catch (error: any) {
     console.error('Error creating work order:', error);

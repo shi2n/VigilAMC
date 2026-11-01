@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { HelpCircle, X, Info } from 'lucide-react';
+import { isDuplicateSubmission } from '@/lib/submissionGuard';
 import {
   Search,
   RefreshCw,
@@ -39,6 +41,7 @@ export function InspectionsView({
   const [recordModalOpen, setRecordModalOpen] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [submittingInspection, setSubmittingInspection] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
   const [inspectionForm, setInspectionForm] = useState({
     buildingId: '',
     equipmentId: '',
@@ -178,6 +181,24 @@ export function InspectionsView({
 
   return (
     <div className="space-y-6">
+      {/* Plain Language Subtitle & Help (§8.0) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#FED7AA]">
+        <div>
+          <h2 className="text-lg sm:text-xl font-bold text-[#1C1917]">Field Inspections</h2>
+          <p className="text-xs text-[#44403C]">
+            Every inspection your technicians completed on-site — results, photos, and proof of visit.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowHelpModal(true)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#FED7AA] text-slate-700 hover:text-[#C2410C] text-xs font-bold transition-all shadow-xs self-start sm:self-auto"
+        >
+          <HelpCircle className="w-3.5 h-3.5 text-[#C2410C]" />
+          <span>What do these mean?</span>
+        </button>
+      </div>
+
       {/* Search & Filter Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 glass-panel-dense p-4 rounded-2xl shadow-sm">
         <div className="flex items-center gap-2.5 flex-1 flex-wrap">

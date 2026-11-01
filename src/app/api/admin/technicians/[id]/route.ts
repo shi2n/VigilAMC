@@ -162,6 +162,19 @@ export async function PATCH(
         }
       }
 
+      if (assignedBuildingIds.length > 0) {
+        await (db as any).notification.create({
+          data: {
+            organizationId,
+            userId: technicianId,
+            title: 'New Building Assignment',
+            message: `You have been assigned to ${assignedBuildingIds.length} building premises.`,
+            type: 'INFO',
+            link: '/technician',
+          },
+        }).catch(() => null);
+      }
+
       await logAuditActivity({
         organizationId,
         userId: auth.user.id,

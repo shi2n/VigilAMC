@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { getCurrentUser, isPlatformOwner } from '@/lib/auth';
 import { evaluateEquipmentStatus } from '@/lib/compliance';
 import { getPlanConfig, PLAN_CONFIGS } from '@/lib/plans';
+import { computeAttentionDigest, computeTrendAnalytics } from '@/lib/dashboardAnalytics';
 
 export const dynamic = 'force-dynamic';
 
@@ -98,6 +99,8 @@ export async function GET(request: Request) {
       inspectionsRaw,
       workOrdersRaw,
       techniciansRaw,
+      pendingSyncCount,
+      newFeedbackCount,
     ] = await Promise.all([
       (db as any).client.findMany({
         where: { organizationId },
@@ -249,6 +252,15 @@ export async function GET(request: Request) {
         },
         orderBy: { createdAt: 'desc' },
       }),
+      (db as any).syncQueue.count({
+        where: {
+          technician: { organizationId },
+          status: { in: ['PENDING', 'FAILED'] },
+        },
+      }).catch(() => 0),
+      (db as any).feedback.count({
+        where: { organizationId },
+      }).catch(() => 0),
     ]);
 
     const now = new Date();
@@ -506,6 +518,21 @@ export async function GET(request: Request) {
       complianceRate,
     };
 
+    const attentionDigest = computeAttentionDigest({
+      overdueCount: kpiOverdueCount,
+      dueSoonCount: kpiDueCount,
+      equipments: evaluatedEquipments,
+      workOrders: workOrdersRaw,
+      pendingSyncCount: pendingSyncCount || 0,
+      newFeedbackCount: newFeedbackCount || 0,
+    });
+
+    const analytics = computeTrendAnalytics({
+      inspections: inspectionsRaw,
+      workOrders: workOrdersRaw,
+      totalAssets: evaluatedEquipments.length,
+    });
+
     return NextResponse.json({
       authenticated: true,
       user: auth.user,
@@ -520,6 +547,8 @@ export async function GET(request: Request) {
       inspections: inspectionsRaw,
       workOrders: workOrdersRaw,
       technicians: formattedTechnicians,
+      attentionDigest,
+      analytics,
       subscription: {
         subscription,
         plan: planConfig,

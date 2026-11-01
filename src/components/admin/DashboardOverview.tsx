@@ -19,6 +19,10 @@ import {
 } from 'lucide-react';
 import { formatStandardDate } from '@/lib/constants/india';
 import { NumberTicker } from '@/components/ui/number-ticker';
+import { AttentionDigestItem, DashboardAnalytics } from '@/lib/dashboardAnalytics';
+import { GettingStartedChecklist } from '@/components/admin/GettingStartedGuide';
+import { AdminDictionary, adminDictEnglish } from '@/lib/i18n/admin';
+import { X } from 'lucide-react';
 
 interface DashboardOverviewProps {
   kpis: {
@@ -34,15 +38,20 @@ interface DashboardOverviewProps {
   };
   company?: any;
   buildings?: any[];
+  attentionDigest?: AttentionDigestItem[];
+  analytics?: DashboardAnalytics;
+  t?: AdminDictionary;
   onNavigateTab: (tab: string) => void;
   onAddEquipment: () => void;
   onCreateRepairJob: () => void;
   onOpenFeedback: () => void;
   onOpenImport?: () => void;
+  onOpenRegisterModal?: () => void;
+  onOpenGuide?: () => void;
 }
 
 type RangeKey = '7D' | '30D' | '90D' | '12M';
-type MetricKey = 'INSPECTIONS' | 'COMPLIANCE' | 'REPAIRS';
+type MetricKey = 'INSPECTIONS' | 'COMPLIANCE' | 'REPAIRS' | 'ASSETS_COVERED';
 
 const CHART_SERIES: Record<
   MetricKey,
@@ -108,6 +117,12 @@ const CHART_SERIES: Record<
       up: true,
     },
   },
+  ASSETS_COVERED: {
+    '7D': { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], values: [0, 0, 0, 0, 0, 0, 0], unit: 'assets', delta: '0% vs prior 7d', up: true },
+    '30D': { labels: ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4'], values: [0, 0, 0, 0], unit: 'assets', delta: '0% vs prior 30d', up: true },
+    '90D': { labels: ['Month 1', 'Month 2', 'Month 3'], values: [0, 0, 0], unit: 'assets', delta: '0% vs prior 90d', up: true },
+    '12M': { labels: ['Q1', 'Q2', 'Q3', 'Q4'], values: [0, 0, 0, 0], unit: 'assets', delta: '0% vs prior 12m', up: true },
+  },
   REPAIRS: {
     '7D': {
       labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -144,17 +159,26 @@ export function DashboardOverview({
   kpis,
   company,
   buildings = [],
+  attentionDigest = [],
+  analytics,
+  t = adminDictEnglish,
   onNavigateTab,
   onAddEquipment,
   onCreateRepairJob,
   onOpenFeedback,
+  onOpenImport,
+  onOpenRegisterModal,
+  onOpenGuide,
 }: DashboardOverviewProps) {
+  const [dismissedDigestIds, setDismissedDigestIds] = useState<string[]>([]);
   const prefersReducedMotion = useReducedMotion();
   const [selectedRange, setSelectedRange] = useState<RangeKey>('30D');
   const [selectedMetric, setSelectedMetric] = useState<MetricKey>('INSPECTIONS');
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
-  const activeSeries = CHART_SERIES[selectedMetric][selectedRange];
+  const realSeries = analytics?.[selectedMetric]?.[selectedRange];
+  const activeSeries = realSeries || CHART_SERIES[selectedMetric][selectedRange];
+  const hasLiveDbData = analytics?.hasData ?? false;
 
   // Compute First-Time Setup Checklist (1 to 5)
   const hasAgencyDetails = Boolean(
@@ -244,7 +268,7 @@ export function DashboardOverview({
   const maxVal = Math.max(...activeSeries.values, 1);
   const minVal = Math.min(...activeSeries.values, 0);
   const span = Math.max(1, maxVal - minVal * 0.85);
-  const pts = activeSeries.values.map((v, i) => {
+  const pts = activeSeries.values.map((v: number, i: number) => {
     const x =
       activeSeries.values.length === 1
         ? 300
@@ -252,7 +276,7 @@ export function DashboardOverview({
     const y = 136 - ((v - minVal * 0.85) / span) * 104;
     return { x, y, v, label: activeSeries.labels[i] };
   });
-  const linePath = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const linePath = pts.map((p: any, i: number) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
   const areaPath = `${linePath} L${pts[pts.length - 1].x.toFixed(1)},148 L${pts[0].x.toFixed(1)},148 Z`;
 
   return (
@@ -456,6 +480,7 @@ export function DashboardOverview({
               <option value="INSPECTIONS">Field Inspections</option>
               <option value="COMPLIANCE">Compliance Rate (%)</option>
               <option value="REPAIRS">Open Repair Backlog</option>
+              <option value="ASSETS_COVERED">Active Assets Covered</option>
             </select>
 
             {/* Range Picker Buttons */}
@@ -530,7 +555,7 @@ export function DashboardOverview({
             />
 
             {/* Data points + labels */}
-            {pts.map((p, idx) => (
+            {pts.map((p: any, idx: number) => (
               <g
                 key={p.label}
                 onMouseEnter={() => setHoverIdx(idx)}

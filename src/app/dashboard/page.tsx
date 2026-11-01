@@ -29,25 +29,94 @@ import {
   X,
   Wrench,
   AlertTriangle,
+  HelpCircle,
 } from 'lucide-react';
 import { AdminSidebar, AdminNavTab } from '@/components/admin/AdminSidebar';
 import { WorkspaceTabs, WorkspaceTabItem } from '@/components/admin/WorkspaceTabs';
 import { MinimizeTray, MinimizedItem } from '@/components/admin/MinimizeTray';
-import { DashboardOverview } from '@/components/admin/DashboardOverview';
-import { ExportModal } from '@/components/admin/ExportModal';
-import { ImportModal } from '@/components/admin/ImportModal';
-import { FeedbackModal } from '@/components/admin/FeedbackModal';
-import { ImportType } from '@/lib/excelImport';
+import dynamic from 'next/dynamic';
+import type { ImportType } from '@/lib/excelImport';
 import { INDIAN_STATES_AND_UTS, REPORTING_CYCLES } from '@/lib/constants/india';
-import { WorkOrdersView } from '@/components/admin/WorkOrdersView';
-import { InspectionsView } from '@/components/admin/InspectionsView';
-import { ReportsView } from '@/components/admin/ReportsView';
-import { ClientsView } from '@/components/admin/ClientsView';
-import { BuildingsView } from '@/components/admin/BuildingsView';
-import { FireAssetsView } from '@/components/admin/FireAssetsView';
-import { SettingsView } from '@/components/admin/SettingsView';
-import { TechnicianManagement } from '@/components/admin/TechnicianManagement';
-import { compressImageToDataUrl, uploadCompressedPhoto } from '@/lib/compressImage';
+import { isDuplicateSubmission, clearSubmissionLock } from '@/lib/submissionGuard';
+import { getAdminDictionary } from '@/lib/i18n/admin';
+
+const DashboardOverview = dynamic(
+  () => import('@/components/admin/DashboardOverview').then((m) => m.DashboardOverview),
+  {
+    loading: () => (
+      <div className="space-y-6 animate-pulse">
+        <div className="h-44 bg-slate-100 rounded-2xl" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="h-28 bg-slate-100 rounded-2xl" />
+          <div className="h-28 bg-slate-100 rounded-2xl" />
+          <div className="h-28 bg-slate-100 rounded-2xl" />
+          <div className="h-28 bg-slate-100 rounded-2xl" />
+        </div>
+      </div>
+    ),
+    ssr: false,
+  }
+);
+
+const WorkOrdersView = dynamic(
+  () => import('@/components/admin/WorkOrdersView').then((m) => m.WorkOrdersView),
+  { loading: () => <div className="h-96 bg-slate-100 rounded-2xl animate-pulse" />, ssr: false }
+);
+
+const InspectionsView = dynamic(
+  () => import('@/components/admin/InspectionsView').then((m) => m.InspectionsView),
+  { loading: () => <div className="h-96 bg-slate-100 rounded-2xl animate-pulse" />, ssr: false }
+);
+
+const ReportsView = dynamic(
+  () => import('@/components/admin/ReportsView').then((m) => m.ReportsView),
+  { loading: () => <div className="h-96 bg-slate-100 rounded-2xl animate-pulse" />, ssr: false }
+);
+
+const ClientsView = dynamic(
+  () => import('@/components/admin/ClientsView').then((m) => m.ClientsView),
+  { loading: () => <div className="h-96 bg-slate-100 rounded-2xl animate-pulse" />, ssr: false }
+);
+
+const BuildingsView = dynamic(
+  () => import('@/components/admin/BuildingsView').then((m) => m.BuildingsView),
+  { loading: () => <div className="h-96 bg-slate-100 rounded-2xl animate-pulse" />, ssr: false }
+);
+
+const FireAssetsView = dynamic(
+  () => import('@/components/admin/FireAssetsView').then((m) => m.FireAssetsView),
+  { loading: () => <div className="h-96 bg-slate-100 rounded-2xl animate-pulse" />, ssr: false }
+);
+
+const SettingsView = dynamic(
+  () => import('@/components/admin/SettingsView').then((m) => m.SettingsView),
+  { loading: () => <div className="h-96 bg-slate-100 rounded-2xl animate-pulse" />, ssr: false }
+);
+
+const TechnicianManagement = dynamic(
+  () => import('@/components/admin/TechnicianManagement').then((m) => m.TechnicianManagement),
+  { loading: () => <div className="h-96 bg-slate-100 rounded-2xl animate-pulse" />, ssr: false }
+);
+
+const ExportModal = dynamic(
+  () => import('@/components/admin/ExportModal').then((m) => m.ExportModal),
+  { ssr: false }
+);
+
+const ImportModal = dynamic(
+  () => import('@/components/admin/ImportModal').then((m) => m.ImportModal),
+  { ssr: false }
+);
+
+const FeedbackModal = dynamic(
+  () => import('@/components/admin/FeedbackModal').then((m) => m.FeedbackModal),
+  { ssr: false }
+);
+
+const GuideModal = dynamic(
+  () => import('@/components/admin/GettingStartedGuide').then((m) => m.GuideModal),
+  { ssr: false }
+);
 
 const LAST_ORG_CACHE_KEY = 'vigilamc_dash_last_org';
 
@@ -148,6 +217,9 @@ export default function AdminDashboardPage() {
   const [clientsSitesSubTab, setClientsSitesSubTab] = useState<'BUILDINGS' | 'CLIENTS'>('BUILDINGS');
   const [inspectionsWorkSubTab, setInspectionsWorkSubTab] = useState<'INSPECTIONS' | 'REPAIRS'>('INSPECTIONS');
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
+  const [guideModalOpen, setGuideModalOpen] = useState(false);
+  const [isSubmittingBuilding, setIsSubmittingBuilding] = useState(false);
+  const [isSubmittingEquip, setIsSubmittingEquip] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [subscriptionData, setSubscriptionData] = useState<any>(null);
 
@@ -529,6 +601,7 @@ export default function AdminDashboardPage() {
     if (!file) return;
     try {
       setCompressingPhoto(true);
+      const { compressImageToDataUrl, uploadCompressedPhoto } = await import('@/lib/compressImage');
       // Show instant local WebP thumbnail preview while uploading to Cloudflare R2
       const previewDataUrl = await compressImageToDataUrl(file, {
         maxDimension: 1280,
@@ -583,10 +656,19 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Create Client & Building
+  // Create Client & Building with duplicate prevention
   const handleCreateBuilding = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmittingBuilding) return;
+
+    const dedupeKey = `create-building-${buildingForm.clientName.trim().toLowerCase()}-${buildingForm.buildingName.trim().toLowerCase()}`;
+    if (isDuplicateSubmission(dedupeKey, 3000)) {
+      showToast('Registration is already processing. Please wait.');
+      return;
+    }
+
     try {
+      setIsSubmittingBuilding(true);
       const res = await fetch('/api/admin/buildings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -611,11 +693,15 @@ export default function AdminDashboardPage() {
         });
         refreshDashboard({ silent: true });
       } else {
+        clearSubmissionLock(dedupeKey);
         showToast(resData.error || 'Failed to create building');
       }
     } catch (e: any) {
+      clearSubmissionLock(dedupeKey);
       console.error(e);
       showToast(e?.message || 'Failed to create building');
+    } finally {
+      setIsSubmittingBuilding(false);
     }
   };
 
@@ -646,11 +732,19 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Single Add Equipment
+  // Single Add Equipment with duplicate prevention
   const handleSingleAddEquipment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!singleAddEquipModalOpen) return;
+    if (!singleAddEquipModalOpen || isSubmittingEquip) return;
+
+    const dedupeKey = `single-equip-${singleAddEquipModalOpen.id}-${singleEquipForm.qrCode.trim().toLowerCase()}`;
+    if (isDuplicateSubmission(dedupeKey, 3000)) {
+      showToast('Equipment creation is already processing.');
+      return;
+    }
+
     try {
+      setIsSubmittingEquip(true);
       const res = await fetch('/api/admin/equipment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -676,11 +770,15 @@ export default function AdminDashboardPage() {
         });
         await refreshDashboard({ silent: true });
       } else {
+        clearSubmissionLock(dedupeKey);
         showToast(resData.error || 'Failed to add equipment');
       }
     } catch (e: any) {
+      clearSubmissionLock(dedupeKey);
       console.error(e);
       showToast(e?.message || 'Failed to add equipment');
+    } finally {
+      setIsSubmittingEquip(false);
     }
   };
 
@@ -1445,6 +1543,17 @@ export default function AdminDashboardPage() {
             </button>
 
             <button
+              type="button"
+              onClick={() => setGuideModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-slate-700 hover:text-[#C2410C] border border-[#FED7AA] text-xs font-bold transition-all shadow-xs"
+              title="Getting Started & Section Guide"
+              aria-label="Getting Started & Section Guide"
+            >
+              <HelpCircle className="w-4 h-4 text-[#C2410C]" />
+              <span className="hidden sm:inline">Guide</span>
+            </button>
+
+            <button
               onClick={() => setFeedbackModalOpen(true)}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FFF0E6] hover:bg-[#FED7AA]/60 text-[#C2410C] border border-[#C2410C]/20 text-xs font-bold transition-all shadow-xs"
               title="Give product feedback"
@@ -1548,6 +1657,9 @@ export default function AdminDashboardPage() {
                 }}
                 company={company}
                 buildings={buildings}
+                attentionDigest={data?.attentionDigest || []}
+                analytics={data?.analytics}
+                t={getAdminDictionary(data?.profile?.preferredLanguage || 'en')}
                 onNavigateTab={handleOpenTab}
                 onAddEquipment={() => {
                   if (buildings.length > 0) {
@@ -1559,6 +1671,8 @@ export default function AdminDashboardPage() {
                 onCreateRepairJob={() => handleOpenTab('REPAIRS')}
                 onOpenFeedback={() => setFeedbackModalOpen(true)}
                 onOpenImport={() => handleOpenImport('FIRE_ASSETS')}
+                onOpenRegisterModal={() => setAddBuildingModalOpen(true)}
+                onOpenGuide={() => setGuideModalOpen(true)}
               />
             )}
 
@@ -1852,6 +1966,14 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
+        {/* Section Guide Modal */}
+        <GuideModal
+          isOpen={guideModalOpen}
+          onClose={() => setGuideModalOpen(false)}
+          onNavigateTab={(tab) => handleOpenTab(tab)}
+          t={getAdminDictionary(data?.profile?.preferredLanguage || 'en')}
+        />
+
         {/* Excel Export Dialog */}
         <ExportModal
           isOpen={exportModalOpen}
@@ -1889,12 +2011,17 @@ export default function AdminDashboardPage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
               transition={prefersReducedMotion ? { duration: 0.1 } : { type: 'spring', stiffness: 300, damping: 28 }}
-              className="glass-dialog rounded-2xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto text-slate-900 my-auto shadow-2xl"
+              className="glass-dialog rounded-2xl max-w-4xl w-full p-6 sm:p-7 space-y-5 max-h-[92vh] overflow-y-auto text-slate-900 my-auto shadow-2xl"
             >
-              <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3">
+              <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3.5">
                 <div className="flex items-center gap-2.5">
-                  <Building2 className="w-5 h-5 text-[#C2410C]" />
-                  <h3 className="font-bold text-[#1C1917] text-base">Register Client &amp; Building</h3>
+                  <div className="p-2 rounded-xl bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA]">
+                    <Building2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-[#1C1917] text-base sm:text-lg">Register Client &amp; Building</h3>
+                    <p className="text-xs text-[#44403C]">Add client society details and premises wing information side-by-side</p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-1">
                   <button
@@ -1918,133 +2045,160 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              <form onSubmit={handleCreateBuilding} className="space-y-4 text-xs">
-                <div className="p-3.5 bg-[#FFF8F2] rounded-xl space-y-2.5 border border-[#FED7AA]">
-                  <h4 className="font-bold text-[#C2410C] uppercase text-[10px] tracking-wider">Client &amp; Society Details</h4>
-                  <div>
-                    <label className="block text-slate-700 font-semibold mb-1">Client / Society Name *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Horizon Co-op Housing Society"
-                      value={buildingForm.clientName}
-                      onChange={(e) => setBuildingForm({ ...buildingForm, clientName: e.target.value })}
-                      className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="block text-slate-700 font-semibold mb-1">Contact Person</label>
-                      <input
-                        type="text"
-                        placeholder="Secretary / Facility Manager"
-                        value={buildingForm.contactPerson}
-                        onChange={(e) => setBuildingForm({ ...buildingForm, contactPerson: e.target.value })}
-                        className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
-                      />
+              <form onSubmit={handleCreateBuilding} className="space-y-5 text-xs">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+                  {/* Left Column: Client & Society Details */}
+                  <div className="p-4 sm:p-5 bg-[#FFF8F2] rounded-2xl space-y-3 border border-[#FED7AA] flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 pb-2 border-b border-[#FED7AA]/60">
+                        <Users className="w-4 h-4 text-[#C2410C]" />
+                        <h4 className="font-bold text-[#C2410C] uppercase text-[11px] tracking-wider">1. Client / Society Details</h4>
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-semibold mb-1">Client / Society Name *</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Horizon Co-op Housing Society"
+                          value={buildingForm.clientName}
+                          onChange={(e) => setBuildingForm({ ...buildingForm, clientName: e.target.value })}
+                          className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-slate-700 font-semibold mb-1">Contact Person</label>
+                          <input
+                            type="text"
+                            placeholder="Secretary / Facility Manager"
+                            value={buildingForm.contactPerson}
+                            onChange={(e) => setBuildingForm({ ...buildingForm, contactPerson: e.target.value })}
+                            className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-700 font-semibold mb-1">Phone Number *</label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="+91 98765 43210"
+                            value={buildingForm.phone}
+                            onChange={(e) => setBuildingForm({ ...buildingForm, phone: e.target.value })}
+                            className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-semibold mb-1">Billing / Official Email</label>
+                        <input
+                          type="email"
+                          placeholder="accounts@society.com"
+                          value={buildingForm.email}
+                          onChange={(e) => setBuildingForm({ ...buildingForm, email: e.target.value })}
+                          className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-slate-700 font-semibold mb-1">Phone Number *</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="+91 98765 43210"
-                        value={buildingForm.phone}
-                        onChange={(e) => setBuildingForm({ ...buildingForm, phone: e.target.value })}
-                        className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
-                      />
-                    </div>
+                    <p className="text-[11px] text-slate-500 pt-1">
+                      Billing receipts &amp; AMC certificates will reference this society name.
+                    </p>
                   </div>
-                  <div>
-                    <label className="block text-slate-700 font-semibold mb-1">Billing / Official Email</label>
-                    <input
-                      type="email"
-                      placeholder="accounts@society.com"
-                      value={buildingForm.email}
-                      onChange={(e) => setBuildingForm({ ...buildingForm, email: e.target.value })}
-                      className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
-                    />
+
+                  {/* Right Column: Building Premises Info */}
+                  <div className="p-4 sm:p-5 bg-white/90 rounded-2xl space-y-3 border border-[#FED7AA] flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 pb-2 border-b border-[#FED7AA]/60">
+                        <Building2 className="w-4 h-4 text-[#C2410C]" />
+                        <h4 className="font-bold text-[#C2410C] uppercase text-[11px] tracking-wider">2. Building &amp; Premises Info</h4>
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-semibold mb-1">Premises / Wing Name *</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Tower A &amp; Clubhouse"
+                          value={buildingForm.buildingName}
+                          onChange={(e) => setBuildingForm({ ...buildingForm, buildingName: e.target.value })}
+                          className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-semibold mb-1">Premises Address *</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Plot No., Road, Sector / Area"
+                          value={buildingForm.address}
+                          onChange={(e) => setBuildingForm({ ...buildingForm, address: e.target.value })}
+                          className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-semibold mb-1">State / UT *</label>
+                        <select
+                          value={buildingForm.state}
+                          onChange={(e) => setBuildingForm({ ...buildingForm, state: e.target.value })}
+                          className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C] focus:outline-none"
+                        >
+                          {INDIAN_STATES_AND_UTS.map((st) => (
+                            <option key={st} value={st}>{st}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-slate-700 font-semibold mb-1">Reporting Cycle</label>
+                          <select
+                            value={buildingForm.reportingCycle}
+                            onChange={(e) => setBuildingForm({ ...buildingForm, reportingCycle: e.target.value })}
+                            className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C] focus:outline-none"
+                          >
+                            {REPORTING_CYCLES.map((rc) => (
+                              <option key={rc.value} value={rc.value}>{rc.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-slate-700 font-semibold mb-1">Local Rule (Optional)</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Rule 33 / Form-B"
+                            value={buildingForm.complianceRuleName}
+                            onChange={(e) => setBuildingForm({ ...buildingForm, complianceRuleName: e.target.value })}
+                            className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-slate-500 pt-1">
+                      Field technicians use GPS geofencing &amp; floor checklists at this premises.
+                    </p>
                   </div>
                 </div>
 
-                <div className="p-3.5 bg-slate-50 rounded-xl space-y-2.5 border border-[#FED7AA]">
-                  <h4 className="font-bold text-[#C2410C] uppercase text-[10px] tracking-wider">Building Premises Info</h4>
-                  <div>
-                    <label className="block text-slate-700 font-semibold mb-1">Premises / Wing Name *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Tower A &amp; Clubhouse"
-                      value={buildingForm.buildingName}
-                      onChange={(e) => setBuildingForm({ ...buildingForm, buildingName: e.target.value })}
-                      className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
-                    />
+                <div className="pt-2 sm:pt-3 border-t border-[#FED7AA]/70 flex items-center justify-between gap-3 flex-wrap">
+                  <div className="text-[11px] text-[#44403C]">
+                    Both client society and initial premises wing will be activated immediately.
                   </div>
-                  <div>
-                    <label className="block text-slate-700 font-semibold mb-1">Premises Address *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Plot No., Road, Sector / Area"
-                      value={buildingForm.address}
-                      onChange={(e) => setBuildingForm({ ...buildingForm, address: e.target.value })}
-                      className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-700 font-semibold mb-1">State / UT *</label>
-                    <select
-                      value={buildingForm.state}
-                      onChange={(e) => setBuildingForm({ ...buildingForm, state: e.target.value })}
-                      className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C] focus:outline-none"
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={isSubmittingBuilding}
+                      onClick={() => handleCloseModal('ADD_BUILDING')}
+                      className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 font-semibold transition-colors disabled:opacity-50"
                     >
-                      {INDIAN_STATES_AND_UTS.map((st) => (
-                        <option key={st} value={st}>{st}</option>
-                      ))}
-                    </select>
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSubmittingBuilding}
+                      className="px-6 py-2.5 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold shadow-sm transition-all flex items-center gap-2 active:scale-[0.98]"
+                    >
+                      {isSubmittingBuilding && <RefreshCw className="w-4 h-4 animate-spin" />}
+                      <span>{isSubmittingBuilding ? 'Registering...' : 'Register Client & Building'}</span>
+                    </button>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="block text-slate-700 font-semibold mb-1">Reporting Cycle</label>
-                      <select
-                        value={buildingForm.reportingCycle}
-                        onChange={(e) => setBuildingForm({ ...buildingForm, reportingCycle: e.target.value })}
-                        className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C] focus:outline-none"
-                      >
-                        {REPORTING_CYCLES.map((rc) => (
-                          <option key={rc.value} value={rc.value}>{rc.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-slate-700 font-semibold mb-1">Local Rule (Optional)</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Rule 33 / Form-B"
-                        value={buildingForm.complianceRuleName}
-                        onChange={(e) => setBuildingForm({ ...buildingForm, complianceRuleName: e.target.value })}
-                        className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 placeholder-slate-400 focus:border-[#C2410C] focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-2 flex justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleCloseModal('ADD_BUILDING')}
-                    className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 font-semibold transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2.5 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white font-bold shadow-xs transition-all"
-                  >
-                    Register Building
-                  </button>
-                </div>
-              </form>
+                </div>              </form>
             </motion.div>
           </motion.div>
         )}

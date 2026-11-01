@@ -23,6 +23,7 @@ import {
   WifiOff,
   Download,
   Flame,
+  Bell,
   Wrench,
   ChevronRight,
   ArrowLeft,
@@ -151,6 +152,28 @@ export default function TechnicianPWA() {
 
   // Assignment Nudge Banner (Section 8.7)
   const [assignmentNudge, setAssignmentNudge] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotificationsDrawer, setShowNotificationsDrawer] = useState<boolean>(false);
+
+  // Mark notification read handler
+  const handleMarkNotificationRead = async (id?: string) => {
+    try {
+      const res = await fetch('/api/technician/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(id ? { id } : { markAll: true }),
+      });
+      if (res.ok) {
+        if (id) {
+          setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
+        } else {
+          setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+        }
+      }
+    } catch (e) {
+      console.error('Failed to mark notification read:', e);
+    }
+  };
 
   // ----------------------------------------------------------------------------------
   // LIVE GPS TRACKER
@@ -353,11 +376,12 @@ export default function TechnicianPWA() {
     }
 
     try {
-      // 1. Fetch Dashboard & Tasks Feed in parallel
-      const [dashRes, tasksRes, historyRes] = await Promise.all([
+      // 1. Fetch Dashboard, Tasks Feed, & Notifications in parallel
+      const [dashRes, tasksRes, historyRes, notifsRes] = await Promise.all([
         fetch('/api/technician/dashboard').catch(() => null),
         fetch('/api/technician/tasks').catch(() => null),
         fetch('/api/technician/history?dateRange=all').catch(() => null),
+        fetch('/api/technician/notifications').catch(() => null),
       ]);
 
       if (dashRes && dashRes.status === 401) {
@@ -1375,7 +1399,23 @@ export default function TechnicianPWA() {
             </div>
 
             <div className="flex items-center gap-1.5 shrink-0">
-              {/* Language Selector Button (Feature D) */}
+              {/* In-app Notification Bell (Section 8.4) */}
+              <button
+                type="button"
+                onClick={() => setShowNotificationsDrawer(true)}
+                className="relative p-2 rounded-xl bg-white border border-[#FED7AA] text-slate-700 hover:border-[#EA580C] min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
+                title="Task Notifications"
+                aria-label="Task Notifications"
+              >
+                <Bell className="w-4 h-4 text-[#C2410C]" />
+                {notifications.some((n: any) => !n.isRead) && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#EA580C] text-white text-[10px] font-bold flex items-center justify-center border-2 border-white shadow-xs animate-pulse">
+                    {notifications.filter((n: any) => !n.isRead).length}
+                  </span>
+                )}
+              </button>
+
+                            {/* Language Selector Button (Feature D) */}
               <button
                 type="button"
                 onClick={() => setShowLanguageSheet(true)}
