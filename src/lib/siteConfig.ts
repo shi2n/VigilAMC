@@ -4,7 +4,10 @@
  */
 
 export const SITE_CONFIG = {
-  SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || 'https://vigilamc.com',
+  SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || 'https://vigilamc.vercel.app',
+  GOOGLE_PLAY_URL:
+    process.env.NEXT_PUBLIC_GOOGLE_PLAY_URL ||
+    'https://play.google.com/store/apps/details?id=com.vigilamc.field',
   CONTACT_EMAIL: process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'vigilamc@gmail.com',
   SUPPORT_EMAIL: process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'vigilamc@gmail.com',
   FOUNDER_EMAIL: process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'vigilamc@gmail.com',

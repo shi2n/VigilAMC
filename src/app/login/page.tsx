@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { getResetPasswordRedirectUrl } from '@/lib/auth-helpers';
+import { GooglePlayBadge } from '@/components/GooglePlayBadge';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -552,6 +553,17 @@ export default function LoginPage() {
             )}
           </>
         )}
+
+        {/* Field Technician Android App Notice */}
+        <div className="pt-3 border-t border-slate-100 flex flex-col items-center justify-center text-center gap-2">
+          <p className="text-xs text-slate-600 font-medium">
+            Field Technician on the move?
+          </p>
+          <GooglePlayBadge size="sm" theme="light" />
+          <span className="text-[11px] text-slate-500">
+            Offline inspections · GPS evidence · Install in one tap
+          </span>
+        </div>
 
         {/* Security Notice */}
         <div className="pt-2 border-t border-slate-100 flex flex-col items-center justify-center gap-1 text-slate-400 text-xs">

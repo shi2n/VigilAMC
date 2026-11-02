@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getAuthenticatedActor } from '@/lib/techSession';
+import { notifyOnAssignment } from '@/lib/notify';
 
 export const dynamic = 'force-dynamic';
 
@@ -148,15 +149,15 @@ export async function POST(request: Request) {
 
     if (resolvedAssignedToId) {
       const dueMsg = parsedDueDate ? ` · Due: ${parsedDueDate.toLocaleDateString('en-IN')}` : '';
-      await (db as any).notification.create({
-        data: {
-          organizationId: auth.organization.id,
-          userId: resolvedAssignedToId,
-          title: 'New Task Assigned',
-          message: `Work Order: "${resolvedTitle}" assigned to you${dueMsg}`,
-          type: 'INFO',
-          link: '/technician',
-        },
+      await notifyOnAssignment({
+        type: 'WORK_ORDER',
+        technicianId: resolvedAssignedToId,
+        organizationId: auth.organization.id,
+        title: 'New Task Assigned',
+        message: `Work Order: "${resolvedTitle}" assigned to you${dueMsg}`,
+        link: '/technician',
+        taskId: workOrder.id,
+        dueDate: parsedDueDate,
       }).catch(() => null);
     }
 

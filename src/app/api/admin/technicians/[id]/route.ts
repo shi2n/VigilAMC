@@ -4,6 +4,7 @@ import { requireAdmin, logAuditActivity } from '@/lib/auth';
 import { checkPlanLimit, getAgencySubscriptionAndUsage } from '@/lib/plans';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { hashPin } from '@/lib/techSession';
+import { notifyOnAssignment } from '@/lib/notify';
 
 export const dynamic = 'force-dynamic';
 
@@ -163,15 +164,13 @@ export async function PATCH(
       }
 
       if (assignedBuildingIds.length > 0) {
-        await (db as any).notification.create({
-          data: {
-            organizationId,
-            userId: technicianId,
-            title: 'New Building Assignment',
-            message: `You have been assigned to ${assignedBuildingIds.length} building premises.`,
-            type: 'INFO',
-            link: '/technician',
-          },
+        await notifyOnAssignment({
+          type: 'BUILDING',
+          technicianId,
+          organizationId,
+          title: 'New Building Assignment',
+          message: `You have been assigned to ${assignedBuildingIds.length} building premises.`,
+          link: '/technician',
         }).catch(() => null);
       }
 

@@ -26,6 +26,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { StatusBadge } from '@/components/StatusBadge';
+import { GooglePlayBadge } from '@/components/GooglePlayBadge';
 
 export default function FeaturesPage() {
   const [activePersona, setActivePersona] = useState<'contractor' | 'technician' | 'facility' | 'auditor'>('contractor');
@@ -228,6 +229,12 @@ export default function FeaturesPage() {
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Simple mobile form with photo capture and GPS verification (in beta)</span>
                   </div>
+                </div>
+                <div className="pt-3 flex flex-wrap items-center gap-3">
+                  <GooglePlayBadge size="sm" theme="light" />
+                  <span className="text-xs text-slate-600 font-medium">
+                    Field app on Google Play — technicians install in one tap.
+                  </span>
                 </div>
               </div>
               <div className="bg-slate-900 text-white p-6 rounded-xl shadow-inner font-mono text-xs space-y-2">

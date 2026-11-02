@@ -42,3 +42,13 @@ next-env.d.ts
 !.env.example
 brag-output/
 skills-lock.json
+
+# Android build and secrets
+android/local.properties
+android/.gradle/
+android/build/
+android/app/build/
+*.keystore
+*.jks
+google-services.json
+android/app/google-services.json

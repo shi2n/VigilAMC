@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { SITE_CONFIG } from '@/lib/siteConfig';
+import { GooglePlayBadge } from '@/components/GooglePlayBadge';
 
 export function CorporateFooter() {
   return (
@@ -28,6 +29,13 @@ export function CorporateFooter() {
             <p className="text-sm text-[#A8A29E] max-w-md leading-relaxed">
               Fire safety AMC software - tracked, proven, reported.
             </p>
+            {/* Google Play Trust Badge */}
+            <div className="pt-1 flex flex-wrap items-center gap-3">
+              <GooglePlayBadge size="sm" theme="dark" />
+              <span className="text-xs text-[#A8A29E]">
+                Field app on Google Play — technicians install in one tap.
+              </span>
+            </div>
             <div className="pt-1 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[#A8A29E]">
               <a
                 href={`mailto:${SITE_CONFIG.CONTACT_EMAIL}`}
@@ -73,15 +81,28 @@ export function CorporateFooter() {
                   href="/technician"
                   className="inline-flex items-center min-h-[36px] hover:text-[#FAFAF9] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
                 >
-                  Field App
+                  Field App (Web PWA)
                 </Link>
+              </li>
+              <li>
+                <a
+                  href={SITE_CONFIG.GOOGLE_PLAY_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 min-h-[36px] text-[#FF8C42] hover:text-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
+                >
+                  <span>Google Play App</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#EA580C]/20 border border-[#EA580C]/30 text-[#FF8C42]">
+                    Android
+                  </span>
+                </a>
               </li>
               <li>
                 <Link
                   href="/login"
                   className="inline-flex items-center min-h-[36px] hover:text-[#FAFAF9] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
                 >
-                  Login
+                  Agency Login
                 </Link>
               </li>
             </ul>
@@ -93,6 +114,14 @@ export function CorporateFooter() {
               Company
             </h3>
             <ul className="space-y-1.5 text-sm text-[#A8A29E]">
+              <li>
+                <Link
+                  href="/privacy"
+                  className="inline-flex items-center min-h-[36px] hover:text-[#FAFAF9] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
+                >
+                  Privacy Policy &amp; DPDP Notice
+                </Link>
+              </li>
               <li>
                 <a
                   href={`mailto:${SITE_CONFIG.CONTACT_EMAIL}`}

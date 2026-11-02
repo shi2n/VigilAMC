@@ -55,6 +55,17 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import {
+  isNativePlatform,
+  registerNativeLifecycle,
+  registerNativePush,
+  unregisterNativePush,
+  scheduleOfflineDueReminders,
+  capturePhotoNative,
+  getNativeLocation,
+  watchNativeLocation,
+  clearNativeWatch,
+} from '@/lib/native/nativeBridge';
+import {
   compressPhotoToBudget,
   createInspectionThumbnail,
   compressSignatureToBudget,
@@ -356,7 +367,21 @@ export default function TechnicianPWA() {
   );
 
   // Re-request GPS on open / foreground
-  const requestLiveLocation = useCallback(() => {
+  const requestLiveLocation = useCallback(async () => {
+    if (isNativePlatform()) {
+      setGpsStatus('LOCKING');
+      const nativeCoords = await getNativeLocation();
+      if (nativeCoords) {
+        setGpsLocation(nativeCoords);
+        setGpsStatus('LOCKED');
+        lastKnownGpsRef.current = nativeCoords;
+        try {
+          localStorage.setItem('vigil_last_known_gps', JSON.stringify(nativeCoords));
+        } catch {}
+        return;
+      }
+    }
+
     if (typeof window === 'undefined' || !('geolocation' in navigator)) {
       setGpsStatus('DENIED');
       return;
@@ -405,6 +430,47 @@ export default function TechnicianPWA() {
   // 2. CONTINUOUS GPS WATCHER (WITH BASEMENT CACHE PERSISTENCE)
   // ----------------------------------------------------------------------------------
   useEffect(() => {
+    let nativeWatchId: string | null = null;
+    let isCancelled = false;
+
+    if (isNativePlatform()) {
+      setGpsStatus('LOCKING');
+      try {
+        const savedGps = localStorage.getItem('vigil_last_known_gps');
+        if (savedGps) lastKnownGpsRef.current = JSON.parse(savedGps);
+      } catch {}
+
+      watchNativeLocation(
+        (coords) => {
+          if (isCancelled) return;
+          setGpsLocation(coords);
+          setGpsStatus('LOCKED');
+          lastKnownGpsRef.current = coords;
+          try {
+            localStorage.setItem('vigil_last_known_gps', JSON.stringify(coords));
+          } catch {}
+        },
+        (err) => {
+          if (isCancelled) return;
+          console.warn('Native GPS drop:', err);
+          if (lastKnownGpsRef.current) {
+            setGpsLocation({ ...lastKnownGpsRef.current, isBasementCached: true });
+            setGpsStatus('BASEMENT_CACHED');
+          } else {
+            setGpsStatus('DENIED');
+          }
+        }
+      ).then((id) => {
+        if (!isCancelled) nativeWatchId = id;
+        else if (id) clearNativeWatch(id);
+      });
+
+      return () => {
+        isCancelled = true;
+        if (nativeWatchId) clearNativeWatch(nativeWatchId);
+      };
+    }
+
     if (typeof window !== 'undefined' && 'geolocation' in navigator) {
       setGpsStatus('LOCKING');
       try {
@@ -536,6 +602,8 @@ export default function TechnicianPWA() {
         }
 
         setTaskList(incomingTasks);
+        scheduleOfflineDueReminders(incomingTasks);
+        fetch('/api/technician/digest').catch(() => null);
         await setLocalCache('technician_tasks', incomingTasks);
       }
 
@@ -733,9 +801,41 @@ export default function TechnicianPWA() {
     }
   };
 
+  // Native Android Shell: Push notifications, FCM token registration & resume lifecycle
+  useEffect(() => {
+    if (!isNativePlatform()) return;
+
+    const unbindLifecycle = registerNativeLifecycle(async () => {
+      await loadDashboardData();
+    });
+
+    registerNativePush({
+      onNotificationReceived: (notif) => {
+        triggerToast(`🔔 ${notif.title || 'Task Notification'}`);
+        fetch('/api/technician/notifications')
+          .then((r) => r.json())
+          .then((d) => {
+            if (d.notifications) setNotifications(d.notifications);
+          })
+          .catch(() => null);
+      },
+      onNotificationTapped: (action) => {
+        const taskId = action.notification?.data?.taskId;
+        if (taskId) {
+          setActiveTab('TASKS');
+        }
+      },
+    });
+
+    return () => {
+      unbindLifecycle();
+    };
+  }, [loadDashboardData]);
+
   const handleSignOut = async () => {
     try {
       localStorage.removeItem('vigil_tech_token');
+      await unregisterNativePush().catch(() => null);
       await fetch('/api/technician/logout', { method: 'POST' }).catch(() => {});
       await supabase.auth.signOut().catch(() => {});
     } finally {
@@ -763,10 +863,7 @@ export default function TechnicianPWA() {
   // ----------------------------------------------------------------------------------
   // 7. FEATURE E: PHOTO STAMP UPGRADE (TIME + DAY + GPS IN PIXELS AND STORED)
   // ----------------------------------------------------------------------------------
-  const handlePhotoCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processPhotoFile = async (file: File) => {
     try {
       setIsProcessingPhoto(true);
       setPhotoStampConfirmed(false);
@@ -895,6 +992,31 @@ export default function TechnicianPWA() {
       triggerToast('Error capturing photo. Please try again.');
     } finally {
       setIsProcessingPhoto(false);
+    }
+  };
+
+  const handlePhotoCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await processPhotoFile(file);
+    }
+  };
+
+  const handleCameraTrigger = async () => {
+    if (isNativePlatform()) {
+      try {
+        setIsProcessingPhoto(true);
+        const nativeFile = await capturePhotoNative();
+        if (nativeFile) {
+          await processPhotoFile(nativeFile);
+        }
+      } catch (err) {
+        console.warn('Native camera capture error:', err);
+      } finally {
+        setIsProcessingPhoto(false);
+      }
+    } else {
+      fileInputRef.current?.click();
     }
   };
 
@@ -3101,7 +3223,7 @@ export default function TechnicianPWA() {
                   <button
                     type="button"
                     disabled={isProcessingPhoto}
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={handleCameraTrigger}
                     className="w-full min-h-[52px] py-4 rounded-2xl bg-[#FFF8F2] border-2 border-dashed border-[#FED7AA] hover:border-[#C2410C] text-slate-700 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs"
                   >
                     <Camera className="w-5 h-5 text-[#C2410C]" />

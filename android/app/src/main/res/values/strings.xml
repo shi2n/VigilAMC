@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">VigilAMC Field</string>
+    <string name="title_activity_main">VigilAMC Field</string>
+    <string name="package_name">com.vigilamc.field</string>
+    <string name="custom_url_scheme">com.vigilamc.field</string>
+</resources>

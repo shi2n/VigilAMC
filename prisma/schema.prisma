@@ -74,6 +74,7 @@ model UserProfile {
   assignedJobs      Job[]                          @relation("TechnicianJobs")
   assignedBuildings TechnicianBuildingAssignment[]
   syncQueueItems    SyncQueue[]
+  deviceTokens      DeviceToken[]
   createdAt         DateTime                       @default(now())
   updatedAt         DateTime                       @updatedAt
 
@@ -454,6 +455,7 @@ model Notification {
   type           String        @default("INFO") // INFO, WARNING, ALERT, SUCCESS
   link           String?
   read           Boolean       @default(false)
+  pushSent       Boolean       @default(false)
   createdAt      DateTime      @default(now())
 
   @@index([organizationId])
@@ -539,4 +541,16 @@ model Feedback {
   createdAt       DateTime @default(now())
 
   @@index([organizationId])
+}
+
+model DeviceToken {
+  id           String      @id @default(cuid())
+  technicianId String
+  technician   UserProfile @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  fcmToken     String      @unique
+  platform     String      @default("android")
+  lastSeenAt   DateTime    @default(now())
+  createdAt    DateTime    @default(now())
+
+  @@index([technicianId])
 }
