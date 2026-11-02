@@ -1,23 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Sora, Inter } from "next/font/google";
+// Google Fonts loaded reliably via CSS to eliminate CI build-time network fragility
 import "./globals.css";
 import { SiteLayout } from "@/components/SiteLayout";
 import { SITE_CONFIG } from "@/lib/siteConfig";
 import { Toaster } from "@/components/ui/sonner";
 
-const sora = Sora({
-  subsets: ["latin"],
-  weight: ["600", "700"],
-  variable: "--font-sora",
-  display: "swap",
-});
+const sora = { variable: "font-sora" };
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-inter",
-  display: "swap",
-});
+const inter = { variable: "font-inter" };
 
 export const viewport: Viewport = {
   themeColor: "#C2410C",
