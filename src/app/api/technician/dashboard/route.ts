@@ -52,7 +52,7 @@ export async function GET(request: Request) {
     const isAdmin = role === 'ORG_ADMIN' || role === 'SUPER_ADMIN';
 
     // Fetch assignments, jobs, workOrders, and recentInspections in parallel
-    const [assignments, jobs, workOrders, recentInspections] = await Promise.all([
+    const [assignments, jobs, workOrders, recentInspections, pendingDeletion] = await Promise.all([
       isAdmin
         ? Promise.resolve([])
         : (db as any).technicianBuildingAssignment.findMany({
@@ -114,6 +114,10 @@ export async function GET(request: Request) {
         orderBy: { date: 'desc' },
         take: 25,
       }),
+      (db as any).accountDeletionRequest.findFirst({
+        where: { userProfileId: userId, status: 'PENDING' },
+        orderBy: { requestedAt: 'desc' },
+      }).catch(() => null),
     ]);
 
     let assignedBuildings = assignments.map((a: any) => a.building);
@@ -233,7 +237,22 @@ export async function GET(request: Request) {
         role: auth.profile.role,
         agencyName: auth.organization.name,
         preferredLanguage: auth.profile.preferredLanguage || 'en',
+        hasPendingDeletion: !!pendingDeletion,
+        pendingDeletionRequest: pendingDeletion
+          ? {
+              id: pendingDeletion.id,
+              requestedAt: pendingDeletion.requestedAt,
+              status: pendingDeletion.status,
+            }
+          : null,
       },
+      pendingDeletionRequest: pendingDeletion
+        ? {
+            id: pendingDeletion.id,
+            requestedAt: pendingDeletion.requestedAt,
+            status: pendingDeletion.status,
+          }
+        : null,
       todayCounters: stats.todayCounters,
       stats,
       assignedBuildings: evaluatedBuildings,

@@ -132,6 +132,19 @@ export interface AdminDictionary {
   guideChecklistDesc: string;
   guideGoTo: string;
   guideDismiss: string;
+  // Account Deletion Requests
+  deletionRequestedBadge: string;
+  deletionRequestsPanelTitle: string;
+  deletionRequestsPanelSubtitle: string;
+  deletionColStaff: string;
+  deletionColRequested: string;
+  deletionColRecords: string;
+  deletionColActions: string;
+  btnApproveDeletion: string;
+  confirmDeletionTitle: string;
+  confirmDeletionMessage: string;
+  deletionApprovedSuccess: string;
+  noPendingDeletionRequests: string;
 }
 
 const DICTIONARY_EN: AdminDictionary = {
@@ -220,6 +233,20 @@ const DICTIONARY_EN: AdminDictionary = {
   guideChecklistDesc: 'Complete these quick steps to get your fire agency running smoothly.',
   guideGoTo: 'Go to section →',
   guideDismiss: 'Skip for now',
+
+  // Account Deletion Requests
+  deletionRequestedBadge: 'Deletion requested',
+  deletionRequestsPanelTitle: 'Account Deletion Requests',
+  deletionRequestsPanelSubtitle: 'Field staff deletion requests under DPDP Act 2023 (7-day compliance window)',
+  deletionColStaff: 'Staff Member',
+  deletionColRequested: 'Requested On',
+  deletionColRecords: 'Statutory Records',
+  deletionColActions: 'Action',
+  btnApproveDeletion: 'Approve & Anonymize',
+  confirmDeletionTitle: 'Permanently Anonymize Staff Account?',
+  confirmDeletionMessage: 'This action is PERMANENT and cannot be undone. The technician\'s login access, mobile number, and personal details will be irreversibly anonymized. Statutory fire safety inspection records and photos are preserved per Indian compliance.',
+  deletionApprovedSuccess: 'Staff account successfully anonymized',
+  noPendingDeletionRequests: 'No pending account deletion requests.',
 };
 
 const DICTIONARY_HI: Partial<AdminDictionary> = {

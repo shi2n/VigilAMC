@@ -25,6 +25,7 @@ import {
   Smartphone,
 } from 'lucide-react';
 import { SeatCounter, SeatUsage } from './SeatCounter';
+import { AdminDictionary, adminDictEnglish } from '@/lib/i18n/admin';
 
 interface TechnicianManagementProps {
   onNavigateToSubscription?: () => void;
@@ -36,6 +37,7 @@ interface TechnicianManagementProps {
   initialPlan?: any;
   agencyName?: string;
   onRefreshDashboard?: () => Promise<void> | void;
+  t?: AdminDictionary;
 }
 
 
@@ -80,12 +82,70 @@ export function TechnicianManagement({
   initialPlan,
   agencyName = 'Fire Safety AMC Agency',
   onRefreshDashboard,
+  t = adminDictEnglish,
 }: TechnicianManagementProps) {
   const [technicians, setTechnicians] = useState<any[]>(initialTechnicians || []);
   const [buildings, setBuildings] = useState<any[]>(initialBuildings || []);
   const [seatUsage, setSeatUsage] = useState<SeatUsage | undefined>(initialSeatUsage);
   const [plan, setPlan] = useState<any>(initialPlan || null);
   const [loading, setLoading] = useState(false);
+
+  // Account Deletion Requests (DPDP Right-to-Erasure)
+  const [deletionRequests, setDeletionRequests] = useState<any[]>([]);
+  const [deletionLoading, setDeletionLoading] = useState(false);
+  const [confirmApproveModal, setConfirmApproveModal] = useState<any | null>(null);
+  const [approveSubmitting, setApproveSubmitting] = useState(false);
+
+  const loadDeletionRequests = async () => {
+    try {
+      setDeletionLoading(true);
+      const res = await fetch('/api/admin/deletion-requests');
+      if (res.ok) {
+        const data = await res.json();
+        setDeletionRequests(data.requests || []);
+      }
+    } catch (e) {
+      // ignore
+    } finally {
+      setDeletionLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDeletionRequests();
+  }, []);
+
+  const handleApproveDeletion = async (request: any) => {
+    setApproveSubmitting(true);
+    try {
+      const res = await fetch(`/api/admin/deletion-requests/${request.id}/approve`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || 'Failed to approve account deletion');
+        return;
+      }
+      showToast(t.deletionApprovedSuccess || 'Staff account successfully anonymized');
+      setConfirmApproveModal(null);
+      await loadDeletionRequests();
+      // Update local technician status
+      setTechnicians((prev) =>
+        prev.map((tech) =>
+          tech.id === request.userProfileId
+            ? { ...tech, fullName: 'Deleted user', status: 'INACTIVE', phone: '-', email: 'deleted@anonymized.vigilamc.app', hasPendingDeletion: false }
+            : tech
+        )
+      );
+      if (onRefreshDashboard) {
+        await onRefreshDashboard();
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Error processing deletion approval');
+    } finally {
+      setApproveSubmitting(false);
+    }
+  };
 
   // Store recently created or reset PINs in localStorage so WhatsApp & Copy buttons always know the PIN
   const [pinMap, setPinMap] = useState<Record<string, string>>({});
@@ -597,6 +657,85 @@ export function TechnicianManagement({
         </div>
       )}
 
+      {/* DPDP Account Deletion Requests Panel */}
+      {deletionRequests.filter((r) => r.status === 'PENDING').length > 0 && (
+        <div className="bg-rose-50/60 border-2 border-rose-200 rounded-2xl p-5 space-y-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-rose-100 text-[#DC2626] flex items-center justify-center font-bold">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-display font-black text-sm text-slate-900 flex items-center gap-2">
+                  <span>{t.deletionRequestsPanelTitle || 'Account Deletion Requests'}</span>
+                  <span className="px-2 py-0.5 rounded-full bg-[#DC2626] text-white text-[10px] font-bold">
+                    {deletionRequests.filter((r) => r.status === 'PENDING').length}
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-600">
+                  {t.deletionRequestsPanelSubtitle || 'Field staff deletion requests under DPDP Act 2023 (7-day compliance window)'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={loadDeletionRequests}
+              className="text-xs text-rose-700 hover:text-rose-900 font-semibold underline"
+            >
+              Refresh
+            </button>
+          </div>
+
+          <div className="overflow-x-auto bg-white rounded-xl border border-rose-200">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-rose-100 bg-rose-50/40 text-slate-600 text-[10px] font-bold uppercase tracking-wider">
+                  <th className="py-2.5 px-3.5">{t.deletionColStaff || 'Staff Member'}</th>
+                  <th className="py-2.5 px-3.5">Mobile / Staff ID</th>
+                  <th className="py-2.5 px-3.5">{t.deletionColRequested || 'Requested On'}</th>
+                  <th className="py-2.5 px-3.5">{t.deletionColRecords || 'Statutory Records'}</th>
+                  <th className="py-2.5 px-3.5 text-right">{t.deletionColActions || 'Action'}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-rose-100 text-slate-700">
+                {deletionRequests
+                  .filter((r) => r.status === 'PENDING')
+                  .map((req) => (
+                    <tr key={req.id} className="hover:bg-rose-50/50 transition-colors">
+                      <td className="py-3 px-3.5 font-bold text-slate-900">
+                        {req.staffName}
+                      </td>
+                      <td className="py-3 px-3.5 font-mono text-[11px]">
+                        {req.phone !== '-' ? req.phone : req.employeeId}
+                      </td>
+                      <td className="py-3 px-3.5 text-slate-500 text-[11px]">
+                        {new Date(req.requestedAt).toLocaleDateString('en-IN', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        })}
+                      </td>
+                      <td className="py-3 px-3.5">
+                        <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-semibold">
+                          {req.inspectionCount} inspections (preserved)
+                        </span>
+                      </td>
+                      <td className="py-3 px-3.5 text-right">
+                        <button
+                          type="button"
+                          onClick={() => setConfirmApproveModal(req)}
+                          className="px-3 py-1.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-xs transition-all active:scale-95"
+                        >
+                          {t.btnApproveDeletion || 'Approve & Anonymize'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* 3. Technicians Table */}
       <div className="bg-white border border-[#FED7AA] rounded-2xl overflow-hidden shadow-sm">
         {loading && technicians.length === 0 ? (
@@ -653,8 +792,16 @@ export function TechnicianManagement({
                           {tech.fullName.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <div className="font-bold text-slate-900 group-hover:text-[#C2410C] transition-colors">
-                            {tech.fullName}
+                          <div className="flex items-center gap-2">
+                            <div className="font-bold text-slate-900 group-hover:text-[#C2410C] transition-colors">
+                              {tech.fullName}
+                            </div>
+                            {tech.hasPendingDeletion && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
+                                <AlertTriangle className="w-3 h-3 text-rose-600" />
+                                {t.deletionRequestedBadge || 'Deletion requested'}
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span className="px-1.5 py-0.5 rounded bg-[#FFF0E6] text-[#1C1917] border border-[#FED7AA] font-mono text-[10px] font-bold">
@@ -1471,6 +1618,51 @@ export function TechnicianManagement({
                 className="px-4 py-2 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-500 text-white transition-colors"
               >
                 Confirm Removal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Permanent Anonymization Confirmation Modal (Danger #DC2626) */}
+      {confirmApproveModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-rose-200 shadow-2xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3 text-[#DC2626]">
+              <div className="w-12 h-12 rounded-2xl bg-rose-100 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-6 h-6 text-[#DC2626]" />
+              </div>
+              <div>
+                <h3 className="font-display font-black text-base text-slate-900">
+                  {t.confirmDeletionTitle || 'Permanently Anonymize Staff Account?'}
+                </h3>
+                <p className="text-xs text-rose-600 font-semibold">DPDP Act 2023 • Irreversible Action</p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-slate-700 space-y-2 leading-relaxed">
+              <p className="font-medium">
+                {t.confirmDeletionMessage || 'This action is PERMANENT and cannot be undone. The technician\'s login access, mobile number, and personal details will be irreversibly anonymized. Statutory fire safety inspection records and photos are preserved per Indian compliance.'}
+              </p>
+              <div className="pt-2 border-t border-rose-200/60 font-semibold text-slate-900">
+                Target Staff: <span className="font-mono text-rose-800">{confirmApproveModal.staffName}</span> ({confirmApproveModal.employeeId || confirmApproveModal.phone})
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmApproveModal(null)}
+                className="w-full py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={approveSubmitting}
+                onClick={() => handleApproveDeletion(confirmApproveModal)}
+                className="w-full py-2.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white font-bold text-xs transition-colors shadow-xs active:scale-95 disabled:opacity-50"
+              >
+                {approveSubmitting ? 'Processing...' : (t.btnApproveDeletion || 'Approve & Anonymize')}
               </button>
             </div>
           </div>

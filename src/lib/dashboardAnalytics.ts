@@ -38,8 +38,9 @@ export function computeAttentionDigest(params: {
   workOrders: any[];
   pendingSyncCount: number;
   newFeedbackCount: number;
+  pendingDeletionCount?: number;
 }): AttentionDigestItem[] {
-  const { overdueCount, dueSoonCount, equipments, workOrders, pendingSyncCount, newFeedbackCount } = params;
+  const { overdueCount, dueSoonCount, equipments, workOrders, pendingSyncCount, newFeedbackCount, pendingDeletionCount } = params;
   const digest: AttentionDigestItem[] = [];
   const now = new Date();
 
@@ -123,6 +124,19 @@ export function computeAttentionDigest(params: {
       count: newFeedbackCount,
       deepLinkTab: 'SETTINGS',
       badgeCls: 'bg-[#FFF0E6] text-[#C2410C] border-[#FED7AA]',
+    });
+  }
+
+  // 6. Pending DPDP account deletion requests from field staff (7-day compliance window)
+  if (pendingDeletionCount && pendingDeletionCount > 0) {
+    digest.push({
+      id: 'digest-deletion-requests',
+      type: 'CRITICAL',
+      title: 'Account Deletion Requested',
+      message: `${pendingDeletionCount} field staff member${pendingDeletionCount > 1 ? 's have' : ' has'} requested account deletion (DPDP Act compliance action required within 7 days)`,
+      count: pendingDeletionCount,
+      deepLinkTab: 'FIELD_TEAM',
+      badgeCls: 'bg-rose-50 text-[#DC2626] border-rose-200',
     });
   }
 

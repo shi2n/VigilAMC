@@ -50,5 +50,8 @@ android/build/
 android/app/build/
 *.keystore
 *.jks
+keystore.properties
+android/keystore.properties
+android/.keystore_secret.json
 google-services.json
 android/app/google-services.json

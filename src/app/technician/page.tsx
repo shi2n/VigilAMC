@@ -34,6 +34,7 @@ import {
   ArrowLeft,
   PenTool,
   Lock,
+  Shield,
   User,
   Sparkles,
   Eye,
@@ -150,6 +151,11 @@ export default function TechnicianPWA() {
   const [authChecking, setAuthChecking] = useState(true);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [isAdminTester, setIsAdminTester] = useState(false);
+  const [pendingDeletionRequest, setPendingDeletionRequest] = useState<any>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePinInput, setDeletePinInput] = useState('');
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [cancelSubmitting, setCancelSubmitting] = useState(false);
 
   // In-App Login Form
   const [loginIdentifier, setLoginIdentifier] = useState('');
@@ -582,6 +588,12 @@ export default function TechnicianPWA() {
         await setLocalCache('technician_dashboard', dashJson);
         await setLocalCache('technician_profile', dashJson.profile);
 
+        if (dashJson.pendingDeletionRequest || dashJson.profile?.pendingDeletionRequest) {
+          setPendingDeletionRequest(dashJson.pendingDeletionRequest || dashJson.profile?.pendingDeletionRequest);
+        } else {
+          setPendingDeletionRequest(null);
+        }
+
         // Apply profile language if available
         if (dashJson.profile?.preferredLanguage && TRANSLATIONS[dashJson.profile.preferredLanguage as SupportedLanguage]) {
           setCurrentLang(dashJson.profile.preferredLanguage as SupportedLanguage);
@@ -831,6 +843,60 @@ export default function TechnicianPWA() {
       unbindLifecycle();
     };
   }, [loadDashboardData]);
+
+
+  // ----------------------------------------------------------------------------------
+  // ACCOUNT DELETION HANDLERS (DPDP Act 2023 Right-to-Erasure)
+  // ----------------------------------------------------------------------------------
+  const handleRequestDeletion = async () => {
+    if (!deletePinInput || !deletePinInput.trim()) {
+      triggerToast(t.pinRequiredToast || 'Please enter your 6-digit PIN');
+      return;
+    }
+    setDeleteSubmitting(true);
+    try {
+      const res = await fetch('/api/technician/delete-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'request', pin: deletePinInput.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        triggerToast(data.error || 'Failed to submit deletion request');
+        return;
+      }
+      setPendingDeletionRequest(data.request || { status: 'PENDING' });
+      setShowDeleteModal(false);
+      setDeletePinInput('');
+      triggerToast(t.deletionRequestedToast || 'Account deletion request submitted');
+    } catch (err: any) {
+      triggerToast(err.message || 'Network error while requesting deletion');
+    } finally {
+      setDeleteSubmitting(false);
+    }
+  };
+
+  const handleCancelDeletion = async () => {
+    setCancelSubmitting(true);
+    try {
+      const res = await fetch('/api/technician/delete-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'cancel' }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        triggerToast(data.error || 'Failed to cancel deletion request');
+        return;
+      }
+      setPendingDeletionRequest(null);
+      triggerToast(t.deletionCancelledToast || 'Account deletion request cancelled');
+    } catch (err: any) {
+      triggerToast(err.message || 'Network error while cancelling deletion');
+    } finally {
+      setCancelSubmitting(false);
+    }
+  };
 
   const handleSignOut = async () => {
     try {
@@ -2956,6 +3022,83 @@ export default function TechnicianPWA() {
               </div>
             </div>
 
+
+            {/* Persistent Deletion Request Banner */}
+            {pendingDeletionRequest && pendingDeletionRequest.status === 'PENDING' && (
+              <div className="p-4 rounded-2xl bg-amber-50 border-2 border-[#DC2626] shadow-xs space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center shrink-0 text-[#DC2626]">
+                    <AlertTriangle className="w-4 h-4" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-black text-[#DC2626] uppercase tracking-wider">
+                      {t.deletionPendingBannerTitle || 'Account Deletion Requested'}
+                    </h4>
+                    <p className="text-[11px] text-slate-700 leading-relaxed font-medium">
+                      {t.deletionPendingBannerText || 'Your account deletion request has been submitted and is pending review by your agency administrator (processed within 7 days). Your account remains active until approved.'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex justify-end pt-1 border-t border-rose-200">
+                  <button
+                    type="button"
+                    onClick={handleCancelDeletion}
+                    disabled={cancelSubmitting}
+                    className="px-3.5 py-1.5 rounded-xl bg-white border border-rose-300 hover:bg-rose-50 text-[#DC2626] text-xs font-bold shadow-xs active:scale-95 transition-all disabled:opacity-50"
+                  >
+                    {cancelSubmitting ? '...' : (t.cancelDeletionRequestBtn || 'Cancel Request')}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Account & Data Card (DPDP Right-to-Erasure) */}
+            <div className="bg-white rounded-2xl border border-[#FED7AA] shadow-xs p-4 space-y-3">
+              <div className="flex items-center gap-2 text-slate-900 font-bold text-xs">
+                <Shield className="w-4 h-4 text-[#EA580C]" />
+                <span>{t.accountAndDataTitle || 'Account & Data'}</span>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between pb-2">
+                  <span className="text-[11px] font-black text-[#DC2626] uppercase tracking-wider">
+                    {t.dangerZoneTitle || 'Danger Zone'}
+                  </span>
+                </div>
+                {pendingDeletionRequest && pendingDeletionRequest.status === 'PENDING' ? (
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs">
+                    <div className="flex items-center gap-2 text-[#DC2626] font-semibold">
+                      <span className="w-2 h-2 rounded-full bg-[#DC2626] animate-pulse" />
+                      <span>{t.deletionPendingBannerTitle || 'Deletion Requested'}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCancelDeletion}
+                      disabled={cancelSubmitting}
+                      className="text-xs text-[#DC2626] font-bold underline hover:text-[#991B1B]"
+                    >
+                      {cancelSubmitting ? '...' : (t.cancelDeletionRequestBtn || 'Cancel')}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDeletePinInput('');
+                      setShowDeleteModal(true);
+                    }}
+                    className="w-full p-3 rounded-xl border border-rose-300 bg-rose-50 hover:bg-rose-100 text-[#DC2626] text-xs font-bold flex items-center justify-between transition-colors shadow-xs"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Trash2 className="w-4 h-4" />
+                      {t.requestAccountDeletionBtn || 'Request account deletion'}
+                    </span>
+                    <span>›</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Quick Settings list */}
             <div className="bg-white rounded-2xl border border-[#FED7AA] shadow-xs divide-y divide-slate-100 text-xs font-semibold">
               <button
@@ -3010,6 +3153,84 @@ export default function TechnicianPWA() {
                 <span className="text-xs">›</span>
               </button>
             </div>
+
+            {/* Account Deletion Confirmation Modal */}
+            {showDeleteModal && (
+              <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl border border-[#FED7AA] shadow-2xl max-w-sm w-full p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="flex items-center gap-3 text-[#DC2626]">
+                    <div className="w-10 h-10 rounded-2xl bg-rose-100 flex items-center justify-center shrink-0">
+                      <AlertTriangle className="w-5 h-5 text-[#DC2626]" />
+                    </div>
+                    <div>
+                      <h3 className="font-display font-black text-base text-slate-900">
+                        {t.deleteAccountModalTitle || 'Request Account Deletion'}
+                      </h3>
+                      <p className="text-[10px] text-slate-500 font-medium">DPDP Act 2023 • Right to Erasure</p>
+                    </div>
+                  </div>
+
+                  {/* Information list */}
+                  <div className="p-3.5 rounded-2xl bg-[#FFF8F2] border border-[#FED7AA] text-[11px] space-y-2 text-slate-700">
+                    <p className="leading-snug">
+                      <strong className="text-rose-700 block mb-0.5">• What is deleted:</strong>
+                      {t.deleteWhatDeleted}
+                    </p>
+                    <p className="leading-snug">
+                      <strong className="text-slate-900 block mb-0.5">• What is retained:</strong>
+                      {t.deleteWhatRetained}
+                    </p>
+                    <p className="leading-snug">
+                      <strong className="text-slate-900 block mb-0.5">• Processing time:</strong>
+                      {t.deleteProcessingTime}
+                    </p>
+                    <p className="leading-snug">
+                      <strong className="text-emerald-700 block mb-0.5">• Cancellable:</strong>
+                      {t.deleteCanCancel}
+                    </p>
+                  </div>
+
+                  {/* Re-authentication PIN */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-800 block">
+                      {t.deleteEnterPinPrompt || 'Enter your 6-digit login PIN to confirm:'}
+                    </label>
+                    <input
+                      type="password"
+                      inputMode="numeric"
+                      maxLength={8}
+                      value={deletePinInput}
+                      onChange={(e) => setDeletePinInput(e.target.value)}
+                      placeholder="••••••"
+                      className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-center text-lg font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-[#DC2626]"
+                      autoFocus
+                    />
+                  </div>
+
+                  {/* Modal Actions */}
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowDeleteModal(false);
+                        setDeletePinInput('');
+                      }}
+                      className="w-full py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50 transition-colors"
+                    >
+                      {t.deleteModalCancel || 'Keep Account'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRequestDeletion}
+                      disabled={deleteSubmitting || deletePinInput.trim().length < 4}
+                      className="w-full py-2.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white font-bold text-xs transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
+                    >
+                      {deleteSubmitting ? '...' : (t.deleteConfirmSubmitBtn || 'Confirm Deletion')}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

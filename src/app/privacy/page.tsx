@@ -139,6 +139,9 @@ export default function PrivacyPolicyPage() {
               <li>The right to erasure of personal data that is no longer necessary for compliance or contractual purposes.</li>
               <li>The right to readily available grievance redressal.</li>
             </ul>
+            <p>
+              You may also request account deletion directly from the app: Profile &rarr; Request account deletion. Requests are processed within 7 days.
+            </p>
           </section>
 
           <section className="space-y-3">

@@ -44,6 +44,10 @@ export async function GET(request: Request) {
           assignedJobs: {
             select: { id: true, status: true },
           },
+          deletionRequests: {
+            where: { status: 'PENDING' },
+            select: { id: true, requestedAt: true, status: true },
+          },
         },
         orderBy: { createdAt: 'desc' },
       }),
@@ -73,6 +77,8 @@ export async function GET(request: Request) {
         activeJobsCount: tech.assignedJobs.filter(
           (j: any) => j.status === 'ASSIGNED' || j.status === 'IN_PROGRESS'
         ).length,
+        hasPendingDeletion: tech.deletionRequests && tech.deletionRequests.length > 0,
+        pendingDeletionRequest: tech.deletionRequests?.[0] || null,
       };
     });
 

@@ -101,6 +101,7 @@ export async function GET(request: Request) {
       techniciansRaw,
       pendingSyncCount,
       newFeedbackCount,
+      pendingDeletionCount,
     ] = await Promise.all([
       (db as any).client.findMany({
         where: { organizationId },
@@ -249,6 +250,10 @@ export async function GET(request: Request) {
           assignedJobs: {
             select: { id: true, status: true },
           },
+          deletionRequests: {
+            where: { status: 'PENDING' },
+            select: { id: true, requestedAt: true, status: true },
+          },
         },
         orderBy: { createdAt: 'desc' },
       }),
@@ -260,6 +265,12 @@ export async function GET(request: Request) {
       }).catch(() => 0),
       (db as any).feedback.count({
         where: { organizationId },
+      }).catch(() => 0),
+      (db as any).accountDeletionRequest.count({
+        where: {
+          organizationId,
+          status: 'PENDING',
+        },
       }).catch(() => 0),
     ]);
 
@@ -434,6 +445,8 @@ export async function GET(request: Request) {
         activeJobsCount: (tech.assignedJobs || []).filter(
           (j: any) => j.status === 'ASSIGNED' || j.status === 'IN_PROGRESS'
         ).length,
+        hasPendingDeletion: tech.deletionRequests && tech.deletionRequests.length > 0,
+        pendingDeletionRequest: tech.deletionRequests?.[0] || null,
       };
     });
 
@@ -525,6 +538,7 @@ export async function GET(request: Request) {
       workOrders: workOrdersRaw,
       pendingSyncCount: pendingSyncCount || 0,
       newFeedbackCount: newFeedbackCount || 0,
+      pendingDeletionCount: pendingDeletionCount || 0,
     });
 
     const analytics = computeTrendAnalytics({

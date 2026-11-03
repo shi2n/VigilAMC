@@ -75,6 +75,7 @@ model UserProfile {
   assignedBuildings TechnicianBuildingAssignment[]
   syncQueueItems    SyncQueue[]
   deviceTokens      DeviceToken[]
+  deletionRequests  AccountDeletionRequest[]
   createdAt         DateTime                       @default(now())
   updatedAt         DateTime                       @updatedAt
 
@@ -106,6 +107,7 @@ model Organization {
   reports        ComplianceReport[]
   notifications  Notification[]
   activityLogs   ActivityLog[]
+  deletionRequests AccountDeletionRequest[]
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 }
@@ -553,4 +555,23 @@ model DeviceToken {
   createdAt    DateTime    @default(now())
 
   @@index([technicianId])
+}
+
+model AccountDeletionRequest {
+  id             String       @id @default(cuid())
+  userProfileId  String
+  userProfile    UserProfile  @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  status         String       @default("PENDING") // PENDING, PROCESSED, CANCELLED
+  reason         String?
+  requestedAt    DateTime     @default(now())
+  processedAt    DateTime?
+  processedBy    String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([userProfileId])
+  @@index([organizationId, status])
+  @@index([status])
 }
