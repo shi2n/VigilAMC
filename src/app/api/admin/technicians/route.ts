@@ -140,7 +140,7 @@ export async function POST(request: Request) {
     }
 
     // 1. Parallelize initial validation & queries to minimize DB roundtrips to Supabase
-    let resolvedEmployeeId = (employeeId || '').trim().toUpperCase();
+    let resolvedEmployeeId = (employeeId || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
     const cleanEmpSlug = resolvedEmployeeId
       ? resolvedEmployeeId.toLowerCase().replace(/[^a-z0-9]/g, '')
       : 'tech';
@@ -190,17 +190,10 @@ export async function POST(request: Request) {
     }
 
     if (!resolvedEmployeeId) {
-      let maxNum = 100;
-      for (const t of (existingTechs as any[])) {
-        const match = String(t.employeeId || '').match(/(\d+)/);
-        if (match) {
-          const n = parseInt(match[1], 10);
-          if (!isNaN(n) && n >= 100 && n < 99999 && n > maxNum) {
-            maxNum = n;
-          }
-        }
-      }
-      resolvedEmployeeId = `TECH-${maxNum + 1}`;
+      const firstName = (trimmedName || '').trim().split(/\s+/)[0] || '';
+      const nameSlug = firstName.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 10) || 'staff';
+      const randomSuffix = crypto.randomBytes(2).toString('hex');
+      resolvedEmployeeId = `tech-${nameSlug}-${randomSuffix}`.toLowerCase();
     }
 
     let normalizedEmail = tentativeEmail;

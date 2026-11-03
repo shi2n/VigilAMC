@@ -49,20 +49,30 @@ function slugify(text: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
+function generateRandomSuffix(len = 4): string {
+  const chars = '23456789abcdefghjkmnpqrstuvwxyz';
+  let result = '';
+  for (let i = 0; i < len; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 function computeSystematicTechId(companyName: string, techName: string, existingList: any[] = []): string {
-  const compSlug = slugify(companyName || 'agency') || 'tech';
-  const nameSlug = slugify(techName || 'member') || 'user';
-  const base = `${compSlug}-${nameSlug}`;
+  const firstName = (techName || '').trim().split(/\s+/)[0] || '';
+  const nameSlug = slugify(firstName).slice(0, 10) || 'staff';
   
   const existingSlugs = new Set(
     existingList.map((t) => (t.employeeId || '').toLowerCase().trim())
   );
-  if (!existingSlugs.has(base)) return base;
-  let counter = 2;
-  while (existingSlugs.has(`${base}-${counter}`)) {
-    counter++;
+
+  for (let attempt = 0; attempt < 15; attempt++) {
+    const candidate = `tech-${nameSlug}-${generateRandomSuffix(4)}`.toLowerCase();
+    if (!existingSlugs.has(candidate)) {
+      return candidate;
+    }
   }
-  return `${base}-${counter}`;
+  return `tech-${nameSlug}-${Date.now().toString(36).slice(-4)}`.toLowerCase();
 }
 
 function normalizeWhatsAppPhone(rawPhone: string): string {
@@ -1024,8 +1034,8 @@ export function TechnicianManagement({
                     type="text"
                     value={addForm.employeeId}
                     onChange={(e) => setAddForm({ ...addForm, employeeId: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
-                    placeholder="e.g. agency-ramesh"
-                    className="w-full px-3 py-2.5 rounded-xl bg-[#FFF8F2] border border-slate-800 text-cyan-300 font-mono placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 uppercase"
+                    placeholder="e.g. tech-ramesh-7k2"
+                    className="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono lowercase placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C2410C]"
                   />
                 </div>
 
@@ -1265,8 +1275,8 @@ export function TechnicianManagement({
                   <input
                     type="text"
                     value={editForm.employeeId}
-                    onChange={(e) => setEditForm({ ...editForm, employeeId: e.target.value.toUpperCase() })}
-                    className="w-full px-3 py-2 rounded-xl bg-[#FFF8F2] border border-slate-800 text-white font-mono uppercase focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    onChange={(e) => setEditForm({ ...editForm, employeeId: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono lowercase placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C2410C]"
                   />
                 </div>
               </div>
@@ -1467,11 +1477,11 @@ export function TechnicianManagement({
               </div>
               <div>
                 <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold block">Mobile No</span>
-                <span className="text-slate-200 font-mono">{viewDetailTech.phone || '—'}</span>
+                <span className="text-slate-800 font-mono">{viewDetailTech.phone || '—'}</span>
               </div>
               <div>
                 <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold block">Staff ID</span>
-                <span className="text-cyan-300 font-mono font-bold">{viewDetailTech.employeeId || '—'}</span>
+                <span className="text-[#C2410C] font-mono font-bold lowercase">{viewDetailTech.employeeId || '—'}</span>
               </div>
               <div>
                 <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold block">Last Login</span>
