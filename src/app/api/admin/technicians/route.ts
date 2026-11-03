@@ -139,32 +139,59 @@ export async function POST(request: Request) {
       );
     }
 
-    // 1. Enforce Server-Side Technician Seat Limits
-    if (status === 'ACTIVE') {
-      const limitCheck = await checkPlanLimit(organizationId, 'technicians', 1);
-      if (!limitCheck.allowed) {
-        return NextResponse.json(
-          {
-            error: limitCheck.message,
-            code: 'PLAN_LIMIT_EXCEEDED',
-            current: limitCheck.current,
-            max: limitCheck.max,
-            planName: limitCheck.planName,
-          },
-          { status: 403 }
-        );
-      }
+    // 1. Parallelize initial validation & queries to minimize DB roundtrips to Supabase
+    let resolvedEmployeeId = (employeeId || '').trim().toUpperCase();
+    const cleanEmpSlug = resolvedEmployeeId
+      ? resolvedEmployeeId.toLowerCase().replace(/[^a-z0-9]/g, '')
+      : 'tech';
+    const tentativeEmail =
+      rawEmail && rawEmail.includes('@')
+        ? rawEmail
+        : cleanedPhone.length >= 10
+        ? `${cleanedPhone.slice(-10)}@tech.vigilamc.app`
+        : `${cleanEmpSlug}@tech.vigilamc.app`;
+
+    const [limitCheck, existingTechs, existingByEmail, validBuildings] = await Promise.all([
+      status === 'ACTIVE'
+        ? checkPlanLimit(organizationId, 'technicians', 1)
+        : Promise.resolve({ allowed: true, message: '', current: 0, max: 999999, planName: 'Basic' }),
+      !resolvedEmployeeId
+        ? (db as any).userProfile.findMany({
+            where: { organizationId, role: 'TECHNICIAN' },
+            select: { employeeId: true },
+          })
+        : Promise.resolve([]),
+      (db as any).userProfile.findUnique({
+        where: { email: tentativeEmail },
+        select: { id: true },
+      }),
+      Array.isArray(assignedBuildingIds) && assignedBuildingIds.length > 0
+        ? (db as any).building.findMany({
+            where: {
+              id: { in: assignedBuildingIds },
+              organizationId,
+            },
+            select: { id: true, name: true, address: true, city: true },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: limitCheck.message,
+          code: 'PLAN_LIMIT_EXCEEDED',
+          current: limitCheck.current,
+          max: limitCheck.max,
+          planName: limitCheck.planName,
+        },
+        { status: 403 }
+      );
     }
 
-    // 2. Auto-generate sequential employeeId (e.g. TECH-101) if blank
-    let resolvedEmployeeId = (employeeId || '').trim().toUpperCase();
     if (!resolvedEmployeeId) {
-      const existingTechs = await (db as any).userProfile.findMany({
-        where: { organizationId, role: 'TECHNICIAN' },
-        select: { employeeId: true },
-      });
       let maxNum = 100;
-      for (const t of existingTechs) {
+      for (const t of (existingTechs as any[])) {
         const match = String(t.employeeId || '').match(/(\d+)/);
         if (match) {
           const n = parseInt(match[1], 10);
@@ -176,30 +203,9 @@ export async function POST(request: Request) {
       resolvedEmployeeId = `TECH-${maxNum + 1}`;
     }
 
-    // Ensure employeeId uniqueness globally in UserProfile
-    const conflictEmpId = await (db as any).userProfile.findUnique({
-      where: { employeeId: resolvedEmployeeId },
-    });
-    if (conflictEmpId) {
-      resolvedEmployeeId = `${resolvedEmployeeId}-${Math.floor(10 + Math.random() * 90)}`;
-    }
-
-    // 3. Auto-generate clean deterministic internal auth email if admin left email blank
-    const cleanEmpSlug = resolvedEmployeeId.toLowerCase().replace(/[^a-z0-9]/g, '');
-    let normalizedEmail =
-      rawEmail && rawEmail.includes('@')
-        ? rawEmail
-        : cleanedPhone.length >= 10
-        ? `${cleanedPhone.slice(-10)}@tech.vigilamc.app`
-        : `${cleanEmpSlug}@tech.vigilamc.app`;
-
-    // Check if email or phone is already in use in user profiles
-    const existingByEmail = await (db as any).userProfile.findUnique({
-      where: { email: normalizedEmail },
-    });
+    let normalizedEmail = tentativeEmail;
     if (existingByEmail) {
       if (!rawEmail) {
-        // If auto-generated phone email collided across orgs, fallback to employeeId + org suffix
         normalizedEmail = `${cleanedPhone.slice(-10)}.${organizationId.slice(-4).toLowerCase()}@tech.vigilamc.app`;
       } else {
         return NextResponse.json(
@@ -256,7 +262,12 @@ export async function POST(request: Request) {
       authUserId = createData.user.id;
     }
 
-    // 5. Create UserProfile in database
+    // 5. Create UserProfile with building assignments in ONE single query (no extra roundtrips)
+    const buildingAssignData = (validBuildings as any[]).map((b: any) => ({
+      buildingId: b.id,
+      assignedById: auth.user.id,
+    }));
+
     const technician = await (db as any).userProfile.create({
       data: {
         id: authUserId,
@@ -267,36 +278,18 @@ export async function POST(request: Request) {
         role: 'TECHNICIAN',
         status: status || 'ACTIVE',
         organizationId: organizationId,
+        ...(buildingAssignData.length > 0
+          ? {
+              assignedBuildings: {
+                create: buildingAssignData,
+              },
+            }
+          : {}),
       },
     });
 
-    // 6. Create Building Assignments if provided
-    if (Array.isArray(assignedBuildingIds) && assignedBuildingIds.length > 0) {
-      const validBuildings = await (db as any).building.findMany({
-        where: {
-          id: { in: assignedBuildingIds },
-          organizationId,
-        },
-        select: { id: true },
-      });
-
-      if (validBuildings.length > 0) {
-        await Promise.all(
-          validBuildings.map((b: any) =>
-            (db as any).technicianBuildingAssignment.create({
-              data: {
-                technicianId: technician.id,
-                buildingId: b.id,
-                assignedById: auth.user.id,
-              },
-            })
-          )
-        );
-      }
-    }
-
-    // 7. Log audit action
-    await logAuditActivity({
+    // 6. Non-blocking audit action in background (does not block HTTP response)
+    logAuditActivity({
       organizationId,
       userId: auth.user.id,
       userEmail: auth.user.email,
@@ -304,36 +297,37 @@ export async function POST(request: Request) {
       entityType: 'UserProfile',
       entityId: technician.id,
       details: `Created technician account for "${trimmedName}" (ID: ${resolvedEmployeeId}, Mobile: ${formattedPhone || '—'}) with status ${status}`,
-    });
+    }).catch((err) => console.error('Failed to log audit activity:', err));
 
-    // Fetch refreshed technician with assignments
-    const finalTech = await (db as any).userProfile.findUnique({
-      where: { id: technician.id },
-      include: {
-        assignedBuildings: {
-          include: { building: true },
-        },
-      },
-    });
-
-    // Get refreshed usage
-    const { usage } = await getAgencySubscriptionAndUsage(organizationId);
+    // 7. Calculate updated seat usage without re-querying 4 tables from scratch
+    const newActive = (limitCheck.current || 0) + (status === 'ACTIVE' ? 1 : 0);
+    const maxT = limitCheck.max ?? 5;
+    const isUnlim = typeof maxT === 'string' ? maxT.toLowerCase() === 'unlimited' : Number(maxT) >= 999999;
+    const computedSeatUsage = {
+      active: newActive,
+      max: isUnlim ? 'Unlimited' : maxT,
+      maxNumeric: maxT,
+      available: isUnlim ? 'Unlimited' : Math.max(0, Number(maxT) - newActive),
+      availableNumeric: isUnlim ? 999999 : Math.max(0, Number(maxT) - newActive),
+      percentUsed: isUnlim ? 0 : Math.min(100, Math.round((newActive / Number(maxT)) * 100)),
+      isAtLimit: isUnlim ? false : newActive >= Number(maxT),
+    };
 
     return NextResponse.json(
       {
         success: true,
         message: 'Technician account created successfully',
         technician: {
-          id: finalTech.id,
-          fullName: finalTech.fullName,
-          email: finalTech.email,
-          phone: finalTech.phone,
-          employeeId: finalTech.employeeId,
-          status: finalTech.status,
-          assignedBuildings: finalTech.assignedBuildings.map((ab: any) => ab.building),
-          createdAt: finalTech.createdAt,
+          id: technician.id,
+          fullName: technician.fullName,
+          email: technician.email,
+          phone: technician.phone,
+          employeeId: technician.employeeId,
+          status: technician.status,
+          assignedBuildings: validBuildings,
+          createdAt: technician.createdAt,
         },
-        seatUsage: usage.technicians,
+        seatUsage: computedSeatUsage,
       },
       { status: 201 }
     );

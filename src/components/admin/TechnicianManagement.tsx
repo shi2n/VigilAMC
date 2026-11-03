@@ -381,6 +381,13 @@ export function TechnicianManagement({
         tempPassword: addForm.password,
       });
 
+      if (json.technician) {
+        setTechnicians((prev) => [json.technician, ...prev.filter((t: any) => t.id !== json.technician.id)]);
+      }
+      if (json.seatUsage) {
+        setSeatUsage(json.seatUsage);
+      }
+
       setAddForm({
         fullName: '',
         email: '',
