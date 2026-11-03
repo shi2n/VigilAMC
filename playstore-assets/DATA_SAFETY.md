@@ -1,6 +1,6 @@
 # Google Play Console Data Safety Form — Copy-Paste Answers
 
-Use this guide when filling out the mandatory **Data Safety Questionnaire** in the Google Play Console for **VigilAMC Field** (`com.vigilamc.field`).
+Use this guide when filling out the mandatory **Data Safety Questionnaire** in the Google Play Console for **VigilAMC Field** (`com.vigilamc`).
 
 ---
 

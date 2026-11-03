@@ -1,4 +1,4 @@
-package com.vigilamc.field;
+package com.vigilamc;
 
 import com.getcapacitor.BridgeActivity;
 

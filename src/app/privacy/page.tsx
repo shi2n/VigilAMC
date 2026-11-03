@@ -64,7 +64,7 @@ export default function PrivacyPolicyPage() {
               </h2>
             </div>
             <p className="text-slate-700">
-              For users operating the <strong>VigilAMC Field</strong> native Android application (<code className="text-xs bg-white px-1.5 py-0.5 rounded border border-[#FED7AA]">com.vigilamc.field</code>), we collect and process specific device data strictly to enable core field-engineering capabilities:
+              For users operating the <strong>VigilAMC Field</strong> native Android application (<code className="text-xs bg-white px-1.5 py-0.5 rounded border border-[#FED7AA]">com.vigilamc</code>), we collect and process specific device data strictly to enable core field-engineering capabilities:
             </p>
             <ul className="list-disc pl-5 space-y-2 text-slate-700">
               <li>

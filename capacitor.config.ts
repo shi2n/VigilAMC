@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.vigilamc.field',
+  appId: 'com.vigilamc',
   appName: 'VigilAMC Field',
   webDir: 'public',
   server: {

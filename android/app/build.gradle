@@ -7,10 +7,10 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace "com.vigilamc.field"
+    namespace "com.vigilamc"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.vigilamc.field"
+        applicationId "com.vigilamc"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
