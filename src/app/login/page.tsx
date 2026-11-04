@@ -47,20 +47,27 @@ export default function LoginPage() {
         if (session?.user) {
           setCurrentUser(session.user);
           // Check if profile exists and has company
-          const meRes = await fetch('/api/auth/me');
+          const authHeaders: Record<string, string> = {};
+          if (session.access_token) {
+            authHeaders['Authorization'] = `Bearer ${session.access_token}`;
+          }
+          const meRes = await fetch('/api/auth/me', { headers: authHeaders });
           if (meRes.ok) {
             const meData = await meRes.json();
-            if (!meData.profile?.organizationId || !meData.profile?.phone) {
-              setMode('COMPLETE_PROFILE');
-              setEmail(session.user.email || '');
-              setFullName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || '');
-            } else {
-              router.push('/dashboard');
-              return;
+            if (meData.authenticated) {
+              if (!meData.profile?.organizationId || !meData.profile?.phone) {
+                setMode('COMPLETE_PROFILE');
+                setEmail(session.user.email || '');
+                setFullName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || '');
+                return;
+              }
+              // Guard against redirect loops: only push to dashboard if login wasn't redirected from dashboard
+              const params = new URLSearchParams(window.location.search);
+              if (!params.get('redirect')) {
+                router.push('/dashboard');
+                return;
+              }
             }
-          } else {
-            router.push('/dashboard');
-            return;
           }
         }
       } catch (e) {

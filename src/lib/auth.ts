@@ -83,6 +83,30 @@ export async function getCurrentUser(
       },
     });
 
+    // If profile not found by auth id, check by email (handles Google OAuth for existing accounts)
+    if (!profile && authUser.email) {
+      const normalizedEmail = authUser.email.trim().toLowerCase();
+      const existingByEmail = await (db as any).userProfile.findUnique({
+        where: { email: normalizedEmail },
+        include: {
+          organization: {
+            include: {
+              subscription: true,
+            },
+          },
+          assignedBuildings: {
+            include: {
+              building: true,
+            },
+          },
+        },
+      });
+
+      if (existingByEmail) {
+        profile = existingByEmail;
+      }
+    }
+
     // If profile doesn't exist yet, check if this is a technician or agency admin
     if (!profile) {
       const explicitRole = authUser.user_metadata?.role === 'TECHNICIAN' ? 'TECHNICIAN' : 'ORG_ADMIN';
