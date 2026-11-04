@@ -168,6 +168,7 @@ export async function getAuthenticatedActor(req?: Request): Promise<Authenticate
   try {
     // --- METHOD 1: Check vigil_tech_session cookie OR Bearer header token ---
     let sessionToken = extractCookie(req, TECH_SESSION_COOKIE);
+    let payload = sessionToken ? verifyTechSessionToken(sessionToken) : null;
 
     let authHeader = req?.headers?.get('authorization') || req?.headers?.get('Authorization');
     if (!authHeader) {
@@ -179,21 +180,19 @@ export async function getAuthenticatedActor(req?: Request): Promise<Authenticate
       }
     }
 
-    if (!sessionToken && authHeader?.startsWith('Bearer ')) {
+    if (!payload && authHeader?.startsWith('Bearer ')) {
       const candidate = authHeader.substring(7).trim();
       if (candidate.includes('.')) {
-        const testPayload = verifyTechSessionToken(candidate);
-        if (testPayload) {
+        payload = verifyTechSessionToken(candidate);
+        if (payload) {
           sessionToken = candidate;
         }
       }
     }
 
-    if (sessionToken) {
-      const payload = verifyTechSessionToken(sessionToken);
-      if (payload && payload.userId) {
-        const profile = await (db as any).userProfile.findUnique({
-          where: { id: payload.userId },
+    if (payload && payload.userId) {
+      const profile = await (db as any).userProfile.findUnique({
+        where: { id: payload.userId },
           include: {
             organization: {
               include: {
@@ -239,7 +238,6 @@ export async function getAuthenticatedActor(req?: Request): Promise<Authenticate
             organization: profile.organization || null,
             subscription,
           };
-        }
       }
     }
 

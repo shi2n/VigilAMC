@@ -157,11 +157,15 @@ export async function POST(request: Request) {
             }
           }
 
-          // FK Safety: Verify Equipment
+          // FK Safety: Verify Equipment (handles both raw ID and AMC- prefixed routine IDs)
           let validEquipmentId: string | null = null;
-          if (equipmentId) {
+          let eqLookupId = equipmentId;
+          if (eqLookupId && typeof eqLookupId === 'string' && eqLookupId.startsWith('AMC-')) {
+            eqLookupId = eqLookupId.substring(4);
+          }
+          if (eqLookupId) {
             const eqExists = await (db as any).equipment.findUnique({
-              where: { id: equipmentId },
+              where: { id: eqLookupId },
               select: { id: true, qrCode: true, serviceIntervalMonths: true },
             });
             if (eqExists) {
@@ -346,34 +350,39 @@ export async function POST(request: Request) {
             throw new Error('workOrderId is required for work order status update');
           }
 
-          const existingWo = await (db as any).workOrder.findUnique({
-            where: { id: workOrderId },
-            select: { id: true },
-          });
+          if (typeof workOrderId === 'string' && workOrderId.startsWith('AMC-')) {
+            // Routine AMC task status is tracked via inspections
+            createdEntityId = workOrderId;
+          } else {
+            const existingWo = await (db as any).workOrder.findUnique({
+              where: { id: workOrderId },
+              select: { id: true },
+            });
 
-          if (!existingWo) {
-            throw new Error(`Work order '${workOrderId}' not found in database`);
-          }
-
-          const updateData: any = {};
-          if (woStatus) {
-            // Whitelist work order statuses
-            const validWoStatuses = ['OPEN', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
-            if (validWoStatuses.includes(woStatus)) {
-              updateData.status = woStatus;
+            if (!existingWo) {
+              throw new Error(`Work order '${workOrderId}' not found in database`);
             }
-          }
-          if (woStatus === 'COMPLETED' || actionType === 'COMPLETE_WORK_ORDER') {
-            updateData.status = 'COMPLETED';
-            updateData.completedAt = completedAt ? new Date(completedAt) : new Date();
-          }
-          if (notes) updateData.notes = String(notes);
 
-          const updated = await (db as any).workOrder.update({
-            where: { id: workOrderId },
-            data: updateData,
-          });
-          createdEntityId = updated.id;
+            const updateData: any = {};
+            if (woStatus) {
+              // Whitelist work order statuses
+              const validWoStatuses = ['OPEN', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
+              if (validWoStatuses.includes(woStatus)) {
+                updateData.status = woStatus;
+              }
+            }
+            if (woStatus === 'COMPLETED' || actionType === 'COMPLETE_WORK_ORDER') {
+              updateData.status = 'COMPLETED';
+              updateData.completedAt = completedAt ? new Date(completedAt) : new Date();
+            }
+            if (notes) updateData.notes = String(notes);
+
+            const updated = await (db as any).workOrder.update({
+              where: { id: workOrderId },
+              data: updateData,
+            });
+            createdEntityId = updated.id;
+          }
 
         } else if (actionType === 'UPLOAD_PHOTO') {
           const {

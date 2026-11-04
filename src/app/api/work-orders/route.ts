@@ -147,15 +147,13 @@ export async function POST(request: Request) {
         .catch(() => null);
     }
 
+    // Dispatch localized push notification & in-app notification row to assigned technician
     if (resolvedAssignedToId) {
-      const dueMsg = parsedDueDate ? ` · Due: ${parsedDueDate.toLocaleDateString('en-IN')}` : '';
       await notifyOnAssignment({
         type: 'WORK_ORDER',
         technicianId: resolvedAssignedToId,
         organizationId: auth.organization.id,
-        title: 'New Task Assigned',
-        message: `Work Order: "${resolvedTitle}" assigned to you${dueMsg}`,
-        link: undefined,
+        taskTitle: resolvedTitle,
         taskId: workOrder.id,
         dueDate: parsedDueDate,
       }).catch(() => null);
@@ -176,14 +174,14 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const { id, status } = body;
-
-    if (!status || !VALID_WORK_ORDER_STATUSES.includes(status)) {
-      return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
-    }
+    const { id, status, assignedToId } = body;
 
     if (!id || typeof id !== 'string') {
       return NextResponse.json({ error: 'Work order not found' }, { status: 404 });
+    }
+
+    if (status && !VALID_WORK_ORDER_STATUSES.includes(status)) {
+      return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
 
     const existing = await (db as any).workOrder.findFirst({
@@ -191,11 +189,28 @@ export async function PATCH(request: Request) {
         id,
         organizationId: auth.organization.id,
       },
-      select: { id: true, defectId: true },
+      select: {
+        id: true,
+        title: true,
+        defectId: true,
+        assignedToId: true,
+        dueDate: true,
+        status: true,
+      },
     });
 
     if (!existing) {
       return NextResponse.json({ error: 'Work order not found' }, { status: 404 });
+    }
+
+    const updateData: any = {};
+    if (status) {
+      updateData.status = status;
+      updateData.completedAt = status === 'COMPLETED' ? new Date() : null;
+    }
+    if (assignedToId !== undefined) {
+      updateData.assignedToId =
+        assignedToId && String(assignedToId).trim() !== '' ? String(assignedToId).trim() : null;
     }
 
     const workOrder = await (db as any).workOrder.update({
@@ -203,14 +218,11 @@ export async function PATCH(request: Request) {
         id: existing.id,
         organizationId: auth.organization.id,
       },
-      data: {
-        status,
-        completedAt: status === 'COMPLETED' ? new Date() : null,
-      },
+      data: updateData,
       include: WORK_ORDER_INCLUDE,
     });
 
-    if (existing.defectId) {
+    if (existing.defectId && status) {
       const defectStatus =
         status === 'COMPLETED'
           ? 'RESOLVED'
@@ -226,6 +238,22 @@ export async function PATCH(request: Request) {
           },
         })
         .catch(() => null);
+    }
+
+    // Trigger notifyOnAssignment when newly assigned or status changed to ASSIGNED
+    const newAssignedId = workOrder.assignedToId;
+    if (
+      newAssignedId &&
+      (newAssignedId !== existing.assignedToId || (status === 'ASSIGNED' && existing.status !== 'ASSIGNED'))
+    ) {
+      await notifyOnAssignment({
+        type: 'WORK_ORDER',
+        technicianId: newAssignedId,
+        organizationId: auth.organization.id,
+        taskTitle: workOrder.title,
+        taskId: workOrder.id,
+        dueDate: workOrder.dueDate,
+      }).catch(() => null);
     }
 
     return NextResponse.json({ success: true, workOrder });

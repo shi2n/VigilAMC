@@ -168,8 +168,7 @@ export async function PATCH(
           type: 'BUILDING',
           technicianId,
           organizationId,
-          title: 'New Building Assignment',
-          message: `You have been assigned to ${assignedBuildingIds.length} building premises.`,
+          buildingCount: assignedBuildingIds.length,
           link: undefined,
         }).catch(() => null);
       }

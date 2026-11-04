@@ -5,6 +5,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   ShieldCheck,
+  Menu,
+  Mail,
+  HelpCircle,
+  Activity,
   Building2,
   CheckCircle2,
   AlertTriangle,
@@ -144,6 +148,9 @@ export default function TechnicianPWA() {
   const [showSupportModal, setShowSupportModal] = useState<boolean>(false);
   const [showSettingsSheet, setShowSettingsSheet] = useState<boolean>(false);
   const [showLocationPrePrompt, setShowLocationPrePrompt] = useState<boolean>(false);
+  const [showNavDrawer, setShowNavDrawer] = useState<boolean>(false);
+  const [activeFaqIndex, setActiveFaqIndex] = useState<number | null>(null);
+  const [pushPermissionDenied, setPushPermissionDenied] = useState<boolean>(false);
 
   // ----------------------------------------------------------------------------------
   // AUTHENTICATION & PROFILE STATE
@@ -190,6 +197,28 @@ export default function TechnicianPWA() {
   const [assignmentNudge, setAssignmentNudge] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotificationsDrawer, setShowNotificationsDrawer] = useState<boolean>(false);
+
+
+  const toggleNavDrawer = useCallback((open: boolean) => {
+    if (open) {
+      if (typeof window !== 'undefined') {
+        window.history.pushState({ techDrawer: true }, '');
+      }
+      setShowNavDrawer(true);
+    } else {
+      setShowNavDrawer(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (showNavDrawer) {
+        setShowNavDrawer(false);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [showNavDrawer]);
 
   // Mark notification read handler
   const handleMarkNotificationRead = async (id?: string) => {
@@ -1485,24 +1514,34 @@ export default function TechnicianPWA() {
   // ----------------------------------------------------------------------------------
   if (authChecking) {
     return (
-      <div
-        className="min-h-screen bg-[#FFF8F2] text-[#1C1917] flex items-center justify-center p-4"
-        style={{
-          backgroundImage:
-            'radial-gradient(circle at 50% 25%, rgba(232, 89, 12, 0.18) 0%, rgba(255, 140, 66, 0.12) 40%, rgba(255, 248, 242, 0) 72%)',
-        }}
-      >
-        <div className="text-center space-y-3 glass-panel p-6 rounded-2xl max-w-xs w-full shadow-lg">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/brand/logo-tile-192.png"
-            alt="VigilAMC Logo"
-            width={44}
-            height={44}
-            className="w-11 h-11 object-cover mx-auto rounded-xl shadow-xs"
-          />
-          <RefreshCw className="w-6 h-6 animate-spin text-[#C2410C] mx-auto" />
-          <p className="text-xs font-bold text-slate-700">Loading VigilAMC Field Operations...</p>
+      <div className="min-h-screen bg-[#FFF8F2] text-[#1C1917] p-3 max-w-md mx-auto space-y-3">
+        {/* Instant Skeleton Header */}
+        <header className="flex items-center justify-between p-2">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-[#EA580C]/15 animate-pulse" />
+            <div className="space-y-1.5">
+              <div className="w-24 h-4 bg-stone-200 rounded animate-pulse" />
+              <div className="w-32 h-3 bg-stone-100 rounded animate-pulse" />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <div className="w-9 h-9 rounded-full bg-stone-200 animate-pulse" />
+            <div className="w-9 h-9 rounded-full bg-stone-200 animate-pulse" />
+          </div>
+        </header>
+        {/* Skeleton Sync Pill */}
+        <div className="h-9 bg-white/80 border border-[#FED7AA] rounded-xl animate-pulse" />
+        {/* Skeleton Hero Card */}
+        <div className="h-28 bg-stone-900/10 rounded-3xl border border-stone-200/50 animate-pulse" />
+        {/* Skeleton Grid */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="h-20 bg-white border border-[#FED7AA] rounded-2xl animate-pulse" />
+          <div className="h-20 bg-white border border-[#FED7AA] rounded-2xl animate-pulse" />
+        </div>
+        {/* Skeleton Card List */}
+        <div className="space-y-2 pt-1">
+          <div className="h-16 bg-white border border-[#FED7AA] rounded-2xl animate-pulse" />
+          <div className="h-16 bg-white border border-[#FED7AA] rounded-2xl animate-pulse" />
         </div>
       </div>
     );
@@ -1706,7 +1745,7 @@ export default function TechnicianPWA() {
       )}
 
       {/* Main Container constrained to mobile max-w-md */}
-      <div className="max-w-md w-full mx-auto flex-1 flex flex-col pb-24">
+      <div className="max-w-md w-full mx-auto flex-1 flex flex-col pb-8">
         {/* =========================================================================
             TOP APP HEADER (Section 3.1: Logo tile + wordmark + circular buttons + avatar)
         ========================================================================= */}
@@ -1723,9 +1762,15 @@ export default function TechnicianPWA() {
                   <ArrowLeft className="w-4 h-4" />
                 </button>
               ) : (
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#EA580C] to-[#C2410C] p-2 flex items-center justify-center shadow-xs shrink-0">
-                  <Flame className="w-6 h-6 text-white stroke-[2.5]" />
-                </div>
+                <button
+                  type="button"
+                  onClick={() => toggleNavDrawer(true)}
+                  aria-label={t.navMenu || 'Open Navigation Menu'}
+                  title={t.navMenu || 'Open Navigation Menu'}
+                  className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#EA580C] to-[#C2410C] text-white flex items-center justify-center shadow-xs shrink-0 active:scale-95 transition-transform"
+                >
+                  <Menu className="w-5 h-5 stroke-[2.5]" />
+                </button>
               )}
 
               <div>
@@ -1810,7 +1855,7 @@ export default function TechnicianPWA() {
           </div>
 
           {/* Sync Confidence Pill (Feature C.5 & Section 8.2) */}
-          <div className="flex items-center justify-between px-3 py-1.5 rounded-xl bg-white/80 border border-[#FED7AA] text-[11px]">
+          <div onClick={() => setShowSyncDiagnostics(true)} className="cursor-pointer hover:bg-white active:scale-[0.99] transition-all flex items-center justify-between px-3 py-1.5 rounded-xl bg-white/80 border border-[#FED7AA] text-[11px]" title="Tap to view Sync Diagnostics">
             <div className="flex items-center gap-2 truncate">
               {isOnline ? (
                 pendingSyncCount > 0 ? (
@@ -3234,82 +3279,7 @@ export default function TechnicianPWA() {
           </div>
         )}
 
-        {/* =========================================================================
-            BOTTOM NAVIGATION BAR (3 Tabs, ≥ 48px Touch Targets)
-        ========================================================================= */}
-        <nav className="fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#FED7AA] shadow-lg max-w-md mx-auto">
-          <div className="grid grid-cols-5 h-16 px-1">
-            {/* Tab 1: Home */}
-            <button
-              type="button"
-              onClick={() => setActiveTab('HOME')}
-              className={`flex flex-col items-center justify-center py-1 transition-all ${
-                activeTab === 'HOME' ? 'text-[#EA580C] font-bold' : 'text-slate-500 font-medium hover:text-slate-800'
-              }`}
-            >
-              <LayoutDashboard className="w-5 h-5" />
-              <span className="text-[10px] mt-0.5">{t.tabHome || 'Home'}</span>
-              {activeTab === 'HOME' && <span className="w-8 h-1 bg-[#EA580C] rounded-full block mt-0.5" />}
-            </button>
-
-            {/* Tab 2: Tasks */}
-            <button
-              type="button"
-              onClick={() => setActiveTab('TASKS')}
-              className={`flex flex-col items-center justify-center py-1 transition-all ${
-                activeTab === 'TASKS' ? 'text-[#EA580C] font-bold' : 'text-slate-500 font-medium hover:text-slate-800'
-              }`}
-            >
-              <div className="relative">
-                <ListTodo className="w-5 h-5" />
-                {overdueTasksCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#DC2626] ring-2 ring-white" />
-                )}
-              </div>
-              <span className="text-[10px] mt-0.5">{t.myTasksTab || 'Tasks'}</span>
-              {activeTab === 'TASKS' && <span className="w-8 h-1 bg-[#EA580C] rounded-full block mt-0.5" />}
-            </button>
-
-            {/* Tab 3: Checklists */}
-            <button
-              type="button"
-              onClick={() => setActiveTab('CHECKLISTS')}
-              className={`flex flex-col items-center justify-center py-1 transition-all ${
-                activeTab === 'CHECKLISTS' ? 'text-[#EA580C] font-bold' : 'text-slate-500 font-medium hover:text-slate-800'
-              }`}
-            >
-              <FileCheck2 className="w-5 h-5" />
-              <span className="text-[10px] mt-0.5">{t.checklistsTab || 'Checklists'}</span>
-              {activeTab === 'CHECKLISTS' && <span className="w-8 h-1 bg-[#EA580C] rounded-full block mt-0.5" />}
-            </button>
-
-            {/* Tab 4: History */}
-            <button
-              type="button"
-              onClick={() => setActiveTab('HISTORY')}
-              className={`flex flex-col items-center justify-center py-1 transition-all ${
-                activeTab === 'HISTORY' ? 'text-[#EA580C] font-bold' : 'text-slate-500 font-medium hover:text-slate-800'
-              }`}
-            >
-              <HistoryIcon className="w-5 h-5" />
-              <span className="text-[10px] mt-0.5">{t.historyTab || 'History'}</span>
-              {activeTab === 'HISTORY' && <span className="w-8 h-1 bg-[#EA580C] rounded-full block mt-0.5" />}
-            </button>
-
-            {/* Tab 5: Profile */}
-            <button
-              type="button"
-              onClick={() => setActiveTab('PROFILE')}
-              className={`flex flex-col items-center justify-center py-1 transition-all ${
-                activeTab === 'PROFILE' ? 'text-[#EA580C] font-bold' : 'text-slate-500 font-medium hover:text-slate-800'
-              }`}
-            >
-              <User className="w-5 h-5" />
-              <span className="text-[10px] mt-0.5">{t.tabProfile || 'Profile'}</span>
-              {activeTab === 'PROFILE' && <span className="w-8 h-1 bg-[#EA580C] rounded-full block mt-0.5" />}
-            </button>
-          </div>
-        </nav>
+        {/* Bottom navigation replaced with Left Slide-Out Navigation Drawer (Item 5) */}
       </div>
 
       {/* =========================================================================
@@ -3732,6 +3702,598 @@ export default function TechnicianPWA() {
                   </div>
                 ))
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* =========================================================================
+          LEFT NAVIGATION DRAWER (Item 5: Primary Navigation at 375px)
+      ========================================================================= */}
+      {showNavDrawer && (
+        <div className="fixed inset-0 z-50 flex">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+            onClick={() => toggleNavDrawer(false)}
+          />
+
+          {/* Slide-out Panel */}
+          <div className="relative w-[300px] max-w-[85vw] bg-white h-full shadow-2xl flex flex-col z-10 animate-in slide-in-from-left duration-200">
+            {/* Drawer Header */}
+            <div className="p-4 bg-gradient-to-br from-[#1C1917] to-[#292524] text-white space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#EA580C] to-[#C2410C] p-1.5 flex items-center justify-center">
+                    <Flame className="w-5 h-5 text-white stroke-[2.5]" />
+                  </div>
+                  <span className="font-display font-black text-lg tracking-tight">VigilAMC</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => toggleNavDrawer(false)}
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/80 hover:text-white"
+                  aria-label="Close menu"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Technician Identity */}
+              <div className="flex items-center gap-3 pt-1 border-t border-white/10">
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-full bg-[#EA580C] text-white flex items-center justify-center font-bold text-sm ring-2 ring-white/30">
+                    {userProfile?.fullName?.charAt(0).toUpperCase() || 'T'}
+                  </div>
+                  <span
+                    className={`absolute bottom-0 right-0 w-3 h-3 rounded-full ring-2 ring-[#1C1917] ${
+                      isOnline ? 'bg-emerald-500' : 'bg-amber-500'
+                    }`}
+                  />
+                </div>
+                <div className="truncate">
+                  <p className="font-bold text-sm text-white truncate">{userProfile?.fullName || 'Technician'}</p>
+                  <p className="text-[11px] text-white/70 truncate">{userProfile?.agencyName || 'Fire AMC Operations'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Navigation Destinations */}
+            <div className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('HOME');
+                  toggleNavDrawer(false);
+                }}
+                className={`w-full min-h-[48px] px-3 rounded-xl flex items-center gap-3 text-sm font-bold transition-all ${
+                  activeTab === 'HOME'
+                    ? 'bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA]'
+                    : 'text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                <LayoutDashboard className="w-5 h-5 text-[#EA580C]" />
+                <span className="flex-1 text-left">{t.navHome || t.tabHome || 'Home'}</span>
+                {activeTab === 'HOME' && <span className="w-2 h-2 rounded-full bg-[#EA580C]" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('TASKS');
+                  toggleNavDrawer(false);
+                }}
+                className={`w-full min-h-[48px] px-3 rounded-xl flex items-center gap-3 text-sm font-bold transition-all ${
+                  activeTab === 'TASKS'
+                    ? 'bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA]'
+                    : 'text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                <div className="relative">
+                  <ListTodo className="w-5 h-5 text-[#EA580C]" />
+                  {overdueTasksCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#DC2626] ring-2 ring-white" />
+                  )}
+                </div>
+                <span className="flex-1 text-left">{t.navTasks || t.myTasksTab || 'Tasks'}</span>
+                {overdueTasksCount > 0 ? (
+                  <span className="px-2 py-0.5 rounded-full bg-red-100 text-[#DC2626] text-[10px] font-extrabold">
+                    {overdueTasksCount}
+                  </span>
+                ) : activeTab === 'TASKS' ? (
+                  <span className="w-2 h-2 rounded-full bg-[#EA580C]" />
+                ) : null}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('CHECKLISTS');
+                  toggleNavDrawer(false);
+                }}
+                className={`w-full min-h-[48px] px-3 rounded-xl flex items-center gap-3 text-sm font-bold transition-all ${
+                  activeTab === 'CHECKLISTS'
+                    ? 'bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA]'
+                    : 'text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                <FileCheck2 className="w-5 h-5 text-[#EA580C]" />
+                <span className="flex-1 text-left">{t.navChecklists || t.checklistsTab || 'Checklists'}</span>
+                {activeTab === 'CHECKLISTS' && <span className="w-2 h-2 rounded-full bg-[#EA580C]" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('HISTORY');
+                  toggleNavDrawer(false);
+                }}
+                className={`w-full min-h-[48px] px-3 rounded-xl flex items-center gap-3 text-sm font-bold transition-all ${
+                  activeTab === 'HISTORY'
+                    ? 'bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA]'
+                    : 'text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                <HistoryIcon className="w-5 h-5 text-[#EA580C]" />
+                <span className="flex-1 text-left">{t.navHistory || t.historyTab || 'History'}</span>
+                {activeTab === 'HISTORY' && <span className="w-2 h-2 rounded-full bg-[#EA580C]" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('PROFILE');
+                  toggleNavDrawer(false);
+                }}
+                className={`w-full min-h-[48px] px-3 rounded-xl flex items-center gap-3 text-sm font-bold transition-all ${
+                  activeTab === 'PROFILE'
+                    ? 'bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA]'
+                    : 'text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                <User className="w-5 h-5 text-[#EA580C]" />
+                <span className="flex-1 text-left">{t.navProfile || t.tabProfile || 'Profile'}</span>
+                {activeTab === 'PROFILE' && <span className="w-2 h-2 rounded-full bg-[#EA580C]" />}
+              </button>
+
+              {/* Secondary Tools Divider */}
+              <div className="pt-3 pb-1 px-3">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Field Tools</p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSyncDiagnostics(true);
+                  toggleNavDrawer(false);
+                }}
+                className="w-full min-h-[44px] px-3 rounded-xl flex items-center gap-3 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                <Activity className="w-4 h-4 text-[#EA580C]" />
+                <span className="flex-1 text-left">{t.navSyncDiagnostics || 'Sync Diagnostics'}</span>
+                {pendingSyncCount > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">
+                    {pendingSyncCount}
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowNotificationsDrawer(true);
+                  toggleNavDrawer(false);
+                }}
+                className="w-full min-h-[44px] px-3 rounded-xl flex items-center gap-3 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                <Bell className="w-4 h-4 text-[#EA580C]" />
+                <span className="flex-1 text-left">Notifications</span>
+                {notifications.some((n: any) => !n.isRead) && (
+                  <span className="w-2 h-2 rounded-full bg-[#EA580C]" />
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSupportModal(true);
+                  toggleNavDrawer(false);
+                }}
+                className="w-full min-h-[44px] px-3 rounded-xl flex items-center gap-3 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                <HelpCircle className="w-4 h-4 text-purple-600" />
+                <span className="flex-1 text-left">{t.navSupportFaq || 'Support & FAQ'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSettingsSheet(true);
+                  toggleNavDrawer(false);
+                }}
+                className="w-full min-h-[44px] px-3 rounded-xl flex items-center gap-3 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                <Sliders className="w-4 h-4 text-slate-500" />
+                <span className="flex-1 text-left">{t.quickSettings || 'Settings'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowLanguageSheet(true);
+                  toggleNavDrawer(false);
+                }}
+                className="w-full min-h-[44px] px-3 rounded-xl flex items-center gap-3 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                <Globe className="w-4 h-4 text-emerald-600" />
+                <span className="flex-1 text-left">Language</span>
+                <span className="text-[11px] text-slate-400 font-mono">
+                  {SUPPORTED_LANGUAGES.find((l) => l.code === currentLang)?.nativeName || 'English'}
+                </span>
+              </button>
+            </div>
+
+            {/* Drawer Footer */}
+            <div className="p-3 border-t border-slate-100 bg-slate-50 space-y-2">
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="w-full min-h-[44px] px-3 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>{t.signOut || 'Sign Out'}</span>
+              </button>
+              <div className="text-center text-[10px] text-slate-400 font-mono">
+                VigilAMC Field v1.0.2 (Build 3)
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          NOTIFICATIONS DRAWER (Item 3 & 6: Real In-App Notification Feed)
+      ========================================================================= */}
+      {showNotificationsDrawer && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white border border-[#FED7AA] rounded-t-3xl sm:rounded-3xl max-w-md w-full p-5 space-y-4 max-h-[85vh] flex flex-col shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3">
+              <div className="flex items-center gap-2">
+                <Bell className="w-5 h-5 text-[#C2410C]" />
+                <h3 className="text-base font-bold text-slate-900">Task Notifications</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                {notifications.some((n: any) => !n.isRead) && (
+                  <button
+                    type="button"
+                    onClick={() => handleMarkNotificationRead()}
+                    className="text-[11px] font-bold text-[#C2410C] hover:underline"
+                  >
+                    Mark all read
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowNotificationsDrawer(false)}
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
+              {notifications.length === 0 ? (
+                <div className="text-center py-10 space-y-2 text-slate-400">
+                  <Bell className="w-8 h-8 mx-auto text-slate-300" />
+                  <p className="text-xs font-semibold">No notifications yet</p>
+                  <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
+                    When admins assign tasks or update AMC schedules, you will see alerts here.
+                  </p>
+                </div>
+              ) : (
+                notifications.map((notif: any) => (
+                  <div
+                    key={notif.id}
+                    onClick={() => {
+                      if (!notif.isRead) handleMarkNotificationRead(notif.id);
+                      if (notif.linkUrl?.includes('tasks') || notif.title?.toLowerCase().includes('task')) {
+                        setShowNotificationsDrawer(false);
+                        setActiveTab('TASKS');
+                      }
+                    }}
+                    className={`p-3.5 rounded-2xl border text-xs space-y-1 cursor-pointer transition-all active:scale-[0.99] ${
+                      notif.isRead
+                        ? 'bg-white border-slate-200 text-slate-700'
+                        : 'bg-[#FFF8F2] border-[#FED7AA] text-slate-900 ring-1 ring-[#EA580C]/20 shadow-xs'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                        {!notif.isRead && <span className="w-2 h-2 rounded-full bg-[#EA580C]" />}
+                        {notif.title}
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 break-words">{notif.message}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          SUPPORT & FAQ SHEET (Item 6: Real answers + mailto:vigilamc@gmail.com)
+      ========================================================================= */}
+      {showSupportModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white border border-[#FED7AA] rounded-t-3xl sm:rounded-3xl max-w-md w-full p-5 space-y-4 max-h-[90vh] flex flex-col shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3">
+              <div className="flex items-center gap-2">
+                <HelpCircle className="w-5 h-5 text-purple-600" />
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">{t.faqTitle || 'Support & FAQ'}</h3>
+                  <p className="text-[10px] text-slate-500">{t.faqSubtitle || 'Field troubleshooting & answers'}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSupportModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* FAQ Accordion List */}
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1 text-xs">
+              {[
+                { q: t.faqQ1 || 'How does offline mode work?', a: t.faqA1 || 'All inspections and stamped photos are saved securely on your device. When your internet reconnects, they sync to the dashboard automatically.' },
+                { q: t.faqQ2 || 'Why do photos require GPS stamps?', a: t.faqA2 || 'Auditors and building safety laws require timestamp and geo-location proof for verified AMC equipment inspection.' },
+                { q: t.faqQ3 || 'What should I do if sync is pending?', a: t.faqA3 || 'Keep the app open or tap "Sync Now". If you are in a basement without cellular signal, sync will complete as soon as you step outside.' },
+                { q: t.faqQ4 || 'How do I change the app language?', a: t.faqA4 || 'Tap the navigation menu or the globe icon in the top header. You can pick between English and 9 Indian languages anytime.' },
+                { q: t.faqQ5 || 'What is my security PIN used for?', a: t.faqA5 || 'Your 6-digit PIN is provided by your agency administrator for secure account identity verification and account management.' },
+                { q: t.faqQ6 || 'Can I dictate inspection remarks by voice?', a: t.faqA6 || 'Yes! Tap the microphone icon beside Remarks during any inspection to speak in Hindi or your preferred language.' },
+              ].map((faq, idx) => (
+                <div key={idx} className="border border-[#FED7AA]/60 rounded-xl bg-[#FFF8F2]/60 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setActiveFaqIndex(activeFaqIndex === idx ? null : idx)}
+                    className="w-full p-3 text-left font-bold text-slate-800 flex items-center justify-between gap-2 hover:bg-[#FFF0E6] transition-colors"
+                  >
+                    <span>{faq.q}</span>
+                    {activeFaqIndex === idx ? (
+                      <ChevronUp className="w-4 h-4 text-[#EA580C] shrink-0" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+                    )}
+                  </button>
+                  {activeFaqIndex === idx && (
+                    <div className="px-3 pb-3 text-[11px] text-slate-600 leading-relaxed border-t border-[#FED7AA]/40 pt-2 bg-white">
+                      {faq.a}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Contact Support Section */}
+            <div className="pt-2 border-t border-[#FED7AA] space-y-2">
+              <p className="text-[11px] font-bold text-slate-700">{t.contactSupport || 'Need Direct Assistance?'}</p>
+              <div className="grid grid-cols-2 gap-2">
+                <a
+                  href="mailto:vigilamc@gmail.com?subject=Technician%20Support%20Request"
+                  className="min-h-[44px] px-3 py-2 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-colors"
+                >
+                  <Mail className="w-4 h-4" />
+                  <span>Email Support</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (navigator.clipboard) {
+                      navigator.clipboard.writeText('vigilamc@gmail.com');
+                      triggerToast(t.emailCopiedToast || 'Email copied: vigilamc@gmail.com');
+                    }
+                  }}
+                  className="min-h-[44px] px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center justify-center gap-1.5 border border-slate-200 transition-colors"
+                >
+                  <Copy className="w-4 h-4" />
+                  <span>{t.copyEmail || 'Copy Email'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          PROGRESS MODAL (Item 6: Real Field Metrics)
+      ========================================================================= */}
+      {showProgressModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white border border-[#FED7AA] rounded-t-3xl sm:rounded-3xl max-w-md w-full p-5 space-y-4 max-h-[85vh] flex flex-col shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-emerald-600" />
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">{t.progressTitle || "Today's Field Progress"}</h3>
+                  <p className="text-[10px] text-slate-500">Live operational snapshot</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowProgressModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200">
+                <span className="text-[10px] font-bold text-emerald-800 uppercase block">{t.todayCompleted || 'Inspections Done'}</span>
+                <span className="text-2xl font-black text-emerald-950 block mt-1">
+                  {historyList.filter((h) => new Date(h.date).toDateString() === new Date().toDateString()).length}
+                </span>
+                <span className="text-[10px] text-emerald-700">Today</span>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200">
+                <span className="text-[10px] font-bold text-amber-800 uppercase block">{t.scheduledToday || 'Scheduled Tasks'}</span>
+                <span className="text-2xl font-black text-amber-950 block mt-1">
+                  {taskList.filter((t) => t.status !== 'COMPLETED').length}
+                </span>
+                <span className="text-[10px] text-amber-700">Remaining</span>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                <span className="text-[10px] font-bold text-slate-700 uppercase block">{t.passRate || 'Pass Rate'}</span>
+                <span className="text-2xl font-black text-slate-900 block mt-1">
+                  {(() => {
+                    const todayInsp = historyList.filter((h) => new Date(h.date).toDateString() === new Date().toDateString());
+                    if (todayInsp.length === 0) return '100%';
+                    const passed = todayInsp.filter((h) => h.result === 'PASSED').length;
+                    return Math.round((passed / todayInsp.length) * 100) + '%';
+                  })()}
+                </span>
+                <span className="text-[10px] text-slate-500">Inspection health</span>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-orange-50 border border-orange-200">
+                <span className="text-[10px] font-bold text-[#C2410C] uppercase block">{t.pendingOutbox || 'Outbox Queue'}</span>
+                <span className="text-2xl font-black text-[#9A3412] block mt-1">
+                  {pendingSyncCount}
+                </span>
+                <span className="text-[10px] text-orange-700">{pendingSyncCount === 0 ? 'All synced' : 'Pending upload'}</span>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-[#FED7AA] flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowProgressModal(false);
+                  setActiveTab('TASKS');
+                }}
+                className="flex-1 min-h-[44px] py-2 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white font-bold text-xs flex items-center justify-center"
+              >
+                Open Tasks Feed
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowProgressModal(false);
+                  setActiveTab('CHECKLISTS');
+                }}
+                className="flex-1 min-h-[44px] py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center justify-center border border-slate-200"
+              >
+                Open Checklists
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          SETTINGS SHEET (Item 6: Real Field Settings)
+      ========================================================================= */}
+      {showSettingsSheet && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white border border-[#FED7AA] rounded-t-3xl sm:rounded-3xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#FED7AA] pb-3">
+              <div className="flex items-center gap-2">
+                <Sliders className="w-5 h-5 text-slate-700" />
+                <h3 className="text-base font-bold text-slate-900">{t.settingsTitle || 'Field Settings'}</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSettingsSheet(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-2 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSettingsSheet(false);
+                  setShowLanguageSheet(true);
+                }}
+                className="w-full min-h-[48px] p-3 rounded-xl border border-slate-200 hover:border-[#FED7AA] flex items-center justify-between text-left transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Globe className="w-4 h-4 text-[#EA580C]" />
+                  <span>Language</span>
+                </div>
+                <span className="text-slate-500 font-mono text-[11px]">
+                  {SUPPORTED_LANGUAGES.find((l) => l.code === currentLang)?.nativeName || 'English'} ›
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  requestLiveLocation();
+                  triggerToast('Re-locking GPS position...');
+                }}
+                className="w-full min-h-[48px] p-3 rounded-xl border border-slate-200 hover:border-[#FED7AA] flex items-center justify-between text-left transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Crosshair className="w-4 h-4 text-emerald-600" />
+                  <span>{t.gpsRecalibrate || 'Recalibrate GPS'}</span>
+                </div>
+                <span className="text-slate-500 font-mono text-[11px]">
+                  {gpsStatus === 'LOCKED' ? '±8m' : gpsStatus} ›
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSettingsSheet(false);
+                  setShowSyncDiagnostics(true);
+                }}
+                className="w-full min-h-[48px] p-3 rounded-xl border border-slate-200 hover:border-[#FED7AA] flex items-center justify-between text-left transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Activity className="w-4 h-4 text-[#EA580C]" />
+                  <span>Offline Outbox & Diagnostics</span>
+                </div>
+                <span className="text-slate-500 font-mono text-[11px]">
+                  {pendingSyncCount} queued ›
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  triggerToast('Refreshing operational data...');
+                  await loadDashboardData();
+                  triggerToast('Data refreshed successfully');
+                }}
+                className="w-full min-h-[48px] p-3 rounded-xl border border-slate-200 hover:border-[#FED7AA] flex items-center justify-between text-left transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <RefreshCw className="w-4 h-4 text-blue-600" />
+                  <span>{t.refreshData || 'Refresh App Data'}</span>
+                </div>
+                <span className="text-slate-500 text-[11px]">Sync ›</span>
+              </button>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 text-center">
+              <span className="text-[10px] text-slate-400 font-mono">
+                VigilAMC Field v1.0.2 (Build 3) • Play Release
+              </span>
             </div>
           </div>
         </div>

@@ -469,6 +469,13 @@ export async function drainOutbox(options?: DrainOptions): Promise<DrainResult> 
     return { success: false, syncedCount: 0, failedCount: 0, errors: ['Offline'] };
   }
 
+  // Section 2: Auto-repair any oversized legacy items before collecting eligible queue
+  try {
+    await repairOversizedOutboxItems();
+  } catch (repairErr) {
+    console.warn('[VigilAMC Sync] Pre-drain repair warning:', repairErr);
+  }
+
   const allItems = await getPendingOutboxItems();
   if (allItems.length === 0) {
     return { success: true, syncedCount: 0, failedCount: 0, errors: [] };
@@ -747,5 +754,39 @@ export async function repairOversizedOutboxItems(): Promise<number> {
     console.warn('Error repairing oversized outbox items:', err);
     return 0;
   }
+}
+
+/**
+ * Seed an oversized outbox item directly into IndexedDB bypassing client validation
+ * Used to verify repairOversizedOutboxItems in diagnostics tests.
+ */
+export async function seedOversizedOutboxItemForTest(clientSyncId: string): Promise<void> {
+  const db = await openDB();
+  const oversizedPhoto = 'data:image/jpeg;base64,' + 'A'.repeat(200000); // 200KB base64
+  const brokenItem: OutboxItem = {
+    clientSyncId,
+    actionType: 'COMPLETE_INSPECTION',
+    payload: {
+      clientSyncId,
+      buildingId: 'test-building',
+      equipmentId: 'test-equipment',
+      status: 'PASSED',
+      photoDataUrl: oversizedPhoto,
+      remarks: 'Seeded oversized test inspection',
+    },
+    createdAt: Date.now(),
+    attempts: 2,
+    status: 'FAILED',
+    lastError: 'HTTP 413: Payload too large',
+    httpStatus: 413,
+  };
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(OUTBOX_STORE, 'readwrite');
+    const store = tx.objectStore(OUTBOX_STORE);
+    store.put(brokenItem);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
 }
 

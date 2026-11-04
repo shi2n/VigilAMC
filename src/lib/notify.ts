@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { db } from '@/lib/db';
+import { TRANSLATIONS, SupportedLanguage } from '@/lib/i18n/technician';
 
 interface ServiceAccountKey {
   project_id: string;
@@ -140,8 +141,10 @@ interface NotifyAssignmentParams {
   type: 'WORK_ORDER' | 'BUILDING';
   technicianId: string;
   organizationId?: string | null;
-  title: string;
-  message: string;
+  title?: string;
+  message?: string;
+  taskTitle?: string;
+  buildingCount?: number;
   link?: string;
   taskId?: string;
   dueDate?: Date | null;
@@ -149,27 +152,71 @@ interface NotifyAssignmentParams {
 
 /**
  * Single entry point for technician task and building assignments:
- * 1. Writes in-app Notification row
- * 2. Fetches registered FCM DeviceTokens
- * 3. Sends FCM Push notification
- * 4. Updates Notification.pushSent flag if pushed
+ * 1. Resolves technician preferredLanguage and localizes push title/body (ALL 10 Indian languages)
+ * 2. Writes in-app Notification row
+ * 3. Fetches registered FCM DeviceTokens
+ * 4. Sends FCM Push notification
+ * 5. Updates Notification.pushSent flag if pushed
  * Failures never break business logic.
  */
 export async function notifyOnAssignment(params: NotifyAssignmentParams): Promise<void> {
   try {
-    const { technicianId, organizationId, title, message, link, taskId, dueDate } = params;
+    const { technicianId, organizationId, link, taskId, dueDate } = params;
 
-    // 1. Create in-app Notification record
+    // 1. Resolve technician preferred language (en/hi/mr/gu/ta/te/kn/ml/bn/pa)
+    let lang: SupportedLanguage = 'en';
+    try {
+      const techUser = await (db as any).userProfile.findUnique({
+        where: { id: technicianId },
+        select: { preferredLanguage: true },
+      });
+      if (techUser?.preferredLanguage && TRANSLATIONS[techUser.preferredLanguage as SupportedLanguage]) {
+        lang = techUser.preferredLanguage as SupportedLanguage;
+      }
+    } catch (langErr) {
+      console.warn('[notify] Could not determine technician preferred language, defaulting to en:', langErr);
+    }
+
+    const dict = TRANSLATIONS[lang] || TRANSLATIONS.en;
+
+    let resolvedTitle = params.title;
+    let resolvedMessage = params.message;
+
+    if (params.type === 'WORK_ORDER') {
+      resolvedTitle = dict.pushTaskAssignedTitle || TRANSLATIONS.en.pushTaskAssignedTitle || 'New Task Assigned';
+      const taskName = params.taskTitle || params.title || 'Work Order';
+      const dueStr = dueDate
+        ? ` · Due: ${new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short' }).format(dueDate)}`
+        : '';
+      const template =
+        dict.pushTaskAssignedBody ||
+        TRANSLATIONS.en.pushTaskAssignedBody ||
+        'Work Order: "{title}" assigned to you{due}';
+      resolvedMessage = template.replace('{title}', taskName).replace('{due}', dueStr);
+    } else if (params.type === 'BUILDING') {
+      resolvedTitle =
+        dict.pushBuildingAssignedTitle ||
+        TRANSLATIONS.en.pushBuildingAssignedTitle ||
+        'New Building Assignment';
+      const count = params.buildingCount || 1;
+      const template =
+        dict.pushBuildingAssignedBody ||
+        TRANSLATIONS.en.pushBuildingAssignedBody ||
+        'You have been assigned to {count} building premises.';
+      resolvedMessage = template.replace('{count}', String(count));
+    }
+
+    // 2. Create in-app Notification record
     let notificationId: string | null = null;
     try {
       const created = await (db as any).notification.create({
         data: {
           organizationId: organizationId || null,
           userId: technicianId,
-          title,
-          message,
+          title: resolvedTitle || 'Task Notification',
+          message: resolvedMessage || 'A new task was assigned to you.',
           type: 'INFO',
-          link: link || null,
+          link: link || (taskId ? `/technician?taskId=${taskId}` : null),
           pushSent: false,
         },
       });
@@ -178,7 +225,7 @@ export async function notifyOnAssignment(params: NotifyAssignmentParams): Promis
       console.warn('[notify] Failed to persist Notification row:', dbErr);
     }
 
-    // 2. Fetch Device Tokens for technician
+    // 3. Fetch Device Tokens for technician
     let deviceTokens: Array<{ fcmToken: string }> = [];
     try {
       deviceTokens = await (db as any).deviceToken.findMany({
@@ -193,7 +240,7 @@ export async function notifyOnAssignment(params: NotifyAssignmentParams): Promis
       return;
     }
 
-    // 3. Dispatch FCM Push to each device token
+    // 4. Dispatch FCM Push to each device token
     let anyPushSuccess = false;
     const fcmData: Record<string, string> = {
       type: params.type,
@@ -204,19 +251,21 @@ export async function notifyOnAssignment(params: NotifyAssignmentParams): Promis
 
     for (const dt of deviceTokens) {
       const ok = await sendFcmMessage(dt.fcmToken, {
-        title,
-        body: message,
+        title: resolvedTitle || 'Task Notification',
+        body: resolvedMessage || 'A new task was assigned to you.',
         data: fcmData,
       });
       if (ok) anyPushSuccess = true;
     }
 
-    // 4. Update pushSent flag
+    // 5. Update pushSent flag
     if (anyPushSuccess && notificationId) {
-      await (db as any).notification.update({
-        where: { id: notificationId },
-        data: { pushSent: true },
-      }).catch(() => null);
+      await (db as any).notification
+        .update({
+          where: { id: notificationId },
+          data: { pushSent: true },
+        })
+        .catch(() => null);
     }
   } catch (err: any) {
     // Non-fatal safety catch: assignments MUST never fail due to notification dispatch
