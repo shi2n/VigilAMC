@@ -107,13 +107,14 @@ export default function LoginPage() {
       if (data?.url) {
         // Pre-flight probe Supabase authorize URL to detect unconfigured provider before navigating away
         try {
-          const probe = await fetch(data.url, { method: 'GET' });
-          if (!probe.ok) {
+          // redirect: 'manual' — an enabled provider answers with a 302 to Google
+          // (opaqueredirect); only a readable 400 "provider is not enabled" means unconfigured.
+          const probe = await fetch(data.url, { method: 'GET', redirect: 'manual' });
+          if (probe.type !== 'opaqueredirect' && probe.status === 400) {
             const probeJson = await probe.json().catch(() => null);
             if (
-              probe.status === 400 ||
               probeJson?.msg?.toLowerCase().includes('not enabled') ||
-              probeJson?.error_code === 'validation_failed'
+              probeJson?.msg?.toLowerCase().includes('unsupported provider')
             ) {
               toast.error('Google Sign-In is not enabled yet in your Supabase project.');
               setErrorMsg('Google Sign-In is not enabled yet in your Supabase project. To fix this, open your Supabase Dashboard > Authentication > Providers > Google, toggle "Enable Google provider", paste your Google Client ID & Secret, and save.');
