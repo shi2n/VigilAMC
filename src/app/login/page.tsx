@@ -54,7 +54,13 @@ export default function LoginPage() {
               setMode('COMPLETE_PROFILE');
               setEmail(session.user.email || '');
               setFullName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || '');
+            } else {
+              router.push('/dashboard');
+              return;
             }
+          } else {
+            router.push('/dashboard');
+            return;
           }
         }
       } catch (e) {
@@ -85,7 +91,7 @@ export default function LoginPage() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${origin}/login?oauth=google`,
+          redirectTo: `${origin}/auth/callback?next=/dashboard`,
           skipBrowserRedirect: true,
         },
       });
