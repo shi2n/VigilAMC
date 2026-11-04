@@ -161,6 +161,26 @@ export interface AdminDictionary {
   confirmDeletionMessage: string;
   deletionApprovedSuccess: string;
   noPendingDeletionRequests: string;
+  // Excel Import Guide & Templates
+  importHowToButton: string;
+  importHowToTitle: string;
+  importStep1: string;
+  importStep2: string;
+  importStep3: string;
+  importStep4: string;
+  importStep5: string;
+  importStep6: string;
+  importFieldRulesTitle: string;
+  importCommonIssuesTitle: string;
+  importIssueAutoMatch: string;
+  importIssueDuplicates: string;
+  importIssueLimits: string;
+  importSupportLine: string;
+  importDownloadExcelTemplate: string;
+  importDownloadCsvTemplate: string;
+  importRequiredUnmappedError: string;
+  importOptionalUnmappedHint: string;
+  importTotalRowsDetected: string;
 }
 
 const DICTIONARY_EN: AdminDictionary = {
@@ -278,6 +298,26 @@ const DICTIONARY_EN: AdminDictionary = {
   confirmDeletionMessage: 'This action is PERMANENT and cannot be undone. The technician\'s login access, mobile number, and personal details will be irreversibly anonymized. Statutory fire safety inspection records and photos are preserved per Indian compliance.',
   deletionApprovedSuccess: 'Staff account successfully anonymized',
   noPendingDeletionRequests: 'No pending account deletion requests.',
+  // Excel Import Guide & Templates
+  importHowToButton: '❓ How to import',
+  importHowToTitle: 'How to Import Your Agency Data (6 Steps)',
+  importStep1: 'Download the template (.xlsx or .csv) for your record type.',
+  importStep2: 'Fill your rows in Excel or Google Sheets (keep headers unchanged).',
+  importStep3: 'Upload your saved .xlsx, .xls, or .csv file.',
+  importStep4: 'Check or auto-adjust column mapping on the mapping screen.',
+  importStep5: 'Click Verify & Preview to validate formats and inspect rows.',
+  importStep6: 'Import (existing duplicates are automatically protected).',
+  importFieldRulesTitle: 'Per-Type Field Rules & Accepted Formats',
+  importCommonIssuesTitle: 'Common Issues & File Limits',
+  importIssueAutoMatch: 'Header names are auto-matched — rename only if unmatched.',
+  importIssueDuplicates: 'Duplicate rows are skipped and counted automatically by default.',
+  importIssueLimits: 'Max file size: 10 MB (.xlsx, .xls, .csv) • Processed in chunks of 100 rows (handles 500 to 20,000+ rows).',
+  importSupportLine: 'Stuck? vigilamc@gmail.com',
+  importDownloadExcelTemplate: 'Download Excel template',
+  importDownloadCsvTemplate: 'Download CSV template',
+  importRequiredUnmappedError: '{field} is required — map a spreadsheet column to it',
+  importOptionalUnmappedHint: 'will be left empty',
+  importTotalRowsDetected: 'Total Rows Detected:',
 };
 
 const DICTIONARY_HI: Partial<AdminDictionary> = {
@@ -381,6 +421,26 @@ const DICTIONARY_HI: Partial<AdminDictionary> = {
   welcomeCta: 'शुरू करें (Start exploring)',
   welcomeCloseAria: 'स्वागत संवाद बंद करें',
   welcomeFooter: 'कोई प्रश्न या सुझाव? vigilamc@gmail.com',
+  // Excel Import Guide & Templates
+  importHowToButton: '❓ आयात कैसे करें (How to import)',
+  importHowToTitle: 'एजेंसी डेटा आयात करने की विधि (6 चरण)',
+  importStep1: 'अपने रिकॉर्ड प्रकार के लिए टेम्पलेट (.xlsx या .csv) डाउनलोड करें।',
+  importStep2: 'अपनी पंक्तियाँ भरें (कॉलम हेडर अपरिवर्तित रखें)।',
+  importStep3: '.xlsx, .xls या .csv फ़ाइल अपलोड करें।',
+  importStep4: 'कॉलम मैपिंग की जांच या समायोजन करें।',
+  importStep5: 'सत्यापन और पूर्वावलोकन (Verify & Preview) पर क्लिक करें।',
+  importStep6: 'आयात करें (डुप्लिकेट अपने आप सुरक्षित रहते हैं)।',
+  importFieldRulesTitle: 'फ़ील्ड नियम और स्वीकार्य प्रारूप',
+  importCommonIssuesTitle: 'सामान्य समस्याएं और फ़ाइल सीमाएं',
+  importIssueAutoMatch: 'हेडर नाम अपने आप मैच हो जाते हैं — केवल अनमैच होने पर बदलें।',
+  importIssueDuplicates: 'डुप्लिकेट पंक्तियाँ डिफ़ॉल्ट रूप से छोड़ दी जाती हैं और गिनी जाती हैं।',
+  importIssueLimits: 'अधिकतम फ़ाइल आकार: 10 MB (.xlsx, .xls, .csv) • 100 पंक्तियों के बैच में प्रोसेस होता है।',
+  importSupportLine: 'कोई समस्या? vigilamc@gmail.com',
+  importDownloadExcelTemplate: 'Excel टेम्पलेट डाउनलोड करें',
+  importDownloadCsvTemplate: 'CSV टेम्पलेट डाउनलोड करें',
+  importRequiredUnmappedError: '{field} अनिवार्य है — इसके लिए स्प्रेडशीट कॉलम चुनें',
+  importOptionalUnmappedHint: 'खाली छोड़ दिया जाएगा',
+  importTotalRowsDetected: 'कुल पंक्तियाँ मिलीं:',
 };
 
 const DICTIONARY_MR: Partial<AdminDictionary> = {

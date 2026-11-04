@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
 import { getCurrentUser } from '@/lib/auth';
-import { IMPORT_CONFIGS, ImportType, generateSampleWorkbook } from '@/lib/excelImport';
+import {
+  IMPORT_CONFIGS,
+  ImportType,
+  generateSampleWorkbook,
+  generateSampleCsv,
+  getTemplateFilename,
+} from '@/lib/excelImport';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,15 +20,28 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const type = (searchParams.get('type') || 'FIRE_ASSETS').toUpperCase() as ImportType;
+    const format = (searchParams.get('format') || 'xlsx').toLowerCase() === 'csv' ? 'csv' : 'xlsx';
 
     if (!IMPORT_CONFIGS[type]) {
       return NextResponse.json({ error: `Invalid import type: ${type}` }, { status: 400 });
     }
 
+    const filename = getTemplateFilename(type, format);
+
+    if (format === 'csv') {
+      const csv = generateSampleCsv(type);
+      return new NextResponse(csv, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+          'Cache-Control': 'no-cache',
+        },
+      });
+    }
+
     const wb = generateSampleWorkbook(type);
     const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
-
-    const filename = `VigilAMC_Template_${IMPORT_CONFIGS[type].plural.replace(/\s+/g, '_')}.xlsx`;
 
     return new NextResponse(buf, {
       status: 200,

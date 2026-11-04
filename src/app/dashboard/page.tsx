@@ -2034,6 +2034,7 @@ export default function AdminDashboardPage() {
           onSuccess={() => {
             refreshDashboard({ silent: true });
           }}
+          t={getAdminDictionary(data?.profile?.preferredLanguage || 'en')}
         />
 
       {/* =========================================================================
