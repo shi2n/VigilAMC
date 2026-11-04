@@ -82,10 +82,11 @@ export default function LoginPage() {
         typeof window !== 'undefined'
           ? window.location.origin
           : process.env.NEXT_PUBLIC_SITE_URL || 'https://vigilamc.vercel.app';
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${origin}/login?oauth=google`,
+          skipBrowserRedirect: true,
         },
       });
 
@@ -95,10 +96,35 @@ export default function LoginPage() {
           error.message?.toLowerCase().includes('unsupported provider') ||
           error.message?.toLowerCase().includes('configuration')
         ) {
-          toast.info('Google sign-in is not configured yet in Supabase Auth settings.');
+          toast.error('Google Sign-In is not enabled in Supabase Auth settings.');
+          setErrorMsg('Google Sign-In is not enabled yet in your Supabase project dashboard. Please enable the Google provider in Supabase Authentication settings.');
+          return;
         } else {
           throw error;
         }
+      }
+
+      if (data?.url) {
+        // Pre-flight probe Supabase authorize URL to detect unconfigured provider before navigating away
+        try {
+          const probe = await fetch(data.url, { method: 'GET' });
+          if (!probe.ok) {
+            const probeJson = await probe.json().catch(() => null);
+            if (
+              probe.status === 400 ||
+              probeJson?.msg?.toLowerCase().includes('not enabled') ||
+              probeJson?.error_code === 'validation_failed'
+            ) {
+              toast.error('Google Sign-In is not enabled yet in your Supabase project.');
+              setErrorMsg('Google Sign-In is not enabled yet in your Supabase project. To fix this, open your Supabase Dashboard > Authentication > Providers > Google, toggle "Enable Google provider", paste your Google Client ID & Secret, and save.');
+              return;
+            }
+          }
+        } catch {
+          // If probe blocked or CORS variation, proceed with redirect
+        }
+
+        window.location.href = data.url;
       }
     } catch (err: any) {
       const msg = err.message || '';
@@ -107,7 +133,8 @@ export default function LoginPage() {
         msg.toLowerCase().includes('not enabled') ||
         msg.toLowerCase().includes('not configured')
       ) {
-        toast.info('Google sign-in is not configured yet in Supabase Auth settings.');
+        toast.error('Google Sign-In is not enabled yet in Supabase Auth settings.');
+        setErrorMsg('Google Sign-In is not enabled yet in your Supabase project. Please enable the Google provider in Supabase Authentication settings.');
       } else {
         setErrorMsg(msg || 'Google sign-in failed. Please try again.');
       }
