@@ -170,7 +170,7 @@ export async function PATCH(
           organizationId,
           title: 'New Building Assignment',
           message: `You have been assigned to ${assignedBuildingIds.length} building premises.`,
-          link: '/technician',
+          link: undefined,
         }).catch(() => null);
       }
 

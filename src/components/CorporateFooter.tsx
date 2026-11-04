@@ -77,23 +77,15 @@ export function CorporateFooter() {
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/technician"
-                  className="inline-flex items-center min-h-[36px] hover:text-[#FAFAF9] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
-                >
-                  Field App (Web PWA)
-                </Link>
-              </li>
-              <li>
                 <a
                   href={SITE_CONFIG.GOOGLE_PLAY_URL}
                   target="_blank"
-                  rel="noopener noreferrer"
+                  rel="noopener"
                   className="inline-flex items-center gap-1.5 min-h-[36px] text-[#FF8C42] hover:text-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
                 >
-                  <span>Google Play App</span>
+                  <span>VigilAMC Field App</span>
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#EA580C]/20 border border-[#EA580C]/30 text-[#FF8C42]">
-                    Android
+                    Google Play
                   </span>
                 </a>
               </li>
@@ -188,9 +180,18 @@ export function CorporateFooter() {
               DPIIT-recognized startup · Recognized under Startup India
             </p>
           </div>
-          <p className="shrink-0 font-medium text-[#FAFAF9]/90">
-            (c) 2026 VigilAMC - Made in India
-          </p>
+          <div className="shrink-0 flex flex-wrap items-center gap-3 font-medium text-[#FAFAF9]/90">
+            <a
+              href={SITE_CONFIG.GOOGLE_PLAY_URL}
+              target="_blank"
+              rel="noopener"
+              className="text-[#FF8C42] hover:text-white hover:underline transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
+            >
+              Get the Android app
+            </a>
+            <span aria-hidden="true" className="text-white/30">&middot;</span>
+            <span>(c) 2026 VigilAMC - Made in India</span>
+          </div>
         </div>
       </div>
     </footer>

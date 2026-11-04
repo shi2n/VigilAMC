@@ -6,6 +6,7 @@ import { HeroGlass } from '@/components/home/HeroGlass';
 import { PainScene } from '@/components/home/PainScene';
 import { HowItWorks } from '@/components/home/HowItWorks';
 import { SectorMarquee } from '@/components/home/SectorMarquee';
+import { FieldAppSection } from '@/components/home/FieldAppSection';
 import { ProofSection } from '@/components/home/ProofSection';
 
 export const metadata: Metadata = {
@@ -110,6 +111,9 @@ export default function HomePage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
         <SectorMarquee />
       </div>
+
+      {/* Screen 3B: VigilAMC Field Android App on Google Play */}
+      <FieldAppSection />
 
       {/* Screen 4: Real Numbers + Guarantees + Founding Agency Promise + Final CTA */}
       <ProofSection />

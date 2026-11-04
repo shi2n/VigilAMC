@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { AdminNavTab } from './AdminSidebar';
 import { AdminDictionary } from '@/lib/i18n/admin';
+import { SITE_CONFIG } from '@/lib/siteConfig';
 
 interface GettingStartedGuideProps {
   t: AdminDictionary;
@@ -87,7 +88,8 @@ export function GettingStartedChecklist({
     {
       id: 'step-tech',
       title: 'Invite Field Technicians',
-      desc: 'Create technician accounts with systematic IDs and PINs.',
+      desc: t.guideInviteTechDesc,
+      playLink: true,
       done: stats.techniciansCount > 0,
       actionLabel: 'Add Technicians',
       onClick: () => onNavigateTab('FIELD_TEAM'),
@@ -95,7 +97,7 @@ export function GettingStartedChecklist({
     {
       id: 'step-assign',
       title: 'Assign Buildings to Technicians',
-      desc: 'Allocate buildings so technicians see their assigned sites in the field app.',
+      desc: 'Allocate buildings so technicians see their assigned sites in VigilAMC Field.',
       done: stats.techniciansCount > 0 && stats.buildingsCount > 0,
       actionLabel: 'Manage Team',
       onClick: () => onNavigateTab('FIELD_TEAM'),
@@ -199,6 +201,17 @@ export function GettingStartedChecklist({
                   <span className={step.done ? 'line-through text-slate-500' : ''}>{step.title}</span>
                 </div>
                 <p className="text-[11px] text-slate-500 leading-relaxed">{step.desc}</p>
+                {step.playLink && (
+                  <a
+                    href={SITE_CONFIG.GOOGLE_PLAY_URL}
+                    target="_blank"
+                    rel="noopener"
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#C2410C] hover:text-[#9A3412] hover:underline pt-0.5"
+                  >
+                    <span>{t.guidePlayStoreLink}</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
               </div>
             </div>
 
@@ -290,10 +303,11 @@ export function GuideModal({ isOpen, onClose, onNavigateTab, t }: GuideModalProp
       title: t.navFieldTeam,
       whatFor: 'Manage field technicians, app credentials, building allocations, and live sync status.',
       howTo: [
+        t.guideInviteTechDesc,
         'Select Active or Blocked from the dropdown or use bulk selection for multiple staff.',
-        'Click "View activity" to see inspections completed today, 7d, 30d, and pending outbox items.',
         'Share credentials via 1-click WhatsApp message including systematic ID and 6-digit PIN.',
       ],
+      playLink: true,
     },
     {
       tab: 'REPORTS' as AdminNavTab,
@@ -370,7 +384,20 @@ export function GuideModal({ isOpen, onClose, onNavigateTab, t }: GuideModalProp
                   </ul>
                 </div>
 
-                <div className="pt-2 border-t border-slate-100 flex justify-end">
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                  {(sec as any).playLink ? (
+                    <a
+                      href={SITE_CONFIG.GOOGLE_PLAY_URL}
+                      target="_blank"
+                      rel="noopener"
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-[#C2410C] hover:text-[#9A3412] hover:underline"
+                    >
+                      <span>{t.guidePlayStoreLink}</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  ) : (
+                    <span />
+                  )}
                   <button
                     type="button"
                     onClick={() => {

@@ -24,7 +24,7 @@ export function GooglePlayBadge({
     <a
       href={SITE_CONFIG.GOOGLE_PLAY_URL}
       target="_blank"
-      rel="noopener noreferrer"
+      rel="noopener"
       aria-label="Get VigilAMC Field on Google Play"
       className={`inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl border transition-all duration-200 active:scale-95 group focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] ${
         theme === 'dark'

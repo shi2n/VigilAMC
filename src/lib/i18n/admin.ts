@@ -132,6 +132,10 @@ export interface AdminDictionary {
   guideChecklistDesc: string;
   guideGoTo: string;
   guideDismiss: string;
+  guideInviteTechDesc: string;
+  guidePlayStoreLink: string;
+  techSuccessPlayCopy: string;
+  techPlayStoreHint: string;
   // Account Deletion Requests
   deletionRequestedBadge: string;
   deletionRequestsPanelTitle: string;
@@ -233,6 +237,10 @@ const DICTIONARY_EN: AdminDictionary = {
   guideChecklistDesc: 'Complete these quick steps to get your fire agency running smoothly.',
   guideGoTo: 'Go to section →',
   guideDismiss: 'Skip for now',
+  guideInviteTechDesc: 'Technicians install VigilAMC Field from Google Play and sign in with the credentials you create here',
+  guidePlayStoreLink: 'Get on Google Play',
+  techSuccessPlayCopy: 'Share these credentials — the technician signs in on the VigilAMC Field Android app (Google Play).',
+  techPlayStoreHint: 'Technicians sign in on the VigilAMC Field Android app (Google Play).',
 
   // Account Deletion Requests
   deletionRequestedBadge: 'Deletion requested',
@@ -335,6 +343,10 @@ const DICTIONARY_HI: Partial<AdminDictionary> = {
   guideChecklistDesc: 'अपनी एजेंसी को शुरू करने के लिए इन चरणों को पूरा करें।',
   guideGoTo: 'इस अनुभाग में जाएं →',
   guideDismiss: 'बाद में देखें',
+  guideInviteTechDesc: 'तकनीशियन Google Play से VigilAMC Field इंस्टॉल करते हैं और यहाँ बनाए गए विवरण से साइन इन करते हैं',
+  guidePlayStoreLink: 'Google Play पर प्राप्त करें',
+  techSuccessPlayCopy: 'ये लॉगिन विवरण साझा करें — तकनीशियन VigilAMC Field एंड्रॉइड ऐप (Google Play) पर साइन इन करता है।',
+  techPlayStoreHint: 'तकनीशियन VigilAMC Field एंड्रॉइड ऐप (Google Play) पर साइन इन करते हैं।',
 };
 
 const DICTIONARY_MR: Partial<AdminDictionary> = {
@@ -354,6 +366,10 @@ const DICTIONARY_MR: Partial<AdminDictionary> = {
   techBlocked: 'ब्लॉक (Blocked)',
   actionSave: 'जतन करा',
   actionCancel: 'रद्द करा',
+  guideInviteTechDesc: 'तंत्रज्ञ Google Play वरून VigilAMC Field इन्स्टॉल करतात आणि येथे तयार केलेल्या माहितीने साइन इन करतात',
+  guidePlayStoreLink: 'Google Play वर मिळवा',
+  techSuccessPlayCopy: 'हे क्रेडेन्शियल्स शेअर करा — तंत्रज्ञ VigilAMC Field अँड्रॉइड अ‍ॅपवर (Google Play) साइन इन करतो.',
+  techPlayStoreHint: 'तंत्रज्ञ VigilAMC Field अँड्रॉइड अ‍ॅपवर (Google Play) साइन इन करतात.',
 };
 
 const DICTIONARY_GU: Partial<AdminDictionary> = {
@@ -373,6 +389,10 @@ const DICTIONARY_GU: Partial<AdminDictionary> = {
   techBlocked: 'બ્લોક (Blocked)',
   actionSave: 'સાચવો',
   actionCancel: 'રદ કરો',
+  guideInviteTechDesc: 'ટેકનિશિયન Google Play પરથી VigilAMC Field ઇન્સ્ટોલ કરે છે અને અહીં બનાવેલા ક્રેડેન્શિયલ્સથી સાઇન ઇન કરે છે',
+  guidePlayStoreLink: 'Google Play પર મેળવો',
+  techSuccessPlayCopy: 'આ ક્રેડેન્શિયલ્સ શેર કરો — ટેકનિશિયન VigilAMC Field એન્ડ્રોઇડ એપ (Google Play) પર સાઇન ઇન કરે છે.',
+  techPlayStoreHint: 'ટેકનિશિયન VigilAMC Field એન્ડ્રોઇડ એપ (Google Play) પર સાઇન ઇન કરે છે.',
 };
 
 const DICTIONARY_TA: Partial<AdminDictionary> = {
@@ -392,6 +412,10 @@ const DICTIONARY_TA: Partial<AdminDictionary> = {
   techBlocked: 'தடுக்கப்பட்டது (Blocked)',
   actionSave: 'சேமி',
   actionCancel: 'ரத்து செய்',
+  guideInviteTechDesc: 'தொழில்நுட்ப வல்லுநர்கள் Google Play இலிருந்து VigilAMC Field செயலியை நிறுவி இங்கு உருவாக்கிய விவரங்களுடன் உள்நுழைவார்கள்',
+  guidePlayStoreLink: 'Google Play இல் பெறுக',
+  techSuccessPlayCopy: 'இந்த விவரங்களைப் பகிரவும் — தொழில்நுட்ப வல்லுநர் VigilAMC Field ஆண்ட்ராய்டு செயலியில் (Google Play) உள்நுழைவார்.',
+  techPlayStoreHint: 'தொழில்நுட்ப வல்லுநர்கள் VigilAMC Field ஆண்ட்ராய்டு செயலியில் (Google Play) உள்நுழைகிறார்கள்.',
 };
 
 const DICTIONARY_TE: Partial<AdminDictionary> = {
@@ -411,6 +435,10 @@ const DICTIONARY_TE: Partial<AdminDictionary> = {
   techBlocked: 'బ్లాక్ చేయబడింది (Blocked)',
   actionSave: 'సేవ్ చేయండి',
   actionCancel: 'రద్దు చేయండి',
+  guideInviteTechDesc: 'టెక్నీషియన్లు Google Play నుండి VigilAMC Field ఇన్‌స్టాల్ చేసి, ఇక్కడ సృష్టించిన వివరాలతో సైన్ ఇన్ చేస్తారు',
+  guidePlayStoreLink: 'Google Playలో పొందండి',
+  techSuccessPlayCopy: 'ఈ వివరాలను షేర్ చేయండి — టెక్నీషియన్ VigilAMC Field ఆండ్రాయిడ్ యాప్ (Google Play)లో సైన్ ఇన్ చేస్తారు.',
+  techPlayStoreHint: 'టెక్నీషియన్లు VigilAMC Field ఆండ్రాయిడ్ యాప్ (Google Play)లో సైన్ ఇన్ చేస్తారు.',
 };
 
 const DICTIONARY_KN: Partial<AdminDictionary> = {
@@ -430,6 +458,10 @@ const DICTIONARY_KN: Partial<AdminDictionary> = {
   techBlocked: 'ನಿರ್ಬಂಧಿಸಲಾಗಿದೆ (Blocked)',
   actionSave: 'ಉಳಿಸಿ',
   actionCancel: 'ರದ್ದುಮಾಡಿ',
+  guideInviteTechDesc: 'ತಂತ್ರಜ್ಞರು Google Play ನಿಂದ VigilAMC Field ಇನ್‌ಸ್ಟಾಲ್ ಮಾಡಿ ಇಲ್ಲಿ ರಚಿಸಿದ ವಿವರಗಳೊಂದಿಗೆ ಸೈನ್ ಇನ್ ಮಾಡುತ್ತಾರೆ',
+  guidePlayStoreLink: 'Google Play ನಲ್ಲಿ ಪಡೆಯಿರಿ',
+  techSuccessPlayCopy: 'ಈ ವಿವರಗಳನ್ನು ಹಂಚಿಕೊಳ್ಳಿ — ತಂತ್ರಜ್ಞರು VigilAMC Field ಆಂಡ್ರಾಯ್ಡ್ ಆಪ್‌ನಲ್ಲಿ (Google Play) ಸೈನ್ ಇನ್ ಮಾಡುತ್ತಾರೆ.',
+  techPlayStoreHint: 'ತಂತ್ರಜ್ಞರು VigilAMC Field ಆಂಡ್ರಾಯ್ಡ್ ಆಪ್‌ನಲ್ಲಿ (Google Play) ಸೈನ್ ಇನ್ ಮಾಡುತ್ತಾರೆ.',
 };
 
 const DICTIONARY_ML: Partial<AdminDictionary> = {
@@ -449,6 +481,10 @@ const DICTIONARY_ML: Partial<AdminDictionary> = {
   techBlocked: 'തടഞ്ഞു (Blocked)',
   actionSave: 'സംരക്ഷിക്കുക',
   actionCancel: 'റദ്ദാക്കുക',
+  guideInviteTechDesc: 'ടെക്നീഷ്യൻമാർ Google Play-യിൽ നിന്ന് VigilAMC Field ഇൻസ്റ്റാൾ ചെയ്ത് ഇവിടെ നൽകിയ വിവരങ്ങൾ ഉപയോഗിച്ച് സൈൻ ഇൻ ചെയ്യുന്നു',
+  guidePlayStoreLink: 'Google Play-യിൽ നേടുക',
+  techSuccessPlayCopy: 'ഈ വിവരങ്ങൾ പങ്കിടുക — ടെക്നീഷ്യൻ VigilAMC Field ആൻഡ്രോയിഡ് ആപ്പിൽ (Google Play) സൈൻ ഇൻ ചെയ്യുന്നു.',
+  techPlayStoreHint: 'ടെക്നീഷ്യൻമാർ VigilAMC Field ആൻഡ്രോയിഡ് ആപ്പിൽ (Google Play) സൈൻ ഇൻ ചെയ്യുന്നു.',
 };
 
 const DICTIONARY_BN: Partial<AdminDictionary> = {
@@ -468,6 +504,10 @@ const DICTIONARY_BN: Partial<AdminDictionary> = {
   techBlocked: 'ব্লকড (Blocked)',
   actionSave: 'সংরক্ষণ করুন',
   actionCancel: 'বাতিল করুন',
+  guideInviteTechDesc: 'টেকনিশিয়ানরা Google Play থেকে VigilAMC Field ইনস্টল করেন এবং এখানে তৈরি করা তথ্য দিয়ে সাইন ইন করেন',
+  guidePlayStoreLink: 'Google Play-তে পান',
+  techSuccessPlayCopy: 'এই লগইন তথ্য শেয়ার করুন — টেকনিশিয়ান VigilAMC Field অ্যান্ড্রয়েড অ্যাপে (Google Play) সাইন ইন করবেন।',
+  techPlayStoreHint: 'টেকনিশিয়ানরা VigilAMC Field অ্যান্ড্রয়েড অ্যাপে (Google Play) সাইন ইন করেন।',
 };
 
 const DICTIONARY_PA: Partial<AdminDictionary> = {
@@ -487,6 +527,10 @@ const DICTIONARY_PA: Partial<AdminDictionary> = {
   techBlocked: 'ਬਲੌਕ (Blocked)',
   actionSave: 'ਸੰਭਾਲੋ',
   actionCancel: 'ਰੱਦ ਕਰੋ',
+  guideInviteTechDesc: 'ਤਕਨੀਸ਼ੀਅਨ Google Play ਤੋਂ VigilAMC Field ਇੰਸਟਾਲ ਕਰਦੇ ਹਨ ਅਤੇ ਇੱਥੇ ਬਣਾਏ ਵੇਰਵਿਆਂ ਨਾਲ ਸਾਈਨ ਇਨ ਕਰਦੇ ਹਨ',
+  guidePlayStoreLink: 'Google Play ਤੇ ਪ੍ਰਾਪਤ ਕਰੋ',
+  techSuccessPlayCopy: 'ਇਹ ਲੌਗਇਨ ਵੇਰਵੇ ਸਾਂਝੇ ਕਰੋ — ਤਕਨੀਸ਼ੀਅਨ VigilAMC Field ਐਂਡਰਾਇਡ ਐਪ (Google Play) ਤੇ ਸਾਈਨ ਇਨ ਕਰਦਾ ਹੈ।',
+  techPlayStoreHint: 'ਤਕਨੀਸ਼ੀਅਨ VigilAMC Field ਐਂਡਰਾਇਡ ਐਪ (Google Play) ਤੇ ਸਾਈਨ ਇਨ ਕਰਦੇ ਹਨ।',
 };
 
 const DICTIONARY_OR: Partial<AdminDictionary> = {
@@ -505,6 +549,10 @@ const DICTIONARY_OR: Partial<AdminDictionary> = {
   techBlocked: 'ବନ୍ଦ (Blocked)',
   actionSave: 'ସାଇତନ୍ତୁ',
   actionCancel: 'ବାତିଲ୍ କରନ୍ତୁ',
+  guideInviteTechDesc: 'ଟେକ୍ନିସିଆନ୍ Google Play ରୁ VigilAMC Field ଇନଷ୍ଟଲ୍ କରନ୍ତି ଏବଂ ଏଠାରେ ତିଆରି ତଥ୍ୟରେ ସାଇନ୍ ଇନ୍ କରନ୍ତି',
+  guidePlayStoreLink: 'Google Play ରେ ପାଆନ୍ତୁ',
+  techSuccessPlayCopy: 'ଏହି লଗଇନ୍ ତଥ୍ୟ ସେୟାର୍ କରନ୍ତୁ — ଟେକ୍ନିସିଆନ୍ VigilAMC Field ଆଣ୍ଡ୍ରଏଡ୍ ଆପ୍ (Google Play) ରେ ସାଇନ୍ ଇନ୍ କରନ୍ତି।',
+  techPlayStoreHint: 'ଟେକ୍ନିସିଆନ୍ VigilAMC Field ଆଣ୍ଡ୍ରଏଡ୍ ଆପ୍ (Google Play) ରେ ସାଇନ୍ ଇନ୍ କରନ୍ତି।',
 };
 
 const DICTIONARY_AS: Partial<AdminDictionary> = {
@@ -523,6 +571,10 @@ const DICTIONARY_AS: Partial<AdminDictionary> = {
   techBlocked: 'অৱৰোধ (Blocked)',
   actionSave: 'সংৰক্ষণ কৰক',
   actionCancel: 'বাতিল কৰক',
+  guideInviteTechDesc: 'কাৰিকৰসকলে Google Play ৰ পৰা VigilAMC Field ইনষ্টল কৰে আৰু ইয়াত সৃষ্টি কৰা তথ্যৰে ছাইন ইন কৰে',
+  guidePlayStoreLink: 'Google Play ত পাওক',
+  techSuccessPlayCopy: 'এই লগইন তথ্য শ্বেয়াৰ কৰক — কাৰিকৰে VigilAMC Field এণ্ড্ৰইড এপত (Google Play) ছাইন ইন কৰিব।',
+  techPlayStoreHint: 'কাৰিকৰসকলে VigilAMC Field এণ্ড্ৰইড এপত (Google Play) ছাইন ইন কৰে।',
 };
 
 const DICTIONARY_UR: Partial<AdminDictionary> = {
@@ -542,6 +594,10 @@ const DICTIONARY_UR: Partial<AdminDictionary> = {
   techBlocked: 'مسدود (Blocked)',
   actionSave: 'محفوظ کریں',
   actionCancel: 'منسوخ کریں',
+  guideInviteTechDesc: 'ٹیکنیشنز Google Play سے VigilAMC Field انسٹال کرتے ہیں اور یہاں بنائی گئی اسناد کے ساتھ سائن ان کرتے ہیں',
+  guidePlayStoreLink: 'Google Play پر حاصل کریں',
+  techSuccessPlayCopy: 'یہ اسناد شیئر کریں — ٹیکنیشن VigilAMC Field اینڈرائیڈ ایپ (Google Play) پر سائن ان کرتا ہے۔',
+  techPlayStoreHint: 'ٹیکنیشنز VigilAMC Field اینڈرائیڈ ایپ (Google Play) پر سائن ان کرتے ہیں۔',
 };
 
 const DICTIONARIES: Record<string, Partial<AdminDictionary>> = {

@@ -169,7 +169,7 @@ export async function notifyOnAssignment(params: NotifyAssignmentParams): Promis
           title,
           message,
           type: 'INFO',
-          link: link || '/technician',
+          link: link || null,
           pushSent: false,
         },
       });
@@ -197,7 +197,7 @@ export async function notifyOnAssignment(params: NotifyAssignmentParams): Promis
     let anyPushSuccess = false;
     const fcmData: Record<string, string> = {
       type: params.type,
-      link: link || '/technician',
+      ...(link ? { link } : {}),
       ...(taskId ? { taskId } : {}),
       ...(dueDate ? { dueDate: dueDate.toISOString() } : {}),
     };

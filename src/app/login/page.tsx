@@ -19,6 +19,7 @@ import {
 import { createClient } from '@/lib/supabase/client';
 import { getResetPasswordRedirectUrl } from '@/lib/auth-helpers';
 import { GooglePlayBadge } from '@/components/GooglePlayBadge';
+import { SITE_CONFIG } from '@/lib/siteConfig';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -136,7 +137,8 @@ export default function LoginPage() {
             : null;
 
         if (regData.profile?.role === 'TECHNICIAN') {
-          router.push('/technician');
+          await supabase.auth.signOut();
+          throw new Error('Technicians: get VigilAMC Field on Google Play to sign in.');
         } else {
           router.push(safeRedirect || '/dashboard');
         }
@@ -557,7 +559,14 @@ export default function LoginPage() {
         {/* Field Technician Android App Notice */}
         <div className="pt-3 border-t border-slate-100 flex flex-col items-center justify-center text-center gap-2">
           <p className="text-xs text-slate-600 font-medium">
-            Field Technician on the move?
+            <a
+              href={SITE_CONFIG.GOOGLE_PLAY_URL}
+              target="_blank"
+              rel="noopener"
+              className="text-[#C2410C] hover:text-[#9A3412] font-semibold hover:underline transition-colors"
+            >
+              Technicians: get VigilAMC Field on Google Play
+            </a>
           </p>
           <GooglePlayBadge size="sm" theme="light" />
           <span className="text-[11px] text-slate-500">

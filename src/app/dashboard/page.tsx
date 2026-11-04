@@ -488,9 +488,9 @@ export default function AdminDashboardPage() {
           return;
         }
 
-        // If user is a TECHNICIAN, redirect to dedicated technician portal
+        // If user is a TECHNICIAN, redirect back to login (technicians use VigilAMC Field Android app)
         if (json.profile?.role === 'TECHNICIAN') {
-          window.location.href = '/technician';
+          window.location.href = '/login';
           return;
         }
 
@@ -1917,6 +1917,7 @@ export default function AdminDashboardPage() {
                 initialPlan={subscriptionData?.plan}
                 agencyName={company?.name}
                 onRefreshDashboard={() => refreshDashboard({ silent: true })}
+                t={getAdminDictionary(data?.profile?.preferredLanguage || 'en')}
               />
             )}
 

@@ -22,7 +22,8 @@ import { NumberTicker } from '@/components/ui/number-ticker';
 import { AttentionDigestItem, DashboardAnalytics } from '@/lib/dashboardAnalytics';
 import { GettingStartedChecklist } from '@/components/admin/GettingStartedGuide';
 import { AdminDictionary, adminDictEnglish } from '@/lib/i18n/admin';
-import { X } from 'lucide-react';
+import { SITE_CONFIG } from '@/lib/siteConfig';
+import { X, ExternalLink } from 'lucide-react';
 
 interface DashboardOverviewProps {
   kpis: {
@@ -218,10 +219,11 @@ export function DashboardOverview({
     },
     {
       id: 4,
-      title: 'Invite a technician',
-      desc: 'Create login for a field technician to record site visits',
+      title: 'Invite technicians',
+      desc: t.guideInviteTechDesc,
+      playLink: true,
       done: hasTechnician,
-      action: () => onNavigateTab('SETTINGS'),
+      action: () => onNavigateTab('FIELD_TEAM'),
       btnText: 'Add technician',
     },
     {
@@ -710,9 +712,20 @@ export function DashboardOverview({
                     )}
                   </div>
                   <h4 className="text-xs font-bold line-clamp-1">{item.title}</h4>
-                  <p className="text-[11px] text-[#44403C] mt-1 line-clamp-2">
+                  <p className="text-[11px] text-[#44403C] mt-1">
                     {item.desc}
                   </p>
+                  {(item as any).playLink && (
+                    <a
+                      href={SITE_CONFIG.GOOGLE_PLAY_URL}
+                      target="_blank"
+                      rel="noopener"
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-[#C2410C] hover:text-[#9A3412] hover:underline mt-1"
+                    >
+                      <span>{t.guidePlayStoreLink}</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
                 </div>
 
                 <div className="pt-3 mt-2 border-t border-[#1C1917]/10">

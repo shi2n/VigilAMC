@@ -21,7 +21,7 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
   const navLinks = [
     { name: 'How It Works', href: '/#how-it-works' },
     { name: 'Sample Report', href: '/sample-report' },
-    { name: 'Field App', href: '/technician' },
+    { name: 'Android App', href: '/#field-app' },
   ];
 
   return (

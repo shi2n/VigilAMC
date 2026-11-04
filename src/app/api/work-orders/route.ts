@@ -155,7 +155,7 @@ export async function POST(request: Request) {
         organizationId: auth.organization.id,
         title: 'New Task Assigned',
         message: `Work Order: "${resolvedTitle}" assigned to you${dueMsg}`,
-        link: '/technician',
+        link: undefined,
         taskId: workOrder.id,
         dueDate: parsedDueDate,
       }).catch(() => null);

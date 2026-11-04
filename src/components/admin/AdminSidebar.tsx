@@ -12,7 +12,6 @@ import {
   X,
   Flame,
   Users,
-  Smartphone,
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react';
@@ -294,34 +293,6 @@ export function AdminSidebar({
             </div>
           );
         })}
-
-        {/* Launch Mobile Field App Button */}
-        <div className="pt-2 mt-2 border-t border-[#1C1917]/10">
-          <div className="relative group">
-            <Link
-              href="/technician"
-              className={`btn-flame w-full flex items-center rounded-xl text-xs font-bold text-white shadow-xs transition-all active:scale-[0.98] ${
-                collapsed ? 'justify-center p-2.5' : 'justify-between px-3.5 py-2.5'
-              }`}
-              aria-label="Open Mobile Field App"
-            >
-              <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-2 truncate'}`}>
-                <Smartphone className="w-4 h-4 shrink-0 text-[#FFF8F2]" />
-                {!collapsed && <span className="truncate">Open Field App</span>}
-              </div>
-            </Link>
-
-            {/* Field App tooltip in collapsed mode */}
-            {collapsed && (
-              <div
-                role="tooltip"
-                className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute left-full ml-2.5 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-[#1C1917] text-[#FAFAF9] text-[11px] font-bold rounded-lg shadow-xl whitespace-nowrap z-50 border border-[#EA580C]/30"
-              >
-                Open Mobile Field App
-              </div>
-            )}
-          </div>
-        </div>
       </div>
 
       {/* Admin User Profile & Sign Out Footer */}

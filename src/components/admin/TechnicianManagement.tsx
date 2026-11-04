@@ -23,9 +23,11 @@ import {
   Copy,
   MessageCircle,
   Smartphone,
+  ExternalLink,
 } from 'lucide-react';
 import { SeatCounter, SeatUsage } from './SeatCounter';
 import { AdminDictionary, adminDictEnglish } from '@/lib/i18n/admin';
+import { SITE_CONFIG } from '@/lib/siteConfig';
 
 interface TechnicianManagementProps {
   onNavigateToSubscription?: () => void;
@@ -286,20 +288,17 @@ export function TechnicianManagement({
   };
 
   const buildCredentialsText = (tech: any, customPin?: string) => {
-    const appUrl =
-      typeof window !== 'undefined'
-        ? `${window.location.origin}/technician`
-        : 'https://vigilamc.vercel.app/technician';
+    const appUrl = SITE_CONFIG.GOOGLE_PLAY_URL;
     const pin = customPin || tech.tempPassword || pinMap[tech.id] || '(Use your assigned 6-digit PIN)';
     const cleanMobile = tech.phone && tech.phone !== '—' ? tech.phone : '—';
     const staffId = tech.employeeId && tech.employeeId !== '—' ? tech.employeeId : '—';
 
     return [
-      `🔥 *${agencyName} — Field Technician App Login*`,
+      `🔥 *${agencyName} — VigilAMC Field (Android App) Login*`,
       ``,
-      `Namaste *${tech.fullName}*, your VigilAMC Field App account is active!`,
+      `Namaste *${tech.fullName}*, your VigilAMC Field account is active!`,
       ``,
-      `📲 *1. Open & Install Mobile App:*`,
+      `📲 *1. Get VigilAMC Field on Google Play:*`,
       `${appUrl}`,
       ``,
       `🔑 *2. Your Login Details:*`,
@@ -307,7 +306,7 @@ export function TechnicianManagement({
       `• *Technician ID (Username):* ${staffId}`,
       `• *Login PIN / Password:* ${pin}`,
       ``,
-      `📍 Tap the link above on your phone, tap *"Install App"*, and sign in with your Mobile Number or Staff ID + PIN.`,
+      `📍 Install *VigilAMC Field* from Google Play and sign in with your Mobile Number or Staff ID + PIN.`,
     ].join('\n');
   };
 
@@ -563,6 +562,20 @@ export function TechnicianManagement({
     <div className="space-y-6">
       {/* 1. Seat Counter Bar */}
       <SeatCounter usage={seatUsage} />
+
+      {/* Compact Google Play Field App Line */}
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 rounded-xl bg-[#FFF8F2] border border-[#FED7AA] text-xs text-[#44403C]">
+        <span>{t.techPlayStoreHint}</span>
+        <a
+          href={SITE_CONFIG.GOOGLE_PLAY_URL}
+          target="_blank"
+          rel="noopener"
+          className="inline-flex items-center gap-1 font-bold text-[#C2410C] hover:text-[#9A3412] hover:underline"
+        >
+          <span>{t.guidePlayStoreLink}</span>
+          <ExternalLink className="w-3 h-3" />
+        </a>
+      </div>
 
       {/* 2. Action & Filter Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 glass-panel-dense p-4 rounded-2xl shadow-sm">
@@ -980,8 +993,8 @@ export function TechnicianManagement({
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-slate-900">Add New Field Technician</h3>
-                  <p className="text-xs text-slate-400">
-                    Create Mobile / Staff ID login &amp; share instantly via WhatsApp
+                  <p className="text-xs text-slate-500">
+                    {t.techSuccessPlayCopy}
                   </p>
                 </div>
               </div>
@@ -1158,8 +1171,8 @@ export function TechnicianManagement({
                 Ready for Field Dispatch
               </span>
               <h3 className="text-xl font-black text-slate-900">Technician Created Successfully</h3>
-              <p className="text-xs text-slate-400">
-                Send the installable mobile app link and login PIN directly to their WhatsApp in 1 click.
+              <p className="text-xs text-slate-600">
+                {t.techSuccessPlayCopy}
               </p>
             </div>
 
