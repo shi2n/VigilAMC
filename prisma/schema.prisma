@@ -67,6 +67,7 @@ model UserProfile {
   assignedRegion    String?
   avatarUrl         String?
   preferredLanguage String?                        @default("en")
+  welcomeSeenAt     DateTime?
   organizationId    String?
   organization      Organization?                  @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   inspections       Inspection[]

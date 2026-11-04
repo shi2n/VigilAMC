@@ -142,7 +142,7 @@ export function GettingStartedChecklist({
   const progressPercent = Math.round((completedCount / steps.length) * 100);
 
   return (
-    <div className="glass-panel-dense rounded-2xl p-4 sm:p-5 border border-[#FED7AA] bg-gradient-to-br from-white/95 via-[#FFF8F2]/90 to-white/95 shadow-sm space-y-4">
+    <div id="getting-started-guide" className="glass-panel-dense rounded-2xl p-4 sm:p-5 border border-[#FED7AA] bg-gradient-to-br from-white/95 via-[#FFF8F2]/90 to-white/95 shadow-sm space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
           <div className="flex items-center gap-2">

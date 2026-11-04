@@ -136,6 +136,18 @@ export interface AdminDictionary {
   guidePlayStoreLink: string;
   techSuccessPlayCopy: string;
   techPlayStoreHint: string;
+  // Welcome Testing Modal
+  welcomeEyebrow: string;
+  welcomeHeading: string;
+  welcomeHeadingFallback: string;
+  welcomeBody: string;
+  welcomeAgencyFallback: string;
+  welcomeBullet1: string;
+  welcomeBullet2: string;
+  welcomeBullet3: string;
+  welcomeCta: string;
+  welcomeCloseAria: string;
+  welcomeFooter: string;
   // Account Deletion Requests
   deletionRequestedBadge: string;
   deletionRequestsPanelTitle: string;
@@ -241,6 +253,17 @@ const DICTIONARY_EN: AdminDictionary = {
   guidePlayStoreLink: 'Get on Google Play',
   techSuccessPlayCopy: 'Share these credentials — the technician signs in on the VigilAMC Field Android app (Google Play).',
   techPlayStoreHint: 'Technicians sign in on the VigilAMC Field Android app (Google Play).',
+  welcomeEyebrow: '🎉 FREE TESTING ACCESS',
+  welcomeHeading: 'Welcome, {firstName}!',
+  welcomeHeadingFallback: 'Welcome to VigilAMC!',
+  welcomeBody: 'Great to have {agency} onboard. VigilAMC is in active testing — your account gets FULL FREE ACCESS to every feature during this testing period. Some things may still evolve; your feedback helps us shape the product.',
+  welcomeAgencyFallback: 'your workspace',
+  welcomeBullet1: 'Add your buildings & fire equipment',
+  welcomeBullet2: 'Invite technicians to the VigilAMC Field Android app (Google Play)',
+  welcomeBullet3: 'Build your first compliance report',
+  welcomeCta: 'Start exploring',
+  welcomeCloseAria: 'Close welcome dialog',
+  welcomeFooter: 'Questions or feedback? vigilamc@gmail.com',
 
   // Account Deletion Requests
   deletionRequestedBadge: 'Deletion requested',
@@ -347,6 +370,17 @@ const DICTIONARY_HI: Partial<AdminDictionary> = {
   guidePlayStoreLink: 'Google Play पर प्राप्त करें',
   techSuccessPlayCopy: 'ये लॉगिन विवरण साझा करें — तकनीशियन VigilAMC Field एंड्रॉइड ऐप (Google Play) पर साइन इन करता है।',
   techPlayStoreHint: 'तकनीशियन VigilAMC Field एंड्रॉइड ऐप (Google Play) पर साइन इन करते हैं।',
+  welcomeEyebrow: '🎉 निःशुल्क परीक्षण एक्सेस (FREE TESTING ACCESS)',
+  welcomeHeading: 'स्वागत है, {firstName}!',
+  welcomeHeadingFallback: 'VigilAMC में आपका स्वागत है!',
+  welcomeBody: '{agency} को हमारे साथ जोड़कर खुशी हुई। VigilAMC अभी सक्रिय परीक्षण (testing) में है — इस परीक्षण अवधि के दौरान आपके खाते को हर सुविधा का पूर्ण निःशुल्क एक्सेस मिलता है। आपकी प्रतिक्रिया उत्पाद को बेहतर बनाने में हमारी मदद करती है।',
+  welcomeAgencyFallback: 'आपका वर्कस्पेस',
+  welcomeBullet1: 'अपने भवन और अग्नि सुरक्षा उपकरण जोड़ें',
+  welcomeBullet2: 'तकनीशियनों को VigilAMC Field एंड्रॉइड ऐप (Google Play) पर आमंत्रित करें',
+  welcomeBullet3: 'अपनी पहली अनुपालन रिपोर्ट तैयार करें',
+  welcomeCta: 'शुरू करें (Start exploring)',
+  welcomeCloseAria: 'स्वागत संवाद बंद करें',
+  welcomeFooter: 'कोई प्रश्न या सुझाव? vigilamc@gmail.com',
 };
 
 const DICTIONARY_MR: Partial<AdminDictionary> = {
@@ -370,6 +404,17 @@ const DICTIONARY_MR: Partial<AdminDictionary> = {
   guidePlayStoreLink: 'Google Play वर मिळवा',
   techSuccessPlayCopy: 'हे क्रेडेन्शियल्स शेअर करा — तंत्रज्ञ VigilAMC Field अँड्रॉइड अ‍ॅपवर (Google Play) साइन इन करतो.',
   techPlayStoreHint: 'तंत्रज्ञ VigilAMC Field अँड्रॉइड अ‍ॅपवर (Google Play) साइन इन करतात.',
+  welcomeEyebrow: '🎉 मोफत चाचणी प्रवेश (FREE TESTING ACCESS)',
+  welcomeHeading: 'स्वागत आहे, {firstName}!',
+  welcomeHeadingFallback: 'VigilAMC मध्ये आपले स्वागत आहे!',
+  welcomeBody: '{agency} आमच्यासोबत जोडल्याबद्दल आनंद झाला. VigilAMC सक्रिय चाचणी टप्प्यात आहे — या चाचणी कालावधीत आपल्या खात्याला सर्व सुविधांचा पूर्ण मोफत प्रवेश मिळतो. आपला अभिप्राय उत्पादन अधिक चांगले करण्यात मदत करतो.',
+  welcomeAgencyFallback: 'तुमचा वर्कस्पेस',
+  welcomeBullet1: 'तुमच्या इमारती आणि अग्निशमन उपकरणे जोडा',
+  welcomeBullet2: 'तंत्रज्ञांना VigilAMC Field अँड्रॉइड अ‍ॅपवर (Google Play) आमंत्रित करा',
+  welcomeBullet3: 'तुमचा पहिला अनुपालन अहवाल तयार करा',
+  welcomeCta: 'वापर सुरू करा',
+  welcomeCloseAria: 'स्वागत पॉपअप बंद करा',
+  welcomeFooter: 'प्रश्न किंवा अभिप्राय? vigilamc@gmail.com',
 };
 
 const DICTIONARY_GU: Partial<AdminDictionary> = {
@@ -393,6 +438,17 @@ const DICTIONARY_GU: Partial<AdminDictionary> = {
   guidePlayStoreLink: 'Google Play પર મેળવો',
   techSuccessPlayCopy: 'આ ક્રેડેન્શિયલ્સ શેર કરો — ટેકનિશિયન VigilAMC Field એન્ડ્રોઇડ એપ (Google Play) પર સાઇન ઇન કરે છે.',
   techPlayStoreHint: 'ટેકનિશિયન VigilAMC Field એન્ડ્રોઇડ એપ (Google Play) પર સાઇન ઇન કરે છે.',
+  welcomeEyebrow: '🎉 મફત ટેસ્ટિંગ એક્સેસ (FREE TESTING ACCESS)',
+  welcomeHeading: 'સ્વાગત છે, {firstName}!',
+  welcomeHeadingFallback: 'VigilAMC માં આપનું સ્વાગત છે!',
+  welcomeBody: '{agency} ને જોડીને આનંદ થયો. VigilAMC હાલમાં સક્રિય ટેસ્ટિંગમાં છે — આ ટેસ્ટિંગ સમયગાળા દરમિયાન તમારા એકાઉન્ટને દરેક સુવિધાનો સંપૂર્ણ મફત એક્સેસ મળે છે. તમારો પ્રતિસાદ અમને પ્રોડક્ટને વધુ સારી બનાવવામાં મદદ કરે છે.',
+  welcomeAgencyFallback: 'તમારું વર્કસ્પેસ',
+  welcomeBullet1: 'તમારી ઇમારતો અને ફાયર સાધનો ઉમેરો',
+  welcomeBullet2: 'ટેકનિશિયનોને VigilAMC Field એન્ડ્રોઇડ એપ (Google Play) પર આમંત્રિત કરો',
+  welcomeBullet3: 'તમારો પ્રથમ અનુપાલન અહેવાલ બનાવો',
+  welcomeCta: 'શરૂ કરો',
+  welcomeCloseAria: 'સ્વાગત પોપઅપ બંધ કરો',
+  welcomeFooter: 'પ્રશ્નો કે પ્રતિસાદ? vigilamc@gmail.com',
 };
 
 const DICTIONARY_TA: Partial<AdminDictionary> = {
@@ -416,6 +472,17 @@ const DICTIONARY_TA: Partial<AdminDictionary> = {
   guidePlayStoreLink: 'Google Play இல் பெறுக',
   techSuccessPlayCopy: 'இந்த விவரங்களைப் பகிரவும் — தொழில்நுட்ப வல்லுநர் VigilAMC Field ஆண்ட்ராய்டு செயலியில் (Google Play) உள்நுழைவார்.',
   techPlayStoreHint: 'தொழில்நுட்ப வல்லுநர்கள் VigilAMC Field ஆண்ட்ராய்டு செயலியில் (Google Play) உள்நுழைகிறார்கள்.',
+  welcomeEyebrow: '🎉 இலவச சோதனை அணுகல் (FREE TESTING ACCESS)',
+  welcomeHeading: 'வரவேற்கிறோம், {firstName}!',
+  welcomeHeadingFallback: 'VigilAMC க்கு வரவேற்கிறோம்!',
+  welcomeBody: '{agency} இணைந்ததில் மகிழ்ச்சி. VigilAMC தற்போது சோதனை கட்டத்தில் உள்ளது — இந்த சோதனைக் காலத்தில் அனைத்து அம்சங்களுக்கும் உங்களுக்கு முழு இலவச அணுகல் கிடைக்கும். உங்கள் கருத்து தயாரிப்பை மேம்படுத்த உதவும்.',
+  welcomeAgencyFallback: 'உங்கள் பணியிடம்',
+  welcomeBullet1: 'உங்கள் கட்டிடங்கள் மற்றும் தீயணைப்பு உபகரணங்களைச் சேர்க்கவும்',
+  welcomeBullet2: 'VigilAMC Field ஆண்ட்ராய்டு செயலிக்கு (Google Play) தொழில்நுட்ப வல்லுநர்களை அழைக்கவும்',
+  welcomeBullet3: 'உங்கள் முதல் இணக்க அறிக்கையை உருவாக்கவும்',
+  welcomeCta: 'தொடங்கவும்',
+  welcomeCloseAria: 'வரவேற்பு சாளரத்தை மூடு',
+  welcomeFooter: 'கேள்விகள் அல்லது கருத்து? vigilamc@gmail.com',
 };
 
 const DICTIONARY_TE: Partial<AdminDictionary> = {
@@ -439,6 +506,17 @@ const DICTIONARY_TE: Partial<AdminDictionary> = {
   guidePlayStoreLink: 'Google Playలో పొందండి',
   techSuccessPlayCopy: 'ఈ వివరాలను షేర్ చేయండి — టెక్నీషియన్ VigilAMC Field ఆండ్రాయిడ్ యాప్ (Google Play)లో సైన్ ఇన్ చేస్తారు.',
   techPlayStoreHint: 'టెక్నీషియన్లు VigilAMC Field ఆండ్రాయిడ్ యాప్ (Google Play)లో సైన్ ఇన్ చేస్తారు.',
+  welcomeEyebrow: '🎉 ఉచిత టెస్టింగ్ యాక్సెస్ (FREE TESTING ACCESS)',
+  welcomeHeading: 'స్వాగతం, {firstName}!',
+  welcomeHeadingFallback: 'VigilAMC కు స్వాగతం!',
+  welcomeBody: '{agency} చేరినందుకు సంతోషం. VigilAMC ప్రస్తుతం యాక్టివ్ టెస్టింగ్‌లో ఉంది — ఈ టెస్టింగ్ సమయంలో ప్రతి ఫీచర్‌కు మీ ఖాతాకు పూర్తి ఉచిత యాక్సెస్ లభిస్తుంది. మీ అభిప్రాయం మాకు ఎంతో విలువైనది.',
+  welcomeAgencyFallback: 'మీ వర్క్‌స్పేస్',
+  welcomeBullet1: 'మీ భవనాలు మరియు అగ్నిమాపక పరికరాలను జోడించండి',
+  welcomeBullet2: 'VigilAMC Field ఆండ్రాయిడ్ యాప్ (Google Play) కు టెక్నీషియన్లను ఆహ్వానించండి',
+  welcomeBullet3: 'మీ మొదటి సమ్మతి నివేదికను రూపొందించండి',
+  welcomeCta: 'ప్రారంభించండి',
+  welcomeCloseAria: 'స్వాగత పాపప్ మూసివేయండి',
+  welcomeFooter: 'ప్రశ్నలు లేదా అభిప్రాయం? vigilamc@gmail.com',
 };
 
 const DICTIONARY_KN: Partial<AdminDictionary> = {
@@ -462,6 +540,17 @@ const DICTIONARY_KN: Partial<AdminDictionary> = {
   guidePlayStoreLink: 'Google Play ನಲ್ಲಿ ಪಡೆಯಿರಿ',
   techSuccessPlayCopy: 'ಈ ವಿವರಗಳನ್ನು ಹಂಚಿಕೊಳ್ಳಿ — ತಂತ್ರಜ್ಞರು VigilAMC Field ಆಂಡ್ರಾಯ್ಡ್ ಆಪ್‌ನಲ್ಲಿ (Google Play) ಸೈನ್ ಇನ್ ಮಾಡುತ್ತಾರೆ.',
   techPlayStoreHint: 'ತಂತ್ರಜ್ಞರು VigilAMC Field ಆಂಡ್ರಾಯ್ಡ್ ಆಪ್‌ನಲ್ಲಿ (Google Play) ಸೈನ್ ಇನ್ ಮಾಡುತ್ತಾರೆ.',
+  welcomeEyebrow: '🎉 ಉಚಿತ ಪರೀಕ್ಷಾ ಪ್ರವೇಶ (FREE TESTING ACCESS)',
+  welcomeHeading: 'ಸ್ವಾಗತ, {firstName}!',
+  welcomeHeadingFallback: 'VigilAMC ಗೆ ಸ್ವಾಗತ!',
+  welcomeBody: '{agency} ನಮ್ಮೊಂದಿಗೆ ಸೇರಿರುವುದು ಸಂತೋಷ. VigilAMC ಸಕ್ರಿಯ ಪರೀಕ್ಷೆಯಲ್ಲಿದೆ — ಈ ಪರೀಕ್ಷಾ ಅವಧಿಯಲ್ಲಿ ನಿಮ್ಮ ಖಾತೆಗೆ ಎಲ್ಲಾ ವೈಶಿಷ್ಟ್ಯಗಳಿಗೆ ಸಂಪೂರ್ಣ ಉಚಿತ ಪ್ರವೇಶ ಸಿಗುತ್ತದೆ. ನಿಮ್ಮ ಪ್ರತಿಕ್ರಿಯೆ ಉತ್ಪನ್ನವನ್ನು ರೂಪಿಸಲು ಸಹಾಯ ಮಾಡುತ್ತದೆ.',
+  welcomeAgencyFallback: 'ನಿಮ್ಮ ಕಾರ್ಯಕ್ಷೇತ್ರ',
+  welcomeBullet1: 'ನಿಮ್ಮ ಕಟ್ಟಡಗಳು ಮತ್ತು ಅಗ್ನಿಶಾಮಕ ಉಪಕರಣಗಳನ್ನು ಸೇರಿಸಿ',
+  welcomeBullet2: 'VigilAMC Field ಆಂಡ್ರಾಯ್ಡ್ ಆಪ್‌ಗೆ (Google Play) ತಂತ್ರಜ್ಞರನ್ನು ಆಹ್ವಾನಿಸಿ',
+  welcomeBullet3: 'ನಿಮ್ಮ ಮೊದಲ ಅನುಸರಣೆ ವರದಿಯನ್ನು ರಚಿಸಿ',
+  welcomeCta: 'ಪ್ರಾರಂಭಿಸಿ',
+  welcomeCloseAria: 'ಸ್ವಾಗತ ವಿಂಡೋ ಮುಚ್ಚಿ',
+  welcomeFooter: 'ಪ್ರಶ್ನೆಗಳು ಅಥವಾ ಪ್ರತಿಕ್ರಿಯೆ? vigilamc@gmail.com',
 };
 
 const DICTIONARY_ML: Partial<AdminDictionary> = {
@@ -485,6 +574,17 @@ const DICTIONARY_ML: Partial<AdminDictionary> = {
   guidePlayStoreLink: 'Google Play-യിൽ നേടുക',
   techSuccessPlayCopy: 'ഈ വിവരങ്ങൾ പങ്കിടുക — ടെക്നീഷ്യൻ VigilAMC Field ആൻഡ്രോയിഡ് ആപ്പിൽ (Google Play) സൈൻ ഇൻ ചെയ്യുന്നു.',
   techPlayStoreHint: 'ടെക്നീഷ്യൻമാർ VigilAMC Field ആൻഡ്രോയിഡ് ആപ്പിൽ (Google Play) സൈൻ ഇൻ ചെയ്യുന്നു.',
+  welcomeEyebrow: '🎉 സൗജന്യ ടെസ്റ്റിംഗ് ആക്സസ് (FREE TESTING ACCESS)',
+  welcomeHeading: 'സ്വാഗതം, {firstName}!',
+  welcomeHeadingFallback: 'VigilAMC-യിലേക്ക് സ്വാഗതം!',
+  welcomeBody: '{agency} ഞങ്ങളോടൊപ്പം ചേർന്നതിൽ സന്തോഷം. VigilAMC സജീവ ടെസ്റ്റിംഗിലാണ് — ഈ ടെസ്റ്റിംഗ് കാലയളവിൽ എല്ലാ ഫീച്ചറുകളിലേക്കും നിങ്ങൾക്ക് പൂർണ്ണ സൗജന്യ ആക്സസ് ലഭിക്കും. നിങ്ങളുടെ അഭിപ്രായം ഉൽപ്പന്നം മെച്ചപ്പെടുത്താൻ സഹായിക്കുന്നു.',
+  welcomeAgencyFallback: 'നിങ്ങളുടെ വർക്ക്‌സ്പേസ്',
+  welcomeBullet1: 'നിങ്ങളുടെ കെട്ടിടങ്ങളും അഗ്നിശമന ഉപകരണങ്ങളും ചേർക്കുക',
+  welcomeBullet2: 'VigilAMC Field ആൻഡ്രോയിഡ് ആപ്പിലേക്ക് (Google Play) ടെക്നീഷ്യൻമാരെ ക്ഷണിക്കുക',
+  welcomeBullet3: 'നിങ്ങളുടെ ആദ്യ കംപ്ലയൻസ് റിപ്പോർട്ട് തയ്യാറാക്കുക',
+  welcomeCta: 'ആരംഭിക്കുക',
+  welcomeCloseAria: 'സ്വാഗത ഡയലോഗ് അടയ്ക്കുക',
+  welcomeFooter: 'ചോദ്യങ്ങളോ അഭിപ്രായങ്ങളോ? vigilamc@gmail.com',
 };
 
 const DICTIONARY_BN: Partial<AdminDictionary> = {
@@ -508,6 +608,17 @@ const DICTIONARY_BN: Partial<AdminDictionary> = {
   guidePlayStoreLink: 'Google Play-তে পান',
   techSuccessPlayCopy: 'এই লগইন তথ্য শেয়ার করুন — টেকনিশিয়ান VigilAMC Field অ্যান্ড্রয়েড অ্যাপে (Google Play) সাইন ইন করবেন।',
   techPlayStoreHint: 'টেকনিশিয়ানরা VigilAMC Field অ্যান্ড্রয়েড অ্যাপে (Google Play) সাইন ইন করেন।',
+  welcomeEyebrow: '🎉 বিনামূল্যে টেস্টিং অ্যাক্সেস (FREE TESTING ACCESS)',
+  welcomeHeading: 'স্বাগতম, {firstName}!',
+  welcomeHeadingFallback: 'VigilAMC-তে স্বাগতম!',
+  welcomeBody: '{agency}-কে আমাদের সাথে পেয়ে আনন্দিত। VigilAMC বর্তমানে সক্রিয় টেস্টিং পর্যায়ে রয়েছে — এই টেস্টিং চলাকালীন আপনার অ্যাকাউন্ট প্রতিটি ফিচারে সম্পূর্ণ বিনামূল্যে অ্যাক্সেস পাবে। আপনার মতামত আমাদের পণ্যটি আরও উন্নত করতে সাহায্য করবে।',
+  welcomeAgencyFallback: 'আপনার ওয়ার্কস্পেস',
+  welcomeBullet1: 'আপনার ভবন এবং অগ্নি নির্বাপক সরঞ্জাম যোগ করুন',
+  welcomeBullet2: 'VigilAMC Field অ্যান্ড্রয়েড অ্যাপে (Google Play) টেকনিশিয়ানদের আমন্ত্রণ জানান',
+  welcomeBullet3: 'আপনার প্রথম কমপ্লায়েন্স রিপোর্ট তৈরি করুন',
+  welcomeCta: 'শুরু করুন',
+  welcomeCloseAria: 'স্বাগতম পপআপ বন্ধ করুন',
+  welcomeFooter: 'প্রশ্ন বা মতামত? vigilamc@gmail.com',
 };
 
 const DICTIONARY_PA: Partial<AdminDictionary> = {
@@ -531,6 +642,17 @@ const DICTIONARY_PA: Partial<AdminDictionary> = {
   guidePlayStoreLink: 'Google Play ਤੇ ਪ੍ਰਾਪਤ ਕਰੋ',
   techSuccessPlayCopy: 'ਇਹ ਲੌਗਇਨ ਵੇਰਵੇ ਸਾਂਝੇ ਕਰੋ — ਤਕਨੀਸ਼ੀਅਨ VigilAMC Field ਐਂਡਰਾਇਡ ਐਪ (Google Play) ਤੇ ਸਾਈਨ ਇਨ ਕਰਦਾ ਹੈ।',
   techPlayStoreHint: 'ਤਕਨੀਸ਼ੀਅਨ VigilAMC Field ਐਂਡਰਾਇਡ ਐਪ (Google Play) ਤੇ ਸਾਈਨ ਇਨ ਕਰਦੇ ਹਨ।',
+  welcomeEyebrow: '🎉 ਮੁਫ਼ਤ ਟੈਸਟਿੰਗ ਐਕਸੈਸ (FREE TESTING ACCESS)',
+  welcomeHeading: 'ਜੀ ਆਇਆਂ ਨੂੰ, {firstName}!',
+  welcomeHeadingFallback: 'VigilAMC ਵਿੱਚ ਜੀ ਆਇਆਂ ਨੂੰ!',
+  welcomeBody: '{agency} ਦਾ ਸਾਡੇ ਨਾਲ ਜੁੜਨ ਤੇ ਸਵਾਗਤ ਹੈ। VigilAMC ਸਰਗਰਮ ਟੈਸਟਿੰਗ ਵਿੱਚ ਹੈ — ਇਸ ਟੈਸਟਿੰਗ ਮਿਆਦ ਦੌਰਾਨ ਤੁਹਾਡੇ ਖਾਤੇ ਨੂੰ ਹਰ ਸਹੂਲਤ ਦੀ ਪੂਰੀ ਮੁਫ਼ਤ ਪਹੁੰਚ ਮਿਲਦੀ ਹੈ। ਤੁਹਾਡਾ ਸੁਝਾਅ ਉਤਪਾਦ ਨੂੰ ਬਿਹਤਰ ਬਣਾਉਣ ਵਿੱਚ ਮਦਦ ਕਰਦਾ ਹੈ।',
+  welcomeAgencyFallback: 'ਤੁਹਾਡਾ ਵਰਕਸਪੇਸ',
+  welcomeBullet1: 'ਆਪਣੀਆਂ ਇਮਾਰਤਾਂ ਅਤੇ ਅੱਗ ਬੁਝਾਊ ਉਪਕਰਣ ਸ਼ਾਮਲ ਕਰੋ',
+  welcomeBullet2: 'ਤਕਨੀਸ਼ੀਅਨਾਂ ਨੂੰ VigilAMC Field ਐਂਡਰਾਇਡ ਐਪ (Google Play) ਤੇ ਸੱਦਾ ਦਿਓ',
+  welcomeBullet3: 'ਆਪਣੀ ਪਹਿਲੀ ਪਾਲਣਾ ਰਿਪੋਰਟ ਤਿਆਰ ਕਰੋ',
+  welcomeCta: 'ਸ਼ੁਰੂ ਕਰੋ',
+  welcomeCloseAria: 'ਸਵਾਗਤ ਵਿੰਡੋ ਬੰਦ ਕਰੋ',
+  welcomeFooter: 'ਸਵਾਲ ਜਾਂ ਸੁਝਾਅ? vigilamc@gmail.com',
 };
 
 const DICTIONARY_OR: Partial<AdminDictionary> = {
@@ -553,6 +675,17 @@ const DICTIONARY_OR: Partial<AdminDictionary> = {
   guidePlayStoreLink: 'Google Play ରେ ପାଆନ୍ତୁ',
   techSuccessPlayCopy: 'ଏହି লଗଇନ୍ ତଥ୍ୟ ସେୟାର୍ କରନ୍ତୁ — ଟେକ୍ନିସିଆନ୍ VigilAMC Field ଆଣ୍ଡ୍ରଏଡ୍ ଆପ୍ (Google Play) ରେ ସାଇନ୍ ଇନ୍ କରନ୍ତି।',
   techPlayStoreHint: 'ଟେକ୍ନିସିଆନ୍ VigilAMC Field ଆଣ୍ଡ୍ରଏଡ୍ ଆପ୍ (Google Play) ରେ ସାଇନ୍ ଇନ୍ କରନ୍ତି।',
+  welcomeEyebrow: '🎉 ମାଗଣା ଟେଷ୍ଟିଂ ଆକ୍ସେସ୍ (FREE TESTING ACCESS)',
+  welcomeHeading: 'ସ୍ୱାଗତ, {firstName}!',
+  welcomeHeadingFallback: 'VigilAMC କୁ ସ୍ୱାଗତ!',
+  welcomeBody: '{agency} ଆମ ସହିତ ଯୋଡ଼ି ହୋଇଥିବାରୁ ଆনନ୍ଦିତ। VigilAMC ବର୍ତ୍ତମାନ ସକ୍ରିୟ ପରୀକ୍ଷଣରେ ଅଛି — ଏହି ପରୀକ୍ଷଣ ସମୟରେ ଆପଣଙ୍କ ଆକାଉଣ୍ଟକୁ ସବୁ ସୁବିଧার ସମ୍ପୂର୍ଣ୍ଣ ମାଗଣା ଆକ୍ସେସ୍ ମିଳିବ। ଆପଣଙ୍କ ମତାମତ ଆମକୁ ସାହାଯ୍ୟ କରିବ।',
+  welcomeAgencyFallback: 'ଆପଣଙ୍କ ୱାର୍କସ୍ପେସ୍',
+  welcomeBullet1: 'ଆପଣଙ୍କ କୋଠା ଏବଂ ଅଗ୍ନିଶମନ ଉପକରଣ ଯୋଡ଼ନ୍ତୁ',
+  welcomeBullet2: 'VigilAMC Field ଆଣ୍ଡ୍ରଏଡ୍ ଆପ୍ (Google Play) କୁ ଟେକ୍ନିସିଆନ୍ ଆମନ୍ତ୍ରଣ କରନ୍ତୁ',
+  welcomeBullet3: 'ଆପଣଙ୍କ ପ୍ରଥମ ଅନୁପାଳନ ରିପୋର୍ଟ ପ୍ରସ୍ତୁତ କରନ୍ତୁ',
+  welcomeCta: 'ଆରମ୍ଭ କରନ୍ତୁ',
+  welcomeCloseAria: 'ସ୍ୱାଗତ ଡାଏଲଗ୍ ବନ୍ଦ କରନ୍ତୁ',
+  welcomeFooter: 'ପ୍ରଶ୍ନ କିମ୍ବା ମତାମତ? vigilamc@gmail.com',
 };
 
 const DICTIONARY_AS: Partial<AdminDictionary> = {
@@ -575,6 +708,17 @@ const DICTIONARY_AS: Partial<AdminDictionary> = {
   guidePlayStoreLink: 'Google Play ত পাওক',
   techSuccessPlayCopy: 'এই লগইন তথ্য শ্বেয়াৰ কৰক — কাৰিকৰে VigilAMC Field এণ্ড্ৰইড এপত (Google Play) ছাইন ইন কৰিব।',
   techPlayStoreHint: 'কাৰিকৰসকলে VigilAMC Field এণ্ড্ৰইড এপত (Google Play) ছাইন ইন কৰে।',
+  welcomeEyebrow: '🎉 বিনামূলীয়া টেষ্টিং এক্সেছ (FREE TESTING ACCESS)',
+  welcomeHeading: 'স্বাগতম, {firstName}!',
+  welcomeHeadingFallback: 'VigilAMC লৈ স্বাগতম!',
+  welcomeBody: '{agency} আমাৰ সৈতে যুক্ত হোৱাত আনন্দিত। VigilAMC বৰ্তমান সক্ৰিয় টেষ্টিঙত আছে — এই টেষ্টিং সময়ছোৱাত আপোনাৰ একাউণ্টে প্ৰতিটো সুবিধাৰ সম্পূৰ্ণ বিনামূলীয়া এক্সেছ পাব। আপোনাৰ মতামতে আমাক সহায় কৰিব।',
+  welcomeAgencyFallback: 'আপোনাৰ ৱৰ্কস্পেচ',
+  welcomeBullet1: 'আপোনাৰ ভৱন আৰু অগ্নি নিৰ্বাপক সঁজুলি যোগ কৰক',
+  welcomeBullet2: 'VigilAMC Field এণ্ড্ৰইড এপলৈ (Google Play) কাৰিকৰসকলক আমন্ত্ৰণ জনাওক',
+  welcomeBullet3: 'আপোনাৰ প্ৰথম অনুপালন প্ৰতিবেদন প্ৰস্তুত কৰক',
+  welcomeCta: 'আৰম্ভ কৰক',
+  welcomeCloseAria: 'স্বাগতম পপআপ বন্ধ কৰক',
+  welcomeFooter: 'প্ৰশ্ন বা মতামত? vigilamc@gmail.com',
 };
 
 const DICTIONARY_UR: Partial<AdminDictionary> = {
@@ -598,6 +742,17 @@ const DICTIONARY_UR: Partial<AdminDictionary> = {
   guidePlayStoreLink: 'Google Play پر حاصل کریں',
   techSuccessPlayCopy: 'یہ اسناد شیئر کریں — ٹیکنیشن VigilAMC Field اینڈرائیڈ ایپ (Google Play) پر سائن ان کرتا ہے۔',
   techPlayStoreHint: 'ٹیکنیشنز VigilAMC Field اینڈرائیڈ ایپ (Google Play) پر سائن ان کرتے ہیں۔',
+  welcomeEyebrow: '🎉 مفت ٹیسٹنگ رسائی (FREE TESTING ACCESS)',
+  welcomeHeading: 'خوش آمدید، {firstName}!',
+  welcomeHeadingFallback: 'VigilAMC میں خوش آمدید!',
+  welcomeBody: '{agency} کا ہمارے ساتھ شامل ہونا خوشی کی بات ہے۔ VigilAMC فعال ٹیسٹنگ کے مرحلے میں ہے — اس ٹیسٹنگ مدت کے دوران آپ کے اکاؤنٹ کو ہر فیچر تک مکمل مفت رسائی حاصل ہے۔ آپ کی رائے ہمیں پروڈکٹ کو بہتر بنانے میں مدد دیتی ہے۔',
+  welcomeAgencyFallback: 'آپ کا ورک اسپیس',
+  welcomeBullet1: 'اپنی عمارتیں اور فائر سیفٹی آلات شامل کریں',
+  welcomeBullet2: 'ٹیکنیشنز کو VigilAMC Field اینڈرائیڈ ایپ (Google Play) پر مدعو کریں',
+  welcomeBullet3: 'اپنی پہلی تعمیل رپورٹ تیار کریں',
+  welcomeCta: 'شروع کریں',
+  welcomeCloseAria: 'خوش آمدید ونڈو بند کریں',
+  welcomeFooter: 'سوالات یا رائے؟ vigilamc@gmail.com',
 };
 
 const DICTIONARIES: Record<string, Partial<AdminDictionary>> = {

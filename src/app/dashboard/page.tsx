@@ -39,6 +39,7 @@ import type { ImportType } from '@/lib/excelImport';
 import { INDIAN_STATES_AND_UTS, REPORTING_CYCLES } from '@/lib/constants/india';
 import { isDuplicateSubmission, clearSubmissionLock } from '@/lib/submissionGuard';
 import { getAdminDictionary } from '@/lib/i18n/admin';
+import { WelcomeTestingModal } from '@/components/admin/WelcomeTestingModal';
 
 const DashboardOverview = dynamic(
   () => import('@/components/admin/DashboardOverview').then((m) => m.DashboardOverview),
@@ -218,6 +219,8 @@ export default function AdminDashboardPage() {
   const [inspectionsWorkSubTab, setInspectionsWorkSubTab] = useState<'INSPECTIONS' | 'REPAIRS'>('INSPECTIONS');
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   const [guideModalOpen, setGuideModalOpen] = useState(false);
+  const [welcomeModalOpen, setWelcomeModalOpen] = useState(false);
+  const welcomeDismissedInSessionRef = React.useRef(false);
   const [isSubmittingBuilding, setIsSubmittingBuilding] = useState(false);
   const [isSubmittingEquip, setIsSubmittingEquip] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -462,6 +465,25 @@ export default function AdminDashboardPage() {
     []
   );
 
+  const handleDismissWelcome = useCallback((seenAtIso: string) => {
+    welcomeDismissedInSessionRef.current = true;
+    setWelcomeModalOpen(false);
+    setData((prev: any) => {
+      if (!prev) return prev;
+      const next = {
+        ...prev,
+        profile: prev.profile ? { ...prev.profile, welcomeSeenAt: seenAtIso } : prev.profile,
+      };
+      try {
+        const orgKey = next.company?.id || next.user?.id || 'default';
+        sessionStorage.setItem(`vigilamc_dash_cache_${orgKey}`, JSON.stringify(next));
+      } catch {
+        // Ignore sessionStorage errors
+      }
+      return next;
+    });
+  }, []);
+
   // Unified stale-while-revalidate dashboard refresh helper
   const refreshDashboard = useCallback(
     async (options?: { silent?: boolean }) => {
@@ -473,8 +495,18 @@ export default function AdminDashboardPage() {
           setLoading(true);
         }
 
+        const supabase = createClient();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
+        const authHeaders: Record<string, string> = {};
+        if (session?.access_token) {
+          authHeaders['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
         const res = await fetch('/api/dashboard/bootstrap', {
           cache: 'no-store',
+          headers: authHeaders,
         });
 
         if (res.status === 401) {
@@ -495,6 +527,17 @@ export default function AdminDashboardPage() {
         }
 
         applyBootstrapPayload(json);
+
+        if (
+          !welcomeDismissedInSessionRef.current &&
+          json.profile &&
+          json.profile.role !== 'TECHNICIAN' &&
+          json.profile.welcomeSeenAt === null
+        ) {
+          setWelcomeModalOpen(true);
+        } else if (json.profile?.welcomeSeenAt) {
+          setWelcomeModalOpen(false);
+        }
 
         // Cache snapshot in sessionStorage keyed by organization/user ID
         try {
@@ -3330,6 +3373,17 @@ export default function AdminDashboardPage() {
         items={minimizedTrayItems}
         onRestore={handleRestoreMinimizedItem}
         onClose={handleCloseMinimizedItem}
+      />
+
+      {/* =========================================================================
+          WELCOME TESTING MODAL (New Signups Only — Root Dashboard Layout)
+      ========================================================================= */}
+      <WelcomeTestingModal
+        isOpen={welcomeModalOpen}
+        fullName={data?.profile?.fullName}
+        agencyName={data?.company?.name}
+        preferredLanguage={data?.profile?.preferredLanguage || 'en'}
+        onDismissed={handleDismissWelcome}
       />
     </div>
   );
