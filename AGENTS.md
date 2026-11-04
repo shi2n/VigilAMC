@@ -29,8 +29,10 @@ Equipment status: VERIFIED | DUE_SOON | OVERDUE | SERVICE_REQUIRED | REPLACEMENT
   ![VigilAMC FIRE Homepage Hero Mobile 375x812](docs/screenshots/hero-mobile-375x812.png)
 - **Sector Marquee Strip (8 Real Photo Tiles — Up-to-Date):** `docs/screenshots/sector-marquee-strip.png`
   ![VigilAMC Sector Marquee Strip 8 Photo Tiles](docs/screenshots/sector-marquee-strip.png)
-- **Login Agency Card (`/login` 1440×900 — Up-to-Date V-Tile):** `docs/screenshots/login-fire-1440x900.png`
-  ![VigilAMC Agency Login Card V-Tile](docs/screenshots/login-fire-1440x900.png)
+- **Login Split-Panel Page (Desktop 1440×900 — FIRE Hero + Light Form):** `docs/screenshots/login-desktop-after.png`
+  ![VigilAMC Split-Panel Login Desktop 1440x900](docs/screenshots/login-desktop-after.png)
+- **Login Compact Banner (Mobile 375×812 — FIRE Hero + Light Form):** `docs/screenshots/login-mobile-after.png`
+  ![VigilAMC Split-Panel Login Mobile 375x812](docs/screenshots/login-mobile-after.png)
 - **Admin Dashboard (`/dashboard` — Up-to-Date FIRE + Glass Theme):** `docs/screenshots/dashboard-fire-1440x900.png`
   ![VigilAMC Admin Dashboard FIRE Theme](docs/screenshots/dashboard-fire-1440x900.png)
 - **Admin Dashboard Multi-Tasking Workspace (Tabs & Tray — Up-to-Date):** `docs/screenshots/dashboard-workspace-multitask.png`
