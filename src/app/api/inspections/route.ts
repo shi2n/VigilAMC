@@ -63,6 +63,7 @@ export async function POST(request: Request) {
       pressureGauge,
       overallCondition,
       remarks,
+      technicianId,
       technicianName,
       customerName,
       customerDesignation,
@@ -122,15 +123,34 @@ export async function POST(request: Request) {
     const normalizedPhotos =
       resolvedPhotoArray.length > 0 ? JSON.stringify(resolvedPhotoArray) : null;
     const primaryPhotoUrl = resolvedPhotoArray[0] || null;
-    const resolvedTechName =
+
+    let resolvedTechId: string = auth.user.id;
+    let resolvedTechName: string =
       technicianName || auth.profile?.fullName || auth.user?.email || 'Field Technician';
+
+    if (typeof technicianId === 'string' && technicianId.trim()) {
+      const selectedTech = await (db as any).userProfile
+        .findFirst({
+          where: {
+            id: technicianId.trim(),
+            organizationId: auth.organization.id,
+          },
+          select: { id: true, fullName: true, email: true },
+        })
+        .catch(() => null);
+      if (selectedTech) {
+        resolvedTechId = selectedTech.id;
+        resolvedTechName =
+          technicianName || selectedTech.fullName || selectedTech.email || resolvedTechName;
+      }
+    }
 
     const inspection = await (db as any).inspection.create({
       data: {
         organizationId: auth.organization.id,
         buildingId,
         equipmentId: equipmentId || null,
-        technicianId: auth.user.id,
+        technicianId: resolvedTechId,
         technicianName: resolvedTechName,
         status: status || 'PASSED',
         checklist: typeof checklist === 'string' ? checklist : JSON.stringify(checklist || {}),
@@ -238,7 +258,7 @@ export async function POST(request: Request) {
               buildingId,
               equipmentId,
               defectId: defect?.id || null,
-              assignedToId: auth.user.id,
+              assignedToId: resolvedTechId,
               title: `${eq?.qrCode || 'Asset'} — ${
                 Array.isArray(issueChips) && issueChips.length > 0 ? issueChips[0] : 'Refill / Repair'
               }`,

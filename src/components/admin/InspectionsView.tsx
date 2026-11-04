@@ -19,6 +19,7 @@ interface InspectionsViewProps {
   showToast: (msg: string) => void;
   onOpenImport?: () => void;
   initialInspections?: any[];
+  initialTechnicians?: any[];
   buildings?: any[];
   equipments?: any[];
   onRefreshDashboard?: () => Promise<void> | void;
@@ -28,11 +29,13 @@ export function InspectionsView({
   showToast,
   onOpenImport,
   initialInspections,
+  initialTechnicians,
   buildings = [],
   equipments = [],
   onRefreshDashboard,
 }: InspectionsViewProps) {
   const [inspections, setInspections] = useState<any[]>(initialInspections || []);
+  const [technicians, setTechnicians] = useState<any[]>(initialTechnicians || []);
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PASSED' | 'FAILED' | 'SERVICE_REQUIRED'>('ALL');
   const [search, setSearch] = useState('');
@@ -47,6 +50,7 @@ export function InspectionsView({
     equipmentId: '',
     status: 'PASSED',
     remarks: '',
+    technicianId: '',
     technicianName: '',
     photoUrl: '',
   });
@@ -58,6 +62,26 @@ export function InspectionsView({
     }
   }, [initialInspections]);
 
+  useEffect(() => {
+    if (Array.isArray(initialTechnicians)) {
+      setTechnicians(initialTechnicians);
+    }
+  }, [initialTechnicians]);
+
+  useEffect(() => {
+    if (initialTechnicians && initialTechnicians.length > 0) return;
+    fetch('/api/admin/technicians', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (j && Array.isArray(j.technicians)) {
+          setTechnicians(j.technicians);
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  }, [initialTechnicians]);
+
   const fetchInspections = async () => {
     try {
       setLoading(true);
@@ -68,10 +92,13 @@ export function InspectionsView({
         const json = await res.json();
         if (res.ok) {
           setInspections(json.inspections || []);
+        } else {
+          showToast(json.error || 'Failed to load inspections');
         }
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      showToast(e?.message || 'Network error loading inspections');
     } finally {
       setLoading(false);
     }
@@ -133,6 +160,7 @@ export function InspectionsView({
           equipmentId: '',
           status: 'PASSED',
           remarks: '',
+          technicianId: '',
           technicianName: '',
           photoUrl: '',
         });
@@ -440,14 +468,30 @@ export function InspectionsView({
                 </div>
 
                 <div>
-                  <label className="block font-bold mb-1 text-slate-700">Technician Name</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Rakesh Sharma"
-                    value={inspectionForm.technicianName}
-                    onChange={(e) => setInspectionForm({ ...inspectionForm, technicianName: e.target.value })}
+                  <label className="block font-bold mb-1 text-slate-700">Select Technician</label>
+                  <select
+                    value={inspectionForm.technicianId}
+                    onChange={(e) => {
+                      const selectedId = e.target.value;
+                      const selectedTech = technicians.find((t: any) => t.id === selectedId);
+                      setInspectionForm({
+                        ...inspectionForm,
+                        technicianId: selectedId,
+                        technicianName: selectedTech ? (selectedTech.fullName || selectedTech.email || '') : '',
+                      });
+                    }}
                     className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900"
-                  />
+                  >
+                    <option value="">
+                      {technicians.length === 0 ? 'No technicians added yet' : 'Select Technician...'}
+                    </option>
+                    {technicians.map((t: any) => (
+                      <option key={t.id} value={t.id}>
+                        {t.employeeId && t.employeeId !== '—' ? `${t.employeeId} · ` : ''}
+                        {t.fullName || t.email}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

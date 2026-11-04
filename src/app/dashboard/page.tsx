@@ -1929,6 +1929,7 @@ export default function AdminDashboardPage() {
                     showToast={showToast}
                     onOpenImport={() => handleOpenImport('INSPECTIONS')}
                     initialInspections={inspectionsList}
+                    initialTechnicians={techniciansList}
                     buildings={data?.buildings || []}
                     equipments={equipmentsList}
                     onRefreshDashboard={() => refreshDashboard({ silent: true })}
