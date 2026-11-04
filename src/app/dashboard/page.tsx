@@ -1028,7 +1028,7 @@ export default function AdminDashboardPage() {
   const initialEquipmentRef = React.useRef<any>(null);
   const initialBuildingRef = React.useRef<any>(null);
 
-  // Restore workspace layout from localStorage on initial mount
+  // Restore workspace layout from localStorage on initial mount, but always land on OVERVIEW first
   useEffect(() => {
     try {
       const saved = localStorage.getItem('vigilamc:workspace-tabs');
@@ -1044,26 +1044,25 @@ export default function AdminDashboardPage() {
             'REPORTS',
             'SETTINGS',
           ];
-          const valid = parsed.filter((t: any) => validIds.includes(t.id));
-          if (valid.length > 0) {
-            setOpenTabs(
-              valid.map((t: any) => ({
-                id: t.id,
-                minimized: !!t.minimized,
-                lastAccessed: Date.now(),
-              }))
-            );
-            const firstActive = valid.find((t: any) => !t.minimized);
-            if (firstActive) {
-              setActiveTab(firstActive.id);
-            } else {
-              setActiveTab(valid[0].id);
-            }
-          }
+          const otherValidTabs = parsed
+            .filter((t: any) => validIds.includes(t.id) && t.id !== 'OVERVIEW')
+            .slice(0, 5)
+            .map((t: any) => ({
+              id: t.id as AdminNavTab,
+              minimized: !!t.minimized,
+              lastAccessed: Date.now() - 1000,
+            }));
+
+          setOpenTabs([
+            { id: 'OVERVIEW', minimized: false, lastAccessed: Date.now() },
+            ...otherValidTabs,
+          ]);
         }
       }
+      setActiveTab('OVERVIEW');
     } catch (e) {
       console.warn('Failed to restore workspace tabs', e);
+      setActiveTab('OVERVIEW');
     }
   }, []);
 
