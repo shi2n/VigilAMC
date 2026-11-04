@@ -42,6 +42,8 @@ export async function PUT(request: Request) {
       signatoryDesignation,
       signatorySignatureUrl,
       reportFooterText,
+      clientPortalEnabled,
+      publicVerificationEnabled,
     } = body;
 
     const cleanNullable = (val: any, fallback: any) => {
@@ -63,6 +65,8 @@ export async function PUT(request: Request) {
         state: state !== undefined ? state.trim() : auth.organization.state,
         gstin: gstin !== undefined ? gstin.trim() : auth.organization.gstin,
         ...(typeof autoSchedulingEnabled === 'boolean' ? { autoSchedulingEnabled } : {}),
+        ...(typeof clientPortalEnabled === 'boolean' ? { clientPortalEnabled } : {}),
+        ...(typeof publicVerificationEnabled === 'boolean' ? { publicVerificationEnabled } : {}),
         brandLogoUrl: cleanNullable(brandLogoUrl, auth.organization.brandLogoUrl),
         signatoryName: cleanNullable(signatoryName, auth.organization.signatoryName),
         signatoryDesignation: cleanNullable(signatoryDesignation, auth.organization.signatoryDesignation),

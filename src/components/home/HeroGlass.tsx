@@ -245,18 +245,37 @@ export function HeroGlass() {
               className="mt-6 sm:mt-7 flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3"
             >
               <Link
-                href="/sample-report"
+                href="/demo"
+                data-testid="hero-live-demo-btn"
                 className="btn-flame inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-base shadow-[0_10px_28px_-6px_rgba(194,65,12,0.45)]"
               >
-                <FileCheck2 className="w-5 h-5" />
-                <span>See a Live Sample Report</span>
+                <Sparkles className="w-5 h-5" />
+                <span>See Live Demo</span>
                 <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link
+                href="/sample-report"
+                className="btn-ghost-flame inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-base"
+              >
+                <FileCheck2 className="w-5 h-5" />
+                <span>Sample Report</span>
               </Link>
               <Link
                 href="/login"
                 className="btn-ghost-flame inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-base"
               >
-                <span>Start 30-Day Free Pilot</span>
+                <span>Free Pilot</span>
+              </Link>
+            </div>
+
+            {/* Link to demo compliance record (H3) */}
+            <div className="mt-3 text-center lg:text-left">
+              <Link
+                href="/verify/DEMO-EXT-01"
+                data-testid="hero-compliance-record-link"
+                className="text-xs font-semibold text-[#EA580C] hover:text-[#C2410C] inline-flex items-center gap-1.5 transition-colors underline"
+              >
+                <span>See a real compliance record →</span>
               </Link>
             </div>
 

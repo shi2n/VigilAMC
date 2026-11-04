@@ -102,6 +102,8 @@ model Organization {
   signatoryDesignation   String?
   signatorySignatureUrl  String?
   reportFooterText       String?
+  clientPortalEnabled    Boolean            @default(true)
+  publicVerificationEnabled Boolean         @default(true)
   subscription           Subscription?
   users                  UserProfile[]
   clients                Client[]
@@ -118,6 +120,7 @@ model Organization {
   notifications          Notification[]
   activityLogs           ActivityLog[]
   deletionRequests       AccountDeletionRequest[]
+  portalUsers            PortalUser[]
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
 }
@@ -145,6 +148,7 @@ model Client {
   email          String?
   buildings      Building[]
   jobs           Job[]
+  portalUsers    PortalUser[]
   createdAt      DateTime      @default(now())
 
   @@index([organizationId])
@@ -179,6 +183,7 @@ model Building {
   floorPlans            FloorPlan[]
   workOrders            WorkOrder[]
   reports               ComplianceReport[]
+  reportAcks            ReportAck[]
   technicianAssignments TechnicianBuildingAssignment[]
   createdAt             DateTime                       @default(now())
   updatedAt             DateTime                       @updatedAt
@@ -436,7 +441,7 @@ model WorkOrder {
   title          String
   description    String
   priority       String        @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
-  status         String        @default("OPEN")   // OPEN, IN_PROGRESS, COMPLETED, CANCELLED
+  status         String        @default("OPEN")   // OPEN, ASSIGNED, IN_PROGRESS, COMPLETED, CANCELLED
   dueDate         DateTime?
   completedAt     DateTime?
   notes           String?
@@ -683,4 +688,40 @@ model AccountDeletionRequest {
   @@index([userProfileId])
   @@index([organizationId, status])
   @@index([status])
+}
+
+model PortalUser {
+  id                  String        @id @default(cuid())
+  organizationId      String
+  organization        Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  clientOrgId         String
+  client              Client        @relation(fields: [clientOrgId], references: [id], onDelete: Cascade)
+  email               String
+  name                String
+  invitedByUserId     String?
+  magicTokenHash      String?
+  magicTokenExpiresAt DateTime?
+  lastLoginAt         DateTime?
+  revokedAt           DateTime?
+  createdAt           DateTime      @default(now())
+  reportAcks          ReportAck[]
+
+  @@unique([organizationId, email])
+  @@index([email])
+  @@index([clientOrgId])
+  @@index([organizationId])
+}
+
+model ReportAck {
+  id             String      @id @default(cuid())
+  reportRef      String
+  buildingId     String
+  building       Building    @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  portalUserId   String
+  portalUser     PortalUser  @relation(fields: [portalUserId], references: [id], onDelete: Cascade)
+  acknowledgedAt DateTime    @default(now())
+
+  @@unique([reportRef, portalUserId])
+  @@index([buildingId])
+  @@index([portalUserId])
 }

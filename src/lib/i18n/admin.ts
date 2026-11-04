@@ -246,6 +246,20 @@ export interface AdminDictionary {
   floorPlansSubtitle: string;
   floorPlansUploadBtn: string;
   floorPlansClickHint: string;
+  // Client Portal & Public Verification
+  portalNavTab: string;
+  portalInviteTitle: string;
+  portalInviteSubtitle: string;
+  portalInviteBtn: string;
+  portalCopyLinkBtn: string;
+  portalLinkCopiedToast: string;
+  portalUsersTableTitle: string;
+  portalReceiptsTabTitle: string;
+  portalRevokeBtn: string;
+  portalRestoreBtn: string;
+  portalPublicVerifyToggleLabel: string;
+  portalMasterToggleLabel: string;
+  portalAcknowledgedBadge: string;
 }
 
 const DICTIONARY_EN: AdminDictionary = {
@@ -448,6 +462,20 @@ const DICTIONARY_EN: AdminDictionary = {
   floorPlansSubtitle: 'Upload floor schematics and place live compliance-colored pins bound to building fire assets.',
   floorPlansUploadBtn: 'Upload Floor Plan',
   floorPlansClickHint: 'Click anywhere on the floor plan to place an asset pin, or drag existing pins to reposition.',
+  // Client Portal & Public Verification
+  portalNavTab: 'Client Portal',
+  portalInviteTitle: 'Invite Client User',
+  portalInviteSubtitle: 'Grant read-only compliance portal access to building owners, societies, and facility managers.',
+  portalInviteBtn: 'Send Portal Invite',
+  portalCopyLinkBtn: 'Copy Magic Invite Link',
+  portalLinkCopiedToast: 'Magic invite link copied to clipboard!',
+  portalUsersTableTitle: 'Active Client Portal Users',
+  portalReceiptsTabTitle: 'Report Delivery & Acknowledgement Receipts',
+  portalRevokeBtn: 'Revoke Access',
+  portalRestoreBtn: 'Restore Access',
+  portalPublicVerifyToggleLabel: 'Public Verification Pages (/verify/[assetTag])',
+  portalMasterToggleLabel: 'Client Portal Access (Master Switch)',
+  portalAcknowledgedBadge: 'Acknowledged ✓',
 };
 
 const DICTIONARY_HI: Partial<AdminDictionary> = {
@@ -628,6 +656,19 @@ const DICTIONARY_HI: Partial<AdminDictionary> = {
   floorPlansSubtitle: 'फ़्लोर प्लान अपलोड करें और उपकरणों की स्थिति दर्शाने वाले पिन लगाएं।',
   floorPlansUploadBtn: 'फ़्लोर प्लान अपलोड करें',
   floorPlansClickHint: 'उपकरण पिन लगाने के लिए फ़्लोर प्लान पर कहीं भी क्लिक करें, या पिन को खींचकर स्थान बदलें।',
+  portalNavTab: 'क्लाइंट पोर्टल (Client Portal)',
+  portalInviteTitle: 'क्लाइंट को आमंत्रित करें',
+  portalInviteSubtitle: 'सोसायटियों और भवन प्रबंधकों को केवल-पठन अनुपालन पोर्टल का उपयोग प्रदान करें।',
+  portalInviteBtn: 'पोर्टल आमंत्रण भेजें',
+  portalCopyLinkBtn: 'मैजिक आमंत्रण लिंक कॉपी करें',
+  portalLinkCopiedToast: 'मैजिक आमंत्रण लिंक क्लिपबोर्ड पर कॉपी हो गया!',
+  portalUsersTableTitle: 'सक्रिय क्लाइंट पोर्टल उपयोगकर्ता',
+  portalReceiptsTabTitle: 'रिपोर्ट डिलीवरी और पावती रसीदें (Receipts)',
+  portalRevokeBtn: 'पहुंच निरस्त करें',
+  portalRestoreBtn: 'पहुंच बहाल करें',
+  portalPublicVerifyToggleLabel: 'सार्वजनिक सत्यापन पृष्ठ (/verify/[assetTag])',
+  portalMasterToggleLabel: 'क्लाइंट पोर्टल मास्टर स्विच',
+  portalAcknowledgedBadge: 'प्राप्ति स्वीकार ✓',
 };
 
 const DICTIONARY_MR: Partial<AdminDictionary> = {

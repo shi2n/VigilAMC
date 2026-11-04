@@ -2126,6 +2126,7 @@ export default function AdminDashboardPage() {
                 </div>
                 <ReportsView
                   buildings={buildings}
+                  clients={clientsList}
                   summary={summary}
                   company={company}
                   equipments={equipmentsList}

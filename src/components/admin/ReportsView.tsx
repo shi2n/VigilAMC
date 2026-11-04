@@ -18,9 +18,11 @@ import {
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { formatStandardDate } from '@/lib/constants/india';
+import { ClientPortalAdminPanel } from './ClientPortalAdminPanel';
 
 interface ReportsViewProps {
   buildings: any[];
+  clients?: any[];
   summary: any;
   company?: any;
   equipments?: any[];
@@ -30,12 +32,14 @@ interface ReportsViewProps {
 
 export function ReportsView({
   buildings,
+  clients = [],
   summary,
   company,
   equipments = [],
   inspections = [],
   onOpenApprovalsQueue,
 }: ReportsViewProps) {
+  const [mainReportTab, setMainReportTab] = useState<'CERTIFICATES' | 'PORTAL'>('CERTIFICATES');
   const [selectedStateFilter, setSelectedStateFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [designerOpen, setDesignerOpen] = useState<boolean>(false);
@@ -244,7 +248,42 @@ export function ReportsView({
         </div>
       </div>
 
-      {/* Filter Bar */}
+      {/* Reports Section Subtabs: Certificates vs Client Portal */}
+      <div className="flex items-center gap-2 border-b border-[#F0E4D8] pb-1">
+        <button
+          type="button"
+          data-testid="reports-tab-certificates"
+          onClick={() => setMainReportTab('CERTIFICATES')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            mainReportTab === 'CERTIFICATES'
+              ? 'bg-[#EA580C] text-white shadow-xs'
+              : 'bg-white text-[#44403C] hover:bg-orange-50/50 border border-[#F0E4D8]'
+          }`}
+        >
+          <FileText className="w-3.5 h-3.5" />
+          <span>Statutory Certificates &amp; Register</span>
+        </button>
+
+        <button
+          type="button"
+          data-testid="reports-tab-client-portal"
+          onClick={() => setMainReportTab('PORTAL')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            mainReportTab === 'PORTAL'
+              ? 'bg-[#EA580C] text-white shadow-xs'
+              : 'bg-white text-[#44403C] hover:bg-orange-50/50 border border-[#F0E4D8]'
+          }`}
+        >
+          <FileCheck2 className="w-3.5 h-3.5" />
+          <span>Client Portal &amp; Receipts</span>
+        </button>
+      </div>
+
+      {mainReportTab === 'PORTAL' ? (
+        <ClientPortalAdminPanel clients={clients} buildings={buildings} />
+      ) : (
+        <>
+          {/* Filter Bar */}
       <div className="glass-panel-dense flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 rounded-2xl">
         <input
           type="text"
@@ -403,6 +442,8 @@ export function ReportsView({
             );
           })}
         </div>
+      )}
+      </>
       )}
 
       {/* "Build Report" Designer Sheet / Drawer */}

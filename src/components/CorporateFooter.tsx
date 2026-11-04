@@ -70,6 +70,38 @@ export function CorporateFooter() {
             <ul className="space-y-1.5 text-sm text-[#A8A29E]">
               <li>
                 <Link
+                  href="/demo"
+                  className="inline-flex items-center min-h-[36px] text-[#FF8C42] hover:text-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded font-semibold"
+                >
+                  Live Interactive Demo
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/tools/extinguisher-calculator"
+                  className="inline-flex items-center min-h-[36px] hover:text-[#FAFAF9] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
+                >
+                  IS 2190 Extinguisher Calculator
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/verify"
+                  className="inline-flex items-center min-h-[36px] hover:text-[#FAFAF9] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
+                >
+                  Public Asset Verification
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/portal/login"
+                  className="inline-flex items-center min-h-[36px] hover:text-[#FAFAF9] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
+                >
+                  Client Portal
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/sample-report"
                   className="inline-flex items-center min-h-[36px] hover:text-[#FAFAF9] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
                 >

@@ -370,6 +370,73 @@ export function SettingsView({
 
             {/* C6: White-label toggle + fee fields using ember accents */}
             <div className="pt-3 border-t border-[#1C1917]/10 space-y-3">
+              {/* Org-level Client Portal and Public Verification Controls (Part 1 D2) */}
+              <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#FFF0E6]/70 border border-[#FED7AA]">
+                <div className="space-y-0.5">
+                  <div className="font-bold text-[#1C1917] flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-[#C2410C]" />
+                    <span>Client Portal Access (Master Switch)</span>
+                  </div>
+                  <p className="text-[11px] text-[#44403C]">
+                    Allow client contacts to access their dedicated read-only /portal view and acknowledge Form-B report receipts.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  data-testid="toggle-client-portal-master"
+                  aria-checked={companyForm.clientPortalEnabled !== false}
+                  onClick={() =>
+                    setCompanyForm({
+                      ...companyForm,
+                      clientPortalEnabled: companyForm.clientPortalEnabled === false ? true : false,
+                    })
+                  }
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ${
+                    companyForm.clientPortalEnabled !== false ? 'bg-[#C2410C]' : 'bg-[#44403C]/30'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition duration-200 ${
+                      companyForm.clientPortalEnabled !== false ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#FFF0E6]/70 border border-[#FED7AA]">
+                <div className="space-y-0.5">
+                  <div className="font-bold text-[#1C1917] flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#C2410C]" />
+                    <span>Public Verification Pages (/verify/[assetTag])</span>
+                  </div>
+                  <p className="text-[11px] text-[#44403C]">
+                    Permit public asset compliance status lookups without login. When disabled, public tag checks show &quot;Record not available&quot;.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  data-testid="toggle-public-verification"
+                  aria-checked={companyForm.publicVerificationEnabled !== false}
+                  onClick={() =>
+                    setCompanyForm({
+                      ...companyForm,
+                      publicVerificationEnabled: companyForm.publicVerificationEnabled === false ? true : false,
+                    })
+                  }
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ${
+                    companyForm.publicVerificationEnabled !== false ? 'bg-[#C2410C]' : 'bg-[#44403C]/30'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition duration-200 ${
+                      companyForm.publicVerificationEnabled !== false ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
               <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#FFF0E6]/70 border border-[#FED7AA]">
                 <div className="space-y-0.5">
                   <div className="font-bold text-[#1C1917] flex items-center gap-1.5">
