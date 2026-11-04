@@ -34,6 +34,9 @@ interface BuildingsViewProps {
   onOpenExport: () => void;
   onOpenImport?: () => void;
   onEditEquipment?: (eq: any) => void;
+  onOpenFloorPlans?: (b: any) => void;
+  clientFilterName?: string | null;
+  onClearClientFilter?: () => void;
 }
 
 export function BuildingsView({
@@ -49,9 +52,31 @@ export function BuildingsView({
   onOpenExport,
   onOpenImport,
   onEditEquipment,
+  onOpenFloorPlans,
+  clientFilterName,
+  onClearClientFilter,
 }: BuildingsViewProps) {
   return (
     <div className="space-y-6">
+      {clientFilterName && (
+        <div
+          data-testid="building-client-filter-banner"
+          className="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-[#FFF0E6] border border-[#FED7AA] text-xs"
+        >
+          <span className="font-bold text-[#1C1917]">
+            Filtered by Client Portfolio: <strong className="text-[#C2410C]">{clientFilterName}</strong> ({buildings.length} site{buildings.length === 1 ? '' : 's'})
+          </span>
+          {onClearClientFilter && (
+            <button
+              type="button"
+              onClick={onClearClientFilter}
+              className="px-3 py-1 rounded-lg bg-white border border-[#FED7AA] text-[#1C1917] font-bold hover:bg-[#FFF8F2]"
+            >
+              Show All Buildings
+            </button>
+          )}
+        </div>
+      )}
       {/* 4 Status Metrics Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
         <div className="p-4 glass-panel-dense rounded-2xl shadow-sm space-y-1">
@@ -280,6 +305,18 @@ export function BuildingsView({
                         + Single Item
                       </button>
 
+                      {onOpenFloorPlans && (
+                        <button
+                          type="button"
+                          data-testid={`open-floor-plans-${b.id}`}
+                          onClick={() => onOpenFloorPlans(b)}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] border border-[#FED7AA] hover:border-[#C2410C]/40 text-xs font-bold transition-all shadow-sm"
+                        >
+                          <MapPin className="w-3.5 h-3.5 text-[#EA580C]" />
+                          <span>Floor Plans</span>
+                        </button>
+                      )}
+
                       <Link
                         href={`/report/${b.id}`}
                         target="_blank"
@@ -337,7 +374,8 @@ export function BuildingsView({
                                 <th className="py-3 px-4">Type &amp; Spec</th>
                                 <th className="py-3 px-4">Location</th>
                                 <th className="py-3 px-4">Last Service</th>
-                                <th className="py-3 px-4">Next Due Date</th>
+                                <th className="py-3 px-4">Next Service Due</th>
+                                <th className="py-3 px-4">Next Hydro Due</th>
                                 <th className="py-3 px-4">Status</th>
                                 <th className="py-3 px-4 text-right">Action</th>
                               </tr>
@@ -410,6 +448,15 @@ export function BuildingsView({
                                           ? `Due in ${diffDays}d`
                                           : `${Math.round(diffDays / 30)} mos left`}
                                       </span>
+                                    </td>
+                                    <td className="py-3 px-4 text-[#1C1917] font-semibold">
+                                      {eq.hydroDueDate && !isNaN(new Date(eq.hydroDueDate).getTime())
+                                        ? new Date(eq.hydroDueDate).toLocaleDateString('en-IN', {
+                                            day: 'numeric',
+                                            month: 'short',
+                                            year: 'numeric',
+                                          })
+                                        : '—'}
                                     </td>
                                     <td className="py-3 px-4">
                                       <span

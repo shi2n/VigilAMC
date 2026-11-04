@@ -39,10 +39,44 @@ export function computeAttentionDigest(params: {
   pendingSyncCount: number;
   newFeedbackCount: number;
   pendingDeletionCount?: number;
+  correctiveActions?: any[];
 }): AttentionDigestItem[] {
-  const { overdueCount, dueSoonCount, equipments, workOrders, pendingSyncCount, newFeedbackCount, pendingDeletionCount } = params;
+  const {
+    overdueCount,
+    dueSoonCount,
+    equipments,
+    workOrders,
+    pendingSyncCount,
+    newFeedbackCount,
+    pendingDeletionCount,
+    correctiveActions = [],
+  } = params;
   const digest: AttentionDigestItem[] = [];
   const now = new Date();
+
+  // Module B3: Corrective Actions open > 15 days (count + oldest age)
+  const agedCorrectiveActions = correctiveActions.filter((ca: any) => {
+    if (!ca || ca.status === 'CLOSED' || !ca.openedAt) return false;
+    const ageDays = Math.floor((now.getTime() - new Date(ca.openedAt).getTime()) / (1000 * 60 * 60 * 24));
+    return ageDays > 15;
+  });
+  if (agedCorrectiveActions.length > 0) {
+    const oldestAge = Math.max(
+      ...agedCorrectiveActions.map((ca: any) =>
+        Math.floor((now.getTime() - new Date(ca.openedAt).getTime()) / (1000 * 60 * 60 * 24))
+      )
+    );
+    digest.push({
+      id: 'digest-aged-corrective-actions',
+      type: 'CRITICAL',
+      title: 'Escalated Corrective Actions (>15d)',
+      message: `${agedCorrectiveActions.length} corrective action(s) open >15 days (oldest: ${oldestAge}d open)`,
+      count: agedCorrectiveActions.length,
+      deepLinkTab: 'INSPECTIONS_WORK',
+      deepLinkFilter: 'FINDINGS',
+      badgeCls: 'bg-rose-50 text-[#DC2626] border-rose-200',
+    });
+  }
 
   // 1. Overdue inspections / AMC dues
   if (overdueCount > 0) {

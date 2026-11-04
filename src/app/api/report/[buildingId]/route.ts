@@ -40,6 +40,7 @@ export async function GET(
           orderBy: { createdAt: 'asc' },
           include: {
             inspections: {
+              where: { approvalStatus: 'APPROVED' },
               orderBy: { date: 'desc' },
               take: 1,
             },
@@ -85,7 +86,11 @@ export async function GET(
           : null;
 
       if (org) {
-        signatoryName = cleanAdminName || org.contactPerson || 'Shaizan';
+        signatoryName =
+          (org.signatoryName && org.signatoryName.trim()) ||
+          cleanAdminName ||
+          org.contactPerson ||
+          'Shaizan';
         company = {
           name: org.name || 'Vigil Fire & Safety Solutions',
           phone: org.phone || '+91 83838 90483',
@@ -97,6 +102,10 @@ export async function GET(
           gstin: org.gstin || '',
           contactPerson: signatoryName,
           signatoryName,
+          brandLogoUrl: org.brandLogoUrl || null,
+          signatoryDesignation: org.signatoryDesignation || null,
+          signatorySignatureUrl: org.signatorySignatureUrl || null,
+          reportFooterText: org.reportFooterText || null,
         };
       } else if (cleanAdminName) {
         signatoryName = cleanAdminName;
@@ -200,6 +209,7 @@ export async function GET(
         .findFirst({
           where: {
             buildingId: building.id,
+            approvalStatus: 'APPROVED',
             latitude: { not: null },
             longitude: { not: null },
           },
@@ -216,6 +226,15 @@ export async function GET(
         };
       }
     }
+
+    const pendingApprovalsCount = await (db as any).inspection
+      .count({
+        where: {
+          buildingId: building.id,
+          approvalStatus: 'PENDING',
+        },
+      })
+      .catch(() => 0);
 
     const isFullyCompliant = overdueCount === 0 && rawEquipments.length > 0;
     const overallReportStatus = isFullyCompliant ? 'COMPLIANT' : 'ACTION_NEEDED';
@@ -270,6 +289,7 @@ export async function GET(
       },
       report,
       latestGpsInspection,
+      pendingApprovalsCount,
       summary: {
         total: rawEquipments.length,
         verified: verifiedCount,

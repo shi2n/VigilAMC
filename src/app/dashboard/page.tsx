@@ -69,6 +69,26 @@ const InspectionsView = dynamic(
   { loading: () => <div className="h-96 bg-slate-100 rounded-2xl animate-pulse" />, ssr: false }
 );
 
+const ApprovalsQueueView = dynamic(
+  () => import('@/components/admin/ApprovalsQueueView').then((m) => m.ApprovalsQueueView),
+  { loading: () => <div className="h-96 bg-slate-100 rounded-2xl animate-pulse" />, ssr: false }
+);
+
+const CorrectiveActionsBoard = dynamic(
+  () => import('@/components/admin/CorrectiveActionsBoard').then((m) => m.CorrectiveActionsBoard),
+  { loading: () => <div className="h-96 bg-slate-100 rounded-2xl animate-pulse" />, ssr: false }
+);
+
+const ExpiryRadarView = dynamic(
+  () => import('@/components/admin/ExpiryRadarView').then((m) => m.ExpiryRadarView),
+  { loading: () => <div className="h-96 bg-slate-100 rounded-2xl animate-pulse" />, ssr: false }
+);
+
+const FloorPlansModal = dynamic(
+  () => import('@/components/admin/FloorPlansModal').then((m) => m.FloorPlansModal),
+  { ssr: false }
+);
+
 const ReportsView = dynamic(
   () => import('@/components/admin/ReportsView').then((m) => m.ReportsView),
   { loading: () => <div className="h-96 bg-slate-100 rounded-2xl animate-pulse" />, ssr: false }
@@ -216,7 +236,12 @@ export default function AdminDashboardPage() {
   // Authenticated Admin Navigation Tab (6 Core Groups)
   const [activeTab, setActiveTab] = useState<AdminNavTab>('OVERVIEW');
   const [clientsSitesSubTab, setClientsSitesSubTab] = useState<'BUILDINGS' | 'CLIENTS'>('BUILDINGS');
-  const [inspectionsWorkSubTab, setInspectionsWorkSubTab] = useState<'INSPECTIONS' | 'REPAIRS'>('INSPECTIONS');
+  const [inspectionsWorkSubTab, setInspectionsWorkSubTab] = useState<
+    'INSPECTIONS' | 'APPROVALS' | 'FINDINGS' | 'RADAR' | 'REPAIRS'
+  >('INSPECTIONS');
+  const [clientFilter, setClientFilter] = useState<{ id: string; name: string } | null>(null);
+  const [floorPlansBuilding, setFloorPlansBuilding] = useState<any | null>(null);
+  const [prefillFinding, setPrefillFinding] = useState<any | null>(null);
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   const [guideModalOpen, setGuideModalOpen] = useState(false);
   const [welcomeModalOpen, setWelcomeModalOpen] = useState(false);
@@ -255,6 +280,7 @@ export default function AdminDashboardPage() {
   const [techniciansList, setTechniciansList] = useState<any[]>([]);
   const [workOrdersList, setWorkOrdersList] = useState<any[]>([]);
   const [inspectionsList, setInspectionsList] = useState<any[]>([]);
+  const [correctiveActionsList, setCorrectiveActionsList] = useState<any[]>([]);
   const [clientsList, setClientsList] = useState<any[]>([]);
   const [equipmentsList, setEquipmentsList] = useState<any[]>([]);
   const [equipSearch, setEquipSearch] = useState('');
@@ -422,6 +448,12 @@ export default function AdminDashboardPage() {
     phone: '',
     email: '',
     address: '',
+    brandLogoUrl: '',
+    signatoryName: '',
+    signatoryDesignation: '',
+    signatorySignatureUrl: '',
+    reportFooterText: '',
+    autoSchedulingEnabled: true,
   });
 
   const applyBootstrapPayload = useCallback(
@@ -431,6 +463,7 @@ export default function AdminDashboardPage() {
       if (Array.isArray(json.clients)) setClientsList(json.clients);
       if (Array.isArray(json.equipments)) setEquipmentsList(json.equipments);
       if (Array.isArray(json.inspections)) setInspectionsList(json.inspections);
+      if (Array.isArray(json.correctiveActions)) setCorrectiveActionsList(json.correctiveActions);
       if (Array.isArray(json.workOrders)) setWorkOrdersList(json.workOrders);
       if (Array.isArray(json.technicians)) setTechniciansList(json.technicians);
       if (json.subscription) setSubscriptionData(json.subscription);
@@ -452,6 +485,12 @@ export default function AdminDashboardPage() {
           phone: json.company.phone || '',
           email: json.company.email || '',
           address: json.company.address || '',
+          brandLogoUrl: json.company.brandLogoUrl || '',
+          signatoryName: json.company.signatoryName || '',
+          signatoryDesignation: json.company.signatoryDesignation || '',
+          signatorySignatureUrl: json.company.signatorySignatureUrl || '',
+          reportFooterText: json.company.reportFooterText || '',
+          autoSchedulingEnabled: json.company.autoSchedulingEnabled !== false,
         });
       }
 
@@ -1778,7 +1817,16 @@ export default function AdminDashboardPage() {
 
                 {clientsSitesSubTab === 'BUILDINGS' ? (
                   <BuildingsView
-                    buildings={buildings}
+                    buildings={
+                      clientFilter
+                        ? buildings.filter(
+                            (b: any) =>
+                              b.clientId === clientFilter.id ||
+                              b.client?.id === clientFilter.id ||
+                              b.client?.name === clientFilter.name
+                          )
+                        : buildings
+                    }
                     summary={summary}
                     expandedBuildingId={expandedBuildingId}
                     setExpandedBuildingId={setExpandedBuildingId}
@@ -1793,6 +1841,9 @@ export default function AdminDashboardPage() {
                     onSingleAdd={(b) => setSingleAddEquipModalOpen(b)}
                     onOpenExport={() => handleOpenExport('BUILDINGS')}
                     onOpenImport={() => handleOpenImport('BUILDINGS')}
+                    onOpenFloorPlans={(b) => setFloorPlansBuilding(b)}
+                    clientFilterName={clientFilter?.name || null}
+                    onClearClientFilter={() => setClientFilter(null)}
                     onEditEquipment={(eq) => {
                       ensureTechniciansLoaded();
                       setAssignTaskOpen(false);
@@ -1806,6 +1857,7 @@ export default function AdminDashboardPage() {
                         ...eq,
                         lastServiceDate: toDateInputString(eq.lastServiceDate),
                         nextDueDate: toDateInputString(eq.nextDueDate),
+                        hydroDueDate: toDateInputString(eq.hydroDueDate || eq.nextDueDate),
                       };
                       initialEquipmentRef.current = { ...normalizedEq };
                       setEditEquipmentModal(normalizedEq);
@@ -1820,6 +1872,11 @@ export default function AdminDashboardPage() {
                     onDeleteClient={handleDeleteClient}
                     onOpenExport={() => handleOpenExport('CLIENTS')}
                     onOpenImport={() => handleOpenImport('CLIENTS')}
+                    onSelectClientSites={(clientId, clientName) => {
+                      setClientFilter({ id: clientId, name: clientName });
+                      setClientsSitesSubTab('BUILDINGS');
+                    }}
+                    t={getAdminDictionary(data?.profile?.preferredLanguage || 'en')}
                   />
                 )}
               </div>
@@ -1880,8 +1937,9 @@ export default function AdminDashboardPage() {
             {tab.id === 'INSPECTIONS_WORK' && (
               <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#FED7AA] shadow-xs">
-                  <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs">
+                  <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs flex-wrap">
                     <button
+                      data-testid="subtab-inspections"
                       onClick={() => setInspectionsWorkSubTab('INSPECTIONS')}
                       className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
                         inspectionsWorkSubTab === 'INSPECTIONS'
@@ -1892,6 +1950,50 @@ export default function AdminDashboardPage() {
                       Field Inspections ({inspectionsList.length})
                     </button>
                     <button
+                      data-testid="subtab-approvals"
+                      onClick={() => setInspectionsWorkSubTab('APPROVALS')}
+                      className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
+                        inspectionsWorkSubTab === 'APPROVALS'
+                          ? 'bg-[#C2410C] text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <span>Approvals</span>
+                      {inspectionsList.filter((i) => i.approvalStatus === 'PENDING').length > 0 && (
+                        <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-[#EA580C] text-white font-bold">
+                          {inspectionsList.filter((i) => i.approvalStatus === 'PENDING').length}
+                        </span>
+                      )}
+                    </button>
+                    <button
+                      data-testid="subtab-findings"
+                      onClick={() => setInspectionsWorkSubTab('FINDINGS')}
+                      className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
+                        inspectionsWorkSubTab === 'FINDINGS'
+                          ? 'bg-[#C2410C] text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <span>Corrective Actions</span>
+                      {correctiveActionsList.filter((c) => c.status !== 'CLOSED').length > 0 && (
+                        <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-[#D97706] text-white font-bold">
+                          {correctiveActionsList.filter((c) => c.status !== 'CLOSED').length}
+                        </span>
+                      )}
+                    </button>
+                    <button
+                      data-testid="subtab-radar"
+                      onClick={() => setInspectionsWorkSubTab('RADAR')}
+                      className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                        inspectionsWorkSubTab === 'RADAR'
+                          ? 'bg-[#C2410C] text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Expiry Radar
+                    </button>
+                    <button
+                      data-testid="subtab-repairs"
                       onClick={() => setInspectionsWorkSubTab('REPAIRS')}
                       className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
                         inspectionsWorkSubTab === 'REPAIRS'
@@ -1912,7 +2014,10 @@ export default function AdminDashboardPage() {
                     <button
                       onClick={() =>
                         handleOpenExport(
-                          inspectionsWorkSubTab === 'INSPECTIONS' ? 'INSPECTIONS' : 'WORK_ORDERS'
+                          inspectionsWorkSubTab === 'INSPECTIONS' ||
+                            inspectionsWorkSubTab === 'APPROVALS'
+                            ? 'INSPECTIONS'
+                            : 'WORK_ORDERS'
                         )
                       }
                       className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-xs"
@@ -1924,7 +2029,7 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                {inspectionsWorkSubTab === 'INSPECTIONS' ? (
+                {inspectionsWorkSubTab === 'INSPECTIONS' && (
                   <InspectionsView
                     showToast={showToast}
                     onOpenImport={() => handleOpenImport('INSPECTIONS')}
@@ -1934,7 +2039,47 @@ export default function AdminDashboardPage() {
                     equipments={equipmentsList}
                     onRefreshDashboard={() => refreshDashboard({ silent: true })}
                   />
-                ) : (
+                )}
+
+                {inspectionsWorkSubTab === 'APPROVALS' && (
+                  <ApprovalsQueueView
+                    inspections={inspectionsList}
+                    onRefreshDashboard={() => refreshDashboard({ silent: true })}
+                    showToast={showToast}
+                    onFlagFinding={(prefill) => {
+                      setPrefillFinding(prefill);
+                      setInspectionsWorkSubTab('FINDINGS');
+                    }}
+                    t={getAdminDictionary(data?.profile?.preferredLanguage || 'en')}
+                  />
+                )}
+
+                {inspectionsWorkSubTab === 'FINDINGS' && (
+                  <CorrectiveActionsBoard
+                    initialActions={correctiveActionsList}
+                    buildings={buildings}
+                    equipments={equipmentsList}
+                    technicians={techniciansList}
+                    showToast={showToast}
+                    onRefreshDashboard={() => refreshDashboard({ silent: true })}
+                    prefillFinding={prefillFinding}
+                    onClearPrefill={() => setPrefillFinding(null)}
+                    t={getAdminDictionary(data?.profile?.preferredLanguage || 'en')}
+                  />
+                )}
+
+                {inspectionsWorkSubTab === 'RADAR' && (
+                  <ExpiryRadarView
+                    equipments={equipmentsList}
+                    workOrders={workOrdersList}
+                    showToast={showToast}
+                    onRefreshDashboard={() => refreshDashboard({ silent: true })}
+                    onNavigateToWorkOrders={() => setInspectionsWorkSubTab('REPAIRS')}
+                    t={getAdminDictionary(data?.profile?.preferredLanguage || 'en')}
+                  />
+                )}
+
+                {inspectionsWorkSubTab === 'REPAIRS' && (
                   <WorkOrdersView
                     showToast={showToast}
                     onOpenImport={() => handleOpenImport('WORK_ORDERS')}
@@ -1979,7 +2124,17 @@ export default function AdminDashboardPage() {
                     <span>Export Excel</span>
                   </button>
                 </div>
-                <ReportsView buildings={buildings} summary={summary} company={company} />
+                <ReportsView
+                  buildings={buildings}
+                  summary={summary}
+                  company={company}
+                  equipments={equipmentsList}
+                  inspections={inspectionsList}
+                  onOpenApprovalsQueue={() => {
+                    handleOpenTab('INSPECTIONS_WORK');
+                    setInspectionsWorkSubTab('APPROVALS');
+                  }}
+                />
               </div>
             )}
 
@@ -3080,6 +3235,27 @@ export default function AdminDashboardPage() {
                             className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
                           />
                         </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-slate-700 font-bold mb-1">
+                            Next Hydro-Test Due Date
+                          </label>
+                          <input
+                            type="date"
+                            data-testid="equipment-modal-hydro-due"
+                            value={
+                              editEquipmentModal.hydroDueDate
+                                ? toDateInputString(editEquipmentModal.hydroDueDate)
+                                : editEquipmentModal.nextDueDate || toDateInputString(new Date())
+                            }
+                            onChange={(e) =>
+                              setEditEquipmentModal({
+                                ...editEquipmentModal,
+                                hydroDueDate: e.target.value,
+                              })
+                            }
+                            className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
+                          />
+                        </div>
 
                         {/* Quick Presets Row */}
                         <div className="sm:col-span-2 flex flex-wrap items-center gap-1.5 pt-1">
@@ -3353,6 +3529,30 @@ export default function AdminDashboardPage() {
           );
         })()}
       </AnimatePresence>
+
+      {/* =========================================================================
+          MODAL 8: FLOOR-PLAN PINS (MODULE H)
+      ========================================================================= */}
+      {floorPlansBuilding && (
+        <FloorPlansModal
+          building={floorPlansBuilding}
+          onClose={() => setFloorPlansBuilding(null)}
+          onViewAsset={(eq) => {
+            setFloorPlansBuilding(null);
+            ensureTechniciansLoaded();
+            const normalizedEq = {
+              ...eq,
+              lastServiceDate: toDateInputString(eq.lastServiceDate),
+              nextDueDate: toDateInputString(eq.nextDueDate),
+              hydroDueDate: toDateInputString(eq.hydroDueDate || eq.nextDueDate),
+            };
+            initialEquipmentRef.current = { ...normalizedEq };
+            setEditEquipmentModal(normalizedEq);
+          }}
+          showToast={showToast}
+          t={getAdminDictionary(data?.profile?.preferredLanguage || 'en')}
+        />
+      )}
 
       {/* =========================================================================
           MODAL 7: FEEDBACK

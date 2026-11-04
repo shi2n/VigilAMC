@@ -4,6 +4,7 @@ import { getCurrentUser, isPlatformOwner } from '@/lib/auth';
 import { evaluateEquipmentStatus } from '@/lib/compliance';
 import { getPlanConfig, PLAN_CONFIGS } from '@/lib/plans';
 import { computeAttentionDigest, computeTrendAnalytics } from '@/lib/dashboardAnalytics';
+import { runAutoSchedulerForOrg } from '@/lib/autoScheduler';
 
 export const dynamic = 'force-dynamic';
 
@@ -91,6 +92,13 @@ export async function GET(request: Request) {
       });
     }
 
+    // Module C2: Run idempotent lead-time auto-scheduler on dashboard load
+    await runAutoSchedulerForOrg({
+      organizationId,
+      actorUserId: auth.user?.id,
+      actorEmail: auth.user?.email,
+    }).catch((err) => console.warn('[bootstrap] Auto-scheduler skipped:', err));
+
     // Execute all tenant operational queries in ONE single Promise.all batch
     const [
       clientsRaw,
@@ -102,6 +110,7 @@ export async function GET(request: Request) {
       pendingSyncCount,
       newFeedbackCount,
       pendingDeletionCount,
+      correctiveActionsRaw,
     ] = await Promise.all([
       (db as any).client.findMany({
         where: { organizationId },
@@ -203,8 +212,16 @@ export async function GET(request: Request) {
           remarks: true,
           latitude: true,
           longitude: true,
+          photos: true,
           isImported: true,
+          approvalStatus: true,
+          approvalNote: true,
+          approvedAt: true,
+          approvedByUserId: true,
           createdAt: true,
+          inspectionPhotos: {
+            select: { id: true, photoUrl: true, category: true, caption: true },
+          },
           building: { select: { id: true, name: true, address: true } },
           equipment: {
             select: {
@@ -272,33 +289,38 @@ export async function GET(request: Request) {
           status: 'PENDING',
         },
       }).catch(() => 0),
+      (db as any).correctiveAction.findMany({
+        where: { organizationId },
+        include: {
+          building: { select: { id: true, name: true, address: true } },
+          equipment: { select: { id: true, qrCode: true, type: true, location: true } },
+        },
+        orderBy: { openedAt: 'desc' },
+      }).catch(() => []),
     ]);
 
     const now = new Date();
 
-    // 1. Enrich Clients
-    const clients = clientsRaw.map((c: any) => {
-      const totalEquipments = c.buildings.reduce(
-        (sum: number, b: any) => sum + (b._count?.equipments || 0),
-        0
-      );
-      return {
-        id: c.id,
-        name: c.name,
-        contactPerson: c.contactPerson,
-        phone: c.phone,
-        email: c.email,
-        buildingCount: c.buildings.length,
-        totalEquipments,
-        buildings: c.buildings.map((b: any) => ({
-          id: b.id,
-          name: b.name,
-          address: b.address,
-          equipmentCount: b._count?.equipments || 0,
-        })),
-        createdAt: c.createdAt,
-      };
-    });
+    // Count pending approvals per building in-memory
+    const pendingApprovalsByBuilding = new Map<string, number>();
+    const latestInspectionByBuilding = new Map<string, Date>();
+    for (const ins of inspectionsRaw) {
+      if (ins.buildingId) {
+        if (ins.approvalStatus === 'PENDING') {
+          pendingApprovalsByBuilding.set(
+            ins.buildingId,
+            (pendingApprovalsByBuilding.get(ins.buildingId) || 0) + 1
+          );
+        }
+        const dt = new Date(ins.date || ins.createdAt);
+        if (!isNaN(dt.getTime())) {
+          const prev = latestInspectionByBuilding.get(ins.buildingId);
+          if (!prev || dt > prev) {
+            latestInspectionByBuilding.set(ins.buildingId, dt);
+          }
+        }
+      }
+    }
 
     // 2. Evaluate Buildings & Assets
     const evaluatedBuildings = buildingsRaw.map((b: any) => {
@@ -348,8 +370,12 @@ export async function GET(request: Request) {
         reportingCycle: b.reportingCycle || b.complianceCycle || 'Half-Yearly',
         complianceRuleName: b.complianceRuleName,
         complianceCycle: b.complianceCycle,
+        leadTimeDays: b.leadTimeDays ?? 7,
+        cycleOverrides: b.cycleOverrides || null,
         nextFilingDueDate: b.nextFilingDueDate,
         filingDaysRemaining,
+        pendingApprovalsCount: pendingApprovalsByBuilding.get(b.id) || 0,
+        lastInspectionDate: latestInspectionByBuilding.get(b.id) || null,
         client: b.client,
         totalEquipments: b.equipments.length,
         verifiedCount,
@@ -358,6 +384,61 @@ export async function GET(request: Request) {
         overdueCount,
         overallStatus,
         equipments: enrichedEquipments,
+      };
+    });
+
+    // 1. Enrich Clients with Module E Portfolio Rollup metrics (0 extra DB queries)
+    const buildingsByClientId = new Map<string, any[]>();
+    for (const eb of evaluatedBuildings) {
+      const cId = eb.client?.id;
+      if (cId) {
+        if (!buildingsByClientId.has(cId)) buildingsByClientId.set(cId, []);
+        buildingsByClientId.get(cId)!.push(eb);
+      }
+    }
+
+    const clients = clientsRaw.map((c: any) => {
+      const clientBldgs = buildingsByClientId.get(c.id) || [];
+      const totalEquipments = clientBldgs.reduce((sum, b) => sum + (b.totalEquipments || 0), 0);
+      const overdueCount = clientBldgs.reduce((sum, b) => sum + (b.overdueCount || 0), 0);
+      const dueSoonCount = clientBldgs.reduce((sum, b) => sum + (b.dueCount || 0), 0);
+      const okCount = Math.max(0, totalEquipments - overdueCount - dueSoonCount);
+      const compliancePercent =
+        totalEquipments > 0
+          ? Math.round(((totalEquipments - overdueCount) / totalEquipments) * 100)
+          : 100;
+
+      let lastInspectionDate: Date | null = null;
+      for (const b of clientBldgs) {
+        if (b.lastInspectionDate) {
+          const dt = new Date(b.lastInspectionDate);
+          if (!lastInspectionDate || dt > lastInspectionDate) {
+            lastInspectionDate = dt;
+          }
+        }
+      }
+
+      return {
+        id: c.id,
+        name: c.name,
+        contactPerson: c.contactPerson,
+        phone: c.phone,
+        email: c.email,
+        buildingCount: c.buildings.length,
+        totalEquipments,
+        okCount,
+        dueSoonCount,
+        overdueCount,
+        expiring30dCount: dueSoonCount,
+        compliancePercent,
+        lastInspectionDate,
+        buildings: c.buildings.map((b: any) => ({
+          id: b.id,
+          name: b.name,
+          address: b.address,
+          equipmentCount: b._count?.equipments || 0,
+        })),
+        createdAt: c.createdAt,
       };
     });
 
@@ -539,6 +620,7 @@ export async function GET(request: Request) {
       pendingSyncCount: pendingSyncCount || 0,
       newFeedbackCount: newFeedbackCount || 0,
       pendingDeletionCount: pendingDeletionCount || 0,
+      correctiveActions: correctiveActionsRaw || [],
     });
 
     const analytics = computeTrendAnalytics({
@@ -560,6 +642,7 @@ export async function GET(request: Request) {
       equipments: evaluatedEquipments,
       inspections: inspectionsRaw,
       workOrders: workOrdersRaw,
+      correctiveActions: correctiveActionsRaw || [],
       technicians: formattedTechnicians,
       attentionDigest,
       analytics,

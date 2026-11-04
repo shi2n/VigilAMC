@@ -132,7 +132,8 @@ export function FireAssetsView({
                 <th className="py-3 px-4">Type &amp; Capacity</th>
                 <th className="py-3 px-4">Location</th>
                 <th className="py-3 px-4">Last Serviced</th>
-                <th className="py-3 px-4">Next Due Date</th>
+                <th className="py-3 px-4">Next Service Due</th>
+                <th className="py-3 px-4">Next Hydro Due</th>
                 <th className="py-3 px-4 text-center">Live Status</th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
@@ -234,6 +235,42 @@ export function FireAssetsView({
                           ? `Due in ${diffDays}d`
                           : `${Math.max(1, Math.round(diffDays / 30))} mos left`}
                       </span>
+                    </td>
+                    <td className="py-3 px-4 font-semibold text-[#1C1917] whitespace-nowrap">
+                      {eq.hydroDueDate && !isNaN(new Date(eq.hydroDueDate).getTime()) ? (
+                        (() => {
+                          const hydroDiff = Math.ceil(
+                            (new Date(eq.hydroDueDate).getTime() - new Date().getTime()) /
+                              (1000 * 60 * 60 * 24)
+                          );
+                          return (
+                            <>
+                              {new Date(eq.hydroDueDate).toLocaleDateString('en-IN', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                              })}
+                              <span
+                                className={`block text-[10px] font-bold ${
+                                  hydroDiff < 0
+                                    ? 'text-[#DC2626]'
+                                    : hydroDiff <= 30
+                                    ? 'text-[#D97706]'
+                                    : 'text-[#059669]'
+                                }`}
+                              >
+                                {hydroDiff < 0
+                                  ? `Hydro overdue (${Math.abs(hydroDiff)}d)`
+                                  : hydroDiff <= 30
+                                  ? `Hydro due (${hydroDiff}d)`
+                                  : 'Hydro OK'}
+                              </span>
+                            </>
+                          );
+                        })()
+                      ) : (
+                        <span className="text-[#44403C]">—</span>
+                      )}
                     </td>
                     <td className="py-3 px-4 text-center whitespace-nowrap">
                       <motion.span

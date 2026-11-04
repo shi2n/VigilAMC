@@ -26,7 +26,30 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { name, licenseNumber, phone, email, address, city, state, gstin, fullName } = body;
+    const {
+      name,
+      licenseNumber,
+      phone,
+      email,
+      address,
+      city,
+      state,
+      gstin,
+      fullName,
+      autoSchedulingEnabled,
+      brandLogoUrl,
+      signatoryName,
+      signatoryDesignation,
+      signatorySignatureUrl,
+      reportFooterText,
+    } = body;
+
+    const cleanNullable = (val: any, fallback: any) => {
+      if (val === undefined) return fallback;
+      if (val === null) return null;
+      const trimmed = String(val).trim();
+      return trimmed ? trimmed : null;
+    };
 
     const company = await (db as any).organization.update({
       where: { id: auth.organization.id },
@@ -39,6 +62,12 @@ export async function PUT(request: Request) {
         city: city !== undefined ? city.trim() : auth.organization.city,
         state: state !== undefined ? state.trim() : auth.organization.state,
         gstin: gstin !== undefined ? gstin.trim() : auth.organization.gstin,
+        ...(typeof autoSchedulingEnabled === 'boolean' ? { autoSchedulingEnabled } : {}),
+        brandLogoUrl: cleanNullable(brandLogoUrl, auth.organization.brandLogoUrl),
+        signatoryName: cleanNullable(signatoryName, auth.organization.signatoryName),
+        signatoryDesignation: cleanNullable(signatoryDesignation, auth.organization.signatoryDesignation),
+        signatorySignatureUrl: cleanNullable(signatorySignatureUrl, auth.organization.signatorySignatureUrl),
+        reportFooterText: cleanNullable(reportFooterText, auth.organization.reportFooterText),
         ...(fullName !== undefined && fullName.trim() ? { contactPerson: fullName.trim() } : {}),
       },
     });

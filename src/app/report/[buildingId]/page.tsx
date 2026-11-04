@@ -415,17 +415,28 @@ export default function ComplianceReportPage() {
         {/* AMC Company Letterhead Header */}
         <div className="border-b-2 border-slate-900 pb-6 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-            <div>
-              <div className="text-xl sm:text-2xl font-black tracking-tight text-slate-900">
-                {company?.name || 'Fire Safety AMC Solutions'}
+            <div className="flex items-start gap-3.5">
+              {company?.brandLogoUrl && (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={company.brandLogoUrl}
+                  alt={company?.name || 'Agency Logo'}
+                  data-testid="report-brand-logo"
+                  className="h-12 w-auto max-w-[140px] object-contain rounded border border-slate-200 p-1 bg-white shrink-0"
+                />
+              )}
+              <div>
+                <div className="text-xl sm:text-2xl font-black tracking-tight text-slate-900">
+                  {company?.name || 'Fire Safety AMC Solutions'}
+                </div>
+                <p className="text-xs font-semibold text-slate-600">
+                  Govt. Licensed Fire Safety Agency &bull; {company?.licenseNumber || 'DL/FIRE/LIC/2026/042'}
+                </p>
+                <p className="text-[11px] text-slate-500 mt-1 max-w-md">
+                  {company?.address || 'Official Registered Service Station'} &bull; Phone:{' '}
+                  {company?.phone || '+91 83838 90483'} &bull; Email: {company?.email || 'vigilamc@gmail.com'}
+                </p>
               </div>
-              <p className="text-xs font-semibold text-slate-600">
-                Govt. Licensed Fire Safety Agency &bull; {company?.licenseNumber || 'DL/FIRE/LIC/2026/042'}
-              </p>
-              <p className="text-[11px] text-slate-500 mt-1 max-w-md">
-                {company?.address || 'Official Registered Service Station'} &bull; Phone:{' '}
-                {company?.phone || '+91 83838 90483'} &bull; Email: {company?.email || 'vigilamc@gmail.com'}
-              </p>
             </div>
 
             <div className="text-left sm:text-right">
@@ -681,19 +692,50 @@ export default function ComplianceReportPage() {
           </div>
 
           {/* Agency Signatory Block */}
-          <div className="text-right space-y-1">
+          <div className="text-right space-y-1" data-testid="report-signatory-block">
+            {company?.signatorySignatureUrl && (
+              <div className="flex justify-end mb-1">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={company.signatorySignatureUrl}
+                  alt="Authorized Signatory Signature"
+                  data-testid="report-signatory-signature"
+                  className="h-10 w-auto max-w-[160px] object-contain"
+                />
+              </div>
+            )}
             <div className="h-10 flex items-center justify-end">
               <span className="font-serif italic text-base font-bold text-slate-800">{signatoryName}</span>
             </div>
-            <div className="font-bold text-xs text-slate-900">Authorized Inspecting Officer</div>
+            <div className="font-bold text-xs text-slate-900">
+              {company?.signatoryDesignation || 'Authorized Inspecting Officer'}
+            </div>
             <div className="text-[11px] text-slate-600">
-              For <strong>{company?.name || 'Vigil Fire & Safety Solutions'}</strong>
+              {company?.signatoryDesignation ? (
+                <span>
+                  For <strong>{company?.name || 'Vigil Fire & Safety Solutions'}</strong> &middot;{' '}
+                  <strong>{signatoryName}</strong> &middot; {company.signatoryDesignation}
+                </span>
+              ) : (
+                <span>
+                  For <strong>{company?.name || 'Vigil Fire & Safety Solutions'}</strong>
+                </span>
+              )}
             </div>
             <div className="text-[10px] text-slate-500">
               Govt. Licensed Fire Safety Agency (Lic: {company?.licenseNumber || 'DL/FIRE/LIC/2026/042'})
             </div>
           </div>
         </div>
+
+        {company?.reportFooterText && (
+          <div
+            data-testid="report-branding-footer"
+            className="mt-6 pt-3 border-t border-slate-200 text-center text-[10px] font-medium text-slate-600 print:fixed print:bottom-2 print:left-0 print:right-0 print:bg-white"
+          >
+            {company.reportFooterText}
+          </div>
+        )}
       </div>
     </div>
   );

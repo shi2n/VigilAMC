@@ -68,6 +68,8 @@ export async function PUT(
       location,
       lastServiceDate,
       nextDueDate,
+      hydroDueDate,
+      nextHydroTestDue,
       serviceIntervalMonths,
       status,
       buildingId,
@@ -95,6 +97,13 @@ export async function PUT(
 
     const finalLastServiceDate = lastServiceDate ? new Date(lastServiceDate) : existing.lastServiceDate;
     const finalNextDueDate = nextDueDate ? new Date(nextDueDate) : existing.nextDueDate;
+    const rawHydro = hydroDueDate !== undefined ? hydroDueDate : nextHydroTestDue;
+    const finalHydroDueDate =
+      rawHydro === undefined
+        ? existing.hydroDueDate
+        : rawHydro && !isNaN(new Date(rawHydro).getTime())
+        ? new Date(rawHydro)
+        : null;
     const derivedStatus = deriveEquipmentDbStatus(new Date(finalNextDueDate));
 
     const updated = await (db as any).equipment.update({
@@ -106,6 +115,7 @@ export async function PUT(
         location: location !== undefined ? location : existing.location,
         lastServiceDate: finalLastServiceDate,
         nextDueDate: finalNextDueDate,
+        hydroDueDate: finalHydroDueDate,
         serviceIntervalMonths:
           serviceIntervalMonths !== undefined ? Number(serviceIntervalMonths) : existing.serviceIntervalMonths,
         status: nextDueDate ? derivedStatus : status !== undefined ? status : derivedStatus,

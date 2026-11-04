@@ -181,6 +181,71 @@ export interface AdminDictionary {
   importRequiredUnmappedError: string;
   importOptionalUnmappedHint: string;
   importTotalRowsDetected: string;
+  // Module A — Inspection Approval Queue
+  approvalsTabTitle: string;
+  approvalsQueueTitle: string;
+  approvalsQueueSubtitle: string;
+  approvalsApproveBtn: string;
+  approvalsBulkApproveBtn: string;
+  approvalsReturnBtn: string;
+  approvalsReturnModalTitle: string;
+  approvalsReturnNoteLabel: string;
+  approvalsReturnConfirmBtn: string;
+  approvalsFlagFindingBtn: string;
+  approvalsEmptyTitle: string;
+  approvalsEmptyDesc: string;
+  approvalsAwaitingChip: string;
+  // Module B — Corrective Action (Findings) Board
+  findingsTabTitle: string;
+  findingsBoardTitle: string;
+  findingsBoardSubtitle: string;
+  findingsNewBtn: string;
+  findingsSendWorkshopBtn: string;
+  findingsCloseConfirmTitle: string;
+  findingsCloseNoteLabel: string;
+  findingsAgeOpen: string;
+  findingsDigestEscalation: string;
+  // Module C — Compliance Cycles + Auto Work Orders
+  cyclesTabTitle: string;
+  cyclesConfigTitle: string;
+  cyclesConfigSubtitle: string;
+  cyclesAutoToggleLabel: string;
+  cyclesAutoToggleDesc: string;
+  cyclesLeadTimeLabel: string;
+  cyclesRunNowBtn: string;
+  cyclesAutoScheduledBadge: string;
+  // Module D — Expiry Radar + Schedule Visit
+  radarTabTitle: string;
+  radarTitle: string;
+  radarSubtitle: string;
+  radarSummaryStrip: string;
+  radarScheduleVisitBtn: string;
+  radarScheduledBadge: string;
+  // Module E — Client Portfolio Rollup
+  portfolioTabTitle: string;
+  portfolioTitle: string;
+  portfolioSubtitle: string;
+  portfolioExpiringChip: string;
+  // Module F — Asset Service Dates + Monthly Register Export
+  registerExportBtn: string;
+  registerColLastService: string;
+  registerColNextService: string;
+  registerColNextHydro: string;
+  // Module G — White-Label Report Branding
+  brandingTabTitle: string;
+  brandingTitle: string;
+  brandingSubtitle: string;
+  brandingLogoLabel: string;
+  brandingSignatoryNameLabel: string;
+  brandingSignatoryDesigLabel: string;
+  brandingSignatureImgLabel: string;
+  brandingFooterLabel: string;
+  // Module H — Floor-Plan Pins
+  floorPlansBtn: string;
+  floorPlansTitle: string;
+  floorPlansSubtitle: string;
+  floorPlansUploadBtn: string;
+  floorPlansClickHint: string;
 }
 
 const DICTIONARY_EN: AdminDictionary = {
@@ -318,6 +383,71 @@ const DICTIONARY_EN: AdminDictionary = {
   importRequiredUnmappedError: '{field} is required — map a spreadsheet column to it',
   importOptionalUnmappedHint: 'will be left empty',
   importTotalRowsDetected: 'Total Rows Detected:',
+  // Module A — Inspection Approval Queue
+  approvalsTabTitle: 'Approvals',
+  approvalsQueueTitle: 'Inspection Approval Queue',
+  approvalsQueueSubtitle: 'Review submitted field inspections before they appear in official Form-B compliance reports.',
+  approvalsApproveBtn: 'Approve',
+  approvalsBulkApproveBtn: 'Approve Selected',
+  approvalsReturnBtn: 'Return with note',
+  approvalsReturnModalTitle: 'Return Inspection to Technician',
+  approvalsReturnNoteLabel: 'Return Reason / Correction Note (Required)',
+  approvalsReturnConfirmBtn: 'Confirm Return',
+  approvalsFlagFindingBtn: 'Flag finding',
+  approvalsEmptyTitle: 'All Caught Up — Zero Pending Approvals',
+  approvalsEmptyDesc: 'Every submitted field inspection has been reviewed. New technician submissions will appear here automatically.',
+  approvalsAwaitingChip: '{count} awaiting approval',
+  // Module B — Corrective Action (Findings) Board
+  findingsTabTitle: 'Corrective Actions',
+  findingsBoardTitle: 'Corrective Actions (Findings) Board',
+  findingsBoardSubtitle: 'Track field defects from discovery through workshop dispatch, repair, verification, and closure.',
+  findingsNewBtn: 'New Finding',
+  findingsSendWorkshopBtn: 'Send to workshop',
+  findingsCloseConfirmTitle: 'Close Corrective Action',
+  findingsCloseNoteLabel: 'Closure Verification Note (Required)',
+  findingsAgeOpen: '{days}d open',
+  findingsDigestEscalation: '{count} corrective action(s) open >15 days (oldest: {oldest}d)',
+  // Module C — Compliance Cycles + Auto Work Orders
+  cyclesTabTitle: 'Compliance Cycles',
+  cyclesConfigTitle: 'Compliance Cycles & Auto-Scheduling',
+  cyclesConfigSubtitle: 'Configure per-building inspection cycles, asset-type overrides, and automated lead-time work order generation.',
+  cyclesAutoToggleLabel: 'Automated Work Order Scheduling',
+  cyclesAutoToggleDesc: 'Automatically create OPEN work orders when assets enter their lead-time window.',
+  cyclesLeadTimeLabel: 'Lead Time (Days Before Due)',
+  cyclesRunNowBtn: 'Run scheduling now',
+  cyclesAutoScheduledBadge: 'Auto-scheduled',
+  // Module D — Expiry Radar + Schedule Visit
+  radarTabTitle: 'Expiry Radar',
+  radarTitle: 'Expiry Radar & Visit Scheduler',
+  radarSubtitle: 'Proactive 30 / 60 / 90 day horizon of upcoming extinguisher refills, hydro-tests, and AMC audits.',
+  radarSummaryStrip: '{due30} due in 30 days · {due90} due in 90 days · {overdue} overdue',
+  radarScheduleVisitBtn: 'Schedule visit',
+  radarScheduledBadge: 'Scheduled ✓',
+  // Module E — Client Portfolio Rollup
+  portfolioTabTitle: 'Portfolio',
+  portfolioTitle: 'Client Portfolio Rollup',
+  portfolioSubtitle: 'Executive multi-site rollup of compliance rate, 30-day expiry exposure, and inspection coverage per client.',
+  portfolioExpiringChip: '{count} expiring ≤30d',
+  // Module F — Asset Service Dates + Monthly Register Export
+  registerExportBtn: 'Monthly Register (.xlsx)',
+  registerColLastService: 'Last Service',
+  registerColNextService: 'Next Service Due',
+  registerColNextHydro: 'Next Hydro Due',
+  // Module G — White-Label Report Branding
+  brandingTabTitle: 'Report Branding',
+  brandingTitle: 'White-Label Report Branding',
+  brandingSubtitle: 'Customize your agency logo, authorized signatory block, digital signature, and statutory page footer.',
+  brandingLogoLabel: 'Agency Logo (PNG/JPEG ≤ 1MB)',
+  brandingSignatoryNameLabel: 'Authorized Signatory Name',
+  brandingSignatoryDesigLabel: 'Signatory Designation',
+  brandingSignatureImgLabel: 'Signatory Signature Image (Optional)',
+  brandingFooterLabel: 'Statutory Footer Line',
+  // Module H — Floor-Plan Pins
+  floorPlansBtn: 'Floor Plans',
+  floorPlansTitle: 'Floor Plans & Asset Pins',
+  floorPlansSubtitle: 'Upload floor schematics and place live compliance-colored pins bound to building fire assets.',
+  floorPlansUploadBtn: 'Upload Floor Plan',
+  floorPlansClickHint: 'Click anywhere on the floor plan to place an asset pin, or drag existing pins to reposition.',
 };
 
 const DICTIONARY_HI: Partial<AdminDictionary> = {
@@ -441,6 +571,63 @@ const DICTIONARY_HI: Partial<AdminDictionary> = {
   importRequiredUnmappedError: '{field} अनिवार्य है — इसके लिए स्प्रेडशीट कॉलम चुनें',
   importOptionalUnmappedHint: 'खाली छोड़ दिया जाएगा',
   importTotalRowsDetected: 'कुल पंक्तियाँ मिलीं:',
+  approvalsTabTitle: 'अनुमोदन (Approvals)',
+  approvalsQueueTitle: 'निरीक्षण अनुमोदन कतार',
+  approvalsQueueSubtitle: 'आधिकारिक फॉर्म-बी रिपोर्ट में शामिल करने से पहले फील्ड निरीक्षणों की समीक्षा करें।',
+  approvalsApproveBtn: 'स्वीकृत करें (Approve)',
+  approvalsBulkApproveBtn: 'चयनित स्वीकृत करें',
+  approvalsReturnBtn: 'नोट के साथ वापस भेजें',
+  approvalsReturnModalTitle: 'तकनीशियन को निरीक्षण वापस भेजें',
+  approvalsReturnNoteLabel: 'वापसी का कारण / सुधार नोट (अनिवार्य)',
+  approvalsReturnConfirmBtn: 'वापसी की पुष्टि करें',
+  approvalsFlagFindingBtn: 'दोष चिह्नित करें (Flag finding)',
+  approvalsEmptyTitle: 'कोई लंबित अनुमोदन नहीं',
+  approvalsEmptyDesc: 'सभी प्रस्तुत फील्ड निरीक्षणों की समीक्षा की जा चुकी है।',
+  approvalsAwaitingChip: '{count} अनुमोदन हेतु लंबित',
+  findingsTabTitle: 'सुधारात्मक कार्य (Findings)',
+  findingsBoardTitle: 'सुधारात्मक कार्य एवं दोष बोर्ड',
+  findingsBoardSubtitle: 'फील्ड दोषों को वर्कशॉप डिस्पैच, मरम्मत और सत्यापन तक ट्रैक करें।',
+  findingsNewBtn: 'नया दोष जोड़ें',
+  findingsSendWorkshopBtn: 'वर्कशॉप भेजें',
+  findingsCloseConfirmTitle: 'सुधारात्मक कार्य बंद करें',
+  findingsCloseNoteLabel: 'समापन सत्यापन नोट (अनिवार्य)',
+  findingsAgeOpen: '{days} दिन से खुला',
+  findingsDigestEscalation: '{count} सुधारात्मक कार्य >15 दिनों से खुले हैं (सबसे पुराना: {oldest} दिन)',
+  cyclesTabTitle: 'अनुपालन चक्र (Cycles)',
+  cyclesConfigTitle: 'अनुपालन चक्र एवं ऑटो-शेड्यूलिंग',
+  cyclesConfigSubtitle: 'प्रत्येक भवन के लिए निरीक्षण चक्र और स्वचालित कार्य आदेश सेट करें।',
+  cyclesAutoToggleLabel: 'स्वचालित कार्य आदेश शेड्यूलिंग',
+  cyclesAutoToggleDesc: 'देय तिथि से पहले स्वचालित रूप से OPEN कार्य आदेश बनाएं।',
+  cyclesLeadTimeLabel: 'लीड टाइम (देय तिथि से पहले के दिन)',
+  cyclesRunNowBtn: 'अभी शेड्यूलिंग चलाएं',
+  cyclesAutoScheduledBadge: 'स्वतः निर्धारित (Auto-scheduled)',
+  radarTabTitle: 'एक्सपायरी रडार (Expiry Radar)',
+  radarTitle: 'एक्सपायरी रडार एवं विज़िट शेड्यूलर',
+  radarSubtitle: 'आगामी 30 / 60 / 90 दिनों में देय रिफिल, हाइड्रो-टेस्ट और एएमसी जांचें।',
+  radarSummaryStrip: '30 दिनों में {due30} देय · 90 दिनों में {due90} देय · {overdue} अतिदेय',
+  radarScheduleVisitBtn: 'विज़िट शेड्यूल करें',
+  radarScheduledBadge: 'शेड्यूल किया गया ✓',
+  portfolioTabTitle: 'पोर्टफोलियो (Portfolio)',
+  portfolioTitle: 'ग्राहक पोर्टफोलियो अनुपालन सारांश',
+  portfolioSubtitle: 'प्रत्येक ग्राहक के लिए भवन, उपकरण, अनुपालन % और 30-दिन एक्सपायरी सारांश।',
+  portfolioExpiringChip: '{count} ≤30 दिनों में समाप्त',
+  registerExportBtn: 'मासिक रजिस्टर (.xlsx)',
+  registerColLastService: 'अंतिम सर्विस',
+  registerColNextService: 'अगली सर्विस देय',
+  registerColNextHydro: 'अगला हाइड्रो टेस्ट देय',
+  brandingTabTitle: 'रिपोर्ट ब्रांडिंग',
+  brandingTitle: 'व्हाइट-लेबल रिपोर्ट ब्रांडिंग',
+  brandingSubtitle: 'अपनी एजेंसी का लोगो, हस्ताक्षरकर्ता का नाम, पदनाम और फुटर पंक्ति सेट करें।',
+  brandingLogoLabel: 'एजेंसी लोगो (PNG/JPEG ≤ 1MB)',
+  brandingSignatoryNameLabel: 'अधिकृत हस्ताक्षरकर्ता का नाम',
+  brandingSignatoryDesigLabel: 'हस्ताक्षरकर्ता का पदनाम',
+  brandingSignatureImgLabel: 'हस्ताक्षर छवि (वैकल्पिक)',
+  brandingFooterLabel: 'रिपोर्ट फुटर पंक्ति',
+  floorPlansBtn: 'फ़्लोर प्लान (Floor Plans)',
+  floorPlansTitle: 'फ़्लोर प्लान और उपकरण पिन',
+  floorPlansSubtitle: 'फ़्लोर प्लान अपलोड करें और उपकरणों की स्थिति दर्शाने वाले पिन लगाएं।',
+  floorPlansUploadBtn: 'फ़्लोर प्लान अपलोड करें',
+  floorPlansClickHint: 'उपकरण पिन लगाने के लिए फ़्लोर प्लान पर कहीं भी क्लिक करें, या पिन को खींचकर स्थान बदलें।',
 };
 
 const DICTIONARY_MR: Partial<AdminDictionary> = {

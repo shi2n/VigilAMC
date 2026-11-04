@@ -72,8 +72,34 @@ export function WorkOrdersView({
     dueDate: '',
   });
   const [submitting, setSubmitting] = useState(false);
+  const [runningScheduler, setRunningScheduler] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [lastAssignedWO, setLastAssignedWO] = useState<any | null>(null);
+
+  const handleRunSchedulingNow = async () => {
+    setRunningScheduler(true);
+    try {
+      const res = await fetch('/api/admin/compliance-cycles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || 'Failed to run compliance scheduler');
+      const created = json.createdCount ?? 0;
+      const skipped = json.skippedCount ?? 0;
+      const msg = `${created} tasks created, ${skipped} already open`;
+      toast.success(msg);
+      showToast(msg);
+      await fetchWorkOrders();
+    } catch (err: any) {
+      const msg = err?.message || 'Error running scheduler';
+      toast.error(msg, { duration: 5500 });
+      showToast(msg);
+    } finally {
+      setRunningScheduler(false);
+    }
+  };
 
   // Sync instantly from parent bootstrap cache
   useEffect(() => {
@@ -341,7 +367,19 @@ export function WorkOrdersView({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          <button
+            type="button"
+            data-testid="run-scheduling-now-btn"
+            onClick={handleRunSchedulingNow}
+            disabled={runningScheduler}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[#1C1917] bg-[#FFF8F2] hover:bg-[#FFF0E6] border border-[#FED7AA] transition-all disabled:opacity-50"
+            title="Run compliance cycle auto-scheduler now"
+          >
+            <Calendar className="w-3.5 h-3.5 text-[#EA580C]" />
+            <span>{runningScheduler ? 'Scheduling...' : 'Run scheduling now'}</span>
+          </button>
+
           {onOpenImport && (
             <button
               onClick={onOpenImport}
@@ -452,6 +490,14 @@ export function WorkOrdersView({
                       >
                         {wo.status || 'OPEN'}
                       </motion.span>
+                      {wo.isAutoScheduled && (
+                        <span
+                          data-testid={`auto-scheduled-badge-${wo.id}`}
+                          className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA]"
+                        >
+                          Auto-scheduled
+                        </span>
+                      )}
                       {isOverdue && (
                         <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-rose-50 text-[#B91C1C] border border-[#B91C1C]/30">
                           ✕ Overdue

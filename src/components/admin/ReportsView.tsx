@@ -12,20 +12,148 @@ import {
   Sliders,
   X,
   FileCheck2,
+  FileSpreadsheet,
+  Clock,
 } from 'lucide-react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { formatStandardDate } from '@/lib/constants/india';
 
 interface ReportsViewProps {
   buildings: any[];
   summary: any;
   company?: any;
+  equipments?: any[];
+  inspections?: any[];
+  onOpenApprovalsQueue?: () => void;
 }
 
-export function ReportsView({ buildings, summary, company }: ReportsViewProps) {
+export function ReportsView({
+  buildings,
+  summary,
+  company,
+  equipments = [],
+  inspections = [],
+  onOpenApprovalsQueue,
+}: ReportsViewProps) {
   const [selectedStateFilter, setSelectedStateFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [designerOpen, setDesignerOpen] = useState<boolean>(false);
+  const [exportingRegister, setExportingRegister] = useState<boolean>(false);
+
+  const handleExportMonthlyRegister = async () => {
+    setExportingRegister(true);
+    try {
+      const XLSX = await import('xlsx');
+      const now = new Date();
+      const yyyyMm = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const baseOrigin =
+        typeof window !== 'undefined' ? window.location.origin : 'https://vigilamc.vercel.app';
+
+      // Collect all assets from buildings or equipments prop
+      const allAssets: any[] =
+        Array.isArray(equipments) && equipments.length > 0
+          ? equipments
+          : buildings.flatMap((b) =>
+              (b.equipments || []).map((eq: any) => ({
+                ...eq,
+                buildingId: eq.buildingId || b.id,
+                building: eq.building || { id: b.id, name: b.name },
+              }))
+            );
+
+      const approvedInspections = (inspections || []).filter(
+        (insp: any) => !insp.approvalStatus || insp.approvalStatus === 'APPROVED'
+      );
+
+      const rows = allAssets.map((eq: any) => {
+        const bId = eq.buildingId || eq.building?.id || '';
+        const bName =
+          eq.building?.name || buildings.find((b) => b.id === bId)?.name || 'Registered Building';
+        const assetInspections = approvedInspections
+          .filter((i: any) => i.equipmentId === eq.id || i.buildingId === bId)
+          .sort(
+            (a: any, b: any) =>
+              new Date(b.timestamp || b.createdAt || 0).getTime() -
+              new Date(a.timestamp || a.createdAt || 0).getTime()
+          );
+        const latestApproved = assetInspections[0] || null;
+        const hasApprovedForAsset = approvedInspections.some(
+          (i: any) => i.equipmentId === eq.id || i.buildingId === bId
+        );
+
+        const formatDt = (d: any) =>
+          d && !isNaN(new Date(d).getTime())
+            ? new Date(d).toISOString().split('T')[0]
+            : '—';
+
+        const lastInspectionStr = latestApproved
+          ? `${formatDt(latestApproved.timestamp || latestApproved.createdAt)} (${
+              latestApproved.inspectorName || 'Verified Tech'
+            })`
+          : 'No approved inspection';
+
+        const inspectionLink =
+          hasApprovedForAsset && bId ? `${baseOrigin}/report/${bId}` : '—';
+
+        return {
+          'Asset Tag': eq.qrCode || eq.id,
+          Type: `${eq.type || 'Extinguisher'}${eq.capacity ? ` (${eq.capacity})` : ''}`,
+          Building: bName,
+          'Floor/Zone': eq.location || 'Main Zone',
+          'Last Service': formatDt(eq.lastServiceDate),
+          'Next Service Due': formatDt(eq.nextDueDate),
+          'Next Hydro Due': formatDt(eq.hydroDueDate),
+          Status: eq.liveStatus || eq.status || 'VERIFIED',
+          'Last Inspection': lastInspectionStr,
+          'Inspection Link': inspectionLink,
+        };
+      });
+
+      const ws = XLSX.utils.json_to_sheet(
+        rows.length > 0
+          ? rows
+          : [
+              {
+                'Asset Tag': 'EXT-001',
+                Type: 'ABC (6kg)',
+                Building: 'Sample Building',
+                'Floor/Zone': 'Ground Lobby',
+                'Last Service': yyyyMm + '-01',
+                'Next Service Due': yyyyMm + '-28',
+                'Next Hydro Due': yyyyMm + '-28',
+                Status: 'VERIFIED',
+                'Last Inspection': `${yyyyMm}-01 (Verified Tech)`,
+                'Inspection Link': `${baseOrigin}/sample-report`,
+              },
+            ]
+      );
+
+      ws['!cols'] = [
+        { wch: 18 },
+        { wch: 20 },
+        { wch: 26 },
+        { wch: 22 },
+        { wch: 15 },
+        { wch: 16 },
+        { wch: 16 },
+        { wch: 14 },
+        { wch: 30 },
+        { wch: 46 },
+      ];
+      (ws as any)['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2', activePane: 'bottomLeft' };
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Monthly Register');
+      const fileName = `vigilamc-register-${yyyyMm}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      toast.success(`Exported ${fileName} (${rows.length} assets)`);
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to export monthly register');
+    } finally {
+      setExportingRegister(false);
+    }
+  };
   const [designerConfig, setDesignerConfig] = useState({
     buildingId: buildings[0]?.id || 'sample',
     format: 'NBC 2016 · IS 2190 Annex B',
@@ -81,6 +209,18 @@ export function ReportsView({ buildings, summary, company }: ReportsViewProps) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            data-testid="export-monthly-register-btn"
+            onClick={handleExportMonthlyRegister}
+            disabled={exportingRegister}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] border border-[#FED7AA] text-xs font-bold shadow-xs transition-all disabled:opacity-50"
+            title="Download Monthly Equipment Register (.xlsx)"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-[#059669]" />
+            <span>{exportingRegister ? 'Exporting...' : 'Monthly Register (.xlsx)'}</span>
+          </button>
+
           <button
             type="button"
             data-testid="build-report-btn"
@@ -182,16 +322,31 @@ export function ReportsView({ buildings, summary, company }: ReportsViewProps) {
                       </p>
                     </div>
 
-                    {isCompliant ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-[#059669] border border-emerald-200 shrink-0">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#059669]" /> Ready
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-[#D97706] border border-amber-200 shrink-0">
-                        <AlertTriangle className="w-3.5 h-3.5 text-[#D97706]" />{' '}
-                        {overdueEq > 0 ? `${overdueEq} Overdue` : 'Pending'}
-                      </span>
-                    )}
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      {isCompliant ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-[#059669] border border-emerald-200 shrink-0">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#059669]" /> Ready
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-[#D97706] border border-amber-200 shrink-0">
+                          <AlertTriangle className="w-3.5 h-3.5 text-[#D97706]" />{' '}
+                          {overdueEq > 0 ? `${overdueEq} Overdue` : 'Pending'}
+                        </span>
+                      )}
+
+                      {(b.pendingApprovalsCount ?? 0) > 0 && (
+                        <button
+                          type="button"
+                          data-testid={`awaiting-approval-chip-${b.id}`}
+                          onClick={() => onOpenApprovalsQueue?.()}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#FFF0E6] hover:bg-[#FED7AA] text-[#C2410C] border border-[#FED7AA] transition-colors cursor-pointer"
+                          title="Review pending inspections in Approval Queue"
+                        >
+                          <Clock className="w-3 h-3 text-[#EA580C]" />
+                          <span>{b.pendingApprovalsCount} awaiting approval</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Equipment breakdown */}
@@ -389,6 +544,9 @@ export function ReportsView({ buildings, summary, company }: ReportsViewProps) {
                   </div>
                   <div>
                     Template: <strong className="text-[#1C1917]">{designerConfig.format}</strong>
+                  </div>
+                  <div className="mt-1 text-[11px] text-[#1C1917] font-semibold">
+                    ✓ Only APPROVED field inspections are included in statutory certificates.
                   </div>
                 </div>
               </div>
