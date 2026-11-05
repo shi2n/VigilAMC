@@ -269,7 +269,7 @@ export default function LoginPage() {
 
         if (regData.profile?.role === 'TECHNICIAN') {
           await supabase.auth.signOut();
-          throw new Error('Technicians: get VigilAMC Field on Google Play to sign in.');
+          throw new Error('Technicians: get VigilAMC Field on Google Play (Apple App Store coming soon) to sign in.');
         } else {
           router.push(safeRedirect || '/dashboard');
         }
@@ -1100,16 +1100,21 @@ export default function LoginPage() {
               </p>
             )}
 
-            <p className="text-[11px] text-[#57534E]">
-              <a
-                href={SITE_CONFIG.GOOGLE_PLAY_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-[#1C1917] hover:underline"
-              >
-                Field technician? Get the Android app →
-              </a>
-            </p>
+            <div className="pt-1 flex flex-col items-center gap-1">
+              <p className="text-[11px] text-[#57534E]">
+                Field technician?{' '}
+                <a
+                  href={SITE_CONFIG.GOOGLE_PLAY_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-[#C2410C] hover:underline"
+                >
+                  Get on Google Play
+                </a>
+                {' · '}
+                <span className="font-semibold text-stone-700">Apple App Store (Soon)</span>
+              </p>
+            </div>
 
             <p className="text-[11px] text-[#57534E] font-medium">
               DPIIT-recognized startup · Made in India

@@ -46,8 +46,8 @@ export default function AboutUsPage() {
     },
     {
       period: 'Roadmap',
-      title: 'Client Transparency Portal & Advanced Fleet Analytics',
-      desc: 'Developing self-service compliance dashboards for building committees, automated repair quotation approvals, and multi-tenant fleet dispatching.',
+      title: 'Apple iOS App Store Launch & Advanced Fleet Analytics',
+      desc: 'Rolling out the native VigilAMC Field app on the Apple App Store (joining our live Google Play Android app), self-service compliance dashboards for building committees, and automated repair quotation approvals.',
     },
   ];
 

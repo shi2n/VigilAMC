@@ -11,6 +11,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { GooglePlayBadge } from '@/components/GooglePlayBadge';
+import { AppStoreBadge } from '@/components/AppStoreBadge';
 
 const BULLETS = [
   '100% offline inspections & checklists — auto-sync on reconnect',
@@ -81,11 +82,11 @@ export function FieldAppSection() {
           style={{ background: 'rgba(255, 255, 255, 0.72)' }}
         >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
-            {/* Left Column: Copy + Exact Claims + Official Google Play Badge */}
+            {/* Left Column: Copy + Exact Claims + Official Badges */}
             <div className="lg:col-span-7 space-y-5">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FFF0E6] border border-[#FED7AA] text-xs font-bold uppercase tracking-wider text-[#C2410C] shadow-xs">
                 <Smartphone className="w-3.5 h-3.5 text-[#EA580C]" />
-                <span>ANDROID APP · LIVE ON GOOGLE PLAY</span>
+                <span>MOBILE APP · ANDROID LIVE · iOS APP STORE SOON</span>
               </div>
 
               <h2
@@ -96,7 +97,7 @@ export function FieldAppSection() {
               </h2>
 
               <p className="text-sm sm:text-base text-[#44403C] leading-relaxed max-w-2xl">
-                VigilAMC Field — the offline-first Android app for fire-safety technicians. Included free with every VigilAMC workspace.
+                VigilAMC Field — the offline-first mobile app for fire-safety technicians across India. Live on Android, with Apple App Store rolling out soon. Included free with every VigilAMC workspace.
               </p>
 
               <ul className="space-y-3 pt-1">
@@ -113,10 +114,11 @@ export function FieldAppSection() {
                 ))}
               </ul>
 
-              <div className="pt-3 flex flex-wrap items-center gap-4">
+              <div className="pt-3 flex flex-wrap items-center gap-3 sm:gap-4">
                 <GooglePlayBadge size="lg" theme="dark" />
-                <span className="text-xs font-medium text-[#44403C]">
-                  Android 8.0+ · Free with your VigilAMC agency account
+                <AppStoreBadge size="lg" theme="dark" comingSoon />
+                <span className="text-xs font-medium text-[#44403C] block w-full sm:w-auto">
+                  Android 8.0+ (Live) · iOS 15.0+ (App Store Soon) · Free with agency account
                 </span>
               </div>
             </div>
@@ -143,7 +145,7 @@ export function FieldAppSection() {
                         VigilAMC Field
                       </div>
                       <div className="text-[11px] font-medium text-[#44403C]">
-                        Technician Android App
+                        Technician Mobile App · Android &amp; iOS (Soon)
                       </div>
                     </div>
                   </div>

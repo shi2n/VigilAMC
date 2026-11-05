@@ -298,15 +298,16 @@ export function TechnicianManagement({
       ``,
       `Namaste *${tech.fullName}*, your VigilAMC Field account is active!`,
       ``,
-      `📲 *1. Get VigilAMC Field on Google Play:*`,
-      `${appUrl}`,
+      `📲 *1. Get VigilAMC Field:*`,
+      `• Android (Google Play): ${appUrl}`,
+      `• iOS (Apple App Store): Coming Soon (iPhone users can open https://vigilamc.vercel.app/technician in Safari)`,
       ``,
       `🔑 *2. Your Login Details:*`,
       `• *Mobile Number:* ${cleanMobile}`,
       `• *Technician ID (Username):* ${staffId}`,
       `• *Login PIN / Password:* ${pin}`,
       ``,
-      `📍 Install *VigilAMC Field* from Google Play and sign in with your Mobile Number or Staff ID + PIN.`,
+      `📍 Install *VigilAMC Field* from Google Play (or web app) and sign in with your Mobile Number or Staff ID + PIN.`,
     ].join('\n');
   };
 

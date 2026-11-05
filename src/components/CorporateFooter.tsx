@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { SITE_CONFIG } from '@/lib/siteConfig';
 import { GooglePlayBadge } from '@/components/GooglePlayBadge';
+import { AppStoreBadge } from '@/components/AppStoreBadge';
 
 export function CorporateFooter() {
   return (
@@ -29,11 +30,12 @@ export function CorporateFooter() {
             <p className="text-sm text-[#A8A29E] max-w-md leading-relaxed">
               Fire safety AMC software - tracked, proven, reported.
             </p>
-            {/* Google Play Trust Badge */}
+            {/* App Store & Google Play Trust Badges */}
             <div className="pt-1 flex flex-wrap items-center gap-3">
               <GooglePlayBadge size="sm" theme="dark" />
-              <span className="text-xs text-[#A8A29E]">
-                Field app on Google Play — technicians install in one tap.
+              <AppStoreBadge size="sm" theme="dark" comingSoon />
+              <span className="text-xs text-[#A8A29E] block w-full sm:w-auto">
+                Field app on Google Play &amp; Coming Soon to Apple App Store.
               </span>
             </div>
             <div className="pt-1 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[#A8A29E]">

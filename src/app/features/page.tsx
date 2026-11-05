@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { StatusBadge } from '@/components/StatusBadge';
 import { GooglePlayBadge } from '@/components/GooglePlayBadge';
+import { AppStoreBadge } from '@/components/AppStoreBadge';
 
 export default function FeaturesPage() {
   const [activePersona, setActivePersona] = useState<'contractor' | 'technician' | 'facility' | 'auditor'>('contractor');
@@ -232,8 +233,9 @@ export default function FeaturesPage() {
                 </div>
                 <div className="pt-3 flex flex-wrap items-center gap-3">
                   <GooglePlayBadge size="sm" theme="light" />
-                  <span className="text-xs text-slate-600 font-medium">
-                    Field app on Google Play — technicians install in one tap.
+                  <AppStoreBadge size="sm" theme="light" comingSoon />
+                  <span className="text-xs text-slate-600 font-medium block w-full sm:w-auto">
+                    Field app on Google Play &amp; Coming Soon to Apple App Store.
                   </span>
                 </div>
               </div>

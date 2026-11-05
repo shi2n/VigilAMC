@@ -3,6 +3,8 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { GooglePlayBadge } from '@/components/GooglePlayBadge';
+import { AppStoreBadge } from '@/components/AppStoreBadge';
 import {
   LayoutDashboard,
   Smartphone,
@@ -240,7 +242,7 @@ export function ProductOverviewSection() {
               <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-emerald-50 text-emerald-800 font-bold text-xs uppercase tracking-wide border border-emerald-200">
                   <Smartphone className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Field Operations App</span>
+                  <span>Field Operations App · Android Live · iOS App Store Soon</span>
                 </div>
                 <h3 className="font-display font-bold text-2xl sm:text-3xl text-[#1C1917] tracking-tight mt-2.5">
                   Field Technician Mobile App
@@ -320,6 +322,8 @@ export function ProductOverviewSection() {
               </div>
 
               <div className="pt-2 flex flex-wrap items-center gap-3">
+                <GooglePlayBadge size="sm" theme="light" />
+                <AppStoreBadge size="sm" theme="light" comingSoon />
                 <Link
                   href="/login"
                   className="btn-flame inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs shadow-md"
