@@ -12,6 +12,7 @@ import {
   X,
   Flame,
   Users,
+  ShieldCheck,
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react';
@@ -23,6 +24,7 @@ export type AdminNavTab =
   | 'FIRE_EQUIPMENT'
   | 'INSPECTIONS_WORK'
   | 'FIELD_TEAM'
+  | 'CLIENT_PORTAL'
   | 'REPORTS'
   | 'SETTINGS'
   // Backward compatibility aliases
@@ -113,6 +115,7 @@ export function AdminSidebar({
       badgeColor: 'bg-[#DC2626] text-white',
     },
     { id: 'FIELD_TEAM', label: 'Field Team', icon: Users },
+    { id: 'CLIENT_PORTAL', label: 'Client Portal', icon: ShieldCheck },
     { id: 'REPORTS', label: 'Reports', icon: FileText },
     {
       id: 'SETTINGS',

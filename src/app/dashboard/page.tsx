@@ -30,6 +30,7 @@ import {
   Wrench,
   AlertTriangle,
   HelpCircle,
+  ShieldCheck,
 } from 'lucide-react';
 import { AdminSidebar, AdminNavTab } from '@/components/admin/AdminSidebar';
 import { WorkspaceTabs, WorkspaceTabItem } from '@/components/admin/WorkspaceTabs';
@@ -111,6 +112,11 @@ const FireAssetsView = dynamic(
 
 const SettingsView = dynamic(
   () => import('@/components/admin/SettingsView').then((m) => m.SettingsView),
+  { loading: () => <div className="h-96 bg-slate-100 rounded-2xl animate-pulse" />, ssr: false }
+);
+
+const ClientPortalAdminPanel = dynamic(
+  () => import('@/components/admin/ClientPortalAdminPanel').then((m) => m.ClientPortalAdminPanel),
   { loading: () => <div className="h-96 bg-slate-100 rounded-2xl animate-pulse" />, ssr: false }
 );
 
@@ -1080,6 +1086,7 @@ export default function AdminDashboardPage() {
             'FIRE_EQUIPMENT',
             'INSPECTIONS_WORK',
             'FIELD_TEAM',
+            'CLIENT_PORTAL',
             'REPORTS',
             'SETTINGS',
           ];
@@ -1125,6 +1132,7 @@ export default function AdminDashboardPage() {
         badge: liveOpenRepairsCount > 0 ? liveOpenRepairsCount : undefined,
       },
       FIELD_TEAM: { label: 'Field Team', icon: Users },
+      CLIENT_PORTAL: { label: 'Client Portal', icon: ShieldCheck },
       REPORTS: { label: 'Reports', icon: FileText },
       SETTINGS: { label: 'Settings', icon: SettingsIcon },
       // Legacy alias mappings
@@ -1596,6 +1604,7 @@ export default function AdminDashboardPage() {
                   {activeTab === 'FIRE_EQUIPMENT' && 'Fire Equipment'}
                   {(activeTab === 'INSPECTIONS_WORK' || activeTab === 'INSPECTIONS' || activeTab === 'REPAIRS') && 'Inspections & Work'}
                   {activeTab === 'FIELD_TEAM' && 'Field Team & Technicians'}
+                  {activeTab === 'CLIENT_PORTAL' && 'Client Portal & Receipts'}
                   {activeTab === 'REPORTS' && 'Compliance Reports'}
                   {activeTab === 'SETTINGS' && 'Agency Settings'}
                 </h1>
@@ -1876,6 +1885,7 @@ export default function AdminDashboardPage() {
                       setClientFilter({ id: clientId, name: clientName });
                       setClientsSitesSubTab('BUILDINGS');
                     }}
+                    onOpenClientPortal={(clientId) => handleOpenTab('CLIENT_PORTAL')}
                     t={getAdminDictionary(data?.profile?.preferredLanguage || 'en')}
                   />
                 )}
@@ -2140,6 +2150,18 @@ export default function AdminDashboardPage() {
             )}
 
             {/* =========================================================================
+                GROUP 5.5: CLIENT PORTAL & RECEIPTS
+            ========================================================================= */}
+            {tab.id === 'CLIENT_PORTAL' && (
+              <div className="space-y-4">
+                <ClientPortalAdminPanel
+                  clients={clientsList}
+                  buildings={buildings}
+                />
+              </div>
+            )}
+
+            {/* =========================================================================
                 GROUP 6: SETTINGS
             ========================================================================= */}
             {tab.id === 'SETTINGS' && (
@@ -2158,6 +2180,7 @@ export default function AdminDashboardPage() {
                 initialSeatUsage={subscriptionData?.usage?.technicians}
                 initialPlan={subscriptionData?.plan}
                 onRefreshDashboard={() => refreshDashboard({ silent: true })}
+                onNavigateTab={handleOpenTab}
               />
             )}
                 </div>

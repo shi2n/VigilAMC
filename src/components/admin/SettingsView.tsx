@@ -48,6 +48,7 @@ interface SettingsViewProps {
   initialSeatUsage?: any;
   initialPlan?: any;
   onRefreshDashboard?: () => Promise<void> | void;
+  onNavigateTab?: (tab: any) => void;
 }
 
 export function SettingsView({
@@ -67,6 +68,7 @@ export function SettingsView({
   initialSeatUsage,
   initialPlan,
   onRefreshDashboard,
+  onNavigateTab,
 }: SettingsViewProps) {
   const [internalSubTab, setInternalSubTab] = useState<SettingsSubTab>('AGENCY');
   const [whiteLabelEnabled, setWhiteLabelEnabled] = useState<boolean>(true);
@@ -380,6 +382,15 @@ export function SettingsView({
                   <p className="text-[11px] text-[#44403C]">
                     Allow client contacts to access their dedicated read-only /portal view and acknowledge Form-B report receipts.
                   </p>
+                  {onNavigateTab && (
+                    <button
+                      type="button"
+                      onClick={() => onNavigateTab('CLIENT_PORTAL')}
+                      className="mt-1 text-xs font-bold text-[#C2410C] hover:underline inline-flex items-center gap-1"
+                    >
+                      <span>Manage Portal Users &amp; Magic Links &rarr;</span>
+                    </button>
+                  )}
                 </div>
                 <button
                   type="button"

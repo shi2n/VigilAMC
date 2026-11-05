@@ -13,6 +13,7 @@ import {
   Calendar,
   ArrowUpDown,
   ChevronRight,
+  ShieldCheck,
 } from 'lucide-react';
 import type { AdminDictionary } from '@/lib/i18n/admin';
 
@@ -24,6 +25,7 @@ interface ClientsViewProps {
   onOpenExport: () => void;
   onOpenImport?: () => void;
   onSelectClientSites?: (clientId: string, clientName: string) => void;
+  onOpenClientPortal?: (clientId?: string) => void;
   t?: AdminDictionary;
 }
 
@@ -35,6 +37,7 @@ export function ClientsView({
   onOpenExport,
   onOpenImport,
   onSelectClientSites,
+  onOpenClientPortal,
   t,
 }: ClientsViewProps) {
   const [search, setSearch] = useState('');
@@ -91,6 +94,18 @@ export function ClientsView({
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
+          {onOpenClientPortal && (
+            <button
+              type="button"
+              onClick={() => onOpenClientPortal()}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-orange-50 hover:bg-orange-100 text-[#C2410C] border border-[#FED7AA] text-xs font-bold transition-all shadow-xs"
+              title="Manage Client Portal Users & Magic Links"
+            >
+              <ShieldCheck className="w-4 h-4 text-[#C2410C]" />
+              <span>Client Portal Access</span>
+            </button>
+          )}
+
           {onOpenImport && (
             <button
               onClick={onOpenImport}
@@ -268,6 +283,16 @@ export function ClientsView({
                     className="flex items-center gap-1"
                     onClick={(e) => e.stopPropagation()}
                   >
+                    {onOpenClientPortal && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenClientPortal(c.id)}
+                        className="p-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 text-[#C2410C] border border-[#FED7AA]"
+                        title={`Client Portal Access & Invite for ${c.name}`}
+                      >
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => onEditClient(c)}
