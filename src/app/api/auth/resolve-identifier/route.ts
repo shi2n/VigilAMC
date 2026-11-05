@@ -74,6 +74,8 @@ export async function POST(request: Request) {
     const digits = cleanDigits(rawIdentifier);
     if (digits.length >= 10) {
       const last10 = digits.slice(-10);
+      const first5 = last10.slice(0, 5);
+      const second5 = last10.slice(5);
 
       // Search user profiles whose phone ends with the 10-digit number or whose internal email starts with it
       const candidates = await (db as any).userProfile
@@ -81,6 +83,8 @@ export async function POST(request: Request) {
           where: {
             OR: [
               { phone: { contains: last10 } },
+              { phone: { contains: `${first5} ${second5}` } },
+              { phone: { contains: first5 } },
               { email: `${last10}@tech.vigilamc.app` },
               { email: `${digits}@tech.vigilamc.app` },
             ],
@@ -91,6 +95,12 @@ export async function POST(request: Request) {
         .catch(() => []);
 
       const matched =
+        candidates.find(
+          (c: any) =>
+            cleanDigits(c.phone || '').slice(-10) === last10 &&
+            c.status === 'ACTIVE' &&
+            (c.role === 'TECHNICIAN' || c.role === 'ORG_ADMIN')
+        ) ||
         candidates.find((c: any) => cleanDigits(c.phone || '').slice(-10) === last10) ||
         candidates[0];
 

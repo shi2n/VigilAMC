@@ -268,6 +268,7 @@ export async function POST(request: Request) {
         fullName: trimmedName,
         phone: formattedPhone,
         employeeId: resolvedEmployeeId,
+        passwordHash: hashPin(String(password)),
         role: 'TECHNICIAN',
         status: status || 'ACTIVE',
         organizationId: organizationId,

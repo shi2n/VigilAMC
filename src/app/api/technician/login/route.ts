@@ -29,63 +29,122 @@ export async function POST(request: Request) {
       );
     }
 
-    let matchedUser: any = null;
+    const candidateUsers: any[] = [];
 
     // 1. Try exact email match
     if (rawIdentifier.includes('@')) {
       const emailLower = rawIdentifier.toLowerCase();
-      matchedUser = await (db as any).userProfile.findUnique({
+      const byEmail = await (db as any).userProfile.findUnique({
         where: { email: emailLower },
         include: { organization: true },
       });
+      if (byEmail) candidateUsers.push(byEmail);
     }
 
-    // 2. Try Employee ID / Staff ID match (e.g. TECH-101)
-    if (!matchedUser) {
-      const upperId = rawIdentifier.toUpperCase();
-      matchedUser = await (db as any).userProfile.findFirst({
-        where: {
-          employeeId: {
-            equals: upperId,
-            mode: 'insensitive',
-          },
+    // 2. Try Employee ID / Staff ID match (e.g. TECH-101, SHAIZAN1234)
+    const upperId = rawIdentifier.toUpperCase();
+    const byStaffId = await (db as any).userProfile.findMany({
+      where: {
+        employeeId: {
+          equals: upperId,
+          mode: 'insensitive',
         },
-        include: { organization: true },
-      });
+      },
+      include: { organization: true },
+    });
+    for (const u of byStaffId) {
+      if (!candidateUsers.some((c) => c.id === u.id)) candidateUsers.push(u);
     }
 
     // 3. Try Mobile Number match (10+ digits)
-    if (!matchedUser) {
-      const digits = cleanDigits(rawIdentifier);
-      if (digits.length >= 10) {
-        const last10 = digits.slice(-10);
-        const candidates = await (db as any).userProfile.findMany({
-          where: {
-            OR: [
-              { phone: { contains: last10 } },
-              { email: `${last10}@tech.vigilamc.app` },
-              { email: `${digits}@tech.vigilamc.app` },
-            ],
-          },
-          include: { organization: true },
-          orderBy: { createdAt: 'desc' },
-        });
+    const digits = cleanDigits(rawIdentifier);
+    if (digits.length >= 10) {
+      const last10 = digits.slice(-10);
+      const first5 = last10.slice(0, 5);
+      const second5 = last10.slice(5);
 
-        // Prefer active TECHNICIAN or ORG_ADMIN
-        matchedUser =
-          candidates.find(
-            (c: any) =>
-              c.status === 'ACTIVE' &&
-              (c.role === 'TECHNICIAN' || c.role === 'ORG_ADMIN') &&
-              cleanDigits(c.phone || '').slice(-10) === last10
-          ) ||
-          candidates.find((c: any) => cleanDigits(c.phone || '').slice(-10) === last10) ||
-          candidates[0] ||
-          null;
+      const byPhone = await (db as any).userProfile.findMany({
+        where: {
+          OR: [
+            { phone: { contains: last10 } },
+            { phone: { contains: `${first5} ${second5}` } },
+            { phone: { contains: first5 } },
+            { email: `${last10}@tech.vigilamc.app` },
+            { email: `${digits}@tech.vigilamc.app` },
+          ],
+        },
+        include: { organization: true },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      for (const u of byPhone) {
+        const uDigits = cleanDigits(u.phone || '');
+        if (
+          uDigits.slice(-10) === last10 ||
+          (u.email && (u.email.includes(last10) || u.email.includes(digits)))
+        ) {
+          if (!candidateUsers.some((c) => c.id === u.id)) candidateUsers.push(u);
+        }
       }
     }
 
-    // If still no user in Prisma, but it's an email, check if Supabase has it
+    let matchedUser: any = null;
+
+    // 4. Test candidates against PIN / Password
+    for (const candidate of candidateUsers) {
+      if (candidate.status === 'INACTIVE' || candidate.status === 'SUSPENDED') {
+        continue;
+      }
+
+      let isVerified = false;
+
+      // Verify PIN hash
+      if (candidate.passwordHash) {
+        isVerified = verifyPin(rawPassword, candidate.passwordHash);
+      }
+
+      // Default PIN 123456 fallback if no passwordHash set yet
+      if (!isVerified && (!candidate.passwordHash || candidate.passwordHash.trim() === '')) {
+        if (rawPassword === '123456') {
+          isVerified = true;
+          await (db as any).userProfile
+            .update({
+              where: { id: candidate.id },
+              data: { passwordHash: hashPin('123456') },
+            })
+            .catch(() => {});
+        }
+      }
+
+      // If still not verified, and candidate has email, try Supabase auth
+      if (!isVerified && candidate.email) {
+        try {
+          const supabase = createServerSupabaseClient();
+          const { data: supaData, error: supaErr } = await supabase.auth.signInWithPassword({
+            email: candidate.email,
+            password: rawPassword,
+          });
+          if (!supaErr && supaData.user) {
+            isVerified = true;
+            await (db as any).userProfile
+              .update({
+                where: { id: candidate.id },
+                data: { passwordHash: hashPin(rawPassword) },
+              })
+              .catch(() => {});
+          }
+        } catch {
+          // ignore error and try next
+        }
+      }
+
+      if (isVerified) {
+        matchedUser = candidate;
+        break;
+      }
+    }
+
+    // 5. If still no matchedUser, but rawIdentifier looks like an email, try Supabase directly
     if (!matchedUser && rawIdentifier.includes('@')) {
       const supabase = createServerSupabaseClient();
       const { data: supaData, error: supaErr } = await supabase.auth.signInWithPassword({
@@ -93,95 +152,52 @@ export async function POST(request: Request) {
         password: rawPassword,
       });
 
-      if (supaErr || !supaData.user) {
-        return NextResponse.json(
-          { error: supaErr?.message || 'Invalid email or password.' },
-          { status: 401 }
-        );
-      }
-
-      // Supabase user authenticated, let's load/create userProfile in Prisma
-      let profile = await (db as any).userProfile.findUnique({
-        where: { id: supaData.user.id },
-        include: { organization: true },
-      });
-
-      if (!profile) {
-        const org = await (db as any).organization.create({
-          data: {
-            name: `${supaData.user.email?.split('@')[0] || 'Agency'} Fire Safety`,
-            email: supaData.user.email,
-          },
-        });
-
-        profile = await (db as any).userProfile.create({
-          data: {
-            id: supaData.user.id,
-            email: supaData.user.email,
-            fullName: (supaData.user.user_metadata?.full_name as string) || 'Agency Admin',
-            role: 'ORG_ADMIN',
-            status: 'ACTIVE',
-            organizationId: org.id,
-            passwordHash: hashPin(rawPassword),
-          },
+      if (!supaErr && supaData.user) {
+        let profile = await (db as any).userProfile.findUnique({
+          where: { id: supaData.user.id },
           include: { organization: true },
         });
-      } else {
-        // Cache passwordHash for instant future logins
-        await (db as any).userProfile
-          .update({
-            where: { id: profile.id },
-            data: { passwordHash: hashPin(rawPassword) },
-          })
-          .catch(() => {});
-      }
 
-      matchedUser = profile;
+        if (!profile) {
+          const org = await (db as any).organization.create({
+            data: {
+              name: `${supaData.user.email?.split('@')[0] || 'Agency'} Fire Safety`,
+              email: supaData.user.email,
+            },
+          });
+
+          profile = await (db as any).userProfile.create({
+            data: {
+              id: supaData.user.id,
+              email: supaData.user.email,
+              fullName: (supaData.user.user_metadata?.full_name as string) || 'Agency Admin',
+              role: 'ORG_ADMIN',
+              status: 'ACTIVE',
+              organizationId: org.id,
+              passwordHash: hashPin(rawPassword),
+            },
+            include: { organization: true },
+          });
+        } else {
+          await (db as any).userProfile
+            .update({
+              where: { id: profile.id },
+              data: { passwordHash: hashPin(rawPassword) },
+            })
+            .catch(() => {});
+        }
+
+        matchedUser = profile;
+      }
     }
 
     if (!matchedUser) {
-      return NextResponse.json(
-        { error: 'No account found matching this Mobile Number, Staff ID, or Email.' },
-        { status: 404 }
-      );
-    }
-
-    // 4. Check if deactivated or inactive
-    if (matchedUser.status === 'INACTIVE' || matchedUser.status === 'SUSPENDED') {
-      return NextResponse.json(
-        { error: 'This staff account has been deactivated by your agency admin.' },
-        { status: 403 }
-      );
-    }
-
-    // 5. Verify Password / PIN
-    let verified = false;
-
-    if (matchedUser.passwordHash) {
-      verified = verifyPin(rawPassword, matchedUser.passwordHash);
-    }
-
-    // If passwordHash didn't match or wasn't set, try Supabase auth if user has email
-    if (!verified && matchedUser.email) {
-      const supabase = createServerSupabaseClient();
-      const { data: supaData, error: supaErr } = await supabase.auth.signInWithPassword({
-        email: matchedUser.email,
-        password: rawPassword,
-      });
-
-      if (!supaErr && supaData.user) {
-        verified = true;
-        // Backfill passwordHash in Prisma so subsequent logins are instant
-        await (db as any).userProfile
-          .update({
-            where: { id: matchedUser.id },
-            data: { passwordHash: hashPin(rawPassword) },
-          })
-          .catch(() => {});
+      if (candidateUsers.length === 0) {
+        return NextResponse.json(
+          { error: 'No account found matching this Mobile Number, Staff ID, or Email.' },
+          { status: 404 }
+        );
       }
-    }
-
-    if (!verified) {
       return NextResponse.json(
         { error: 'Invalid PIN or Password. Please check your credentials.' },
         { status: 401 }
