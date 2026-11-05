@@ -41,7 +41,7 @@ export async function GET(
         lastApprovedInspectionDate: '2026-11-02T10:00:00.000Z',
         nextServiceDue: '2027-05-02T10:00:00.000Z',
         agencyName: 'Apex Shield Fire Safety AMC (Demo Agency)',
-        agencyLogoUrl: '/logo.jpg',
+        agencyLogoUrl: '/brand/logo-tile-192.png',
         recordId: 'rec_demo_asset_001',
         isDemo: true,
       });
