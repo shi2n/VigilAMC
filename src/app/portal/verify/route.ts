@@ -67,7 +67,7 @@ export async function GET(request: Request) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      path: '/portal',
+      path: '/',
       maxAge: 7 * 24 * 60 * 60, // 7 days
     });
 

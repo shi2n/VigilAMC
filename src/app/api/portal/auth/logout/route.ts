@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    path: '/portal',
+    path: '/',
     maxAge: 0,
   });
   return response;
