@@ -27,6 +27,58 @@ function extractPhotoUrl(eq: any, latestInspection: any): string | null {
   return null;
 }
 
+function determineApplicableStandards(equipments: any[]): string[] {
+  const standards: string[] = [];
+  const types = equipments.map((e) => `${e.type || ''} ${e.capacity || ''}`.toLowerCase());
+
+  const hasExtinguisher =
+    equipments.length === 0 ||
+    types.some(
+      (t) =>
+        t.includes('extinguisher') ||
+        t.includes('abc') ||
+        t.includes('co2') ||
+        t.includes('foam') ||
+        t.includes('powder') ||
+        t.includes('water')
+    );
+  const hasHydrantOrHose = types.some(
+    (t) => t.includes('hydrant') || t.includes('hose') || t.includes('landing') || t.includes('riser')
+  );
+  const hasYardHydrant = types.some(
+    (t) => t.includes('yard') || t.includes('external hydrant') || t.includes('ring main')
+  );
+  const hasSprinkler = types.some((t) => t.includes('sprinkler') || t.includes('drencher'));
+  const hasAlarm = types.some(
+    (t) =>
+      t.includes('alarm') ||
+      t.includes('detector') ||
+      t.includes('panel') ||
+      t.includes('mcp') ||
+      t.includes('hooter')
+  );
+
+  if (hasExtinguisher) {
+    standards.push('IS 2190:2010 — Selection, Installation and Maintenance of First-Aid Fire Extinguishers');
+  }
+  if (hasHydrantOrHose) {
+    standards.push('IS 3844:1989 — Code of Practice for Installation & Maintenance of Internal Fire Hydrants and Hose Reels');
+  }
+  if (hasYardHydrant) {
+    standards.push('IS 13039:1991 — Provision and Maintenance of External Fire Hydrant Systems');
+  }
+  if (hasSprinkler) {
+    standards.push('IS 15105:2021 — Design and Installation of Fixed Automatic Sprinkler Fire Extinguishing Systems');
+  }
+  if (hasAlarm) {
+    standards.push('IS 2189:2008 — Selection, Installation and Maintenance of Automatic Fire Detection and Alarm System');
+  }
+  // NBC 2016 Part 4 is the universal statutory benchmark for built premises in India
+  standards.push('NBC 2016 Part 4 — National Building Code of India (Fire and Life Safety)');
+
+  return standards;
+}
+
 export async function GET(
   request: Request,
   { params }: { params: { buildingId: string } }
@@ -280,16 +332,66 @@ export async function GET(
         status: overallReportStatus,
       };
 
+    const [correctiveActions, buildingInspections] = await Promise.all([
+      (db as any).correctiveAction
+        .findMany({
+          where: { buildingId: building.id },
+          orderBy: [{ status: 'asc' }, { openedAt: 'desc' }],
+          include: {
+            equipment: {
+              select: {
+                id: true,
+                qrCode: true,
+                type: true,
+                location: true,
+              },
+            },
+          },
+        })
+        .catch(() => []),
+      (db as any).inspection
+        .findMany({
+          where: { buildingId: building.id },
+          orderBy: { date: 'desc' },
+          take: 25,
+          include: {
+            inspectionPhotos: {
+              orderBy: { createdAt: 'desc' },
+              take: 4,
+            },
+            issues: true,
+            equipment: {
+              select: {
+                id: true,
+                qrCode: true,
+                type: true,
+                location: true,
+              },
+            },
+          },
+        })
+        .catch(() => []),
+    ]);
+
+    const openFindingsCount = (correctiveActions || []).filter(
+      (ca: any) => ca.status === 'OPEN' || ca.status === 'DISPATCHED' || ca.status === 'REPAIRED'
+    ).length;
+
+    const applicableStandards = determineApplicableStandards(evaluatedEquipments);
+
     return NextResponse.json({
       company,
       signatoryName,
       building: {
         ...building,
         equipments: evaluatedEquipments,
+        inspections: buildingInspections,
+        correctiveActions,
       },
       report,
       latestGpsInspection,
       pendingApprovalsCount,
+      applicableStandards,
       summary: {
         total: rawEquipments.length,
         verified: verifiedCount,
@@ -297,6 +399,9 @@ export async function GET(
         dueSoon: dueSoonCount,
         overdue: overdueCount,
         notInspected: notInspectedCount,
+        openFindings: openFindingsCount,
+        compliantPercent:
+          rawEquipments.length > 0 ? Math.round((compliantCount / rawEquipments.length) * 100) : 0,
         overallStatus: overallReportStatus,
       },
     });

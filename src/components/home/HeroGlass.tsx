@@ -236,7 +236,7 @@ export function HeroGlass() {
 
             <div style={stagger(2)}>
               <p className="mt-4 sm:mt-5 text-[15px] sm:text-lg text-[#44403C] max-w-xl mx-auto lg:mx-0 leading-relaxed">
-                Every building has fire extinguishers, alarms, and pumps that must be checked on time. VigilAMC tracks every check, proves the technician actually visited, and prints your fire-NOC report in one click.
+                Every building has fire extinguishers, alarms, and pumps that must be checked on time. VigilAMC connects your <strong className="font-semibold text-[#1C1917]">dashboard suite</strong>, <strong className="font-semibold text-[#1C1917]">offline technician app</strong>, and <strong className="font-semibold text-[#1C1917]">client portal</strong> — proving every visit with live GPS, photo proof, and one-click statutory reports.
               </p>
             </div>
 

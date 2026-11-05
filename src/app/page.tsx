@@ -6,13 +6,17 @@ import { HeroGlass } from '@/components/home/HeroGlass';
 import { PainScene } from '@/components/home/PainScene';
 import { HowItWorks } from '@/components/home/HowItWorks';
 import { SectorMarquee } from '@/components/home/SectorMarquee';
+import { ProductOverviewSection } from '@/components/home/ProductOverviewSection';
+import { PlatformFeaturesGrid } from '@/components/home/PlatformFeaturesGrid';
+import { VideoExplainerSection } from '@/components/home/VideoExplainerSection';
+import { FreeToolsSection } from '@/components/home/FreeToolsSection';
 import { FieldAppSection } from '@/components/home/FieldAppSection';
 import { ProofSection } from '@/components/home/ProofSection';
 
 export const metadata: Metadata = {
   title: 'VigilAMC - Fire Safety AMC & Compliance Software | India',
   description:
-    'VigilAMC is the simple software that fire-safety service companies use to track every extinguisher, pump and alarm, record visits with live GPS, photos and client signatures, and send compliance-ready reports in minutes.',
+    'VigilAMC is the complete software suite that fire-safety service companies use to track every extinguisher, pump and alarm, record visits with live GPS, photos and client signatures, and send compliance-ready reports in minutes.',
   alternates: {
     canonical: '/',
   },
@@ -112,7 +116,19 @@ export default function HomePage() {
         <SectorMarquee />
       </div>
 
-      {/* Screen 3B: VigilAMC Field Android App on Google Play */}
+      {/* Screen 3A: Product Overview Section (Admin Dashboard + Field Technician App) */}
+      <ProductOverviewSection />
+
+      {/* Screen 3B: Platform Features Grid (10 Core Tools) */}
+      <PlatformFeaturesGrid />
+
+      {/* Screen 3C: Video Explainer Section (Owner 40s YouTube Facade) */}
+      <VideoExplainerSection />
+
+      {/* Screen 3D: Free Tools & Live Demos Section (4 Real Tool Cards) */}
+      <FreeToolsSection />
+
+      {/* Screen 3E: VigilAMC Field Android App on Google Play */}
       <FieldAppSection />
 
       {/* Screen 4: Real Numbers + Guarantees + Founding Agency Promise + Final CTA */}
