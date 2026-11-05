@@ -56,18 +56,35 @@ export async function POST(request: Request) {
         'https://vigilamc.vercel.app';
       const magicLink = `${origin}/portal/verify?token=${rawToken}`;
 
-      await sendMagicLinkEmail({
+      const emailRes = await sendMagicLinkEmail({
         to: portalUser.email,
         name: portalUser.name,
         agencyName: portalUser.organization?.name || 'Your Servicing Agency',
         magicLink,
         expiresMinutes: 30,
       });
+
+      if (!emailRes.success) {
+        return NextResponse.json({
+          success: true,
+          emailSent: false,
+          directLink: magicLink,
+          message:
+            'SMTP email service is not configured in this environment. You can sign in directly using the access link below.',
+        });
+      }
+
+      return NextResponse.json({
+        success: true,
+        emailSent: true,
+        message: 'A sign-in link has been sent to your email inbox.',
+      });
     }
 
     // Generic response (always returns success to prevent user enumeration)
     return NextResponse.json({
       success: true,
+      emailSent: true,
       message: 'If your email is registered with an agency, a sign-in link has been sent to your inbox.',
     });
   } catch (error: any) {

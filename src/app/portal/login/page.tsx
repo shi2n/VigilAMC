@@ -2,13 +2,15 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { ShieldCheck, Mail, ArrowRight, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { ShieldCheck, Mail, ArrowRight, CheckCircle2, AlertCircle, Loader2, Copy, Check, ExternalLink } from 'lucide-react';
 import { getPortalDictionary } from '@/lib/i18n/portal';
 
 export default function PortalLoginPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sentSuccess, setSentSuccess] = useState(false);
+  const [directLink, setDirectLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [lang, setLang] = useState<'en' | 'hi'>('en');
 
@@ -31,6 +33,11 @@ export default function PortalLoginPage() {
         throw new Error(data.error || 'Failed to send login link');
       }
 
+      if (data.directLink) {
+        setDirectLink(data.directLink);
+      } else {
+        setDirectLink(null);
+      }
       setSentSuccess(true);
     } catch (err: any) {
       setErrorMsg(err.message || 'Unable to request sign-in link. Please try again.');
@@ -117,20 +124,64 @@ export default function PortalLoginPage() {
         {/* Success Notification */}
         {sentSuccess ? (
           <div className="space-y-4 py-2">
-            <div className="p-4 bg-emerald-50/90 border border-emerald-200 text-[#065F46] rounded-2xl flex items-start gap-3 shadow-sm">
-              <CheckCircle2 className="w-6 h-6 flex-shrink-0 text-[#059669] mt-0.5" />
-              <div className="space-y-1">
-                <p className="text-sm font-semibold">{dict.loginSentMsg}</p>
-                <p className="text-xs text-[#047857]">
-                  Sent to <strong className="font-semibold">{email}</strong>. The link expires in 30 minutes and can only be used once.
-                </p>
+            {directLink ? (
+              <div className="p-4 bg-orange-50 border border-orange-200 text-[#1C1917] rounded-2xl space-y-3 shadow-sm">
+                <div className="flex items-start gap-2.5">
+                  <ShieldCheck className="w-5 h-5 flex-shrink-0 text-[#EA580C] mt-0.5" />
+                  <div>
+                    <p className="text-sm font-bold text-[#1C1917]">Magic Access Link Ready</p>
+                    <p className="text-xs text-[#44403C] mt-0.5">
+                      SMTP email server is not configured in this environment. You can sign in immediately using your direct access link below:
+                    </p>
+                  </div>
+                </div>
+                <div className="pt-2 flex flex-col gap-2">
+                  <a
+                    href={directLink}
+                    className="w-full text-center py-2.5 px-4 bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold rounded-xl text-xs transition-colors shadow-sm block"
+                  >
+                    Open Client Portal Now &rarr;
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(directLink);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className="w-full text-center py-2 px-4 bg-white hover:bg-orange-50 text-[#C2410C] border border-[#FED7AA] font-bold rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Copied Link to Clipboard!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Copy Sign-In Link</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-4 bg-emerald-50/90 border border-emerald-200 text-[#065F46] rounded-2xl flex items-start gap-3 shadow-sm">
+                <CheckCircle2 className="w-6 h-6 flex-shrink-0 text-[#059669] mt-0.5" />
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold">{dict.loginSentMsg}</p>
+                  <p className="text-xs text-[#047857]">
+                    Sent to <strong className="font-semibold">{email}</strong>. The link expires in 30 minutes and can only be used once.
+                  </p>
+                </div>
+              </div>
+            )}
 
             <button
               type="button"
               onClick={() => {
                 setSentSuccess(false);
+                setDirectLink(null);
                 setEmail('');
               }}
               className="w-full text-center text-xs font-semibold text-[#EA580C] hover:text-[#C2410C] underline py-1"

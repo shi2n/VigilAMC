@@ -137,6 +137,38 @@ export function ClientPortalAdminPanel({ clients = [], buildings = [] }: ClientP
     }
   };
 
+  const handleRegenerateLink = async (user: any) => {
+    try {
+      setSelectedClientId(user.clientOrgId);
+      setContactName(user.name);
+      setContactEmail(user.email);
+      setInviting(true);
+      const res = await fetch('/api/admin/portal-users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientOrgId: user.clientOrgId,
+          name: user.name,
+          email: user.email,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create link');
+      if (data.inviteLink) {
+        setGeneratedInviteLink(data.inviteLink);
+        navigator.clipboard.writeText(data.inviteLink);
+        toast.success(`Fresh access link for ${user.name} copied to clipboard!`);
+      } else {
+        toast.success(`Invite email sent to ${user.email}`);
+      }
+      await fetchUsers();
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to create link');
+    } finally {
+      setInviting(false);
+    }
+  };
+
   return (
     <div data-testid="client-portal-admin-panel" className="space-y-6">
       {/* Subtab Bar */}
@@ -358,25 +390,37 @@ export function ClientPortalAdminPanel({ clients = [], buildings = [] }: ClientP
                             </span>
                           </td>
                           <td className="py-2.5 px-4 text-right">
-                            <button
-                              type="button"
-                              onClick={() => handleToggleRevoke(u.id, isRevoked)}
-                              className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 ml-auto transition-colors ${
-                                isRevoked
-                                  ? 'text-[#059669] hover:bg-emerald-50'
-                                  : 'text-[#DC2626] hover:bg-red-50'
-                              }`}
-                            >
-                              {isRevoked ? (
-                                <>
-                                  <RotateCcw className="w-3 h-3" /> Restore Access
-                                </>
-                              ) : (
-                                <>
-                                  <Ban className="w-3 h-3" /> Revoke
-                                </>
-                              )}
-                            </button>
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleRegenerateLink(u)}
+                                disabled={isRevoked}
+                                className="px-2 py-1 rounded-lg text-xs font-semibold text-[#EA580C] hover:bg-orange-50 border border-orange-200 transition-colors disabled:opacity-40 flex items-center gap-1 shadow-2xs"
+                                title="Generate and copy fresh magic link"
+                              >
+                                <Copy className="w-3 h-3" />
+                                <span className="hidden sm:inline">Copy Link</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleRevoke(u.id, isRevoked)}
+                                className={`px-2 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors ${
+                                  isRevoked
+                                    ? 'text-[#059669] hover:bg-emerald-50'
+                                    : 'text-[#DC2626] hover:bg-red-50'
+                                }`}
+                              >
+                                {isRevoked ? (
+                                  <>
+                                    <RotateCcw className="w-3 h-3" /> Restore Access
+                                  </>
+                                ) : (
+                                  <>
+                                    <Ban className="w-3 h-3" /> Revoke
+                                  </>
+                                )}
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
