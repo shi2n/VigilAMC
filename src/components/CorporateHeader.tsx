@@ -21,7 +21,7 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
   const navLinks = [
     { name: 'How It Works', href: '/#how-it-works' },
     { name: 'Sample Report', href: '/sample-report' },
-    { name: 'Android App', href: '/#field-app' },
+    { name: 'Mobile App', href: '/#field-app', badge: 'iOS Soon' },
   ];
 
   return (
@@ -56,13 +56,18 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
               <Link
                 key={link.name}
                 href={link.href}
-                className={`min-h-[44px] inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C] ${
+                className={`min-h-[44px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C] ${
                   isActive
                     ? 'text-[#C2410C] bg-[#FFF4EC] font-semibold'
                     : 'text-[#44403C] hover:text-[#1C1917] hover:bg-[#FFF8F2]'
                 }`}
               >
-                {link.name}
+                <span>{link.name}</span>
+                {link.badge && (
+                  <span className="px-1.5 py-0.5 rounded-md bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA] text-[10px] font-bold">
+                    {link.badge}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -146,6 +151,11 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
                 className="min-h-[44px] flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-[#1C1917] hover:bg-[#FFF4EC] hover:text-[#C2410C] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C]"
               >
                 <span>{link.name}</span>
+                {link.badge && (
+                  <span className="px-2 py-0.5 rounded-md bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA] text-[10px] font-bold">
+                    {link.badge}
+                  </span>
+                )}
               </Link>
             ))}
           </div>

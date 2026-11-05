@@ -111,17 +111,25 @@ export function CorporateFooter() {
                 </Link>
               </li>
               <li>
-                <a
-                  href={SITE_CONFIG.GOOGLE_PLAY_URL}
-                  target="_blank"
-                  rel="noopener"
-                  className="inline-flex items-center gap-1.5 min-h-[36px] text-[#FF8C42] hover:text-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
-                >
-                  <span>VigilAMC Field App</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#EA580C]/20 border border-[#EA580C]/30 text-[#FF8C42]">
-                    Google Play
-                  </span>
-                </a>
+                <div className="flex flex-col gap-1 py-1">
+                  <a
+                    href={SITE_CONFIG.GOOGLE_PLAY_URL}
+                    target="_blank"
+                    rel="noopener"
+                    className="inline-flex items-center gap-1.5 text-[#FF8C42] hover:text-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
+                  >
+                    <span>Field App</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/30 text-emerald-300">
+                      Play Store (Live)
+                    </span>
+                  </a>
+                  <div className="inline-flex items-center gap-1.5 text-xs text-[#A8A29E]">
+                    <span>Apple App Store</span>
+                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#EA580C]/20 border border-[#EA580C]/30 text-[#FF8C42] font-semibold">
+                      Soon
+                    </span>
+                  </div>
+                </div>
               </li>
               <li>
                 <Link
@@ -221,8 +229,12 @@ export function CorporateFooter() {
               rel="noopener"
               className="text-[#FF8C42] hover:text-white hover:underline transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
             >
-              Get the Android app
+              Android (Play Store)
             </a>
+            <span aria-hidden="true" className="text-white/30">&middot;</span>
+            <span className="text-[#A8A29E] text-xs">
+              iOS (App Store Soon)
+            </span>
             <span aria-hidden="true" className="text-white/30">&middot;</span>
             <span>(c) 2026 VigilAMC - Made in India</span>
           </div>

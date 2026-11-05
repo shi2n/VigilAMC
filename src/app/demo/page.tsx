@@ -391,7 +391,7 @@ export default function DemoPage() {
                     Inspection Approval Queue
                   </h3>
                   <p className="text-xs text-[#78716C]">
-                    Submitted by field technicians on Android — review proof photos before statutory Form-B release.
+                    Submitted by field technicians on mobile (Android &amp; iOS) — review proof photos before statutory Form-B release.
                   </p>
                 </div>
                 <span className="px-2.5 py-1 bg-amber-50 text-[#D97706] border border-amber-200 text-xs font-bold rounded-lg">
