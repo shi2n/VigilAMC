@@ -24,14 +24,14 @@ export function SiteLayout({ children }: SiteLayoutProps) {
 
   if (isProductOrStandaloneSurface) {
     return (
-      <div className="min-h-screen font-sans selection:bg-[#C2410C] selection:text-white print:bg-white">
+      <div className="min-h-screen font-sans selection:bg-[#C2410C] selection:text-white print:bg-white w-full max-w-full overflow-x-hidden">
         {children}
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-white text-[#1C1917] font-sans selection:bg-[#EA580C] selection:text-white">
+    <div className="min-h-screen flex flex-col bg-white text-[#1C1917] font-sans selection:bg-[#EA580C] selection:text-white w-full max-w-full overflow-x-hidden">
       <div className="print:hidden no-print sticky top-0 z-50">
         <CorporateHeader />
       </div>

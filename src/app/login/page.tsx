@@ -360,7 +360,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-[#FFF8F2]">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden flex flex-col lg:flex-row bg-[#FFF8F2]">
       {/* ============================================================ */}
       {/* LEFT PANEL — Brand Hero (≈52% width on desktop, ≤180px banner on mobile) */}
       {/* ============================================================ */}
@@ -494,7 +494,7 @@ export default function LoginPage() {
         {/* Subtle warm ember ambient background glow */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute top-0 right-0 w-[420px] h-[340px] rounded-full"
+          className="pointer-events-none absolute top-0 right-0 w-[90vw] max-w-[420px] h-[340px] rounded-full overflow-hidden"
           style={{
             background:
               'radial-gradient(circle at top right, rgba(232, 89, 12, 0.10) 0%, rgba(255, 140, 66, 0.05) 45%, transparent 70%)',

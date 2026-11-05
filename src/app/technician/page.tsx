@@ -1514,7 +1514,7 @@ export default function TechnicianPWA() {
   // ----------------------------------------------------------------------------------
   if (authChecking) {
     return (
-      <div className="min-h-screen bg-[#FFF8F2] text-[#1C1917] p-3 max-w-md mx-auto space-y-3">
+      <div className="min-h-screen bg-[#FFF8F2] text-[#1C1917] p-3 max-w-md mx-auto space-y-3 w-full max-w-full overflow-x-hidden">
         {/* Instant Skeleton Header */}
         <header className="flex items-center justify-between p-2">
           <div className="flex items-center gap-2.5">
@@ -1550,12 +1550,12 @@ export default function TechnicianPWA() {
   if (!userProfile) {
     return (
       <div
-        className="relative min-h-screen bg-[#FFF8F2] text-[#1C1917] flex flex-col justify-center px-4 py-8 overflow-hidden"
+        className="relative min-h-screen bg-[#FFF8F2] text-[#1C1917] flex flex-col justify-center px-4 py-8 overflow-hidden w-full max-w-full"
         style={{ background: 'linear-gradient(180deg, #FFFFFF 0%, #FFF8F2 42%, #FFE8D6 100%)' }}
       >
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] h-[360px] rounded-full"
+          className="pointer-events-none absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[420px] h-[360px] rounded-full overflow-hidden"
           style={{
             background:
               'radial-gradient(circle, rgba(232, 89, 12, 0.22) 0%, rgba(255, 140, 66, 0.15) 48%, rgba(255, 248, 242, 0) 74%)',
@@ -1731,7 +1731,7 @@ export default function TechnicianPWA() {
 
   return (
     <div
-      className="relative min-h-screen bg-[#FFF8F2] text-[#1C1917] flex flex-col justify-between selection:bg-[#EA580C]/20"
+      className="relative min-h-screen bg-[#FFF8F2] text-[#1C1917] flex flex-col justify-between selection:bg-[#EA580C]/20 w-full max-w-full overflow-x-hidden"
       style={{
         backgroundImage:
           'radial-gradient(circle at 50% 12%, rgba(232, 89, 12, 0.16) 0%, rgba(255, 140, 66, 0.10) 36%, rgba(255, 248, 242, 0) 70%)',
@@ -1745,13 +1745,13 @@ export default function TechnicianPWA() {
       )}
 
       {/* Main Container constrained to mobile max-w-md */}
-      <div className="max-w-md w-full mx-auto flex-1 flex flex-col pb-8">
+      <div className="max-w-md w-full mx-auto flex-1 flex flex-col pb-8 overflow-x-hidden">
         {/* =========================================================================
             TOP APP HEADER (Section 3.1: Logo tile + wordmark + circular buttons + avatar)
         ========================================================================= */}
         <header className="sticky top-0 z-40 glass-panel-dense border-t-0 border-x-0 p-3 space-y-2.5 bg-white/95 backdrop-blur-md">
           {/* Top Bar: Logo, Wordmark, and Circular Actions */}
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-1.5 sm:gap-2 min-w-0">
             <div className="flex items-center gap-2.5">
               {selectedBuilding ? (
                 <button
@@ -1789,7 +1789,7 @@ export default function TechnicianPWA() {
             </div>
 
             {/* Right Circular Buttons (Notification Bell, Language, Logout, Avatar) */}
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               {/* Notification Bell */}
               <button
                 type="button"
