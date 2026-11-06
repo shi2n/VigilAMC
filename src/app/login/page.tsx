@@ -394,10 +394,10 @@ export default function LoginPage() {
       {/* ============================================================ */}
       {/* LEFT PANEL — Brand Hero (≈52% width on desktop, ≤180px banner on mobile) */}
       {/* ============================================================ */}
-      <div className="relative w-full lg:w-[52%] xl:w-[54%] h-[160px] sm:h-[180px] lg:h-auto lg:min-h-screen shrink-0 overflow-hidden select-none bg-[#1C1917]">
+      <div className="relative w-full lg:w-[50%] xl:w-[52%] h-[160px] sm:h-[180px] lg:h-screen lg:sticky lg:top-0 shrink-0 overflow-hidden select-none bg-[#1C1917]">
         {/* Real Brand Hero Photography */}
         <Image
-          src="/images/hero-technician-v2.jpg"
+          src="/images/auth-hero.jpg"
           alt="VigilAMC Field Technician Inspecting Fire Safety Equipment"
           fill
           priority
@@ -520,7 +520,7 @@ export default function LoginPage() {
       {/* ============================================================ */}
       {/* RIGHT PANEL — Light Form Panel (≈48% width) */}
       {/* ============================================================ */}
-      <div className="flex-1 w-full lg:w-[48%] xl:w-[46%] min-h-full flex flex-col justify-center items-center p-4 sm:p-6 lg:p-10 xl:p-12 relative overflow-y-auto">
+      <div className="flex-1 w-full lg:w-[50%] xl:w-[48%] min-h-full lg:min-h-screen flex flex-col justify-center items-center p-4 sm:p-6 lg:p-10 xl:p-12 relative overflow-y-auto">
         {/* Subtle warm ember ambient background glow */}
         <div
           aria-hidden="true"
@@ -541,19 +541,23 @@ export default function LoginPage() {
           <div className="space-y-1.5">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFF0E6] border border-[#FED7AA] text-[#C2410C] text-[11px] font-bold tracking-wider uppercase">
               {mode === 'SIGN_IN' && 'AGENCY WORKSPACE'}
-              {mode === 'SIGN_UP' && 'CREATE ACCOUNT'}
+              {mode === 'SIGN_UP' && 'FREE TESTING ACCESS'}
               {mode === 'FORGOT_PASSWORD' && 'PASSWORD RECOVERY'}
               {mode === 'COMPLETE_PROFILE' && 'SETUP WORKSPACE'}
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1C1917] tracking-tight">
               {mode === 'SIGN_IN' && 'Welcome back.'}
-              {mode === 'SIGN_UP' && 'Create agency workspace.'}
+              {mode === 'SIGN_UP' && (
+                <>
+                  Create your agency account<span className="text-[#EA580C]">.</span>
+                </>
+              )}
               {mode === 'FORGOT_PASSWORD' && 'Reset your password.'}
               {mode === 'COMPLETE_PROFILE' && 'Complete agency setup.'}
             </h1>
             <p className="text-xs sm:text-sm text-[#44403C]">
               {mode === 'SIGN_IN' && 'Log in to your VigilAMC workspace.'}
-              {mode === 'SIGN_UP' && 'Set up your agency profile and dispatch field inspections in minutes.'}
+              {mode === 'SIGN_UP' && 'VigilAMC is in active testing — full free access during the testing period.'}
               {mode === 'FORGOT_PASSWORD' && "Enter your registered email and we'll send a password reset link."}
               {mode === 'COMPLETE_PROFILE' && 'Specify your agency name and phone to initialize your workspace.'}
             </p>
@@ -883,133 +887,155 @@ export default function LoginPage() {
               {/* SIGN_UP Form */}
               {mode === 'SIGN_UP' && (
                 <form onSubmit={handleSignUp} className="space-y-3.5">
-                  <div>
+                  {/* Agency Name */}
+                  <div className="relative">
+                    <input
+                      id="signup-company"
+                      type="text"
+                      required
+                      placeholder=" "
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      className="peer w-full min-h-[50px] h-[50px] px-4 pt-4 pb-1 text-sm font-medium text-[#1C1917] bg-[#FFF8F2] border border-[#DCE7F2] rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-transparent transition-all pr-11"
+                    />
                     <label
                       htmlFor="signup-company"
-                      className="block text-xs font-bold text-[#1C1917] uppercase tracking-wider mb-1"
+                      className="pointer-events-none absolute left-4 top-3.5 text-xs font-semibold text-[#57534E] transition-all duration-150 origin-[0] -translate-y-2.5 scale-90 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:text-sm peer-placeholder-shown:text-[#57534E] peer-focus:-translate-y-2.5 peer-focus:scale-90 peer-focus:text-xs peer-focus:text-[#EA580C]"
                     >
                       Agency / Company Name *
                     </label>
-                    <div className="relative">
-                      <Building2 className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                      <input
-                        id="signup-company"
-                        type="text"
-                        required
-                        placeholder="e.g. Apex Fire Protection Services"
-                        value={companyName}
-                        onChange={(e) => setCompanyName(e.target.value)}
-                        className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 text-sm text-[#1C1917] bg-white rounded-xl border border-[#DCE7F2] focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-transparent transition-all placeholder:text-stone-400"
-                      />
-                    </div>
+                    <Building2 className="w-4 h-4 text-stone-400 peer-focus:text-[#EA580C] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors" />
                   </div>
 
-                  <div>
+                  {/* Full Name */}
+                  <div className="relative">
+                    <input
+                      id="signup-name"
+                      type="text"
+                      required
+                      autoComplete="name"
+                      placeholder=" "
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="peer w-full min-h-[50px] h-[50px] px-4 pt-4 pb-1 text-sm font-medium text-[#1C1917] bg-[#FFF8F2] border border-[#DCE7F2] rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-transparent transition-all pr-11"
+                    />
                     <label
                       htmlFor="signup-name"
-                      className="block text-xs font-bold text-[#1C1917] uppercase tracking-wider mb-1"
+                      className="pointer-events-none absolute left-4 top-3.5 text-xs font-semibold text-[#57534E] transition-all duration-150 origin-[0] -translate-y-2.5 scale-90 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:text-sm peer-placeholder-shown:text-[#57534E] peer-focus:-translate-y-2.5 peer-focus:scale-90 peer-focus:text-xs peer-focus:text-[#EA580C]"
                     >
                       Your Full Name *
                     </label>
-                    <div className="relative">
-                      <User className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                      <input
-                        id="signup-name"
-                        type="text"
-                        required
-                        autoComplete="name"
-                        placeholder="e.g. Vikram Sharma"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 text-sm text-[#1C1917] bg-white rounded-xl border border-[#DCE7F2] focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-transparent transition-all placeholder:text-stone-400"
-                      />
-                    </div>
+                    <User className="w-4 h-4 text-stone-400 peer-focus:text-[#EA580C] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors" />
                   </div>
 
-                  <div>
+                  {/* Official Email */}
+                  <div className="relative">
+                    <input
+                      id="signup-email"
+                      type="email"
+                      required
+                      autoComplete="email"
+                      placeholder=" "
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="peer w-full min-h-[50px] h-[50px] px-4 pt-4 pb-1 text-sm font-medium text-[#1C1917] bg-[#FFF8F2] border border-[#DCE7F2] rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-transparent transition-all pr-11"
+                    />
                     <label
                       htmlFor="signup-email"
-                      className="block text-xs font-bold text-[#1C1917] uppercase tracking-wider mb-1"
+                      className="pointer-events-none absolute left-4 top-3.5 text-xs font-semibold text-[#57534E] transition-all duration-150 origin-[0] -translate-y-2.5 scale-90 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:text-sm peer-placeholder-shown:text-[#57534E] peer-focus:-translate-y-2.5 peer-focus:scale-90 peer-focus:text-xs peer-focus:text-[#EA580C]"
                     >
                       Official Email *
                     </label>
-                    <div className="relative">
-                      <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                      <input
-                        id="signup-email"
-                        type="email"
-                        required
-                        autoComplete="email"
-                        placeholder="vikram@apexfire.in"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 text-sm text-[#1C1917] bg-white rounded-xl border border-[#DCE7F2] focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-transparent transition-all placeholder:text-stone-400"
-                      />
-                    </div>
+                    <Mail className="w-4 h-4 text-stone-400 peer-focus:text-[#EA580C] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors" />
                   </div>
 
-                  <div>
+                  {/* Phone */}
+                  <div className="relative">
+                    <input
+                      id="signup-phone"
+                      type="tel"
+                      required
+                      autoComplete="tel"
+                      placeholder=" "
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="peer w-full min-h-[50px] h-[50px] px-4 pt-4 pb-1 text-sm font-medium text-[#1C1917] bg-[#FFF8F2] border border-[#DCE7F2] rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-transparent transition-all pr-11"
+                    />
                     <label
                       htmlFor="signup-phone"
-                      className="block text-xs font-bold text-[#1C1917] uppercase tracking-wider mb-1"
+                      className="pointer-events-none absolute left-4 top-3.5 text-xs font-semibold text-[#57534E] transition-all duration-150 origin-[0] -translate-y-2.5 scale-90 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:text-sm peer-placeholder-shown:text-[#57534E] peer-focus:-translate-y-2.5 peer-focus:scale-90 peer-focus:text-xs peer-focus:text-[#EA580C]"
                     >
                       Phone / Mobile *
                     </label>
-                    <div className="relative">
-                      <Phone className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                      <input
-                        id="signup-phone"
-                        type="tel"
-                        required
-                        autoComplete="tel"
-                        placeholder="+91 98000 00000"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 text-sm text-[#1C1917] bg-white rounded-xl border border-[#DCE7F2] focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-transparent transition-all placeholder:text-stone-400"
-                      />
-                    </div>
+                    <Phone className="w-4 h-4 text-stone-400 peer-focus:text-[#EA580C] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors" />
                   </div>
 
-                  <div>
+                  {/* Set Secure Password */}
+                  <div className="relative">
+                    <input
+                      id="signup-password"
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      minLength={6}
+                      autoComplete="new-password"
+                      placeholder=" "
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="peer w-full min-h-[50px] h-[50px] px-4 pt-4 pb-1 text-sm font-medium text-[#1C1917] bg-[#FFF8F2] border border-[#DCE7F2] rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-transparent transition-all pr-16"
+                    />
                     <label
                       htmlFor="signup-password"
-                      className="block text-xs font-bold text-[#1C1917] uppercase tracking-wider mb-1"
+                      className="pointer-events-none absolute left-4 top-3.5 text-xs font-semibold text-[#57534E] transition-all duration-150 origin-[0] -translate-y-2.5 scale-90 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:text-sm peer-placeholder-shown:text-[#57534E] peer-focus:-translate-y-2.5 peer-focus:scale-90 peer-focus:text-xs peer-focus:text-[#EA580C]"
                     >
-                      Set Secure Password *
+                      Set Secure Password (min 6 chars) *
                     </label>
-                    <div className="relative">
-                      <Lock className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                      <input
-                        id="signup-password"
-                        type="password"
-                        required
-                        minLength={6}
-                        autoComplete="new-password"
-                        placeholder="Minimum 6 characters"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 text-sm text-[#1C1917] bg-white rounded-xl border border-[#DCE7F2] focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-transparent transition-all placeholder:text-stone-400"
-                      />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                      <Lock className="w-4 h-4 text-stone-400 pointer-events-none" />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        className="text-stone-400 hover:text-[#1C1917] p-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#EA580C]"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
                     </div>
                   </div>
 
+                  {/* CTA: Full-width rounded-full #EA580C button */}
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full min-h-[44px] h-11 sm:h-12 bg-[#EA580C] hover:bg-[#C2410C] active:bg-[#9A3412] disabled:opacity-60 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#EA580C]"
+                    className="w-full min-h-[46px] h-12 bg-[#EA580C] hover:bg-[#C2410C] active:bg-[#9A3412] disabled:opacity-60 text-white font-bold text-sm rounded-full shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#EA580C]"
                   >
                     {loading ? (
                       <>
                         <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Creating Agency Workspace...</span>
+                        <span>Creating account...</span>
                       </>
                     ) : (
                       <>
-                        <span>Register &amp; Launch Workspace</span>
+                        <span>Create free account</span>
                         <ArrowRight className="w-4 h-4" />
                       </>
                     )}
                   </button>
+
+                  {/* Bottom row: Already have an account? Log in */}
+                  <div className="pt-2 text-center text-xs text-[#57534E]">
+                    Already have an account?{' '}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode('SIGN_IN');
+                        setErrorMsg(null);
+                        setSuccessMsg(null);
+                      }}
+                      className="font-bold text-[#EA580C] hover:text-[#C2410C] hover:underline focus:outline-none"
+                    >
+                      Log in
+                    </button>
+                  </div>
                 </form>
               )}
 
