@@ -77,6 +77,13 @@ export async function POST(request: Request) {
       include: { organization: true },
     });
 
+    if (!profile && normalizedEmail) {
+      profile = await (db as any).userProfile.findUnique({
+        where: { email: normalizedEmail },
+        include: { organization: true },
+      });
+    }
+
     if (profile) {
       if (profile.status === 'INACTIVE') {
         return NextResponse.json(

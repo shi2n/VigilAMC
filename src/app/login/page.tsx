@@ -104,6 +104,10 @@ export default function LoginPage() {
         options: {
           redirectTo: `${origin}/auth/callback?next=/dashboard`,
           skipBrowserRedirect: true,
+          queryParams: {
+            prompt: 'select_account',
+            access_type: 'offline',
+          },
         },
       });
 
