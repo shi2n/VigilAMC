@@ -98,7 +98,7 @@ export default function LoginPage() {
       const origin =
         typeof window !== 'undefined'
           ? window.location.origin
-          : process.env.NEXT_PUBLIC_SITE_URL || 'https://vigilamc.vercel.app';
+          : SITE_CONFIG.SITE_URL;
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {

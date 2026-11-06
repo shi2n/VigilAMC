@@ -300,7 +300,7 @@ export function TechnicianManagement({
       ``,
       `📲 *1. Get VigilAMC Field:*`,
       `• Android (Google Play): ${appUrl}`,
-      `• iOS (Apple App Store): Coming Soon (iPhone users can open https://vigilamc.vercel.app/technician in Safari)`,
+      `• iOS (Apple App Store): Coming Soon (iPhone users can open ${SITE_CONFIG.SITE_URL}/technician in Safari)`,
       ``,
       `🔑 *2. Your Login Details:*`,
       `• *Mobile Number:* ${cleanMobile}`,

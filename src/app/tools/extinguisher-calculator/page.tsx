@@ -16,6 +16,7 @@ import {
   PhoneCall
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { SITE_CONFIG } from '@/lib/siteConfig';
 
 type RiskLevel = 'low' | 'ordinary' | 'high';
 type BuildingType =
@@ -215,7 +216,7 @@ ${breakdown.map((b) => `• ${b.count}× ${b.type} (${b.capacity}) — ${b.reaso
 IS 2190 Travel Distance Guidance: Maximum 15 meters to the nearest unit.
 
 Indicative estimate based on IS 2190 coverage guidance — not statutory advice.
-Calculate live at: https://vigilamc.vercel.app/tools/extinguisher-calculator
+Calculate live at: ${SITE_CONFIG.SITE_URL}/tools/extinguisher-calculator
 `.trim();
 
   const handleCopySummary = () => {

@@ -1,8 +1,33 @@
-'use client';
-
 import React from 'react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, ShieldCheck, Lock, FileText, Mail, Phone, MapPin, Smartphone } from 'lucide-react';
+import { SITE_CONFIG } from '@/lib/siteConfig';
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy & Mobile App Data Notice | VigilAMC',
+  description:
+    'Privacy policy and mobile app data disclosure for VigilAMC and the VigilAMC Field Android application in compliance with the DPDP Act 2023.',
+  alternates: {
+    canonical: '/privacy',
+  },
+  openGraph: {
+    title: 'Privacy Policy & Mobile App Data Notice | VigilAMC',
+    description:
+      'Privacy policy and mobile app data disclosure for VigilAMC and the VigilAMC Field Android application in compliance with the DPDP Act 2023.',
+    url: `${SITE_CONFIG.SITE_URL}/privacy`,
+    siteName: SITE_CONFIG.COMPANY_NAME,
+    locale: 'en_IN',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Privacy Policy & Mobile App Data Notice | VigilAMC',
+    description:
+      'Privacy policy and mobile app data disclosure for VigilAMC.',
+    creator: '@vigilamc',
+  },
+};
 
 export default function PrivacyPolicyPage() {
   return (

@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import { generateMagicToken } from '@/lib/portalSession';
 import { isSmtpConfigured, sendMagicLinkEmail } from '@/lib/email';
-import { SITE_CONFIG } from '@/lib/siteConfig';
+import { SITE_CONFIG, getBaseUrl } from '@/lib/siteConfig';
 
 export const dynamic = 'force-dynamic';
 
@@ -99,10 +99,7 @@ export async function POST(request: Request) {
       },
     });
 
-    const origin =
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      SITE_CONFIG.SITE_URL ||
-      'https://vigilamc.vercel.app';
+    const origin = getBaseUrl(request);
     const magicLink = `${origin}/portal/verify?token=${rawToken}`;
 
     // Log invite activity

@@ -58,8 +58,8 @@ Designed ground-up for real-world field conditions — basement plant rooms, hig
 • **In-App Purchases:** No (Part of VigilAMC B2B Enterprise Subscription)
 • **Developer Name:** VigilAMC Technologies
 • **Developer Email:** vigilamc@gmail.com
-• **Privacy Policy URL:** https://vigilamc.vercel.app/privacy
-• **Website:** https://vigilamc.vercel.app
+• **Privacy Policy URL:** https://vigilamc.com/privacy
+• **Website:** https://vigilamc.com
 
 ## 5. Search Keywords & Tags
 `fire safety amc`, `fire extinguisher inspection`, `nbc 2016`, `is 2190`, `technician field app`, `fire hydrant maintenance`, `offline inspection app`, `facility management india`, `equipment maintenance`, `amc tracker`

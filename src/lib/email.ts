@@ -214,7 +214,7 @@ If you did not request this link, you can safely ignore this email.
 
 ---
 VigilAMC Compliance & Fire Safety Infrastructure
-https://vigilamc.vercel.app
+${SITE_CONFIG.SITE_URL}
 `.trim();
 
   const html = `

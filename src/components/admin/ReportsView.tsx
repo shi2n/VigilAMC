@@ -19,6 +19,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { formatStandardDate } from '@/lib/constants/india';
 import { ClientPortalAdminPanel } from './ClientPortalAdminPanel';
+import { SITE_CONFIG } from '@/lib/siteConfig';
 
 interface ReportsViewProps {
   buildings: any[];
@@ -52,7 +53,7 @@ export function ReportsView({
       const now = new Date();
       const yyyyMm = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
       const baseOrigin =
-        typeof window !== 'undefined' ? window.location.origin : 'https://vigilamc.vercel.app';
+        typeof window !== 'undefined' ? window.location.origin : SITE_CONFIG.SITE_URL;
 
       // Collect all assets from buildings or equipments prop
       const allAssets: any[] =
@@ -171,7 +172,7 @@ export function ReportsView({
     const reportUrl =
       typeof window !== 'undefined'
         ? `${window.location.origin}/report/${b.id}`
-        : `https://vigilamc.vercel.app/report/${b.id}`;
+        : `${SITE_CONFIG.SITE_URL}/report/${b.id}`;
     const message = encodeURIComponent(
       `*Fire Safety Inspection Report*\n\n` +
         `Building: *${b.name}*\n` +

@@ -3,8 +3,45 @@
  * Single source of truth for domains, phone numbers, emails, and direct WhatsApp links.
  */
 
+export const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL &&
+  !process.env.NEXT_PUBLIC_SITE_URL.includes('vercel.app')
+    ? process.env.NEXT_PUBLIC_SITE_URL
+    : 'https://vigilamc.com';
+
+/**
+ * Resolves base URL for generated links & magic links.
+ * Defaults to canonical SITE_URL (https://vigilamc.com).
+ * If a request is provided, inspects origin / host headers:
+ * if the request originates from an active staging / alternate host
+ * (such as vigilamc.vercel.app during migration or localhost during testing),
+ * it preserves that host so direct links and testing workflows remain intact.
+ */
+export function getBaseUrl(request?: Request): string {
+  if (request) {
+    const originHeader = request.headers.get('origin');
+    if (originHeader) {
+      try {
+        const u = new URL(originHeader);
+        if (u.hostname === 'localhost' || u.hostname.endsWith('.vercel.app')) {
+          return originHeader;
+        }
+      } catch {}
+    }
+    const hostHeader =
+      request.headers.get('x-forwarded-host') || request.headers.get('host');
+    if (hostHeader) {
+      const proto = request.headers.get('x-forwarded-proto') || 'https';
+      if (hostHeader.includes('localhost') || hostHeader.includes('.vercel.app')) {
+        return `${proto}://${hostHeader}`;
+      }
+    }
+  }
+  return SITE_URL;
+}
+
 export const SITE_CONFIG = {
-  SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || 'https://vigilamc.vercel.app',
+  SITE_URL,
   GOOGLE_PLAY_URL:
     'https://play.google.com/store/apps/details?id=com.vigilamc',
   APP_STORE_URL: '#',

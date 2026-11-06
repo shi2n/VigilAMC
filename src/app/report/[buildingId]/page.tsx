@@ -29,6 +29,7 @@ import {
   UserCheck,
   ExternalLink,
 } from 'lucide-react';
+import { SITE_CONFIG } from '@/lib/siteConfig';
 
 function formatSafeDate(dateVal: any): string {
   if (!dateVal) return '—';
@@ -151,13 +152,12 @@ export default function ComplianceReportPage() {
   };
 
   const getReportUrl = () => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://vigilamc.vercel.app';
+    const origin = typeof window !== 'undefined' ? window.location.origin : SITE_CONFIG.SITE_URL;
     return `${origin}/report/${buildingId}`;
   };
 
   const getVerifyUrl = () => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://vigilamc.vercel.app';
-    return `${origin}/verify/${buildingId}`;
+    return `${SITE_CONFIG.SITE_URL}/verify/${buildingId}`;
   };
 
   const handleCopyClientLink = async () => {

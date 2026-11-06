@@ -43,10 +43,11 @@ export default function HomePage() {
     {
       '@context': 'https://schema.org',
       '@type': 'Organization',
-      name: SITE_CONFIG.COMPANY_NAME,
+      name: 'VigilAMC Technologies',
       legalName: SITE_CONFIG.LEGAL_NAME,
       url: SITE_CONFIG.SITE_URL,
-      email: SITE_CONFIG.CONTACT_EMAIL,
+      logo: `${SITE_CONFIG.SITE_URL}/brand/logo-tile-512.png`,
+      email: 'vigilamc@gmail.com',
       telephone: SITE_CONFIG.PHONE_DISPLAY,
       address: {
         '@type': 'PostalAddress',
@@ -55,10 +56,11 @@ export default function HomePage() {
         addressCountry: 'IN',
       },
       sameAs: [
+        SITE_CONFIG.SOCIAL.YOUTUBE,
+        SITE_CONFIG.GOOGLE_PLAY_URL,
         SITE_CONFIG.SOCIAL.LINKEDIN,
         SITE_CONFIG.SOCIAL.INSTAGRAM,
         SITE_CONFIG.SOCIAL.TWITTER,
-        SITE_CONFIG.SOCIAL.YOUTUBE,
       ],
       contactPoint: {
         '@type': 'ContactPoint',
@@ -80,7 +82,8 @@ export default function HomePage() {
       url: SITE_CONFIG.SITE_URL,
       author: {
         '@type': 'Organization',
-        name: SITE_CONFIG.COMPANY_NAME,
+        name: 'VigilAMC Technologies',
+        url: SITE_CONFIG.SITE_URL,
       },
       offers: {
         '@type': 'Offer',
