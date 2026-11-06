@@ -48,6 +48,7 @@ export const SITE_CONFIG = {
   APP_STORE_STATUS: 'Coming Soon',
   CONTACT_EMAIL: process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'vigilamc@gmail.com',
   SUPPORT_EMAIL: process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'vigilamc@gmail.com',
+  GTM_ID: process.env.NEXT_PUBLIC_GTM_ID || 'GTM-PM6K363Q',
   FOUNDER_EMAIL: process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'vigilamc@gmail.com',
   FOUNDER_NAME: 'Shaizan',
   FOUNDER_TITLE: 'Founder, VigilAMC',

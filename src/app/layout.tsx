@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 // Google Fonts loaded reliably via CSS to eliminate CI build-time network fragility
 import "./globals.css";
 import { SiteLayout } from "@/components/SiteLayout";
@@ -87,7 +88,29 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${sora.variable} ${inter.variable} scroll-smooth`}>
+      <head>
+        {/* Google Tag Manager / Google tag */}
+        <Script
+          src={`https://www.googletagmanager.com/gtm.js?id=${SITE_CONFIG.GTM_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="google-tag-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+          `}
+        </Script>
+      </head>
       <body className="antialiased bg-white text-[#1C1917] min-h-screen flex flex-col font-sans selection:bg-[#EA580C] selection:text-white">
+        <noscript>
+          <iframe
+            src={`https://www.googletagmanager.com/ns.html?id=${SITE_CONFIG.GTM_ID}`}
+            height="0"
+            width="0"
+            style={{ display: "none", visibility: "hidden" }}
+          />
+        </noscript>
         <SiteLayout>{children}</SiteLayout>
         <Toaster />
       </body>
