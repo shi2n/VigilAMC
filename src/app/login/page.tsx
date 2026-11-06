@@ -520,7 +520,7 @@ export default function LoginPage() {
       {/* ============================================================ */}
       {/* RIGHT PANEL — Light Form Panel (≈48% width) */}
       {/* ============================================================ */}
-      <div className="flex-1 w-full lg:w-[50%] xl:w-[48%] min-h-full lg:min-h-screen flex flex-col justify-center items-center p-4 sm:p-6 lg:p-10 xl:p-12 relative overflow-y-auto">
+      <div className="flex-1 w-full lg:w-[50%] xl:w-[48%] min-h-full lg:min-h-screen flex flex-col justify-start items-center p-4 sm:p-6 lg:p-8 xl:p-10 pt-4 sm:pt-6 lg:pt-8 pb-10 relative overflow-y-auto">
         {/* Subtle warm ember ambient background glow */}
         <div
           aria-hidden="true"
@@ -535,17 +535,17 @@ export default function LoginPage() {
         {/* Glass Card Container */}
         <div
           data-testid="login-glass-card"
-          className="relative z-10 w-full max-w-md bg-white/95 backdrop-blur-xl border border-[#DCE7F2] rounded-3xl p-6 sm:p-8 shadow-xl shadow-stone-900/5 space-y-5"
+          className="relative z-10 w-full max-w-md bg-white/95 backdrop-blur-xl border border-[#DCE7F2] rounded-3xl p-5 sm:p-7 shadow-xl shadow-stone-900/5 space-y-4"
         >
-          {/* Header rhythm: Eyebrow -> H1 -> Sub */}
-          <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFF0E6] border border-[#FED7AA] text-[#C2410C] text-[11px] font-bold tracking-wider uppercase">
+          {/* Header rhythm: Eyebrow -> H1 -> Sub with fixed min-h so tabs below never shift */}
+          <div className="space-y-1.5 min-h-[96px] sm:min-h-[102px]">
+            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#FFF0E6] border border-[#FED7AA] text-[#C2410C] text-[11px] font-bold tracking-wider uppercase">
               {mode === 'SIGN_IN' && 'AGENCY WORKSPACE'}
               {mode === 'SIGN_UP' && 'FREE TESTING ACCESS'}
               {mode === 'FORGOT_PASSWORD' && 'PASSWORD RECOVERY'}
               {mode === 'COMPLETE_PROFILE' && 'SETUP WORKSPACE'}
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1C1917] tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-extrabold text-[#1C1917] tracking-tight">
               {mode === 'SIGN_IN' && 'Welcome back.'}
               {mode === 'SIGN_UP' && (
                 <>
@@ -555,7 +555,7 @@ export default function LoginPage() {
               {mode === 'FORGOT_PASSWORD' && 'Reset your password.'}
               {mode === 'COMPLETE_PROFILE' && 'Complete agency setup.'}
             </h1>
-            <p className="text-xs sm:text-sm text-[#44403C]">
+            <p className="text-xs sm:text-sm text-[#44403C] leading-snug">
               {mode === 'SIGN_IN' && 'Log in to your VigilAMC workspace.'}
               {mode === 'SIGN_UP' && 'VigilAMC is in active testing — full free access during the testing period.'}
               {mode === 'FORGOT_PASSWORD' && "Enter your registered email and we'll send a password reset link."}
