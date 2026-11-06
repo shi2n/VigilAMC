@@ -520,7 +520,7 @@ export default function LoginPage() {
       {/* ============================================================ */}
       {/* RIGHT PANEL — Light Form Panel (≈48% width) */}
       {/* ============================================================ */}
-      <div className="flex-1 w-full lg:w-[50%] xl:w-[48%] min-h-full lg:min-h-screen flex flex-col justify-start items-center p-4 sm:p-6 lg:p-8 xl:p-10 pt-4 sm:pt-6 lg:pt-8 pb-10 relative overflow-y-auto">
+      <div className="flex-1 w-full lg:w-[50%] xl:w-[48%] min-h-full lg:min-h-screen flex flex-col justify-start items-center px-4 sm:px-6 lg:px-8 xl:px-10 pt-2 sm:pt-4 lg:pt-5 pb-8 relative overflow-y-auto">
         {/* Subtle warm ember ambient background glow */}
         <div
           aria-hidden="true"
@@ -535,10 +535,42 @@ export default function LoginPage() {
         {/* Glass Card Container */}
         <div
           data-testid="login-glass-card"
-          className="relative z-10 w-full max-w-md bg-white/95 backdrop-blur-xl border border-[#DCE7F2] rounded-3xl p-5 sm:p-7 shadow-xl shadow-stone-900/5 space-y-4"
+          className="relative z-10 w-full max-w-md bg-white/95 backdrop-blur-xl border border-[#DCE7F2] rounded-3xl p-4 sm:p-6 shadow-xl shadow-stone-900/5 space-y-3.5"
         >
-          {/* Header rhythm: Eyebrow -> H1 -> Sub with fixed min-h so tabs below never shift */}
-          <div className="space-y-1.5 min-h-[96px] sm:min-h-[102px]">
+          {/* Mode Switch Tabs at top of card so login option is immediately accessible */}
+          {mode !== 'FORGOT_PASSWORD' && mode !== 'COMPLETE_PROFILE' && (
+            <div className="flex rounded-xl bg-[#FFF0E6] p-1 border border-[#FED7AA] text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('SIGN_IN');
+                  setErrorMsg(null);
+                  setSuccessMsg(null);
+                }}
+                className={`flex-1 py-2 rounded-lg transition-all min-h-[36px] ${
+                  mode === 'SIGN_IN' ? 'bg-white text-[#1C1917] shadow-xs' : 'text-[#57534E] hover:text-[#1C1917]'
+                }`}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('SIGN_UP');
+                  setErrorMsg(null);
+                  setSuccessMsg(null);
+                }}
+                className={`flex-1 py-2 rounded-lg transition-all min-h-[36px] ${
+                  mode === 'SIGN_UP' ? 'bg-white text-[#1C1917] shadow-xs' : 'text-[#57534E] hover:text-[#1C1917]'
+                }`}
+              >
+                Register Agency
+              </button>
+            </div>
+          )}
+
+          {/* Header rhythm: Eyebrow -> H1 -> Sub */}
+          <div className="space-y-1">
             <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#FFF0E6] border border-[#FED7AA] text-[#C2410C] text-[11px] font-bold tracking-wider uppercase">
               {mode === 'SIGN_IN' && 'AGENCY WORKSPACE'}
               {mode === 'SIGN_UP' && 'FREE TESTING ACCESS'}
@@ -596,38 +628,6 @@ export default function LoginPage() {
             </div>
           ) : (
             <>
-              {/* Mode Switch Tabs */}
-              {mode !== 'FORGOT_PASSWORD' && mode !== 'COMPLETE_PROFILE' && (
-                <div className="flex rounded-xl bg-[#FFF0E6] p-1 border border-[#FED7AA] text-xs font-bold">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMode('SIGN_IN');
-                      setErrorMsg(null);
-                      setSuccessMsg(null);
-                    }}
-                    className={`flex-1 py-2 rounded-lg transition-all min-h-[36px] ${
-                      mode === 'SIGN_IN' ? 'bg-white text-[#1C1917] shadow-xs' : 'text-[#57534E] hover:text-[#1C1917]'
-                    }`}
-                  >
-                    Sign In
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMode('SIGN_UP');
-                      setErrorMsg(null);
-                      setSuccessMsg(null);
-                    }}
-                    className={`flex-1 py-2 rounded-lg transition-all min-h-[36px] ${
-                      mode === 'SIGN_UP' ? 'bg-white text-[#1C1917] shadow-xs' : 'text-[#57534E] hover:text-[#1C1917]'
-                    }`}
-                  >
-                    Register Agency
-                  </button>
-                </div>
-              )}
-
               {/* Error & Success Banners with accessible aria-live */}
               {errorMsg && (
                 <div
