@@ -343,7 +343,7 @@ export function ClientPortalAdminPanel({ clients = [], buildings = [] }: ClientP
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
+                <table className="w-full text-left border-collapse text-xs min-w-[720px]">
                   <thead>
                     <tr className="bg-[#FFF8F2] border-b border-[#F0E4D8] text-[#44403C] font-bold text-[11px] uppercase tracking-wider">
                       <th className="py-2.5 px-4">Client Society</th>
@@ -459,7 +459,7 @@ export function ClientPortalAdminPanel({ clients = [], buildings = [] }: ClientP
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
+              <table className="w-full text-left border-collapse text-xs min-w-[640px]">
                 <thead>
                   <tr className="bg-[#FFF8F2] border-b border-[#F0E4D8] text-[#44403C] font-bold text-[11px] uppercase tracking-wider">
                     <th className="py-2.5 px-4">Report Reference</th>

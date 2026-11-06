@@ -127,7 +127,7 @@ export function AlertsSettingsView({ company, showToast }: AlertsSettingsViewPro
                   type="checkbox"
                   checked={alert60Days}
                   onChange={(e) => setAlert60Days(e.target.checked)}
-                  className="rounded text-[#C2410C] focus:ring-0"
+                  className="w-4 h-4 rounded border-stone-300 text-[#EA580C] focus:ring-[#EA580C] accent-[#EA580C]"
                 />
                 <div>
                   <div className="text-xs font-bold text-slate-900">60 Days Prior</div>
@@ -140,7 +140,7 @@ export function AlertsSettingsView({ company, showToast }: AlertsSettingsViewPro
                   type="checkbox"
                   checked={alert30Days}
                   onChange={(e) => setAlert30Days(e.target.checked)}
-                  className="rounded text-[#C2410C] focus:ring-0"
+                  className="w-4 h-4 rounded border-stone-300 text-[#EA580C] focus:ring-[#EA580C] accent-[#EA580C]"
                 />
                 <div>
                   <div className="text-xs font-bold text-slate-900">30 Days Prior</div>
@@ -153,7 +153,7 @@ export function AlertsSettingsView({ company, showToast }: AlertsSettingsViewPro
                   type="checkbox"
                   checked={alert7Days}
                   onChange={(e) => setAlert7Days(e.target.checked)}
-                  className="rounded text-[#C2410C] focus:ring-0"
+                  className="w-4 h-4 rounded border-stone-300 text-[#EA580C] focus:ring-[#EA580C] accent-[#EA580C]"
                 />
                 <div>
                   <div className="text-xs font-bold text-slate-900">7 Days Prior</div>

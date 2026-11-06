@@ -32,9 +32,9 @@ export function FireAssetsView({
   const prefersReducedMotion = useReducedMotion();
 
   return (
-    <div className="glass-panel-dense rounded-2xl shadow-xs p-5 sm:p-6 space-y-6 text-slate-800">
+    <div className="glass-panel-dense rounded-2xl shadow-xs p-4 sm:p-6 space-y-6 text-slate-800 max-w-full overflow-hidden">
       {/* Header & Filters */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#FED7AA] pb-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[#FED7AA] pb-4">
         <div>
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-[#FFF0E6] border border-[#C2410C]/30 flex items-center justify-center text-[#C2410C]">
@@ -52,12 +52,12 @@ export function FireAssetsView({
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2.5 flex-wrap w-full lg:w-auto">
           {/* Building Filter */}
           <select
             value={equipFilterBuilding}
             onChange={(e) => setEquipFilterBuilding(e.target.value)}
-            className="bg-white border border-[#FED7AA] rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-[#C2410C] shadow-xs"
+            className="bg-white border border-[#FED7AA] rounded-xl px-3 py-2 text-xs text-[#1C1917] font-medium focus:outline-none focus:border-[#C2410C] shadow-xs w-full sm:w-auto"
           >
             <option value="ALL">All Buildings</option>
             {buildings.map((b: any) => (
@@ -68,14 +68,14 @@ export function FireAssetsView({
           </select>
 
           {/* Search */}
-          <div className="relative">
+          <div className="relative w-full sm:w-auto min-w-[200px] flex-1 sm:flex-initial">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search Asset ID or location..."
               value={equipSearch}
               onChange={(e) => setEquipSearch(e.target.value)}
-              className="bg-white border border-[#FED7AA] rounded-xl pl-8 pr-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#C2410C] shadow-xs"
+              className="w-full bg-white border border-[#FED7AA] rounded-xl pl-8 pr-3 py-2 text-xs text-[#1C1917] placeholder-[#78716C] focus:outline-none focus:border-[#C2410C] shadow-xs"
             />
           </div>
 
@@ -123,19 +123,21 @@ export function FireAssetsView({
           )}
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-[#FED7AA] overflow-x-auto shadow-xs">
-          <table className="w-full text-left text-xs">
+        <div className="bg-white rounded-xl border border-[#FED7AA] overflow-x-auto shadow-xs relative max-w-full">
+          <table className="w-full min-w-[1020px] text-left text-xs border-collapse">
             <thead className="bg-[#FFF8F2] text-[#1C1917] uppercase text-[10px] font-bold tracking-wider border-b border-[#FED7AA]">
               <tr>
-                <th className="py-3 px-4">Asset ID / Serial</th>
-                <th className="py-3 px-4">Building</th>
-                <th className="py-3 px-4">Type &amp; Capacity</th>
-                <th className="py-3 px-4">Location</th>
-                <th className="py-3 px-4">Last Serviced</th>
-                <th className="py-3 px-4">Next Service Due</th>
-                <th className="py-3 px-4">Next Hydro Due</th>
-                <th className="py-3 px-4 text-center">Live Status</th>
-                <th className="py-3 px-4 text-right">Actions</th>
+                <th className="py-3 px-4 whitespace-nowrap">Asset ID / Serial</th>
+                <th className="py-3 px-4 whitespace-nowrap">Building</th>
+                <th className="py-3 px-4 whitespace-nowrap">Type &amp; Capacity</th>
+                <th className="py-3 px-4 whitespace-nowrap">Location</th>
+                <th className="py-3 px-4 whitespace-nowrap">Last Serviced</th>
+                <th className="py-3 px-4 whitespace-nowrap">Next Service Due</th>
+                <th className="py-3 px-4 whitespace-nowrap">Next Hydro Due</th>
+                <th className="py-3 px-4 text-center whitespace-nowrap">Live Status</th>
+                <th className="py-3 px-4 text-right whitespace-nowrap sticky right-0 bg-[#FFF8F2] z-20 shadow-[-6px_0_12px_-4px_rgba(28,25,23,0.08)] border-b border-[#FED7AA] min-w-[160px]">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#FED7AA]/60">
@@ -184,7 +186,7 @@ export function FireAssetsView({
                       delay: prefersReducedMotion ? 0 : Math.min(idx, 7) * 0.025,
                       ease: 'easeOut',
                     }}
-                    className="hover:bg-[#FFF0E6]/40 transition-colors"
+                    className="hover:bg-[#FFF0E6]/40 transition-colors group"
                   >
                     <td className="py-3 px-4 font-mono font-bold">
                       <button
@@ -297,7 +299,7 @@ export function FireAssetsView({
                           : 'Not Inspected'}
                       </motion.span>
                     </td>
-                    <td className="py-3 px-4 text-right space-x-2 whitespace-nowrap">
+                    <td className="py-3 px-4 text-right space-x-2 whitespace-nowrap sticky right-0 bg-white group-hover:bg-[#FFF6EF] z-10 shadow-[-6px_0_12px_-4px_rgba(28,25,23,0.08)] min-w-[160px]">
                       <button
                         type="button"
                         onClick={() => onEditEquipment(eq)}

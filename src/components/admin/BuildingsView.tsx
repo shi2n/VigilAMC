@@ -367,7 +367,7 @@ export function BuildingsView({
                         </div>
                       ) : (
                         <div className="bg-white rounded-xl border border-[#FED7AA] overflow-x-auto shadow-sm">
-                          <table className="w-full text-left text-xs">
+                          <table className="w-full text-left text-xs min-w-[760px]">
                             <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider border-b border-[#FED7AA]">
                               <tr>
                                 <th className="py-3 px-4">Asset ID / Serial</th>

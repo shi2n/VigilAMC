@@ -118,7 +118,7 @@ export function FeedbackModal({ isOpen, onClose, userEmail }: FeedbackModalProps
                 value={confusingText}
                 onChange={(e) => setConfusingText(e.target.value)}
                 placeholder="e.g. It was not clear how to assign a technician..."
-                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#C2410C] outline-none transition-all"
+                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-[#1C1917] placeholder-[#78716C] focus:border-[#C2410C] outline-none transition-all"
               />
             </div>
 
@@ -131,7 +131,7 @@ export function FeedbackModal({ isOpen, onClose, userEmail }: FeedbackModalProps
                 value={missingFeatures}
                 onChange={(e) => setMissingFeatures(e.target.value)}
                 placeholder="e.g. A quick way to print customer AMC quotation..."
-                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#C2410C] outline-none transition-all"
+                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-[#1C1917] placeholder-[#78716C] focus:border-[#C2410C] outline-none transition-all"
               />
             </div>
 
@@ -144,7 +144,7 @@ export function FeedbackModal({ isOpen, onClose, userEmail }: FeedbackModalProps
                 value={fairPrice}
                 onChange={(e) => setFairPrice(e.target.value)}
                 placeholder="e.g. ₹999/month, ₹5,000/year, or Pay per building"
-                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#C2410C] outline-none transition-all"
+                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-[#1C1917] placeholder-[#78716C] focus:border-[#C2410C] outline-none transition-all"
               />
             </div>
 

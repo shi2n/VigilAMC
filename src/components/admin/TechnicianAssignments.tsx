@@ -255,7 +255,7 @@ export function TechnicianAssignments({ showToast }: TechnicianAssignmentsProps)
                               setSelectedTechIds(selectedTechIds.filter((id) => id !== tech.id));
                             }
                           }}
-                          className="rounded text-[#C2410C] focus:ring-[#C2410C] border-slate-300"
+                          className="w-4 h-4 rounded border-stone-300 text-[#EA580C] focus:ring-[#EA580C] accent-[#EA580C]"
                         />
                         <div>
                           <span className="font-bold text-slate-900 block">{tech.fullName}</span>

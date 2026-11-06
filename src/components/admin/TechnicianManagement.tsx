@@ -717,7 +717,7 @@ export function TechnicianManagement({
           </div>
 
           <div className="overflow-x-auto bg-white rounded-xl border border-rose-200">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full min-w-[720px] text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-rose-100 bg-rose-50/40 text-slate-600 text-[10px] font-bold uppercase tracking-wider">
                   <th className="py-2.5 px-3.5">{t.deletionColStaff || 'Staff Member'}</th>
@@ -799,7 +799,7 @@ export function TechnicianManagement({
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full min-w-[880px] text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-[#FED7AA] bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] font-bold">
                   <th className="py-3.5 px-4">Technician &amp; Staff ID</th>
@@ -1001,65 +1001,65 @@ export function TechnicianManagement({
               </div>
               <button
                 onClick={() => setAddModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg"
+                className="text-stone-400 hover:text-[#1C1917] hover:bg-stone-100 p-1 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {formError && (
-              <div className="p-3.5 rounded-xl bg-red-950/50 border border-red-500/50 text-red-200 text-xs flex items-start gap-2.5">
-                <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                <p className="font-semibold">{formError}</p>
+              <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-[#B91C1C] text-xs flex items-start gap-2.5 font-semibold">
+                <AlertTriangle className="w-4 h-4 text-[#DC2626] shrink-0 mt-0.5" />
+                <p>{formError}</p>
               </div>
             )}
 
             <form onSubmit={handleAddSubmit} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="space-y-1">
-                  <label className="text-slate-700 font-bold">Technician Full Name *</label>
+                  <label className="text-[#1C1917] font-bold">Technician Full Name *</label>
                   <input
                     type="text"
                     required
                     value={addForm.fullName}
                     onChange={(e) => { const val = e.target.value; setAddForm((prev) => ({ ...prev, fullName: val, employeeId: computeSystematicTechId(agencyName, val, technicians) })); }}
                     placeholder="e.g. Ramesh Kumar"
-                    className="w-full px-3 py-2.5 rounded-xl bg-white  border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C2410C]"
+                    className="w-full px-3 py-2.5 rounded-xl bg-white border border-[#FED7AA] text-[#1C1917] placeholder-[#78716C] focus:outline-none focus:ring-2 focus:ring-[#C2410C]"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-slate-700 font-bold">Mobile Number (WhatsApp) *</label>
+                  <label className="text-[#1C1917] font-bold">Mobile Number (WhatsApp) *</label>
                   <input
                     type="tel"
                     required={!addForm.email}
                     value={addForm.phone}
                     onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })}
                     placeholder="+91 98765 43210"
-                    className="w-full px-3 py-2.5 rounded-xl bg-white  border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C2410C] font-mono"
+                    className="w-full px-3 py-2.5 rounded-xl bg-white border border-[#FED7AA] text-[#1C1917] placeholder-[#78716C] focus:outline-none focus:ring-2 focus:ring-[#C2410C] font-mono"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="space-y-1">
-                  <div className="flex items-center justify-between"><label className="text-slate-700 font-bold">Technician ID (Username) *</label><button type="button" onClick={() => setAddForm((prev) => ({ ...prev, employeeId: computeSystematicTechId(agencyName, prev.fullName || 'tech', technicians) }))} className="text-[11px] font-bold text-[#C2410C] hover:text-[#9A3412] flex items-center gap-1"><RefreshCw className="w-3 h-3" /><span>Regenerate</span></button></div>
+                  <div className="flex items-center justify-between"><label className="text-[#1C1917] font-bold">Technician ID (Username) *</label><button type="button" onClick={() => setAddForm((prev) => ({ ...prev, employeeId: computeSystematicTechId(agencyName, prev.fullName || 'tech', technicians) }))} className="text-[11px] font-bold text-[#C2410C] hover:text-[#9A3412] flex items-center gap-1"><RefreshCw className="w-3 h-3" /><span>Regenerate</span></button></div>
                   <input
                     type="text"
                     value={addForm.employeeId}
                     onChange={(e) => setAddForm({ ...addForm, employeeId: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
                     placeholder="e.g. tech-ramesh-7k2"
-                    className="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono lowercase placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C2410C]"
+                    className="w-full px-3 py-2.5 rounded-xl bg-white border border-[#FED7AA] text-[#1C1917] font-mono lowercase placeholder-[#78716C] focus:outline-none focus:ring-2 focus:ring-[#C2410C]"
                   />
                 </div>
 
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <label className="text-slate-700 font-bold">6-Digit Login PIN / Password *</label>
+                    <label className="text-[#1C1917] font-bold">6-Digit Login PIN / Password *</label>
                     <button
                       type="button"
                       onClick={handleGeneratePinAndId}
-                      className="text-[11px] font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1"
+                      className="text-[11px] font-bold text-[#C2410C] hover:text-[#9A3412] flex items-center gap-1"
                     >
                       <Sparkles className="w-3 h-3" />
                       <span>Generate PIN</span>
@@ -1072,42 +1072,42 @@ export function TechnicianManagement({
                     value={addForm.password}
                     onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
                     placeholder="e.g. 482915"
-                    className="w-full px-3 py-2.5 rounded-xl bg-white  border border-slate-300 text-amber-700 font-mono font-bold tracking-wider placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2.5 rounded-xl bg-white border border-[#FED7AA] text-[#C2410C] font-mono font-bold tracking-wider placeholder-[#78716C] focus:outline-none focus:ring-2 focus:ring-[#C2410C]"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-slate-400 font-semibold">
-                  Login Email <span className="text-slate-500 font-normal">(Optional — leave blank to log in with Mobile No / Staff ID)</span>
+                <label className="text-[#1C1917] font-semibold">
+                  Login Email <span className="text-[#57534E] font-normal">(Optional — leave blank to log in with Mobile No / Staff ID)</span>
                 </label>
                 <input
                   type="email"
                   value={addForm.email}
                   onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
                   placeholder="Optional — leave blank for field staff without email"
-                  className="w-full px-3 py-2 rounded-xl bg-[#FFF8F2] border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 rounded-xl bg-white border border-[#FED7AA] text-[#1C1917] placeholder-[#78716C] focus:outline-none focus:ring-2 focus:ring-[#C2410C]"
                 />
               </div>
 
               {/* Assigned Buildings Checklist */}
               <div className="space-y-1.5 pt-1">
-                <label className="text-slate-700 font-bold flex items-center justify-between">
+                <label className="text-[#1C1917] font-bold flex items-center justify-between">
                   <span>Assigned Facilities / Buildings</span>
-                  <span className="text-[11px] text-slate-500 font-normal">
+                  <span className="text-[11px] text-[#57534E] font-normal">
                     {addForm.assignedBuildingIds.length === 0
                       ? 'All agency buildings (default)'
                       : `${addForm.assignedBuildingIds.length} selected`}
                   </span>
                 </label>
-                <div className="max-h-36 overflow-y-auto p-2 bg-[#F8FAFC]  border border-[#FED7AA] rounded-xl space-y-1">
+                <div className="max-h-36 overflow-y-auto p-2 bg-[#FFF8F2] border border-[#FED7AA] rounded-xl space-y-1">
                   {buildings.length === 0 ? (
                     <p className="text-slate-500 p-2 text-center text-xs">No facilities added yet.</p>
                   ) : (
                     buildings.map((b) => (
                       <label
                         key={b.id}
-                        className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer text-slate-700 hover:text-slate-900"
+                        className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-[#FFF0E6] cursor-pointer text-[#1C1917]"
                       >
                         <input
                           type="checkbox"
@@ -1125,28 +1125,28 @@ export function TechnicianManagement({
                               });
                             }
                           }}
-                          className="rounded text-emerald-500 focus:ring-emerald-500 border-slate-700 bg-slate-900"
+                          className="w-4 h-4 rounded border-stone-300 text-[#EA580C] focus:ring-[#EA580C] accent-[#EA580C]"
                         />
                         <span className="font-medium truncate">{b.name}</span>
-                        {b.city && <span className="text-[10px] text-slate-500">({b.city})</span>}
+                        {b.city && <span className="text-[10px] text-[#57534E]">({b.city})</span>}
                       </label>
                     ))
                   )}
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-slate-800 flex items-center justify-end gap-2.5">
+              <div className="pt-3 border-t border-[#FED7AA] flex items-center justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setAddModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white font-bold"
+                  className="px-4 py-2 rounded-xl border border-stone-300 hover:bg-stone-50 text-[#1C1917] font-bold text-xs transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={formSubmitting}
-                  className="px-5 py-2.5 rounded-xl font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-900 shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl font-bold bg-[#EA580C] hover:bg-[#C2410C] active:bg-[#9A3412] text-white shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50 text-xs"
                 >
                   {formSubmitting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                   <span>Create Technician &amp; Get WhatsApp Link</span>
@@ -1245,28 +1245,28 @@ export function TechnicianManagement({
           MODAL: EDIT TECHNICIAN
       ========================================================================= */}
       {editModalTech && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white border border-[#FED7AA] rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 my-8 text-slate-900">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white border border-[#FED7AA] rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 my-8 text-[#1C1917]">
+            <div className="flex items-center justify-between pb-3 border-b border-[#FED7AA]">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+                <div className="w-8 h-8 rounded-xl bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA] flex items-center justify-center font-bold">
                   <Edit className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">Edit Technician Details</h3>
-                  <p className="text-xs text-slate-400">{editModalTech.employeeId || editModalTech.phone}</p>
+                  <h3 className="text-base font-bold text-[#1C1917]">Edit Technician Details</h3>
+                  <p className="text-xs text-[#57534E]">{editModalTech.employeeId || editModalTech.phone}</p>
                 </div>
               </div>
               <button
                 onClick={() => setEditModalTech(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg"
+                className="text-stone-400 hover:text-[#1C1917] hover:bg-stone-100 p-1 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {formError && (
-              <div className="p-3 rounded-xl bg-red-950/50 border border-red-500/50 text-red-200 text-xs">
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-[#B91C1C] text-xs font-semibold">
                 {formError}
               </div>
             )}
@@ -1274,44 +1274,44 @@ export function TechnicianManagement({
             <form onSubmit={handleEditSubmit} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="space-y-1">
-                  <label className="text-slate-700 font-bold">Full Name</label>
+                  <label className="text-[#1C1917] font-bold">Full Name</label>
                   <input
                     type="text"
                     required
                     value={editForm.fullName}
                     onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-[#FFF8F2] border border-slate-800 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#FED7AA] text-[#1C1917] placeholder-[#78716C] focus:outline-none focus:ring-2 focus:ring-[#C2410C]"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-slate-700 font-bold">Staff / Employee ID</label>
+                  <label className="text-[#1C1917] font-bold">Staff / Employee ID</label>
                   <input
                     type="text"
                     value={editForm.employeeId}
                     onChange={(e) => setEditForm({ ...editForm, employeeId: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
-                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono lowercase placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C2410C]"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#FED7AA] text-[#1C1917] font-mono lowercase placeholder-[#78716C] focus:outline-none focus:ring-2 focus:ring-[#C2410C]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="space-y-1">
-                  <label className="text-slate-700 font-bold">Mobile Phone</label>
+                  <label className="text-[#1C1917] font-bold">Mobile Phone</label>
                   <input
                     type="tel"
                     value={editForm.phone}
                     onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-[#FFF8F2] border border-slate-800 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#FED7AA] text-[#1C1917] placeholder-[#78716C] focus:outline-none focus:ring-2 focus:ring-[#C2410C]"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-slate-700 font-bold">Account Access</label>
+                  <label className="text-[#1C1917] font-bold">Account Access</label>
                   <select
                     value={editForm.status}
                     onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-[#FFF8F2] border border-slate-800 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#FED7AA] text-[#1C1917] focus:outline-none focus:ring-2 focus:ring-[#C2410C]"
                   >
                     <option value="ACTIVE">Active (Can Sign In)</option>
                     <option value="INACTIVE">Blocked / Inactive (Access Revoked)</option>
@@ -1321,17 +1321,17 @@ export function TechnicianManagement({
 
               {/* Building Assignments */}
               <div className="space-y-1.5 pt-1">
-                <label className="text-slate-700 font-bold flex items-center justify-between">
+                <label className="text-[#1C1917] font-bold flex items-center justify-between">
                   <span>Assigned Facilities</span>
-                  <span className="text-[11px] text-slate-500 font-normal">
+                  <span className="text-[11px] text-[#57534E] font-normal">
                     {editForm.assignedBuildingIds.length} selected
                   </span>
                 </label>
-                <div className="max-h-36 overflow-y-auto p-2 bg-[#F8FAFC]  border border-[#FED7AA] rounded-xl space-y-1">
+                <div className="max-h-36 overflow-y-auto p-2 bg-[#FFF8F2] border border-[#FED7AA] rounded-xl space-y-1">
                   {buildings.map((b) => (
                     <label
                       key={b.id}
-                      className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer text-slate-700 hover:text-slate-900"
+                      className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-[#FFF0E6] cursor-pointer text-[#1C1917]"
                     >
                       <input
                         type="checkbox"
@@ -1349,28 +1349,30 @@ export function TechnicianManagement({
                             });
                           }
                         }}
-                        className="rounded text-amber-500 focus:ring-amber-500 border-slate-700 bg-slate-900"
+                        className="w-4 h-4 rounded border-stone-300 text-[#EA580C] focus:ring-[#EA580C] accent-[#EA580C]"
                       />
                       <span className="font-medium truncate">{b.name}</span>
-                      {b.city && <span className="text-[10px] text-slate-500">({b.city})</span>}
+                      {b.city && <span className="text-[10px] text-[#57534E]">({b.city})</span>}
                     </label>
                   ))}
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-slate-800 flex items-center justify-end gap-2.5">
+              <div className="pt-3 border-t border-[#FED7AA] flex items-center justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setEditModalTech(null)}
-                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white font-bold"
+                  className="px-4 py-2 rounded-xl border border-stone-300 hover:bg-stone-50 text-[#1C1917] font-bold text-xs transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={formSubmitting}
-                  className="px-5 py-2.5 rounded-xl font-bold bg-amber-500 hover:bg-amber-400 text-slate-900 shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl font-bold bg-[#EA580C] hover:bg-[#C2410C] active:bg-[#9A3412] text-white shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50 text-xs"
                 >
+                  {formSubmitting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Save Changes</span>
                   {formSubmitting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                   <span>Save Changes</span>
                 </button>
@@ -1384,28 +1386,28 @@ export function TechnicianManagement({
           MODAL: RESET PASSWORD / PIN
       ========================================================================= */}
       {resetPasswordTech && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white border border-[#FED7AA] rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-slate-900">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-[#FED7AA] rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-[#1C1917]">
+            <div className="flex items-center justify-between pb-3 border-b border-[#FED7AA]">
               <div className="flex items-center gap-2">
-                <KeyRound className="w-5 h-5 text-amber-400" />
-                <h3 className="text-base font-bold text-slate-900">Reset 6-Digit PIN / Password</h3>
+                <KeyRound className="w-5 h-5 text-[#C2410C]" />
+                <h3 className="text-base font-bold text-[#1C1917]">Reset 6-Digit PIN / Password</h3>
               </div>
               <button
                 onClick={() => setResetPasswordTech(null)}
-                className="text-slate-400 hover:text-white"
+                className="text-stone-400 hover:text-[#1C1917] hover:bg-stone-100 p-1 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-400">
-              Set a new login PIN for <strong className="text-slate-900">{resetPasswordTech.fullName}</strong> (
+            <p className="text-xs text-[#57534E]">
+              Set a new login PIN for <strong className="text-[#1C1917]">{resetPasswordTech.fullName}</strong> (
               {resetPasswordTech.employeeId !== '—' ? resetPasswordTech.employeeId : resetPasswordTech.phone}).
             </p>
 
             {resetError && (
-              <div className="p-3 rounded-xl bg-red-950/50 border border-red-500/50 text-red-200 text-xs">
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-[#B91C1C] text-xs font-semibold">
                 {resetError}
               </div>
             )}
@@ -1413,11 +1415,11 @@ export function TechnicianManagement({
             <form onSubmit={handleResetPassword} className="space-y-4 text-xs">
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <label className="text-slate-700 font-bold">New 6-Digit PIN / Password</label>
+                  <label className="text-[#1C1917] font-bold">New 6-Digit PIN / Password</label>
                   <button
                     type="button"
                     onClick={() => setNewPassword(generateSixDigitPin())}
-                    className="text-[11px] font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1"
+                    className="text-[11px] font-bold text-[#C2410C] hover:text-[#9A3412] flex items-center gap-1"
                   >
                     <Sparkles className="w-3 h-3" />
                     <span>Generate PIN</span>
@@ -1430,22 +1432,22 @@ export function TechnicianManagement({
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Min 6 characters"
-                  className="w-full px-3 py-2.5 rounded-xl bg-white  border border-slate-300 text-amber-700 font-mono font-bold tracking-wider placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2.5 rounded-xl bg-white border border-[#FED7AA] text-[#C2410C] font-mono font-bold tracking-wider placeholder-[#78716C] focus:outline-none focus:ring-2 focus:ring-[#C2410C]"
                 />
               </div>
 
-              <div className="pt-2 flex justify-end gap-2">
+              <div className="pt-2 flex justify-end gap-2 border-t border-[#FED7AA]">
                 <button
                   type="button"
                   onClick={() => setResetPasswordTech(null)}
-                  className="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white font-bold"
+                  className="px-3.5 py-2 rounded-xl border border-stone-300 hover:bg-stone-50 text-[#1C1917] font-bold text-xs transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={resetSubmitting}
-                  className="px-4 py-2 rounded-xl font-bold bg-amber-500 hover:bg-amber-400 text-slate-900 transition-all disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl font-bold bg-[#EA580C] hover:bg-[#C2410C] active:bg-[#9A3412] text-white transition-all disabled:opacity-50 text-xs"
                 >
                   {resetSubmitting ? 'Updating...' : 'Save New PIN'}
                 </button>
@@ -1459,39 +1461,39 @@ export function TechnicianManagement({
           MODAL: VIEW TECHNICIAN DETAILS & ACTIVITY
       ========================================================================= */}
       {viewDetailTech && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white border border-[#FED7AA] rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-5 my-8 text-slate-900">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white border border-[#FED7AA] rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-5 my-8 text-[#1C1917]">
+            <div className="flex items-center justify-between pb-3 border-b border-[#FED7AA]">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#EA580C] to-[#C2410C] text-white flex items-center justify-center font-bold text-base shadow-md">
                   {viewDetailTech.fullName?.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">{viewDetailTech.fullName}</h3>
-                  <p className="text-xs text-slate-400">
+                  <h3 className="text-base font-bold text-[#1C1917]">{viewDetailTech.fullName}</h3>
+                  <p className="text-xs text-[#57534E]">
                     {viewDetailTech.employeeId !== '—' ? `Staff ID: ${viewDetailTech.employeeId}` : viewDetailTech.email}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setViewDetailTech(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg"
+                className="text-stone-400 hover:text-[#1C1917] hover:bg-stone-100 p-1 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Profile Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-[#FFF8F2]  p-4 rounded-xl border border-[#FED7AA]">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-[#FFF8F2] p-4 rounded-xl border border-[#FED7AA]">
               <div>
                 <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold block">Status</span>
-                <span className={viewDetailTech.status === 'ACTIVE' ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
+                <span className={viewDetailTech.status === 'ACTIVE' ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold'}>
                   {viewDetailTech.status}
                 </span>
               </div>
               <div>
                 <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold block">Mobile No</span>
-                <span className="text-slate-800 font-mono">{viewDetailTech.phone || '—'}</span>
+                <span className="text-[#1C1917] font-mono font-medium">{viewDetailTech.phone || '—'}</span>
               </div>
               <div>
                 <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold block">Staff ID</span>
@@ -1499,7 +1501,7 @@ export function TechnicianManagement({
               </div>
               <div>
                 <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold block">Last Login</span>
-                <span className="text-slate-200">
+                <span className="text-[#1C1917] font-medium">
                   {viewDetailTech.lastLoginAt ? new Date(viewDetailTech.lastLoginAt).toLocaleDateString('en-IN') : 'Never'}
                 </span>
               </div>
@@ -1507,7 +1509,7 @@ export function TechnicianManagement({
 
             {/* Assigned Buildings */}
             <div className="space-y-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#1C1917]">
                 Assigned Facilities ({viewDetailTech.assignedBuildings?.length || 0})
               </h4>
               <div className="flex flex-wrap gap-2">
@@ -1515,7 +1517,7 @@ export function TechnicianManagement({
                   viewDetailTech.assignedBuildings.map((b: any) => (
                     <span
                       key={b.id}
-                      className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 text-xs font-medium border border-slate-700"
+                      className="px-2.5 py-1 rounded-lg bg-[#FFF0E6] text-[#C2410C] text-xs font-medium border border-[#FED7AA]"
                     >
                       {b.name}
                     </span>
@@ -1603,7 +1605,7 @@ export function TechnicianManagement({
               </button>
               <button
                 onClick={() => setViewDetailTech(null)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-colors"
+                className="px-4 py-2 border border-stone-300 hover:bg-stone-50 text-[#1C1917] rounded-xl text-xs font-bold transition-colors"
               >
                 Close
               </button>
@@ -1616,19 +1618,19 @@ export function TechnicianManagement({
           MODAL: CONFIRM DELETION / SAFE DEACTIVATION
       ========================================================================= */}
       {deleteConfirmTech && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white border border-[#FED7AA] rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-slate-900">
-            <div className="flex items-center gap-3 text-red-400">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-[#FED7AA] rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-[#1C1917]">
+            <div className="flex items-center gap-3 text-[#DC2626]">
               <AlertTriangle className="w-6 h-6 shrink-0" />
-              <h3 className="text-base font-bold text-slate-900">Remove Technician Account?</h3>
+              <h3 className="text-base font-bold text-[#1C1917]">Remove Technician Account?</h3>
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Are you sure you want to remove <strong className="text-slate-900">{deleteConfirmTech.fullName}</strong>?
+            <p className="text-xs text-[#57534E] leading-relaxed">
+              Are you sure you want to remove <strong className="text-[#1C1917]">{deleteConfirmTech.fullName}</strong>?
             </p>
 
-            <div className="p-3 rounded-xl bg-[#F8FAFC]  border border-[#FED7AA] text-[11px] text-slate-600 space-y-1">
-              <p className="font-semibold text-amber-300 flex items-center gap-1">
+            <div className="p-3 rounded-xl bg-[#FFF8F2] border border-[#FED7AA] text-[11px] text-[#44403C] space-y-1">
+              <p className="font-semibold text-[#C2410C] flex items-center gap-1">
                 <ShieldCheck className="w-3.5 h-3.5" />
                 Audit Trail Protection
               </p>
@@ -1637,16 +1639,16 @@ export function TechnicianManagement({
               </p>
             </div>
 
-            <div className="pt-2 flex justify-end gap-2">
+            <div className="pt-2 flex justify-end gap-2 border-t border-[#FED7AA]">
               <button
                 onClick={() => setDeleteConfirmTech(null)}
-                className="px-4 py-2 rounded-xl text-slate-400 hover:text-white text-xs font-bold"
+                className="px-4 py-2 rounded-xl border border-stone-300 hover:bg-stone-50 text-[#1C1917] text-xs font-bold transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteTechnician}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-500 text-white transition-colors"
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-[#DC2626] hover:bg-[#B91C1C] text-white transition-colors"
               >
                 Confirm Removal
               </button>

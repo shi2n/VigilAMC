@@ -316,7 +316,7 @@ export function InspectionsView({
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full text-left text-xs border-collapse min-w-[760px]">
               <thead>
                 <tr className="border-b border-[#FED7AA] bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] font-bold">
                   <th className="py-3.5 px-4">Date</th>

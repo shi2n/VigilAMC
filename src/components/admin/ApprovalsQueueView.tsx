@@ -294,7 +294,7 @@ export function ApprovalsQueueView({
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full text-left text-xs border-collapse min-w-[850px]">
               <thead>
                 <tr className="bg-[#FFF8F2] border-b border-[#FED7AA] text-[#1C1917] uppercase tracking-wider text-[10px] font-bold">
                   <th className="py-3.5 px-3 w-8 text-center">
