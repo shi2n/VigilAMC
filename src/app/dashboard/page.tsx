@@ -1024,7 +1024,7 @@ export default function AdminDashboardPage() {
   const buildings = data?.buildings || [];
   const company = data?.company;
   const agencyName = company?.name || 'VigilAMC Operating System';
-  const licenseNo = company?.licenseNumber || 'DL/FIRE/LIC/2026';
+  const licenseNo = company?.licenseNumber && !company.licenseNumber.startsWith('DL/FIRE/LIC/') ? company.licenseNumber : 'Not Provided';
 
   // Live reactive KPI computations so any mutation updates Overview & Sidebar in 0ms
   const liveEquipmentMetrics = useMemo(() => {

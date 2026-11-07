@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { detectJurisdictionFromBuilding } from '@/lib/compliance-engine';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +18,15 @@ export async function GET() {
       },
       include: {
         client: true,
-        equipments: true,
+        equipments: {
+          include: {
+            inspections: {
+              where: { approvalStatus: 'APPROVED' },
+              orderBy: { date: 'desc' },
+              take: 1,
+            },
+          },
+        },
         reports: {
           orderBy: { generatedAt: 'desc' },
           take: 1,
@@ -31,26 +40,44 @@ export async function GET() {
       let compliantCount = 0;
       let dueCount = 0;
       let overdueCount = 0;
+      let notInspectedCount = 0;
 
       b.equipments.forEach((eq: any) => {
-        const diffDays = Math.ceil((new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        if (diffDays < 0) overdueCount++;
-        else if (diffDays <= 30) dueCount++;
+        const hasInspection = Boolean(eq.inspections && eq.inspections.length > 0);
+        const diffDays = eq.nextDueDate
+          ? Math.ceil((new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+          : 999999;
+        if (diffDays < 0 || eq.status === 'OVERDUE' || eq.status === 'DEFECTIVE') overdueCount++;
+        else if (diffDays <= 30 || eq.status === 'DUE_SOON') dueCount++;
+        else if (!hasInspection) notInspectedCount++;
         else compliantCount++;
       });
+
+      const overallStatus =
+        b.equipments.length === 0
+          ? 'INSUFFICIENT_DATA'
+          : overdueCount > 0
+          ? 'OVERDUE'
+          : dueCount > 0
+          ? 'DUE_SOON'
+          : notInspectedCount > 0
+          ? 'NOT_INSPECTED'
+          : 'VERIFIED';
 
       return {
         ...b,
         city: b.city || b.address || '',
-        occupancyType: b.complianceCycle || 'General Commercial / Residential',
-        fireNocNumber: b.licenseNumber || 'Under Review',
-        nocExpiryDate: b.nextFilingDueDate,
+        jurisdictionCode: detectJurisdictionFromBuilding(b),
+        occupancyType: b.occupancyType || 'Commercial / Residential',
+        fireNocNumber: b.fireNocNumber || b.fscNumber || null,
+        nocExpiryDate: b.fireNocExpiryDate || b.fscValidityDate || b.nextFilingDueDate,
         totalAssets: b.equipments.length,
         assets: b.equipments,
         compliantCount,
         dueCount,
         overdueCount,
-        status: overdueCount > 0 ? 'OVERDUE' : (dueCount > 0 ? 'DUE_SOON' : 'COMPLIANT'),
+        notInspectedCount,
+        status: overallStatus,
       };
     });
 
@@ -73,7 +100,16 @@ export async function POST(request: Request) {
       name,
       address,
       city,
+      state,
       occupancyType,
+      buildingHeight,
+      localAuthority,
+      jurisdictionCode,
+      fscNumber,
+      fscValidityDate,
+      fireNocNumber,
+      fireNocIssueDate,
+      fireNocExpiryDate,
       contactPerson,
       contactPhone,
       contactEmail,
@@ -94,14 +130,32 @@ export async function POST(request: Request) {
       },
     });
 
+    const detectedJurisdiction =
+      jurisdictionCode ||
+      detectJurisdictionFromBuilding({
+        city,
+        state,
+        address,
+      });
+
     const building = await (db as any).building.create({
       data: {
         organizationId: auth.organization.id,
         clientId: client.id,
         name: name.trim(),
         address: (address || city || 'Facility Address').trim(),
-        city: (city || '').trim(),
-        complianceCycle: occupancyType || 'Delhi NCR Statutory Form-B (Half-Yearly)',
+        city: city ? String(city).trim() : null,
+        state: state ? String(state).trim() : null,
+        occupancyType: occupancyType ? String(occupancyType).trim() : null,
+        buildingHeight: buildingHeight ? String(buildingHeight).trim() : null,
+        localAuthority: localAuthority ? String(localAuthority).trim() : null,
+        jurisdictionCode: detectedJurisdiction,
+        fscNumber: fscNumber ? String(fscNumber).trim() : null,
+        fscValidityDate: fscValidityDate ? new Date(fscValidityDate) : null,
+        fireNocNumber: fireNocNumber ? String(fireNocNumber).trim() : null,
+        fireNocIssueDate: fireNocIssueDate ? new Date(fireNocIssueDate) : null,
+        fireNocExpiryDate: fireNocExpiryDate ? new Date(fireNocExpiryDate) : null,
+        complianceCycle: 'Half-Yearly',
         nextFilingDueDate: nocExpiryDate ? new Date(nocExpiryDate) : new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
       },
       include: {

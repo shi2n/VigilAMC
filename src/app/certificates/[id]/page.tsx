@@ -4,19 +4,13 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
-  FileCheck2,
   Printer,
   ArrowLeft,
   ShieldCheck,
-  CheckCircle2,
-  Building2,
-  Calendar,
-  Flame,
-  Download,
-  Share2,
-  RefreshCw
+  RefreshCw,
 } from 'lucide-react';
 import { EQUIPMENT_TYPES } from '@/lib/compliance';
+import { PERMANENT_LEGAL_DISCLAIMER_PARAGRAPHS } from '@/lib/compliance-engine';
 
 export default function CertificateDetailPage() {
   const params = useParams();
@@ -48,47 +42,54 @@ export default function CertificateDetailPage() {
 
   if (loading || !cert) {
     return (
-      <div className="py-20 flex justify-center text-slate-400">
-        <RefreshCw className="w-8 h-8 animate-spin text-emerald-500" />
+      <div className="min-h-screen bg-[#FFF8F2] py-20 flex justify-center text-[#44403C]">
+        <RefreshCw className="w-8 h-8 animate-spin text-[#EA580C]" />
       </div>
     );
   }
 
-  const building = cert.building;
-  const company = building.company;
-  const assets = building.assets || [];
+  const building = cert.building || {};
+  const company = building.company || {};
+  const assets = building.equipments || building.assets || [];
 
   return (
-    <div className="flex-1 p-4 md:p-8 max-w-5xl mx-auto w-full space-y-6">
-      {/* Action Header (Hidden in Print) */}
+    <div className="min-h-screen bg-[#FFF8F2] text-[#1C1917] flex-1 p-4 md:p-8 max-w-5xl mx-auto w-full space-y-6">
       <div className="no-print space-y-3">
         <Link
           href="/certificates"
-          className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white font-medium"
+          className="inline-flex items-center gap-1.5 text-xs text-[#44403C] hover:text-[#1C1917] font-bold"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back to All Certificates</span>
+          <span>Back to All Inspection Reports</span>
         </Link>
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#F0E4D8] pb-5">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl md:text-2xl font-black text-white tracking-tight">
-                Form-B Compliance Certificate Studio
+              <h1 className="text-xl md:text-2xl font-black text-[#1C1917] tracking-tight">
+                VigilAMC Fire Safety Inspection &amp; Maintenance Report
               </h1>
-              <span className="font-mono text-xs px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              <span className="font-mono text-xs px-2.5 py-0.5 rounded bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA]">
                 {cert.certificateNumber}
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-1">
-              Official certificate ready for municipal submission to Delhi Fire Service (DFS) / Local Authority.
+            <p className="text-xs text-[#44403C] mt-1">
+              Equipment Inspection, Maintenance Records and Field Verification Report.
             </p>
           </div>
 
           <div className="flex items-center gap-2.5">
+            {building.id && (
+              <Link
+                href={`/report/${building.id}`}
+                className="px-4 py-2.5 rounded-xl bg-white border border-[#FED7AA] text-xs font-bold text-[#1C1917]"
+              >
+                Open Full 5-Page Report
+              </Link>
+            )}
             <button
               onClick={handlePrint}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-950/60 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold text-xs shadow-sm cursor-pointer"
             >
               <Printer className="w-4 h-4" />
               <span>Print / Save as PDF</span>
@@ -97,81 +98,57 @@ export default function CertificateDetailPage() {
         </div>
       </div>
 
-      {/* Official Legal Form-B Document Container */}
-      <div className="bg-white text-slate-900 rounded-2xl shadow-2xl p-8 md:p-12 border border-slate-300 print:shadow-none print:border-none print:p-0 print:m-0">
-        {/* Document Header */}
-        <div className="text-center border-b-2 border-slate-900 pb-6 mb-6 space-y-1">
-          <div className="text-xs font-black uppercase tracking-widest text-red-700">
-            DELHI FIRE SAFETY &amp; LIFE SAFETY COMPLIANCE STATUTORY FORMAT
+      <div className="bg-white text-slate-900 rounded-2xl shadow-xl p-8 md:p-12 border border-slate-300 print:shadow-none print:border-none print:p-0 print:m-0 space-y-6">
+        <div className="text-center border-b-2 border-slate-900 pb-6 space-y-1">
+          <div className="text-xs font-black uppercase tracking-widest text-[#C2410C]">
+            VIGILAMC FIRE SAFETY INSPECTION &amp; MAINTENANCE REPORT
           </div>
-          <div className="text-[11px] text-slate-600 font-semibold">
-            [Under Delhi Fire Prevention and Fire Safety Rules / NBC 2016 Part 4]
-          </div>
-          <h2 className="text-2xl font-black tracking-tight text-slate-900 pt-1">
-            FORM &apos;B&apos;
-          </h2>
-          <p className="text-xs font-bold text-slate-700 max-w-2xl mx-auto uppercase">
-            Certificate by Licensed Agency regarding maintenance of fire prevention and life safety measures in good repair and efficient condition
+          <p className="text-xs font-bold text-slate-700 max-w-2xl mx-auto">
+            Equipment Inspection, Maintenance Records and Field Verification Report.
           </p>
         </div>
 
-        {/* Agency and Certificate Meta */}
         <div className="grid grid-cols-2 gap-4 text-xs pb-4 border-b border-slate-200">
           <div>
-            <div className="text-[10px] font-bold text-slate-500 uppercase">Licensed Agency Details:</div>
-            <div className="font-bold text-sm text-slate-900">{company?.name || 'Vigil Fire & Safety Solutions Pvt Ltd'}</div>
-            <div className="text-slate-600 text-[11px]">License No: <strong className="text-slate-900">{cert.licensedAgencyNumber}</strong></div>
-            <div className="text-slate-600 text-[11px]">State / Region: {company?.state || 'Delhi NCR'}</div>
+            <div className="text-[10px] font-bold text-slate-500 uppercase">Servicing Agency Details:</div>
+            <div className="font-bold text-sm text-slate-900">{company?.name || cert.signatoryName || 'Servicing Agency'}</div>
+            <div className="text-slate-600 text-[11px]">
+              Agency License Ref: <strong className="text-slate-900">{cert.licensedAgencyNumber || 'Not Provided'}</strong>
+            </div>
           </div>
 
           <div className="text-right space-y-1">
             <div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase block">Certificate No:</span>
+              <span className="text-[10px] font-bold text-slate-500 uppercase block">Report Reference ID:</span>
               <span className="font-mono font-bold text-sm text-slate-900">{cert.certificateNumber}</span>
             </div>
             <div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase block">Date of Issue:</span>
-              <span className="font-semibold text-slate-800">{new Date(cert.issueDate).toLocaleDateString()}</span>
+              <span className="text-[10px] font-bold text-slate-500 uppercase block">Date of Generation:</span>
+              <span className="font-semibold text-slate-800">{new Date(cert.issueDate).toLocaleDateString('en-IN')}</span>
             </div>
             <div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase block">Validity Period:</span>
-              <span className="font-bold text-emerald-700">{cert.period} (Valid till {new Date(cert.validUntil).toLocaleDateString()})</span>
+              <span className="text-[10px] font-bold text-slate-500 uppercase block">Reporting Period:</span>
+              <span className="font-bold text-slate-800">{cert.period}</span>
             </div>
           </div>
         </div>
 
-        {/* Certified Building Details */}
-        <div className="py-4 border-b border-slate-200 space-y-1.5 text-xs">
+        <div className="py-2 border-b border-slate-200 space-y-1 text-xs">
           <div className="text-[10px] font-bold text-slate-500 uppercase">Premises Inspected:</div>
           <div className="font-bold text-base text-slate-900">{building.name}</div>
           <div className="text-slate-700">
-            <strong>Address: </strong>{building.address}, {building.city} - {building.pincode}
-          </div>
-          <div className="flex items-center gap-6 text-[11px] text-slate-600 pt-1">
-            <span><strong>Occupancy Type: </strong>{building.occupancyType}</span>
-            <span><strong>Floors: </strong>{building.totalFloors} Upper Floors + {building.basements} Basements</span>
-            <span><strong>Fire NOC Ref: </strong>{building.fireNocNumber}</span>
+            <strong>Address: </strong>
+            {building.address} {building.city ? `, ${building.city}` : ''}
           </div>
         </div>
 
-        {/* Legal Declaration */}
-        <div className="py-5 border-b border-slate-200 text-xs text-slate-800 leading-relaxed space-y-3 text-justify">
-          <p>
-            Certified that we have carried out the bi-annual / periodic inspection and maintenance of the fire prevention and life safety measures installed in the aforesaid building / premises as required under applicable State Fire Safety Rules and NBC 2016 Part 4.
-          </p>
-          <p>
-            We further certify that the fire fighting installations, including stored pressure ABC dry powder extinguishers, CO2 gas cylinders, mechanical foam equipment, landing hydrants, and life safety gear, have been thoroughly inspected, hydrostatically pressure-tested per <strong>Indian Standard IS 2190 / IS 15683</strong>, and are in <strong>good repair and efficient working condition</strong>.
-          </p>
-        </div>
-
-        {/* Equipment Summary Annexure */}
-        <div className="py-5 border-b border-slate-200 space-y-3">
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-black uppercase tracking-wider text-slate-900">
-              Annexure A: Certified Equipment Schedule ({assets.length} Assets)
+              Registered Equipment Schedule ({assets.length} Units)
             </h3>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
-              ✓ All Units Serviced & Certified Safe
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-300">
+              Status: {cert.overallResult}
             </span>
           </div>
 
@@ -179,73 +156,70 @@ export default function CertificateDetailPage() {
             <table className="w-full text-left text-[11px] border border-slate-300">
               <thead className="bg-slate-100 text-slate-700 font-bold uppercase text-[9px] border-b border-slate-300">
                 <tr>
-                  <th className="py-1.5 px-2 border-r border-slate-300">Asset ID / Serial</th>
-                  <th className="py-1.5 px-2 border-r border-slate-300">Location Spot</th>
-                  <th className="py-1.5 px-2 border-r border-slate-300">Type & Capacity</th>
-                  <th className="py-1.5 px-2 border-r border-slate-300">Standard</th>
-                  <th className="py-1.5 px-2 border-r border-slate-300">Test Date</th>
-                  <th className="py-1.5 px-2 border-r border-slate-300">Next Refill Due</th>
-                  <th className="py-1.5 px-2 text-right">Result</th>
+                  <th className="py-1.5 px-2 border-r border-slate-300">Equipment ID</th>
+                  <th className="py-1.5 px-2 border-r border-slate-300">Location</th>
+                  <th className="py-1.5 px-2 border-r border-slate-300">Type &amp; Capacity</th>
+                  <th className="py-1.5 px-2 border-r border-slate-300">Last Service</th>
+                  <th className="py-1.5 px-2 border-r border-slate-300">Next Due</th>
+                  <th className="py-1.5 px-2 text-right">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {assets.slice(0, 15).map((a: any) => {
-                  const eqInfo = EQUIPMENT_TYPES[a.type];
-                  return (
-                    <tr key={a.id} className="hover:bg-slate-50">
-                      <td className="py-1.5 px-2 font-mono font-bold border-r border-slate-200">{a.qrCode}</td>
-                      <td className="py-1.5 px-2 border-r border-slate-200">
-                        {a.locationFloor}, {a.locationWing} ({a.locationSpecific})
-                      </td>
-                      <td className="py-1.5 px-2 font-medium border-r border-slate-200">
-                        {a.capacity} {eqInfo?.name || a.type}
-                      </td>
-                      <td className="py-1.5 px-2 text-slate-600 border-r border-slate-200">{a.isStandard}</td>
-                      <td className="py-1.5 px-2 border-r border-slate-200">{new Date(a.lastRefillDate).toLocaleDateString()}</td>
-                      <td className="py-1.5 px-2 font-bold border-r border-slate-200">{new Date(a.nextRefillDueDate).toLocaleDateString()}</td>
-                      <td className="py-1.5 px-2 text-right font-bold text-emerald-700">PASS</td>
-                    </tr>
-                  );
-                })}
+                {assets.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-4 px-3 text-center text-slate-600">
+                      No fire safety equipment has been registered in this system for the selected premises. Inspection and compliance status cannot be determined.
+                    </td>
+                  </tr>
+                ) : (
+                  assets.slice(0, 15).map((a: any) => {
+                    const eqInfo = EQUIPMENT_TYPES[a.type];
+                    return (
+                      <tr key={a.id} className="hover:bg-slate-50">
+                        <td className="py-1.5 px-2 font-mono font-bold border-r border-slate-200">{a.qrCode}</td>
+                        <td className="py-1.5 px-2 border-r border-slate-200">{a.location || '—'}</td>
+                        <td className="py-1.5 px-2 font-medium border-r border-slate-200">
+                          {eqInfo?.name || a.type} {a.capacity ? `(${a.capacity})` : ''}
+                        </td>
+                        <td className="py-1.5 px-2 border-r border-slate-200">
+                          {a.lastServiceDate ? new Date(a.lastServiceDate).toLocaleDateString('en-IN') : '—'}
+                        </td>
+                        <td className="py-1.5 px-2 font-bold border-r border-slate-200">
+                          {a.nextDueDate ? new Date(a.nextDueDate).toLocaleDateString('en-IN') : '—'}
+                        </td>
+                        <td className="py-1.5 px-2 text-right font-bold text-slate-800">{a.status || 'RECORDED'}</td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
-
-          {assets.length > 15 && (
-            <p className="text-[10px] text-slate-500 italic text-center">
-              + {assets.length - 15} additional floor units inspected and logged on continuous schedule.
-            </p>
-          )}
         </div>
 
-        {/* Signature & Verification Stamp Block */}
-        <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-6">
-          {/* Municipal Authenticator */}
+        {/* Legal Disclaimer */}
+        <div className="p-4 rounded-xl border border-slate-300 bg-slate-50 text-[10.5px] text-slate-700 space-y-1 leading-relaxed">
+          <div className="font-bold text-slate-900 uppercase">Important Legal Disclaimer</div>
+          {PERMANENT_LEGAL_DISCLAIMER_PARAGRAPHS.map((p, i) => (
+            <p key={i}>{p}</p>
+          ))}
+        </div>
+
+        <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3 p-2.5 rounded-xl border border-slate-300 bg-slate-50">
-            <ShieldCheck className="w-10 h-10 text-emerald-700 shrink-0" />
+            <ShieldCheck className="w-8 h-8 text-emerald-700 shrink-0" />
             <div className="text-[10px] text-slate-600 space-y-0.5">
-              <div className="font-bold text-slate-900 uppercase">Verification Stamp</div>
-              <div>Verified equipment schedule and inspection record on VigilAMC compliance server.</div>
-              <div className="font-mono text-[9px] text-slate-500">Stamp ID: {cert.id}</div>
+              <div className="font-bold text-slate-900 uppercase">VigilAMC Platform Authenticity Record</div>
+              <div className="font-mono text-[9px] text-slate-500">Record ID: {cert.id}</div>
             </div>
           </div>
 
-          {/* Official Signatory Block */}
-          <div className="text-right space-y-1">
-            <div className="h-10 flex items-center justify-end">
-              <span className="font-serif italic text-lg text-slate-800 font-bold tracking-wider">
-                {cert.signatoryName || 'Er. Rajeshwar Patil'}
-              </span>
-            </div>
-            <div className="font-bold text-xs text-slate-900">{cert.signatoryName}</div>
-            <div className="text-[10px] text-slate-600 font-medium">
-              Authorized Signatory & Chief Fire Safety Officer
+          <div className="text-right space-y-0.5">
+            <div className="font-bold text-xs text-slate-900">
+              {cert.signatoryName || 'Authorized Agency Representative'}
             </div>
             <div className="text-[10px] text-slate-600">
-              For <strong>{company?.name || 'Vigil Fire & Safety Solutions Pvt Ltd'}</strong>
-            </div>
-            <div className="text-[9px] text-slate-500">
-              (Licensed Agency under Fire Prevention Act)
+              Authorized Agency Representative
             </div>
           </div>
         </div>

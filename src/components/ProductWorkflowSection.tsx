@@ -328,7 +328,7 @@ export function ProductWorkflowSection() {
 
                     <div className="p-2 rounded bg-slate-900 border border-slate-800 flex items-center justify-between text-[11px]">
                       <span className="text-slate-400">Authorized Agency Seal Block:</span>
-                      <span className="text-cyan-300 font-mono">DL/FIRE/LIC/2026/042</span>
+                      <span className="text-cyan-300 font-mono">Agency Registration Verified</span>
                     </div>
                   </div>
 

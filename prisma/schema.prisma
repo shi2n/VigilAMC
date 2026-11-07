@@ -77,6 +77,7 @@ model UserProfile {
   syncQueueItems    SyncQueue[]
   deviceTokens      DeviceToken[]
   deletionRequests  AccountDeletionRequest[]
+  credentials       TechnicianCredential[]
   createdAt         DateTime                       @default(now())
   updatedAt         DateTime                       @updatedAt
 
@@ -121,6 +122,11 @@ model Organization {
   activityLogs           ActivityLog[]
   deletionRequests       AccountDeletionRequest[]
   portalUsers            PortalUser[]
+  agencyCredentials      AgencyCredential[]
+  technicianCredentials  TechnicianCredential[]
+  jurisdictionTemplates  JurisdictionTemplate[]
+  legalReferences        LegalReference[]
+  inspectionReports      InspectionReport[]
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
 }
@@ -128,7 +134,7 @@ model Organization {
 model Company {
   id             String    @id @default(cuid())
   name           String    @default("Vigil Fire & Safety Solutions")
-  licenseNumber  String    @default("DL/FIRE/LIC/2022/A-412")
+  licenseNumber  String    @default("")
   phone          String    @default("+91 98201 54321")
   email          String    @default("compliance@vigilfire.in")
   address        String    @default("Plot 24, Okhla Industrial Area Phase III, New Delhi, Delhi NCR")
@@ -174,6 +180,15 @@ model Building {
   nextFilingDueDate     DateTime?
   latitude              Float?
   longitude             Float?
+  occupancyType         String?
+  buildingHeight        String?
+  localAuthority        String?
+  jurisdictionCode      String?
+  fscNumber             String?
+  fscValidityDate       DateTime?
+  fireNocNumber         String?
+  fireNocIssueDate      DateTime?
+  fireNocExpiryDate     DateTime?
   equipments            Equipment[]
   jobs                  Job[]
   inspections           Inspection[]
@@ -183,6 +198,7 @@ model Building {
   floorPlans            FloorPlan[]
   workOrders            WorkOrder[]
   reports               ComplianceReport[]
+  inspectionReports     InspectionReport[]
   reportAcks            ReportAck[]
   technicianAssignments TechnicianBuildingAssignment[]
   createdAt             DateTime                       @default(now())
@@ -724,4 +740,242 @@ model ReportAck {
   @@unique([reportRef, portalUserId])
   @@index([buildingId])
   @@index([portalUserId])
+}
+
+model JurisdictionTemplate {
+  id                  String              @id @default(cuid())
+  organizationId      String?
+  organization        Organization?       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  code                String              // DELHI, UP_NOIDA, HR_GURUGRAM, GENERAL
+  state               String              // NCT of Delhi, Uttar Pradesh, Haryana, All India
+  city                String              // Delhi, Noida, Gurugram, General
+  templateName        String              // e.g. "Delhi AMC Inspection Report"
+  reportType          String              @default("FIRE_SAFETY_INSPECTION_REPORT")
+  isStatutoryForm     Boolean             @default(false)
+  statutoryFormCode   String?             // e.g. "DELHI_FORM_B", "DELHI_FORM_H"
+  statutoryPurpose    String?
+  issuingAuthority    String?
+  status              String              @default("ACTIVE") // ACTIVE, DRAFT_PENDING_LEGAL_REVIEW, INACTIVE
+  version             String              @default("1.0.0")
+  effectiveDate       DateTime            @default(now())
+  verifiedBy          String?
+  verifiedAt          DateTime?
+  configJson          String?             // JSON configuration for jurisdiction fields & procedures
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([code])
+  @@index([organizationId])
+  @@index([status])
+  @@map("jurisdiction_templates")
+}
+
+model LegalReference {
+  id                     String        @id @default(cuid())
+  organizationId         String?
+  organization           Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  jurisdictionCode       String        @default("GENERAL") // DELHI, UP_NOIDA, HR_GURUGRAM, GENERAL
+  state                  String
+  city                   String
+  department             String
+  actName                String
+  ruleNumber             String?
+  notificationNumber     String?
+  applicableStandard     String?
+  equipmentCategory      String?       // PORTABLE_EXTINGUISHER, WHEELED_EXTINGUISHER, HYDRANT, HOSE_REEL, ALARM_PANEL, SMOKE_DETECTOR, SPRINKLER, FIRE_PUMP, EMERGENCY_LIGHTING, GENERAL
+  officialSourceUrl      String
+  publicationDate        DateTime?
+  effectiveDate          DateTime?
+  lastVerifiedDate       DateTime?
+  version                String        @default("2024")
+  currentStatus          String        @default("LEGAL REFERENCE PENDING VERIFICATION") // VERIFIED_ACTIVE, LEGAL REFERENCE PENDING VERIFICATION, OUTDATED, SUPERSEDED
+  verificationNotes      String?
+  verifiedBy             String?
+  approvalStatus         String        @default("PENDING_REVIEW") // PENDING_REVIEW, APPROVED, REJECTED
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+
+  @@index([jurisdictionCode])
+  @@index([organizationId])
+  @@index([approvalStatus])
+  @@map("legal_references")
+}
+
+model AgencyCredential {
+  id                     String        @id @default(cuid())
+  organizationId         String
+  organization           Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  legalName              String
+  businessAddress        String?
+  contactInfo            String?
+  gstin                  String?
+  licenseNumber          String?
+  issuingAuthority       String?
+  issueDate              DateTime?
+  expiryDate             DateTime?
+  supportingDocUrl       String?
+  verificationStatus     String        @default("NOT_PROVIDED") // NOT_PROVIDED, PENDING_VERIFICATION, VERIFIED, REJECTED, EXPIRED
+  verifiedBy             String?
+  verifiedAt             DateTime?
+  reviewNotes            String?
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+
+  @@index([organizationId])
+  @@index([verificationStatus])
+  @@map("agency_credentials")
+}
+
+model TechnicianCredential {
+  id                     String        @id @default(cuid())
+  organizationId         String
+  organization           Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userProfileId          String?
+  userProfile            UserProfile?  @relation(fields: [userProfileId], references: [id], onDelete: SetNull)
+  fullName               String
+  employeeId             String?
+  designation            String        @default("Field Service Technician")
+  qualification          String?
+  trainingDetails        String?
+  certificationDetails   String?
+  issuingOrganization    String?
+  certificateNumber      String?
+  validityDate           DateTime?
+  supportingDocUrl       String?
+  verificationStatus     String        @default("NOT_PROVIDED") // NOT_PROVIDED, PENDING_VERIFICATION, VERIFIED, REJECTED, EXPIRED
+  verifiedBy             String?
+  verifiedAt             DateTime?
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+
+  @@index([organizationId])
+  @@index([userProfileId])
+  @@index([verificationStatus])
+  @@map("technician_credentials")
+}
+
+model InspectionReport {
+  id                     String                  @id @default(cuid())
+  organizationId         String?
+  organization           Organization?           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  buildingId             String
+  building               Building                @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  reportReferenceId      String                  @unique
+  reportType             String                  @default("FIRE_SAFETY_INSPECTION_REPORT")
+  reportTitle            String                  @default("VIGILAMC FIRE SAFETY INSPECTION & MAINTENANCE REPORT")
+  reportSubtitle         String                  @default("Equipment Inspection, Maintenance Records and Field Verification Report.")
+  jurisdictionCode       String                  @default("GENERAL") // DELHI, UP_NOIDA, HR_GURUGRAM, GENERAL
+  templateVersion        String                  @default("1.0.0")
+  reportingPeriod        String
+  inspectionStatus       String                  @default("INSUFFICIENT DATA") // NOT INSPECTED, INSPECTION IN PROGRESS, INSPECTION COMPLETED, INSPECTION COMPLETED - ACTION REQUIRED, CORRECTIVE ACTION PENDING, CORRECTIVE ACTION COMPLETED, INSUFFICIENT DATA
+  compliancePercentage   Float?
+  totalRegistered        Int                     @default(0)
+  inspectedCount         Int                     @default(0)
+  operationalCount       Int                     @default(0)
+  nonOperationalCount    Int                     @default(0)
+  maintenanceDueCount    Int                     @default(0)
+  overdueCount           Int                     @default(0)
+  notInspectedCount      Int                     @default(0)
+  openDefectsCount       Int                     @default(0)
+  resolvedDefectsCount   Int                     @default(0)
+  integrityHash          String
+  generatedAt            DateTime                @default(now())
+  versions               ReportVersion[]
+  assets                 ReportAsset[]
+  evidences              InspectionEvidence[]
+  signatures             ReportSignature[]
+  verificationLogs       ReportVerificationLog[]
+
+  @@index([organizationId])
+  @@index([buildingId])
+  @@index([reportReferenceId])
+  @@index([inspectionStatus])
+  @@map("inspection_reports")
+}
+
+model ReportVersion {
+  id                 String           @id @default(cuid())
+  inspectionReportId String
+  inspectionReport   InspectionReport @relation(fields: [inspectionReportId], references: [id], onDelete: Cascade)
+  versionNumber      Int              @default(1)
+  templateVersion    String           @default("1.0.0")
+  snapshotJson       String           // Immutable JSON snapshot so historical reports retain original template & data
+  integrityHash      String
+  createdByUserId    String?
+  createdAt          DateTime         @default(now())
+
+  @@index([inspectionReportId])
+  @@map("report_versions")
+}
+
+model ReportAsset {
+  id                 String           @id @default(cuid())
+  inspectionReportId String
+  inspectionReport   InspectionReport @relation(fields: [inspectionReportId], references: [id], onDelete: Cascade)
+  equipmentId        String?
+  assetTag           String
+  type               String
+  make               String?
+  model              String?
+  capacity           String?
+  serialNumber       String?
+  floor              String?
+  location           String
+  lastServiceDate    DateTime?
+  nextDueDate        DateTime?
+  inspectionStatus   String           // OPERATIONAL, NON_OPERATIONAL, MAINTENANCE_DUE, OVERDUE, NOT_INSPECTED
+  applicableStandard String?
+  createdAt          DateTime         @default(now())
+
+  @@index([inspectionReportId])
+  @@map("report_assets")
+}
+
+model InspectionEvidence {
+  id                 String           @id @default(cuid())
+  inspectionReportId String
+  inspectionReport   InspectionReport @relation(fields: [inspectionReportId], references: [id], onDelete: Cascade)
+  inspectionId       String?
+  equipmentRef       String?
+  photoUrl           String?
+  capturedAt         DateTime?
+  latitude           Float?
+  longitude          Float?
+  gpsVerified        Boolean          @default(false)
+  technicianName     String
+  checklistJson      String?
+  observations       String?
+  createdAt          DateTime         @default(now())
+
+  @@index([inspectionReportId])
+  @@map("inspection_evidence")
+}
+
+model ReportSignature {
+  id                  String           @id @default(cuid())
+  inspectionReportId  String
+  inspectionReport    InspectionReport @relation(fields: [inspectionReportId], references: [id], onDelete: Cascade)
+  role                String           // TECHNICIAN, AGENCY_REPRESENTATIVE, CLIENT_ACKNOWLEDGEMENT
+  signerName          String
+  signerDesignation   String?
+  signatureDataUrl    String?
+  signedAt            DateTime         @default(now())
+
+  @@index([inspectionReportId])
+  @@map("report_signatures")
+}
+
+model ReportVerificationLog {
+  id                 String            @id @default(cuid())
+  inspectionReportId String?
+  inspectionReport   InspectionReport? @relation(fields: [inspectionReportId], references: [id], onDelete: SetNull)
+  queriedRef         String
+  verificationResult String            // VERIFIED_AUTHENTIC, ASSET_VERIFIED, NOT_FOUND
+  ipHash             String?
+  userAgent          String?
+  verifiedAt         DateTime          @default(now())
+
+  @@index([inspectionReportId])
+  @@index([queriedRef])
+  @@map("report_verification_logs")
 }

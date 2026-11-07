@@ -19,9 +19,14 @@ export function evaluateEquipmentStatus(eq: any, now: Date = new Date()): Equipm
   const diffDays = nextDue ? Math.ceil((nextDue.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 999999;
 
   const latestInspection = eq.inspections?.[0] || eq.serviceLogs?.[0] || null;
-  const hasInspection = Boolean(latestInspection || eq.lastServiceDate || eq.status);
+  const hasInspection = Boolean(latestInspection);
   const isImported = Boolean(latestInspection?.isImported || eq.isImported);
-  const hasGPS = Boolean(latestInspection?.latitude && latestInspection?.longitude);
+  const hasGPS = Boolean(
+    typeof latestInspection?.latitude === 'number' &&
+    typeof latestInspection?.longitude === 'number' &&
+    !isNaN(latestInspection.latitude) &&
+    !isNaN(latestInspection.longitude)
+  );
   const hasPhoto = Boolean(
     eq.photoUrl ||
     latestInspection?.photos ||
@@ -29,17 +34,31 @@ export function evaluateEquipmentStatus(eq: any, now: Date = new Date()): Equipm
   );
   const verifiedDate = latestInspection
     ? new Date(latestInspection.date || latestInspection.servicedAt)
-    : eq.lastServiceDate
-    ? new Date(eq.lastServiceDate)
     : null;
 
-  // 1. Overdue (red) - always takes priority when nextDueDate has passed
-  if ((hasDue && diffDays < 0) || eq.status === 'OVERDUE') {
+  // 1. Overdue / Defective (red)
+  if (
+    (hasDue && diffDays < 0) ||
+    eq.status === 'OVERDUE' ||
+    eq.status === 'SERVICE_REQUIRED' ||
+    eq.status === 'REPLACEMENT_REQUIRED' ||
+    eq.status === 'DEFECTIVE' ||
+    latestInspection?.status === 'FAILED' ||
+    latestInspection?.status === 'SERVICE_REQUIRED' ||
+    latestInspection?.status === 'REPLACEMENT_REQUIRED'
+  ) {
+    const isDefect =
+      eq.status === 'SERVICE_REQUIRED' ||
+      eq.status === 'REPLACEMENT_REQUIRED' ||
+      eq.status === 'DEFECTIVE' ||
+      latestInspection?.status === 'FAILED' ||
+      latestInspection?.status === 'SERVICE_REQUIRED' ||
+      latestInspection?.status === 'REPLACEMENT_REQUIRED';
     return {
       status: 'OVERDUE',
-      label: 'Overdue',
+      label: isDefect ? 'Action Required' : 'Overdue',
       color: 'rose',
-      badgeClass: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800/50',
+      badgeClass: 'bg-rose-50 text-rose-700 border-rose-200',
       diffDays: hasDue ? diffDays : -1,
       lastVerifiedDate: verifiedDate,
       hasGPS,
@@ -54,7 +73,7 @@ export function evaluateEquipmentStatus(eq: any, now: Date = new Date()): Equipm
       status: 'DUE_SOON',
       label: 'Due soon (<30d)',
       color: 'amber',
-      badgeClass: 'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/50',
+      badgeClass: 'bg-amber-50 text-amber-800 border-amber-300',
       diffDays: hasDue ? diffDays : 30,
       lastVerifiedDate: verifiedDate,
       hasGPS,
@@ -69,7 +88,7 @@ export function evaluateEquipmentStatus(eq: any, now: Date = new Date()): Equipm
       status: 'NOT_INSPECTED',
       label: 'Not inspected yet',
       color: 'slate',
-      badgeClass: 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800/80 dark:text-slate-400 dark:border-slate-700',
+      badgeClass: 'bg-slate-100 text-slate-700 border-slate-300',
       diffDays,
       lastVerifiedDate: null,
       hasGPS: false,
@@ -82,10 +101,10 @@ export function evaluateEquipmentStatus(eq: any, now: Date = new Date()): Equipm
   return {
     status: 'VERIFIED',
     label: isImported ? 'Imported (not field-verified)' : 'Verified',
-    color: isImported ? 'blue' : 'emerald',
+    color: isImported ? 'amber' : 'emerald',
     badgeClass: isImported
-      ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/50'
-      : 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/50',
+      ? 'bg-amber-50 text-amber-800 border-amber-300'
+      : 'bg-emerald-50 text-emerald-700 border-emerald-300',
     diffDays,
     lastVerifiedDate: verifiedDate,
     hasGPS,
@@ -103,7 +122,7 @@ export const EQUIPMENT_TYPES: Record<string, any> = {
     notSuitableFor: ['Cooking oil/kitchen deep fat fryers (Class F)'],
     refillIntervalMonths: 12,
     hydroTestIntervalMonths: 36,
-    colorCode: '#3b82f6',
+    colorCode: '#EA580C',
     description: 'Multi-purpose powder extinguisher suitable for standard commercial and residential hazards.',
   },
   CO2: {
@@ -182,32 +201,32 @@ export function getNocStatus(expiryDate: Date | string): NocStatus {
       daysRemaining,
       status: 'EXPIRED',
       label: `Lapsed (${Math.abs(daysRemaining)} days ago)`,
-      badgeClass: 'bg-red-950 text-red-400 border border-red-800',
-      textClass: 'text-red-500 font-bold',
+      badgeClass: 'bg-rose-50 text-rose-700 border border-rose-200',
+      textClass: 'text-rose-600 font-bold',
     };
   } else if (daysRemaining <= 30) {
     return {
       daysRemaining,
       status: 'CRITICAL',
       label: `${daysRemaining} days left (Urgent Renewal)`,
-      badgeClass: 'bg-red-500/20 text-red-300 border border-red-500/50 animate-pulse',
-      textClass: 'text-red-400 font-semibold',
+      badgeClass: 'bg-rose-50 text-rose-700 border border-rose-200',
+      textClass: 'text-rose-600 font-semibold',
     };
   } else if (daysRemaining <= 60) {
     return {
       daysRemaining,
       status: 'WARNING',
       label: `${daysRemaining} days left (Upcoming Renewal)`,
-      badgeClass: 'bg-amber-500/20 text-amber-300 border border-amber-500/40',
-      textClass: 'text-amber-400 font-medium',
+      badgeClass: 'bg-amber-50 text-amber-800 border border-amber-300',
+      textClass: 'text-amber-700 font-medium',
     };
   } else {
     return {
       daysRemaining,
       status: 'HEALTHY',
       label: `Valid (${daysRemaining} days left)`,
-      badgeClass: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
-      textClass: 'text-emerald-400',
+      badgeClass: 'bg-emerald-50 text-emerald-700 border border-emerald-300',
+      textClass: 'text-emerald-700',
     };
   }
 }
@@ -218,7 +237,7 @@ export function getAssetRefillStatus(nextRefillDate?: Date | string | null) {
       status: 'OK',
       label: 'No due date set',
       color: 'bg-slate-600 text-white',
-      badgeClass: 'bg-slate-800 text-slate-300 border border-slate-700',
+      badgeClass: 'bg-slate-100 text-slate-700 border border-slate-300',
     };
   }
   const due = new Date(nextRefillDate);
@@ -230,21 +249,21 @@ export function getAssetRefillStatus(nextRefillDate?: Date | string | null) {
       status: 'OVERDUE',
       label: `Overdue by ${Math.abs(diffDays)}d`,
       color: 'bg-red-500 text-white',
-      badgeClass: 'bg-red-950/80 text-red-300 border border-red-800'
+      badgeClass: 'bg-rose-50 text-rose-700 border border-rose-200'
     };
   } else if (diffDays <= 30) {
     return {
       status: 'DUE_SOON',
       label: `Due in ${diffDays}d`,
       color: 'bg-amber-500 text-black',
-      badgeClass: 'bg-amber-950/80 text-amber-300 border border-amber-800'
+      badgeClass: 'bg-amber-50 text-amber-800 border border-amber-300'
     };
   } else {
     return {
       status: 'OK',
       label: `Valid (${Math.round(diffDays / 30)} mos)`,
       color: 'bg-emerald-600 text-white',
-      badgeClass: 'bg-emerald-950/80 text-emerald-300 border border-emerald-800'
+      badgeClass: 'bg-emerald-50 text-emerald-700 border border-emerald-300'
     };
   }
 }

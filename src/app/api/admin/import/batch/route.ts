@@ -196,7 +196,7 @@ export async function POST(request: Request) {
               name: buildingName,
               address: parsedData.address || `${buildingName}, Delhi NCR`,
               city: parsedData.city || 'Delhi NCR',
-              complianceCycle: parsedData.complianceCycle || 'Delhi NCR Statutory Form-B (Half-Yearly)',
+              complianceCycle: parsedData.complianceCycle || 'Half-Yearly',
               cycleIntervalMos: 6,
               nextFilingDueDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
             },

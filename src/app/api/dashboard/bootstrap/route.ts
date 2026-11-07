@@ -433,11 +433,11 @@ export async function GET(request: Request) {
       const totalEquipments = clientBldgs.reduce((sum, b) => sum + (b.totalEquipments || 0), 0);
       const overdueCount = clientBldgs.reduce((sum, b) => sum + (b.overdueCount || 0), 0);
       const dueSoonCount = clientBldgs.reduce((sum, b) => sum + (b.dueCount || 0), 0);
-      const okCount = Math.max(0, totalEquipments - overdueCount - dueSoonCount);
+      const okCount = clientBldgs.reduce((sum, b) => sum + (b.verifiedCount || 0), 0);
       const compliancePercent =
         totalEquipments > 0
-          ? Math.round(((totalEquipments - overdueCount) / totalEquipments) * 100)
-          : 100;
+          ? Math.round((okCount / totalEquipments) * 100)
+          : 0;
 
       let lastInspectionDate: Date | null = null;
       for (const b of clientBldgs) {
@@ -480,9 +480,9 @@ export async function GET(request: Request) {
 
     const evaluatedEquipments = equipmentsRaw.map((eq: any) => {
       const evalResult = evaluateEquipmentStatus(eq, now);
-      if (evalResult.diffDays < 0) kpiOverdueCount++;
-      else if (evalResult.diffDays <= 30) kpiDueCount++;
-      else kpiCompliantCount++;
+      if (evalResult.status === 'OVERDUE') kpiOverdueCount++;
+      else if (evalResult.status === 'DUE_SOON') kpiDueCount++;
+      else if (evalResult.status === 'VERIFIED') kpiCompliantCount++;
 
       return {
         ...eq,
@@ -623,7 +623,7 @@ export async function GET(request: Request) {
     const complianceRate =
       evaluatedEquipments.length > 0
         ? Math.round((kpiCompliantCount / evaluatedEquipments.length) * 100)
-        : 100;
+        : 0;
 
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const inspectionsThisWeek = inspectionsRaw.filter(

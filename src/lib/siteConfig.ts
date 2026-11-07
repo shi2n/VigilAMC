@@ -61,7 +61,7 @@ export const SITE_CONFIG = {
   COMPANY_NAME: 'VigilAMC',
   LEGAL_NAME: 'VigilAMC Technologies',
   ADDRESS_DISPLAY: 'New Delhi 110092, India',
-  LICENSE_DEMO: 'DL/FIRE/LIC/2026/042',
+  LICENSE_DEMO: 'Not Provided (Agency Credential Verification Required)',
   SOCIAL: {
     LINKEDIN: 'https://www.linkedin.com/company/vigilamc/',
     INSTAGRAM: 'https://www.instagram.com/vigilamc',

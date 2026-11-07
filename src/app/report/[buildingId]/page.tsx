@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import EmberLine from '@/components/home/EmberLine';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import {
   Printer,
   ArrowLeft,
@@ -20,16 +20,24 @@ import {
   Clock,
   MapPin,
   Calendar,
-  Building2,
-  Wrench,
   Camera,
   CheckCircle,
-  XCircle,
   AlertCircle,
-  UserCheck,
   ExternalLink,
+  Scale,
+  Building2,
+  Save,
 } from 'lucide-react';
 import { SITE_CONFIG } from '@/lib/siteConfig';
+import {
+  REPORT_TYPES,
+  ReportTypeCode,
+  JURISDICTIONS,
+  JurisdictionCode,
+  PERMANENT_LEGAL_DISCLAIMER_PARAGRAPHS,
+  ZERO_ASSET_MESSAGE,
+  INCOMPLETE_INSPECTION_MESSAGE,
+} from '@/lib/compliance-engine';
 
 function formatSafeDate(dateVal: any): string {
   if (!dateVal) return '—';
@@ -75,60 +83,144 @@ function calculateAgeDays(dateVal: any): number {
 export default function ComplianceReportPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const buildingId = (params?.buildingId as string) || '';
+
+  const [selectedReportType, setSelectedReportType] = useState<ReportTypeCode>(
+    ((searchParams?.get('reportType') as ReportTypeCode) || 'FIRE_SAFETY_INSPECTION_REPORT')
+  );
+  const [selectedJurisdiction, setSelectedJurisdiction] = useState<JurisdictionCode | ''>(
+    ((searchParams?.get('jurisdiction') as JurisdictionCode) || '')
+  );
 
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Client delivery state
+  // Client delivery & Jurisdiction Reference Editor state
   const [clientPhone, setClientPhone] = useState('');
   const [clientEmail, setClientEmail] = useState('');
   const [showContactEditor, setShowContactEditor] = useState(false);
+  const [showJurisdictionEditor, setShowJurisdictionEditor] = useState(false);
+  const [savingBuildingFields, setSavingBuildingFields] = useState(false);
+
+  const [occupancyType, setOccupancyType] = useState('');
+  const [buildingHeight, setBuildingHeight] = useState('');
+  const [localAuthority, setLocalAuthority] = useState('');
+  const [fscNumber, setFscNumber] = useState('');
+  const [fscValidityDate, setFscValidityDate] = useState('');
+  const [fireNocNumber, setFireNocNumber] = useState('');
+  const [fireNocIssueDate, setFireNocIssueDate] = useState('');
+  const [fireNocExpiryDate, setFireNocExpiryDate] = useState('');
+
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastTone, setToastTone] = useState<'success' | 'error'>('success');
   const [copiedLink, setCopiedLink] = useState(false);
 
-  const showToast = (msg: string) => {
+  const showToast = (msg: string, tone: 'success' | 'error' = 'success') => {
+    setToastTone(tone);
     setToastMessage(msg);
     setTimeout(() => {
       setToastMessage((prev) => (prev === msg ? null : prev));
-    }, 3500);
+    }, 4000);
   };
 
-  const fetchReport = useCallback(async () => {
-    if (!buildingId) return;
-    try {
-      setLoading(true);
-      setError(null);
-      const res = await fetch(`/api/report/${encodeURIComponent(buildingId)}`);
-      const json = await res.json().catch(() => ({}));
+  const fetchReport = useCallback(
+    async (overrideType?: ReportTypeCode, overrideJurisdiction?: JurisdictionCode | '') => {
+      if (!buildingId) return;
+      try {
+        setLoading(true);
+        setError(null);
+        const rType = overrideType || selectedReportType;
+        const jur = overrideJurisdiction !== undefined ? overrideJurisdiction : selectedJurisdiction;
+        const qs = new URLSearchParams();
+        if (rType) qs.set('reportType', rType);
+        if (jur) qs.set('jurisdiction', jur);
 
-      if (!res.ok || json.error || !json.building || !json.summary) {
-        setError(json.error || `Could not load compliance report (HTTP ${res.status})`);
+        const res = await fetch(`/api/report/${encodeURIComponent(buildingId)}?${qs.toString()}`);
+        const json = await res.json().catch(() => ({}));
+
+        if (!res.ok || json.error || !json.building || !json.summary) {
+          setError(json.error || `Could not load inspection report (HTTP ${res.status})`);
+          setData(null);
+          return;
+        }
+
+        setData(json);
+        setClientPhone(json.building?.client?.phone || '');
+        setClientEmail(json.building?.client?.email || '');
+
+        if (!jur && json.reportMetadata?.jurisdictionCode) {
+          setSelectedJurisdiction(json.reportMetadata.jurisdictionCode);
+        }
+
+        setOccupancyType(json.building?.occupancyType || '');
+        setBuildingHeight(json.building?.buildingHeight || '');
+        setLocalAuthority(json.building?.localAuthority || '');
+        setFscNumber(json.building?.fscNumber || '');
+        setFscValidityDate(
+          json.building?.fscValidityDate ? new Date(json.building.fscValidityDate).toISOString().slice(0, 10) : ''
+        );
+        setFireNocNumber(json.building?.fireNocNumber || '');
+        setFireNocIssueDate(
+          json.building?.fireNocIssueDate ? new Date(json.building.fireNocIssueDate).toISOString().slice(0, 10) : ''
+        );
+        setFireNocExpiryDate(
+          json.building?.fireNocExpiryDate ? new Date(json.building.fireNocExpiryDate).toISOString().slice(0, 10) : ''
+        );
+
+        if (typeof document !== 'undefined' && json.building?.name) {
+          const refNum = json.report?.reportNumber || 'VAMC-RPT';
+          const titleName = json.reportMetadata?.reportTypeName || 'Fire Safety Inspection & Maintenance Report';
+          document.title = `${json.building.name} - ${titleName} (${refNum})`;
+        }
+      } catch (e: any) {
+        setError(e?.message || 'Unexpected network error while generating report.');
         setData(null);
-        return;
+      } finally {
+        setLoading(false);
       }
-
-      setData(json);
-      setClientPhone(json.building?.client?.phone || '');
-      setClientEmail(json.building?.client?.email || '');
-
-      if (typeof document !== 'undefined' && json.building?.name) {
-        const refNum = json.report?.reportNumber || `FORM-B-${new Date().getFullYear()}`;
-        document.title = `${json.building.name} - Fire Safety Compliance Report (${refNum})`;
-      }
-    } catch (e: any) {
-      console.error('Error loading report:', e);
-      setError(e?.message || 'Unexpected network error while generating report.');
-      setData(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [buildingId]);
+    },
+    [buildingId, selectedReportType, selectedJurisdiction]
+  );
 
   useEffect(() => {
     fetchReport();
   }, [fetchReport]);
+
+  const handleSaveJurisdictionFields = async () => {
+    try {
+      setSavingBuildingFields(true);
+      const res = await fetch(`/api/report/${encodeURIComponent(buildingId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'UPDATE_BUILDING_COMPLIANCE_FIELDS',
+          jurisdictionCode: selectedJurisdiction || null,
+          occupancyType: occupancyType.trim() || null,
+          buildingHeight: buildingHeight.trim() || null,
+          localAuthority: localAuthority.trim() || null,
+          fscNumber: fscNumber.trim() || null,
+          fscValidityDate: fscValidityDate || null,
+          fireNocNumber: fireNocNumber.trim() || null,
+          fireNocIssueDate: fireNocIssueDate || null,
+          fireNocExpiryDate: fireNocExpiryDate || null,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || json.error) {
+        showToast(json.error || 'Failed to save building compliance reference details', 'error');
+        return;
+      }
+      showToast('Premises jurisdiction & FSC / Fire NOC reference details updated');
+      setShowJurisdictionEditor(false);
+      await fetchReport(selectedReportType, selectedJurisdiction);
+    } catch (err: any) {
+      showToast(err?.message || 'Network error while saving reference details', 'error');
+    } finally {
+      setSavingBuildingFields(false);
+    }
+  };
 
   const handleCloseOrBack = () => {
     if (typeof window !== 'undefined') {
@@ -145,19 +237,24 @@ export default function ComplianceReportPage() {
 
   const handlePrint = () => {
     if (typeof document !== 'undefined' && data?.building?.name) {
-      const refNum = data?.report?.reportNumber || `FORM-B-${new Date().getFullYear()}`;
-      document.title = `${data.building.name} - Fire Safety Compliance Report (${refNum})`;
+      const refNum = data?.report?.reportNumber || 'VAMC-RPT';
+      const titleName = data?.reportMetadata?.reportTypeName || 'Fire Safety Inspection & Maintenance Report';
+      document.title = `${data.building.name} - ${titleName} (${refNum})`;
     }
     window.print();
   };
 
   const getReportUrl = () => {
     const origin = typeof window !== 'undefined' ? window.location.origin : SITE_CONFIG.SITE_URL;
-    return `${origin}/report/${buildingId}`;
+    const qs = new URLSearchParams();
+    if (selectedReportType) qs.set('reportType', selectedReportType);
+    if (selectedJurisdiction) qs.set('jurisdiction', selectedJurisdiction);
+    return `${origin}/report/${buildingId}${qs.toString() ? `?${qs.toString()}` : ''}`;
   };
 
   const getVerifyUrl = () => {
-    return `${SITE_CONFIG.SITE_URL}/verify/${buildingId}`;
+    const refId = data?.report?.reportNumber || buildingId;
+    return `${SITE_CONFIG.SITE_URL}/verify/${encodeURIComponent(refId)}`;
   };
 
   const handleCopyClientLink = async () => {
@@ -165,7 +262,7 @@ export default function ComplianceReportPage() {
     try {
       await navigator.clipboard.writeText(url);
       setCopiedLink(true);
-      showToast('Official client report link copied to clipboard!');
+      showToast('Inspection report link copied to clipboard!');
       setTimeout(() => setCopiedLink(false), 2500);
     } catch {
       showToast(`Report Link: ${url}`);
@@ -175,27 +272,25 @@ export default function ComplianceReportPage() {
   const handleSendWhatsApp = () => {
     const url = getReportUrl();
     const bldgName = data?.building?.name || 'Client Facility';
-    const agencyName = data?.company?.name || 'Fire Safety AMC Agency';
-    const licenseNo = data?.company?.licenseNumber || 'DL/FIRE/LIC/2026';
-    const compCount = data?.summary?.compliant ?? 0;
+    const agencyName = data?.company?.name || 'Fire Safety Service Agency';
+    const reportTitle = data?.reportMetadata?.reportTypeName || 'Fire Safety Inspection & Maintenance Report';
+    const reportStatus = data?.compliance?.reportStatus || data?.summary?.overallStatus || 'INSUFFICIENT DATA';
+    const opCount = data?.summary?.operational ?? 0;
     const totalCount = data?.summary?.total ?? 0;
-    const isOk =
-      totalCount > 0 &&
-      (data?.summary?.overallStatus === 'COMPLIANT' || data?.summary?.overallStatus === 'VERIFIED');
 
     const statusLine =
       totalCount === 0
-        ? 'Pending Equipment Registration (0 Assets Logged)'
-        : `${isOk ? 'FULLY COMPLIANT' : 'ACTION REQUIRED'} (${compCount}/${totalCount} Assets Operational)`;
+        ? 'INSUFFICIENT DATA (0 Registered Assets)'
+        : `${reportStatus} (${opCount} of ${totalCount} Operational)`;
 
     const message = [
-      `*Fire Safety Compliance Report (Form-B) — ${bldgName}*`,
+      `*${reportTitle} — ${bldgName}*`,
       ``,
-      `• *Audit Status:* ${statusLine}`,
-      `• *Inspecting Agency:* ${agencyName} (Lic: ${licenseNo})`,
-      `• *Report Ref:* ${data?.report?.reportNumber || 'FORM-B'}`,
+      `• *Inspection Status:* ${statusLine}`,
+      `• *Servicing Agency:* ${agencyName}`,
+      `• *Report Reference:* ${data?.report?.reportNumber || 'VAMC-RPT'}`,
       ``,
-      `View & download the official printable A4 compliance certificate directly (no login required):`,
+      `View & download the 5-page A4 inspection and maintenance report directly:`,
       url,
     ].join('\n');
 
@@ -205,19 +300,17 @@ export default function ComplianceReportPage() {
       : `https://wa.me/?text=${encodeURIComponent(message)}`;
 
     window.open(waUrl, '_blank', 'noopener,noreferrer');
-    showToast('Opening WhatsApp with pre-filled compliance summary...');
+    showToast('Opening WhatsApp with inspection report summary...');
   };
 
   const handleSendEmail = async () => {
     const url = getReportUrl();
     const bldgName = data?.building?.name || 'Client Facility';
-    const agencyName = data?.company?.name || 'Fire Safety AMC Agency';
-    const licenseNo = data?.company?.licenseNumber || 'DL/FIRE/LIC/2026';
-    const compCount = data?.summary?.compliant ?? 0;
+    const agencyName = data?.company?.name || 'Fire Safety Service Agency';
+    const reportTitle = data?.reportMetadata?.reportTypeName || 'Fire Safety Inspection & Maintenance Report';
+    const reportStatus = data?.compliance?.reportStatus || data?.summary?.overallStatus || 'INSUFFICIENT DATA';
+    const opCount = data?.summary?.operational ?? 0;
     const totalCount = data?.summary?.total ?? 0;
-    const isOk =
-      totalCount > 0 &&
-      (data?.summary?.overallStatus === 'COMPLIANT' || data?.summary?.overallStatus === 'VERIFIED');
 
     try {
       await navigator.clipboard.writeText(url);
@@ -225,26 +318,28 @@ export default function ComplianceReportPage() {
 
     const statusLine =
       totalCount === 0
-        ? 'Pending Equipment Registration (0 Assets Logged)'
-        : `${isOk ? 'Fully Compliant' : 'Action Needed'} (${compCount} / ${totalCount} Operational)`;
+        ? 'INSUFFICIENT DATA (0 Registered Assets)'
+        : `${reportStatus} (${opCount} / ${totalCount} Operational)`;
 
-    const subject = `Fire Safety Compliance Report — ${bldgName} (${data?.report?.reportNumber || 'Official Form-B'})`;
+    const subject = `${reportTitle} — ${bldgName} (${data?.report?.reportNumber || 'VAMC-RPT'})`;
     const body = [
       `Dear ${data?.building?.client?.contactPerson || data?.building?.client?.name || 'Facility Manager'},`,
       ``,
-      `Please find below the official Fire Safety Equipment Compliance Inspection Report (Form-B) for ${bldgName}.`,
+      `Please find below the ${reportTitle} for ${bldgName}.`,
       ``,
       `Summary:`,
       `- Facility: ${bldgName} (${data?.building?.address || ''})`,
-      `- Audit Status: ${statusLine}`,
-      `- Certified By: ${agencyName} (License No: ${licenseNo})`,
-      `- Report Reference: ${data?.report?.reportNumber || 'FORM-B'}`,
+      `- Report Status: ${statusLine}`,
+      `- Servicing Agency: ${agencyName}`,
+      `- Report Reference ID: ${data?.report?.reportNumber || 'VAMC-RPT'}`,
       ``,
-      `Click below to view and download the official A4 document:`,
+      `Click below to view and print the 5-page A4 report:`,
       url,
       ``,
+      `Note: This document is an equipment inspection and maintenance report only and does not constitute a government-issued Fire NOC or Fire Safety Certificate.`,
+      ``,
       `Regards,`,
-      `${data?.signatoryName || data?.company?.contactPerson || 'Authorized Signatory'}`,
+      `${data?.signatoryName || data?.company?.contactPerson || 'Authorized Agency Representative'}`,
       `${agencyName}`,
     ].join('\n');
 
@@ -256,30 +351,57 @@ export default function ComplianceReportPage() {
   const company = data?.company || {};
   const building = data?.building || {};
   const report = data?.report || {};
+  const reportMetadata = data?.reportMetadata || {};
+  const compliance = data?.compliance || {};
   const summary = data?.summary || {};
   const equipments = Array.isArray(building?.equipments) ? building.equipments : [];
   const inspections = Array.isArray(building?.inspections) ? building.inspections : [];
   const correctiveActions = Array.isArray(building?.correctiveActions) ? building.correctiveActions : [];
-  const applicableStandards = Array.isArray(data?.applicableStandards)
-    ? data.applicableStandards
-    : ['IS 2190:2010 — Maintenance of First-Aid Fire Extinguishers', 'NBC 2016 Part 4 — Fire and Life Safety'];
+  const defects = Array.isArray(building?.defects) ? building.defects : [];
+  const applicableStandardsDetailed = Array.isArray(data?.applicableStandardsDetailed)
+    ? data.applicableStandardsDetailed
+    : [];
+  const legalReferences = Array.isArray(data?.legalReferences) ? data.legalReferences : [];
+  const disclaimerParagraphs: string[] =
+    data?.legalDisclaimer?.paragraphs || PERMANENT_LEGAL_DISCLAIMER_PARAGRAPHS;
 
-  const totalCount = summary?.total ?? equipments.length;
-  const compliantCount = summary?.compliant ?? 0;
-  const overdueCount = summary?.overdue ?? 0;
-  const dueSoonCount = summary?.dueSoon ?? 0;
-  const openFindingsCount =
-    summary?.openFindings ??
-    correctiveActions.filter((ca: any) => ca.status === 'OPEN' || ca.status === 'DISPATCHED' || ca.status === 'REPAIRED').length;
-  const compliantPercent = summary?.compliantPercent ?? (totalCount > 0 ? Math.round((compliantCount / totalCount) * 100) : 0);
+  const activeJurisdictionCode: JurisdictionCode =
+    (reportMetadata?.jurisdictionCode as JurisdictionCode) || 'GENERAL';
+  const jurisdictionConfig = JURISDICTIONS[activeJurisdictionCode] || JURISDICTIONS.GENERAL;
+  const activeReportType =
+    REPORT_TYPES[(reportMetadata?.reportType as ReportTypeCode) || selectedReportType] ||
+    REPORT_TYPES.FIRE_SAFETY_INSPECTION_REPORT;
 
-  const hasZeroEquipment = totalCount === 0 || equipments.length === 0;
+  const totalCount = compliance?.counts?.totalRegistered ?? summary?.total ?? equipments.length;
+  const inspectedCount = compliance?.counts?.inspectedCount ?? summary?.inspected ?? 0;
+  const operationalCount = compliance?.counts?.operationalCount ?? summary?.operational ?? 0;
+  const nonOperationalCount = compliance?.counts?.nonOperationalCount ?? summary?.nonOperational ?? 0;
+  const maintenanceDueCount = compliance?.counts?.maintenanceDueCount ?? summary?.dueSoon ?? 0;
+  const overdueCount = compliance?.counts?.overdueCount ?? summary?.overdue ?? 0;
+  const notInspectedCount = compliance?.counts?.notInspectedCount ?? summary?.notInspected ?? 0;
+  const openFindingsCount = compliance?.counts?.openDefectsCount ?? summary?.openFindings ?? 0;
+  const resolvedFindingsCount = compliance?.counts?.resolvedDefectsCount ?? summary?.resolvedFindings ?? 0;
+  const compliancePercentage: number | null =
+    compliance?.compliancePercentage !== undefined ? compliance.compliancePercentage : null;
+
+  const reportStatus: string =
+    compliance?.reportStatus || summary?.overallStatus || (totalCount === 0 ? 'INSUFFICIENT DATA' : 'NOT INSPECTED');
+  const statusBadgeColor: 'green' | 'orange' | 'red' | 'grey' =
+    compliance?.statusBadgeColor ||
+    (reportStatus === 'INSPECTION COMPLETED' || reportStatus === 'CORRECTIVE ACTION COMPLETED'
+      ? 'green'
+      : reportStatus === 'INSPECTION IN PROGRESS'
+      ? 'orange'
+      : reportStatus === 'INSUFFICIENT DATA' || reportStatus === 'NOT INSPECTED'
+      ? 'grey'
+      : 'red');
+
+  const statusBannerMessage: string =
+    compliance?.statusBannerMessage ||
+    (totalCount === 0 ? ZERO_ASSET_MESSAGE : INCOMPLETE_INSPECTION_MESSAGE);
+
   const signatoryName =
-    data?.signatoryName || company?.signatoryName || company?.contactPerson || 'Authorized Inspecting Officer';
-
-  const isCompliant =
-    !hasZeroEquipment &&
-    (summary?.overallStatus === 'COMPLIANT' || summary?.overallStatus === 'VERIFIED');
+    data?.signatoryName || company?.signatoryName || company?.contactPerson || 'Authorized Agency Representative';
 
   // Next-due schedule: sorted by nextDueDate ascending
   const nextDueSchedule = useMemo(() => {
@@ -289,55 +411,102 @@ export default function ComplianceReportPage() {
       .slice(0, 10);
   }, [equipments]);
 
-  // Key findings from open corrective actions and inspections
-  const keyFindings = useMemo(() => {
-    if (correctiveActions.length > 0) {
-      return correctiveActions.slice(0, 6);
+  // Combined Findings & Defects list for Page 2 & Page 5
+  const combinedFindings = useMemo(() => {
+    const list: any[] = [];
+    for (const ca of correctiveActions) {
+      list.push({
+        id: ca.id,
+        assetRef: ca.assetRef || ca.equipment?.qrCode || 'Premises',
+        title: ca.title,
+        description: ca.description,
+        severity: ca.severity || 'MEDIUM',
+        status: ca.status || 'OPEN',
+        openedAt: ca.openedAt || ca.createdAt,
+        closeNote: ca.closeNote,
+        workshopNote: ca.workshopNote,
+      });
     }
-    // Fallback to equipment overdue or issues
-    return equipments
-      .filter((eq: any) => eq.currentStatus === 'OVERDUE' || eq.currentStatus === 'DUE_SOON')
-      .map((eq: any) => ({
-        id: eq.id,
-        assetRef: eq.qrCode,
-        title: `${eq.type} (${eq.capacity || 'Standard'}) requires service verification`,
-        description: `Located at ${eq.location || 'Premise'}. Next service due was ${formatSafeDate(eq.nextDueDate)}.`,
-        severity: eq.currentStatus === 'OVERDUE' ? 'HIGH' : 'MEDIUM',
-        status: 'OPEN',
-        openedAt: eq.lastServiceDate || eq.createdAt,
-      }));
-  }, [correctiveActions, equipments]);
+    for (const def of defects) {
+      if (!list.some((item) => item.id === def.id)) {
+        list.push({
+          id: def.id,
+          assetRef: def.equipmentId ? 'Equipment Defect' : 'Premises',
+          title: def.description,
+          description: 'Recorded during equipment inspection.',
+          severity: def.severity || 'MEDIUM',
+          status: def.status || 'OPEN',
+          openedAt: def.reportedAt,
+          closeNote: def.resolvedAt ? `Resolved on ${formatSafeDate(def.resolvedAt)}` : null,
+          workshopNote: null,
+        });
+      }
+    }
+    for (const eq of equipments) {
+      if (
+        (eq.inspectionStatus === 'NON_OPERATIONAL' || eq.inspectionStatus === 'OVERDUE') &&
+        !list.some((item) => item.assetRef === eq.qrCode)
+      ) {
+        list.push({
+          id: `eq-finding-${eq.id}`,
+          assetRef: eq.qrCode || 'Equipment',
+          title: `${eq.type} (${eq.capacity || 'Standard'}) — ${eq.statusLabel}`,
+          description: `Located at ${eq.location || 'Premises'}. ${eq.inspectionNotes || ''}`,
+          severity: eq.inspectionStatus === 'NON_OPERATIONAL' ? 'HIGH' : 'MEDIUM',
+          status: 'OPEN',
+          openedAt: eq.latestInspectionDate || eq.createdAt,
+          closeNote: null,
+          workshopNote: null,
+        });
+      }
+    }
+    return list;
+  }, [correctiveActions, defects, equipments]);
 
-  const reportDateFormatted = formatSafeDate(report?.generatedAt || new Date());
-  const auditCycleDisplay = report?.cyclePeriod || building?.complianceCycle || 'Half-Yearly Mandatory Audit';
+  const reportDateFormatted = formatSafeDate(reportMetadata?.generatedAt || report?.generatedAt || new Date());
+  const auditCycleDisplay = reportMetadata?.reportingPeriod || report?.cyclePeriod || building?.complianceCycle || 'Half-Yearly';
+  const totalPages = 5;
 
-  // Common statutory footer component
-  const StatutoryFooter = ({ pageNumber, totalPages }: { pageNumber: number; totalPages: number }) => (
-    <div className="report-footer mt-auto pt-4 border-t border-slate-300 text-[10px] text-slate-600 space-y-1.5">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] font-semibold text-slate-800">
-        <span>Generated by VigilAMC &bull; {reportDateFormatted}</span>
+  // Status badge helper (Strictly adheres to Step 9: Green / Orange / Red / Grey)
+  const getReportStatusBadgeStyle = (color: 'green' | 'orange' | 'red' | 'grey') => {
+    switch (color) {
+      case 'green':
+        return 'bg-emerald-50 text-emerald-800 border-emerald-300';
+      case 'orange':
+        return 'bg-amber-50 text-amber-800 border-amber-300';
+      case 'red':
+        return 'bg-rose-50 text-rose-800 border-rose-300';
+      case 'grey':
+      default:
+        return 'bg-slate-100 text-slate-700 border-slate-300';
+    }
+  };
+
+  // Common footer component across all 5 pages
+  const ReportPageFooter = ({ pageNumber }: { pageNumber: number }) => (
+    <div className="report-footer mt-auto pt-3 border-t border-slate-300 text-[10px] text-slate-600 space-y-1">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[10px] font-semibold text-slate-800">
+        <span>
+          Generated on VigilAMC Platform &bull; {jurisdictionConfig.reportTemplateName} (v{reportMetadata?.templateVersion || '2.0.0'}) &bull; {reportDateFormatted}
+        </span>
         <span className="font-mono text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-300">
           Page {pageNumber} of {totalPages}
         </span>
       </div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[10px]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[9.5px]">
         <div className="text-slate-700">
-          <span className="font-bold">Statutory Verification Line:</span> Verify this official record at{' '}
+          <span className="font-bold">Report Authenticity Verification URL:</span>{' '}
           <span className="font-mono font-bold text-[#C2410C] underline">{getVerifyUrl()}</span>
         </div>
         <div className="text-slate-500 font-mono text-[9px]">
-          Ref: {report?.reportNumber || 'FORM-B'} &bull; Bldg ID: {buildingId.slice(0, 12)}
+          Ref: {report?.reportNumber || 'VAMC-RPT'} &bull; Integrity Hash: {reportMetadata?.integrityHash || 'VERIFIED'}
         </div>
       </div>
-      <div className="text-[9px] text-slate-500 border-t border-slate-200 pt-1 leading-snug">
-        <span className="font-bold uppercase tracking-wider text-slate-700">Applicable Standards:</span>{' '}
-        {applicableStandards.join(' • ')}
+      <div className="text-[8.5px] text-slate-500 border-t border-slate-200 pt-1 leading-snug">
+        <span className="font-bold text-slate-700">NON-STATUTORY NOTICE:</span> This document is an equipment inspection and
+        maintenance report only. It does NOT constitute a government-issued Fire Safety Certificate (Form-H), Stand-by Duty
+        Application (Form-B), or Fire NOC.
       </div>
-      {company?.reportFooterText && (
-        <div data-testid="report-branding-footer" className="text-[9px] text-slate-500 italic text-center pt-0.5">
-          {company.reportFooterText}
-        </div>
-      )}
     </div>
   );
 
@@ -346,8 +515,12 @@ export default function ComplianceReportPage() {
       <div className="bg-[#FFF8F2] min-h-screen py-10 px-4 flex items-center justify-center">
         <div className="bg-white border border-slate-200 rounded-2xl shadow-lg p-8 max-w-md w-full flex flex-col items-center gap-3 text-slate-700 text-center">
           <RefreshCw className="w-8 h-8 animate-spin text-[#C2410C]" />
-          <p className="text-sm font-bold text-slate-900">Generating Official Form-B Compliance Report...</p>
-          <p className="text-xs text-slate-500">Compiling verified equipment register, GPS audit &amp; agency seal</p>
+          <p className="text-sm font-bold text-slate-900">
+            Generating Fire Safety Inspection &amp; Maintenance Report...
+          </p>
+          <p className="text-xs text-slate-500">
+            Evaluating registered assets, field inspection records, jurisdiction framework &amp; BIS standards
+          </p>
         </div>
       </div>
     );
@@ -360,13 +533,13 @@ export default function ComplianceReportPage() {
           <div className="w-12 h-12 rounded-2xl bg-red-50 border border-red-200 flex items-center justify-center mx-auto text-red-600">
             <AlertTriangle className="w-6 h-6" />
           </div>
-          <h2 className="text-lg font-extrabold text-slate-900">Unable to Load Compliance Report</h2>
+          <h2 className="text-lg font-extrabold text-slate-900">Unable to Load Inspection Report</h2>
           <p className="text-xs text-slate-600 leading-relaxed">
             {error || 'This building report could not be found or generated right now.'}
           </p>
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2.5">
             <button
-              onClick={fetchReport}
+              onClick={() => fetchReport()}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#C2410C] hover:bg-[#1C1917] text-white font-bold text-xs transition-all cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" />
@@ -384,9 +557,6 @@ export default function ComplianceReportPage() {
       </div>
     );
   }
-
-  // Calculate total pages for footer (Cover = 1, Exec Summary = 2, Asset Register = 3, Evidence = 4, Findings = 5)
-  const totalPages = 5;
 
   return (
     <div className="relative bg-[#FFF8F2] min-h-screen py-6 sm:py-10 px-3 sm:px-6 print:bg-white print:p-0 text-[#1C1917]">
@@ -422,37 +592,99 @@ export default function ComplianceReportPage() {
 
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="no-print print:hidden fixed bottom-5 right-5 z-50 bg-slate-900 border border-emerald-500/40 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs font-semibold">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+        <div
+          className={`no-print print:hidden fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs font-semibold border ${
+            toastTone === 'error'
+              ? 'bg-rose-950 border-rose-500/40 text-white'
+              : 'bg-slate-900 border-emerald-500/40 text-white'
+          }`}
+        >
+          {toastTone === 'error' ? (
+            <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+          ) : (
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          )}
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Sticky Top Action Bar (Screen Only) */}
+      {/* Sticky Top Action & Template Selector Bar (Screen Only) */}
       <div
         data-testid="report-glass-action-bar"
         className="no-print print:hidden max-w-[210mm] mx-auto mb-6 sticky top-3 z-40 glass-panel-dense rounded-xl p-3 sm:px-4 space-y-3"
       >
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          {/* Left: Close / Back + Title */}
-          <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Left: Back + Selectors (Step 2 & Step 12) */}
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               type="button"
               onClick={handleCloseOrBack}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 text-xs font-bold transition-colors cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Dashboard</span>
+              <span>Dashboard</span>
             </button>
 
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#FFF0E6] text-[#1C1917] border border-[#FED7AA] text-[11px] font-bold tracking-tight">
-              <FileText className="w-3.5 h-3.5 text-[#C2410C]" />
-              <span>Statutory Compliance Report (A4 5-Page Standard)</span>
-            </span>
+            {/* Step 12: State-Wise Jurisdiction Template Selector */}
+            <div className="flex items-center gap-1.5">
+              <label htmlFor="jurisdiction-select" className="text-[10px] font-bold uppercase text-slate-500">
+                Jurisdiction:
+              </label>
+              <select
+                id="jurisdiction-select"
+                data-testid="report-jurisdiction-select"
+                value={selectedJurisdiction || activeJurisdictionCode}
+                onChange={(e) => {
+                  const val = e.target.value as JurisdictionCode;
+                  setSelectedJurisdiction(val);
+                  fetchReport(selectedReportType, val);
+                }}
+                className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#EA580C]"
+              >
+                <option value="DELHI">1. Delhi (Delhi AMC Inspection Report)</option>
+                <option value="UP_NOIDA">2. Uttar Pradesh – Noida (Noida Report)</option>
+                <option value="HR_GURUGRAM">3. Haryana – Gurugram (Gurugram Report)</option>
+                <option value="GENERAL">General Inspection Report</option>
+              </select>
+            </div>
+
+            {/* Step 2: 6 Report Types Selector */}
+            <div className="flex items-center gap-1.5">
+              <label htmlFor="report-type-select" className="text-[10px] font-bold uppercase text-slate-500">
+                Report Type:
+              </label>
+              <select
+                id="report-type-select"
+                data-testid="report-type-select"
+                value={selectedReportType}
+                onChange={(e) => {
+                  const val = e.target.value as ReportTypeCode;
+                  setSelectedReportType(val);
+                  fetchReport(val, selectedJurisdiction);
+                }}
+                className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#EA580C]"
+              >
+                {Object.values(REPORT_TYPES).map((rt) => (
+                  <option key={rt.code} value={rt.code}>
+                    {rt.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Right: Actions */}
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowJurisdictionEditor((prev) => !prev)}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-[11px] font-bold transition-all cursor-pointer"
+              title="Edit FSC / Fire NOC reference & occupancy details"
+            >
+              <Building2 className="w-3.5 h-3.5 text-[#C2410C]" />
+              <span>FSC / NOC Ref</span>
+            </button>
+
             <button
               type="button"
               onClick={handleSendWhatsApp}
@@ -477,10 +709,10 @@ export default function ComplianceReportPage() {
               type="button"
               onClick={handleCopyClientLink}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-semibold text-xs transition-all cursor-pointer"
-              title="Copy direct verification link"
+              title="Copy direct report link"
             >
               {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedLink ? 'Link Copied ✓' : 'Copy Link'}</span>
+              <span>{copiedLink ? 'Copied ✓' : 'Copy Link'}</span>
             </button>
 
             <button
@@ -490,7 +722,6 @@ export default function ComplianceReportPage() {
               title="Customize recipient contact"
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Recipient</span>
             </button>
 
             <button
@@ -499,10 +730,144 @@ export default function ComplianceReportPage() {
               className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-gradient-to-r from-[#1C1917] to-[#C2410C] hover:from-[#1C1917] hover:to-[#1C1917] text-white font-extrabold text-xs shadow-md transition-all cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5 stroke-[2.2]" />
-              <span>Open &amp; Print PDF</span>
+              <span>Print / Save 5-Page PDF</span>
             </button>
           </div>
         </div>
+
+        {/* Inline Jurisdiction & FSC / Fire NOC Reference Editor (Step 3) */}
+        {showJurisdictionEditor && (
+          <div className="pt-3 border-t border-slate-200 bg-white/90 rounded-lg p-3 space-y-3 text-xs">
+            <div className="flex items-center justify-between">
+              <div className="font-bold text-slate-900">
+                Premises Occupancy &amp; Client-Supplied Statutory Reference ({jurisdictionConfig.label})
+              </div>
+              <span className="text-[10px] text-slate-500">
+                Optional fields — only displayed as client-supplied reference, never auto-certified.
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                  Building Occupancy Classification
+                </label>
+                <input
+                  type="text"
+                  value={occupancyType}
+                  onChange={(e) => setOccupancyType(e.target.value)}
+                  placeholder="e.g. Mercantile / Business / Residential / Industrial"
+                  className="w-full px-2.5 py-1.5 rounded border border-slate-300 text-xs"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                  Building Height / Covered Area
+                </label>
+                <input
+                  type="text"
+                  value={buildingHeight}
+                  onChange={(e) => setBuildingHeight(e.target.value)}
+                  placeholder="e.g. 24m (G+7 Floors)"
+                  className="w-full px-2.5 py-1.5 rounded border border-slate-300 text-xs"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                  District / Local Authority
+                </label>
+                <input
+                  type="text"
+                  value={localAuthority}
+                  onChange={(e) => setLocalAuthority(e.target.value)}
+                  placeholder={jurisdictionConfig.referenceFields.localAuthorityDefault}
+                  className="w-full px-2.5 py-1.5 rounded border border-slate-300 text-xs"
+                />
+              </div>
+              {activeJurisdictionCode === 'DELHI' ? (
+                <>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                      Existing Delhi FSC (Form-H) Number (If Supplied)
+                    </label>
+                    <input
+                      type="text"
+                      value={fscNumber}
+                      onChange={(e) => setFscNumber(e.target.value)}
+                      placeholder="Client-supplied FSC number"
+                      className="w-full px-2.5 py-1.5 rounded border border-slate-300 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                      FSC Validity Date (If Supplied)
+                    </label>
+                    <input
+                      type="date"
+                      value={fscValidityDate}
+                      onChange={(e) => setFscValidityDate(e.target.value)}
+                      className="w-full px-2.5 py-1.5 rounded border border-slate-300 text-xs"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                      Existing Fire NOC Ref. Number (If Supplied)
+                    </label>
+                    <input
+                      type="text"
+                      value={fireNocNumber}
+                      onChange={(e) => setFireNocNumber(e.target.value)}
+                      placeholder="Client-supplied Fire NOC reference"
+                      className="w-full px-2.5 py-1.5 rounded border border-slate-300 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                      Fire NOC Issue Date (If Supplied)
+                    </label>
+                    <input
+                      type="date"
+                      value={fireNocIssueDate}
+                      onChange={(e) => setFireNocIssueDate(e.target.value)}
+                      className="w-full px-2.5 py-1.5 rounded border border-slate-300 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                      Fire NOC Expiry / Validity Date (If Supplied)
+                    </label>
+                    <input
+                      type="date"
+                      value={fireNocExpiryDate}
+                      onChange={(e) => setFireNocExpiryDate(e.target.value)}
+                      className="w-full px-2.5 py-1.5 rounded border border-slate-300 text-xs"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowJurisdictionEditor(false)}
+                className="px-3 py-1 rounded border border-slate-300 text-slate-600 text-xs font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={savingBuildingFields}
+                onClick={handleSaveJurisdictionFields}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded bg-[#EA580C] hover:bg-[#C2410C] text-white text-xs font-bold cursor-pointer"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>{savingBuildingFields ? 'Saving...' : 'Save Reference Details'}</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Inline Recipient Contact Drawer */}
         {showContactEditor && (
@@ -528,7 +893,7 @@ export default function ComplianceReportPage() {
                 value={clientEmail}
                 onChange={(e) => setClientEmail(e.target.value)}
                 placeholder="e.g. facility.manager@client.com"
-                className="w-full px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600"
+                className="w-full px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-[#EA580C]"
               />
             </div>
           </div>
@@ -536,76 +901,107 @@ export default function ComplianceReportPage() {
       </div>
 
       {/* ========================================================================= */}
-      {/* PAGE 1: COVER PAGE                                                         */}
+      {/* PAGE 1: REPORT COVER & INSPECTION SUMMARY (Steps 2, 3, 6, 7, 9)           */}
       {/* ========================================================================= */}
       <div
         data-testid="report-page-1-cover"
-        className="max-w-[210mm] mx-auto bg-white shadow-2xl border border-slate-200 rounded-sm sm:p-12 p-6 text-slate-900 print:shadow-none print:border-none print:max-w-none print:p-0 mb-8 flex flex-col justify-between min-h-[275mm]"
+        className="max-w-[210mm] mx-auto bg-white shadow-2xl border border-slate-200 rounded-sm sm:p-10 p-6 text-slate-900 print:shadow-none print:border-none print:max-w-none print:p-0 mb-8 flex flex-col justify-between min-h-[275mm]"
       >
         <div>
-          {/* AMC Company Letterhead */}
-          <div className="border-b-2 border-slate-900 pb-5 mb-6">
+          {/* Servicing Agency Header (Step 7: Verified / Unverified Credential Display) */}
+          <div className="border-b-2 border-slate-900 pb-4 mb-5">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-              <div className="flex items-start gap-4">
+              <div className="flex items-start gap-3.5">
                 {company?.brandLogoUrl && (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img
                     src={company.brandLogoUrl}
                     alt={company?.name || 'Agency Logo'}
                     data-testid="report-brand-logo"
-                    className="h-14 w-auto max-w-[150px] object-contain rounded border border-slate-200 p-1 bg-white shrink-0"
+                    className="h-14 w-auto max-w-[140px] object-contain rounded border border-slate-200 p-1 bg-white shrink-0"
                   />
                 )}
                 <div>
-                  <div className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 uppercase">
-                    {company?.name || 'Vigil Fire & Safety Solutions'}
+                  <div className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 uppercase">
+                    {company?.name || 'Service Agency'}
                   </div>
-                  <p className="text-xs font-bold text-[#C2410C] mt-0.5">
-                    Govt. Licensed Fire Safety Agency &bull; Lic: {company?.licenseNumber || 'DL/FIRE/LIC/2026/042'}
-                    {company?.gstin ? ` • GSTIN: ${company.gstin}` : ''}
-                  </p>
+                  <div className="text-[11px] font-semibold text-slate-700 mt-0.5 flex flex-wrap items-center gap-1.5">
+                    <span>Fire Safety Inspection &amp; Maintenance Servicing Agency</span>
+                    {company?.licenseNumber ? (
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                          company.isLicenseVerified
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                            : 'bg-amber-50 text-amber-800 border-amber-300'
+                        }`}
+                      >
+                        License Ref: {company.licenseNumber} ({company.licenseVerificationLabel})
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-300">
+                        Agency License: Not Provided
+                      </span>
+                    )}
+                    {company?.gstin ? (
+                      <span className="font-mono text-[10px] text-slate-600">&bull; GSTIN: {company.gstin}</span>
+                    ) : null}
+                  </div>
                   <p className="text-[11px] text-slate-600 mt-1 max-w-lg leading-relaxed">
-                    {company?.address || 'Official Registered Fire Equipment Service Station'} &bull; Phone:{' '}
-                    {company?.phone || '+91 83838 90483'} &bull; Email: {company?.email || 'vigilamc@gmail.com'}
+                    {company?.address || 'Address Not Provided'} &bull; Phone: {company?.phone || 'Not Provided'} &bull;
+                    Email: {company?.email || 'Not Provided'}
                   </p>
                 </div>
               </div>
 
               <div className="text-left sm:text-right shrink-0">
-                <span className="font-mono text-xs font-black text-slate-900 bg-slate-100 px-3 py-1.5 rounded border border-slate-300 block sm:inline-block">
-                  Ref: {report?.reportNumber || `FORM-B/${new Date().getFullYear()}`}
+                <span className="font-mono text-xs font-black text-slate-900 bg-slate-100 px-3 py-1 rounded border border-slate-300 block sm:inline-block">
+                  Ref: {report?.reportNumber || 'VAMC-RPT'}
                 </span>
-                <div className="text-[11px] text-slate-600 mt-1.5 font-medium">
-                  Issue Date: <strong className="text-slate-900">{reportDateFormatted}</strong>
+                <div className="text-[11px] text-slate-600 mt-1 font-medium">
+                  Report Date: <strong className="text-slate-900">{reportDateFormatted}</strong>
                 </div>
                 <div className="text-[11px] text-slate-600 font-medium">
-                  Audit Cycle: <strong className="text-slate-900">{auditCycleDisplay}</strong>
+                  Reporting Period: <strong className="text-slate-900">{auditCycleDisplay}</strong>
+                </div>
+                <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                  Template: {jurisdictionConfig.reportTemplateName}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Document Title Block */}
-          <div className="text-center py-4 px-3 bg-gradient-to-r from-slate-50 via-[#FFF8F2] to-slate-50 border border-slate-200 rounded-xl mb-6">
-            <span className="inline-block text-[10px] font-black tracking-wider uppercase bg-[#C2410C] text-white px-3 py-0.5 rounded-full mb-1">
-              Official Statutory Form &apos;B&apos; Certificate
-            </span>
-            <h1 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-slate-900">
-              Fire Safety Compliance &amp; Equipment Maintenance Report
+          {/* Document Title Block (Step 2: Default Title & Subtitle, Never "Official Form-B Certificate") */}
+          <div className="text-center py-4 px-4 bg-[#FFF8F2] border border-[#FED7AA] rounded-xl mb-5">
+            <div className="flex items-center justify-center gap-2 flex-wrap mb-1.5">
+              <span className="inline-block text-[10px] font-black tracking-wider uppercase bg-[#1C1917] text-white px-3 py-0.5 rounded-full">
+                {activeReportType.name}
+              </span>
+              <span className="inline-block text-[10px] font-bold tracking-wide uppercase bg-white text-[#C2410C] border border-[#FED7AA] px-2.5 py-0.5 rounded-full">
+                Jurisdiction: {jurisdictionConfig.state} ({jurisdictionConfig.cityOrRegion})
+              </span>
+            </div>
+            <h1
+              data-testid="report-main-title"
+              className="text-lg sm:text-2xl font-black uppercase tracking-tight text-slate-900"
+            >
+              {activeReportType.title}
             </h1>
-            <p className="text-xs text-slate-700 font-semibold mt-1">
-              Pursuant to {building?.complianceRuleName || building?.complianceCycle || 'NBC 2016 Part 4 & IS 2190:2010'}
+            <p
+              data-testid="report-main-subtitle"
+              className="text-xs text-slate-700 font-semibold mt-1"
+            >
+              {activeReportType.subtitle}
             </p>
           </div>
 
-          {/* Premise & Client Entity Details */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 mb-6 grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs">
+          {/* Premise, Client & Jurisdiction Statutory Reference Details (Step 3) */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-5 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div className="space-y-1">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
-                Audited Facility / Premise:
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider block">
+                1. Inspected Premises &amp; Building Details
               </span>
-              <div className="font-black text-base text-slate-900">{building?.name || 'Commercial Facility'}</div>
-              <div className="text-slate-700 leading-snug flex items-start gap-1 pt-0.5">
+              <div className="font-black text-sm text-slate-900">{building?.name || 'Registered Premises'}</div>
+              <div className="text-slate-700 leading-snug flex items-start gap-1">
                 <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-0.5" />
                 <span>
                   {building?.address || '—'}
@@ -613,318 +1009,427 @@ export default function ComplianceReportPage() {
                   {building?.state ? `, ${building.state}` : ''}
                 </span>
               </div>
-              <div className="text-[11px] text-slate-500 pt-1">
-                Compliance Regime:{' '}
-                <strong className="text-slate-800">
-                  {building?.complianceCycle || 'Half-Yearly Mandatory Statutory Filing'}
+              <div className="text-[11px] text-slate-600 pt-0.5">
+                Occupancy Classification:{' '}
+                <strong className="text-slate-900">{building?.occupancyType || 'Not Specified'}</strong>
+                {building?.buildingHeight ? (
+                  <>
+                    {' '}
+                    &bull; Height: <strong className="text-slate-900">{building.buildingHeight}</strong>
+                  </>
+                ) : null}
+              </div>
+              <div className="text-[11px] text-slate-600">
+                District / Local Authority:{' '}
+                <strong className="text-slate-900">
+                  {building?.localAuthority || jurisdictionConfig.referenceFields.localAuthorityDefault}
                 </strong>
               </div>
             </div>
 
-            <div className="space-y-1 sm:border-l sm:border-slate-200 sm:pl-5">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
-                Client / Facility Authority:
+            <div className="space-y-1 sm:border-l sm:border-slate-200 sm:pl-4">
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider block">
+                2. Client Details &amp; Supplied Statutory Reference
               </span>
-              <div className="font-bold text-sm text-slate-900">{building?.client?.name || 'Registered Client'}</div>
-              <div className="text-slate-700 leading-snug">
-                Authorized Contact: <strong>{building?.client?.contactPerson || 'Facility Manager / Estate Officer'}</strong>
+              <div className="font-bold text-sm text-slate-900">{building?.client?.name || 'Premises Management'}</div>
+              <div className="text-slate-700">
+                Contact Representative: <strong>{building?.client?.contactPerson || 'Not Specified'}</strong>
               </div>
-              <div className="text-slate-600 pt-0.5">
-                Phone: {building?.client?.phone || 'On Record'} &bull; Email: {building?.client?.email || 'On Record'}
-              </div>
-              <div className="text-[11px] text-slate-500 pt-1">
-                Verification Route: <strong className="text-slate-800 font-mono">Asset Tag ID + Physical Audit</strong>
-              </div>
+              {activeJurisdictionCode === 'DELHI' ? (
+                <div className="pt-1 border-t border-slate-200 mt-1 text-[11px] space-y-0.5">
+                  <div>
+                    <span className="text-slate-600">{jurisdictionConfig.referenceFields.numberFieldLabel}:</span>{' '}
+                    <strong className="font-mono text-slate-900">
+                      {building?.fscNumber || 'Not Supplied by Client'}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-600">{jurisdictionConfig.referenceFields.validityDateLabel}:</span>{' '}
+                    <strong className="text-slate-900">
+                      {building?.fscValidityDate ? formatSafeDate(building.fscValidityDate) : 'Not Supplied'}
+                    </strong>
+                  </div>
+                </div>
+              ) : (
+                <div className="pt-1 border-t border-slate-200 mt-1 text-[11px] space-y-0.5">
+                  <div>
+                    <span className="text-slate-600">{jurisdictionConfig.referenceFields.numberFieldLabel}:</span>{' '}
+                    <strong className="font-mono text-slate-900">
+                      {building?.fireNocNumber || 'Not Supplied by Client'}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-600">Issue / Expiry Date (As Supplied):</span>{' '}
+                    <strong className="text-slate-900">
+                      {building?.fireNocIssueDate ? formatSafeDate(building.fireNocIssueDate) : '—'} /{' '}
+                      {building?.fireNocExpiryDate ? formatSafeDate(building.fireNocExpiryDate) : 'Not Supplied'}
+                    </strong>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* SUMMARY STRIP (Mandatory: total assets · compliant % · overdue · open findings) */}
-          <div className="mb-6">
-            <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">
-              Statutory Compliance Summary Strip (Real Data Audit)
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-3.5 bg-slate-50 border border-slate-300 rounded-xl text-center">
-                <div className="text-[10px] font-bold text-slate-500 uppercase">Total Assets</div>
-                <div className="text-2xl font-black text-slate-900 tabular-nums">{totalCount}</div>
-                <div className="text-[10px] text-slate-500 font-medium">Logged in Schedule</div>
+          {/* Step 6: Overall Inspection Status & Summary of Actual Inspection Data */}
+          <div className="mb-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+              <div className="text-[10px] font-black uppercase tracking-wider text-slate-600">
+                3. Inspection Status &amp; Actual Equipment Summary
               </div>
-
-              <div className="p-3.5 bg-emerald-50 border border-emerald-300 rounded-xl text-center">
-                <div className="text-[10px] font-bold text-emerald-800 uppercase">Compliant %</div>
-                <div className="text-2xl font-black text-emerald-700 tabular-nums">{compliantPercent}%</div>
-                <div className="text-[10px] text-emerald-700 font-semibold">{compliantCount} of {totalCount} Operational</div>
-              </div>
-
-              <div className={`p-3.5 rounded-xl border text-center ${overdueCount > 0 ? 'bg-rose-50 border-rose-300' : 'bg-slate-50 border-slate-200'}`}>
-                <div className={`text-[10px] font-bold uppercase ${overdueCount > 0 ? 'text-rose-800' : 'text-slate-500'}`}>
-                  Overdue
-                </div>
-                <div className={`text-2xl font-black tabular-nums ${overdueCount > 0 ? 'text-[#DC2626]' : 'text-slate-800'}`}>
-                  {overdueCount}
-                </div>
-                <div className={`text-[10px] font-medium ${overdueCount > 0 ? 'text-rose-700 font-bold' : 'text-slate-500'}`}>
-                  {overdueCount > 0 ? 'Requires Service' : 'Zero Overdue'}
-                </div>
-              </div>
-
-              <div className={`p-3.5 rounded-xl border text-center ${openFindingsCount > 0 ? 'bg-amber-50 border-amber-300' : 'bg-slate-50 border-slate-200'}`}>
-                <div className={`text-[10px] font-bold uppercase ${openFindingsCount > 0 ? 'text-amber-800' : 'text-slate-500'}`}>
-                  Open Findings
-                </div>
-                <div className={`text-2xl font-black tabular-nums ${openFindingsCount > 0 ? 'text-[#D97706]' : 'text-slate-800'}`}>
-                  {openFindingsCount}
-                </div>
-                <div className={`text-[10px] font-medium ${openFindingsCount > 0 ? 'text-amber-800 font-bold' : 'text-slate-500'}`}>
-                  {openFindingsCount > 0 ? 'Corrective Actions' : 'All Rectified'}
-                </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase text-slate-500">Report Status:</span>
+                <span
+                  data-testid="report-status-badge"
+                  className={`px-3 py-0.5 rounded-full text-xs font-black uppercase border ${getReportStatusBadgeStyle(
+                    statusBadgeColor
+                  )}`}
+                >
+                  {reportStatus}
+                </span>
               </div>
             </div>
-          </div>
 
-          {/* Compliance Status Banner */}
-          <div
-            className={`p-4 rounded-xl border mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 ${
-              hasZeroEquipment
-                ? 'bg-amber-50 border-amber-300 text-amber-950'
-                : isCompliant
-                ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
-                : 'bg-red-50 border-red-300 text-red-950'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-white shrink-0 shadow-xs ${
-                  hasZeroEquipment ? 'bg-amber-600' : isCompliant ? 'bg-emerald-600' : 'bg-red-600'
-                }`}
-              >
-                {hasZeroEquipment ? (
-                  <Clock className="w-7 h-7" />
-                ) : isCompliant ? (
-                  <ShieldCheck className="w-7 h-7" />
+            {/* Status Banner (Enforces Zero Asset Rule & Incomplete Inspection Rule) */}
+            <div
+              data-testid="report-status-banner"
+              className={`p-3.5 rounded-xl border mb-3 flex items-start gap-3 ${getReportStatusBadgeStyle(
+                statusBadgeColor
+              )}`}
+            >
+              <div className="shrink-0 mt-0.5">
+                {statusBadgeColor === 'green' ? (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-700" />
+                ) : statusBadgeColor === 'orange' ? (
+                  <Clock className="w-5 h-5 text-amber-700" />
+                ) : statusBadgeColor === 'red' ? (
+                  <AlertTriangle className="w-5 h-5 text-rose-700" />
                 ) : (
-                  <AlertTriangle className="w-7 h-7" />
+                  <AlertCircle className="w-5 h-5 text-slate-600" />
                 )}
               </div>
-              <div>
-                <div className="text-base font-black uppercase tracking-wide">
-                  {hasZeroEquipment
-                    ? 'Pending Equipment Registration (0 Assets Logged)'
-                    : isCompliant
-                    ? 'Audit Result: FULLY COMPLIANT'
-                    : 'Audit Result: STATUTORY ACTION REQUIRED'}
-                </div>
-                <p className="text-xs text-slate-700 mt-0.5 leading-snug">
-                  {hasZeroEquipment
-                    ? 'No fire safety equipment units have been added to this building schedule yet. Add extinguishers, hydrants, or panels from the Dashboard.'
-                    : isCompliant
-                    ? 'All fire prevention and life safety installations in this building have undergone scheduled maintenance and are in proper working condition as per NBC 2016 Part 4.'
-                    : `${overdueCount} equipment item(s) require mandatory refill/overhaul or corrective servicing to restore statutory certification.`}
-                </p>
+              <div className="text-xs leading-relaxed">
+                <div className="font-black uppercase tracking-wide">{reportStatus}</div>
+                <p className="mt-0.5 font-medium">{statusBannerMessage}</p>
               </div>
             </div>
 
-            <div className="text-right shrink-0">
-              <div className="text-xs font-bold uppercase text-slate-600">Inventory Status</div>
-              <div className="text-sm font-black text-slate-900">
-                {compliantCount} / {totalCount} Operational
+            {/* 6-Column Metric Strip */}
+            <div className="grid grid-cols-2 sm:grid-cols-6 gap-2.5 text-center">
+              <div className="p-2.5 bg-slate-50 border border-slate-300 rounded-lg">
+                <div className="text-[9px] font-bold text-slate-500 uppercase">Registered</div>
+                <div className="text-lg font-black text-slate-900 tabular-nums">{totalCount}</div>
+                <div className="text-[9px] text-slate-500">Total Assets</div>
+              </div>
+              <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <div className="text-[9px] font-bold text-emerald-800 uppercase">Operational</div>
+                <div className="text-lg font-black text-emerald-700 tabular-nums">{operationalCount}</div>
+                <div className="text-[9px] text-emerald-700">Inspected OK</div>
+              </div>
+              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-lg">
+                <div className="text-[9px] font-bold text-rose-800 uppercase">Non-Operational</div>
+                <div className="text-lg font-black text-rose-700 tabular-nums">{nonOperationalCount}</div>
+                <div className="text-[9px] text-rose-700">Defective</div>
+              </div>
+              <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="text-[9px] font-bold text-amber-800 uppercase">Due Soon</div>
+                <div className="text-lg font-black text-amber-700 tabular-nums">{maintenanceDueCount}</div>
+                <div className="text-[9px] text-amber-700">&le; 30 Days</div>
+              </div>
+              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-lg">
+                <div className="text-[9px] font-bold text-rose-800 uppercase">Overdue</div>
+                <div className="text-lg font-black text-rose-700 tabular-nums">{overdueCount}</div>
+                <div className="text-[9px] text-rose-700">Past Due Date</div>
+              </div>
+              <div className="p-2.5 bg-slate-100 border border-slate-300 rounded-lg">
+                <div className="text-[9px] font-bold text-slate-700 uppercase">Not Inspected</div>
+                <div className="text-lg font-black text-slate-800 tabular-nums">{notInspectedCount}</div>
+                <div className="text-[9px] text-slate-600">
+                  {compliancePercentage !== null ? `Readiness: ${compliancePercentage}%` : 'Pending Audit'}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Digital GPS Stamp & Agency Signatory Block */}
-          <div className="pt-4 border-t border-slate-300 flex flex-col sm:flex-row items-center justify-between gap-6">
-            {/* GPS verification badge */}
+          {/* Step 3 & 4: Jurisdiction Legal Framework & Official Sources Box */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-5 text-xs space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                <Scale className="w-3.5 h-3.5 text-[#C2410C]" />
+                <span>4. Applicable Jurisdiction Reference Framework ({jurisdictionConfig.label})</span>
+              </span>
+              <span className="text-[10px] font-semibold text-slate-500">{jurisdictionConfig.department}</span>
+            </div>
+            <ul className="list-disc list-inside text-[11px] text-slate-700 space-y-0.5">
+              {jurisdictionConfig.legalFramework.map((item, i) => (
+                <li key={i}>{item}</li>
+              ))}
+            </ul>
+            <div className="p-2.5 rounded-lg bg-amber-50/80 border border-amber-200 text-[10.5px] text-amber-950 leading-relaxed">
+              {jurisdictionConfig.statutoryFormDistinction}
+            </div>
+            <div className="text-[10px] text-slate-600 flex flex-wrap items-center gap-x-4 gap-y-1 pt-1">
+              <span className="font-bold text-slate-700">Official Government Reference Portals:</span>
+              {jurisdictionConfig.primaryOfficialSources.map((src, idx) => (
+                <a
+                  key={idx}
+                  href={src.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[#C2410C] underline font-mono"
+                >
+                  <span>{src.label}</span>
+                  <ExternalLink className="w-2.5 h-2.5" />
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* Field GPS Telemetry & Agency Representative Verification Block */}
+          <div className="pt-3 border-t border-slate-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            {/* Step 9 Page 4 Rule: Only display GPS Verified when actual coordinates exist */}
             <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-300 max-w-sm w-full">
-              <div className="w-10 h-10 rounded-lg bg-[#1C1917] text-white flex flex-col items-center justify-center shrink-0">
-                <MapPin className="w-5 h-5 text-amber-400" />
+              <div className="w-9 h-9 rounded-lg bg-[#1C1917] text-white flex flex-col items-center justify-center shrink-0">
+                <MapPin className="w-4 h-4 text-amber-400" />
               </div>
               <div className="text-[10px] text-slate-700 space-y-0.5">
-                <div className="font-black text-slate-900 uppercase">GPS &amp; Timestamp Verified</div>
-                <p className="font-mono text-slate-800 font-bold">
-                  {data?.latestGpsInspection?.latitude != null && data?.latestGpsInspection?.longitude != null
-                    ? `${Number(data.latestGpsInspection.latitude).toFixed(4)}° N, ${Number(
-                        data.latestGpsInspection.longitude
-                      ).toFixed(4)}° E`
-                    : `Verified Facility: ${building?.address || 'On-Site Physical Audit'}`}
-                </p>
-                <div className="text-slate-500 text-[9px]">
-                  Audited by: <strong>{data?.latestGpsInspection?.technicianName || 'Certified Technician'}</strong>
-                </div>
+                {data?.latestGpsInspection?.latitude != null && data?.latestGpsInspection?.longitude != null ? (
+                  <>
+                    <div className="font-black text-emerald-800 uppercase">GPS Coordinates Recorded</div>
+                    <p className="font-mono text-slate-800 font-bold">
+                      {Number(data.latestGpsInspection.latitude).toFixed(4)}° N,{' '}
+                      {Number(data.latestGpsInspection.longitude).toFixed(4)}° E
+                    </p>
+                    <div className="text-slate-500 text-[9px]">
+                      Recorded by: <strong>{data.latestGpsInspection.technicianName || 'Field Service Technician'}</strong>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="font-black text-slate-700 uppercase">GPS Telemetry Not Recorded</div>
+                    <p className="text-slate-600">
+                      No GPS coordinates were captured for this building’s current inspection cycle.
+                    </p>
+                  </>
+                )}
               </div>
             </div>
 
-            {/* Signatory block */}
-            <div className="text-right space-y-1" data-testid="report-signatory-block">
+            {/* Agency Signatory Block */}
+            <div className="text-right space-y-0.5 ml-auto" data-testid="report-signatory-block">
               {company?.signatorySignatureUrl && (
                 <div className="flex justify-end mb-1">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={company.signatorySignatureUrl}
-                    alt="Authorized Signatory Signature"
+                    alt="Authorized Representative Signature"
                     data-testid="report-signatory-signature"
-                    className="h-10 w-auto max-w-[160px] object-contain"
+                    className="h-9 w-auto max-w-[150px] object-contain"
                   />
                 </div>
               )}
-              <div className="h-8 flex items-center justify-end">
-                <span className="font-serif italic text-base font-bold text-slate-900">{signatoryName}</span>
+              <div className="font-serif italic text-sm font-bold text-slate-900">{signatoryName}</div>
+              <div className="font-bold text-[11px] text-slate-900">
+                {company?.signatoryDesignation || 'Authorized Agency Representative'}
               </div>
-              <div className="font-bold text-xs text-slate-900">
-                {company?.signatoryDesignation || 'Authorized Inspecting Officer'}
+              <div className="text-[10.5px] text-slate-600">
+                For <strong>{company?.name || 'Service Agency'}</strong>
               </div>
-              <div className="text-[11px] text-slate-600">
-                For <strong>{company?.name || 'Vigil Fire & Safety Solutions'}</strong>
-              </div>
-              <div className="text-[10px] text-slate-500">
-                Govt. Licensed Fire Safety Agency (Lic: {company?.licenseNumber || 'DL/FIRE/LIC/2026/042'})
+              <div className="text-[9.5px] text-slate-500">
+                {company?.licenseNumber
+                  ? `Submitted Agency License Ref: ${company.licenseNumber} (${company.licenseVerificationLabel})`
+                  : 'Private Fire Safety AMC Inspection & Maintenance Record'}
               </div>
             </div>
           </div>
         </div>
 
         {/* Page 1 Footer */}
-        <StatutoryFooter pageNumber={1} totalPages={totalPages} />
+        <ReportPageFooter pageNumber={1} />
       </div>
 
       {/* ========================================================================= */}
-      {/* PAGE 2: EXECUTIVE SUMMARY & NEXT-DUE SCHEDULE                             */}
+      {/* PAGE 2: FIRE SAFETY EQUIPMENT SUMMARY & APPLICABLE STANDARDS (Step 5 & 9)  */}
       {/* ========================================================================= */}
       <div
         data-testid="report-page-2-summary"
-        className="max-w-[210mm] mx-auto bg-white shadow-2xl border border-slate-200 rounded-sm sm:p-12 p-6 text-slate-900 print:shadow-none print:border-none print:max-w-none print:p-0 mb-8 print-page-break flex flex-col justify-between min-h-[275mm]"
+        className="max-w-[210mm] mx-auto bg-white shadow-2xl border border-slate-200 rounded-sm sm:p-10 p-6 text-slate-900 print:shadow-none print:border-none print:max-w-none print:p-0 mb-8 print-page-break flex flex-col justify-between min-h-[275mm]"
       >
         <div>
-          {/* Section Header */}
-          <div className="border-b-2 border-slate-900 pb-3 mb-6 flex items-center justify-between">
+          <div className="border-b-2 border-slate-900 pb-3 mb-5 flex items-center justify-between">
             <div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-[#C2410C]">Section 01</span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#C2410C]">Page 2 &bull; Section 01</span>
               <h2 className="text-lg sm:text-xl font-black uppercase text-slate-900">
-                Executive Compliance Summary &amp; Maintenance Radar
+                Fire Safety Equipment Summary &amp; Applicable Standards
               </h2>
             </div>
             <div className="text-right text-[11px] text-slate-500 font-mono">
-              Ref: {report?.reportNumber || 'FORM-B'}
+              Ref: {report?.reportNumber || 'VAMC-RPT'}
             </div>
           </div>
 
-          {/* Status Legend */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6">
-            <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2.5">
-              Auditor Status Legend &amp; Compliance Thresholds
+          {/* Equipment Breakdown Table */}
+          <div className="mb-5">
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 mb-2">
+              1. Equipment Operational &amp; Inspection Status Breakdown
+            </h3>
+            <div className="border border-slate-300 rounded-lg overflow-hidden">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-100 text-slate-800 uppercase text-[10px] font-bold border-b border-slate-300">
+                  <tr>
+                    <th className="py-2 px-3 border-r border-slate-300">Metric Category</th>
+                    <th className="py-2 px-3 border-r border-slate-300 text-center">Count</th>
+                    <th className="py-2 px-3 border-r border-slate-300">Status Classification</th>
+                    <th className="py-2 px-3">Definition &amp; Verification Basis</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  <tr>
+                    <td className="py-2 px-3 font-bold text-slate-900 border-r border-slate-200">Total Registered Equipment</td>
+                    <td className="py-2 px-3 text-center font-mono font-bold border-r border-slate-200">{totalCount}</td>
+                    <td className="py-2 px-3 border-r border-slate-200">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">Inventory Base</span>
+                    </td>
+                    <td className="py-2 px-3 text-slate-600 text-[11px]">
+                      Total fire protection units registered in the VigilAMC asset register for this premises.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 font-bold text-emerald-800 border-r border-slate-200">Operational Equipment</td>
+                    <td className="py-2 px-3 text-center font-mono font-bold text-emerald-700 border-r border-slate-200">
+                      {operationalCount}
+                    </td>
+                    <td className="py-2 px-3 border-r border-slate-200">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
+                        GREEN &bull; Operational
+                      </span>
+                    </td>
+                    <td className="py-2 px-3 text-slate-600 text-[11px]">
+                      Equipment with a documented inspection record, satisfactory condition, and valid service window.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 font-bold text-rose-800 border-r border-slate-200">Non-Operational Equipment</td>
+                    <td className="py-2 px-3 text-center font-mono font-bold text-rose-700 border-r border-slate-200">
+                      {nonOperationalCount}
+                    </td>
+                    <td className="py-2 px-3 border-r border-slate-200">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-800 border border-rose-300">
+                        RED &bull; Defect / Action Required
+                      </span>
+                    </td>
+                    <td className="py-2 px-3 text-slate-600 text-[11px]">
+                      Equipment with physical damage, low/abnormal pressure, failed inspection, or pending replacement/repair.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 font-bold text-amber-800 border-r border-slate-200">Maintenance Due Equipment</td>
+                    <td className="py-2 px-3 text-center font-mono font-bold text-amber-700 border-r border-slate-200">
+                      {maintenanceDueCount}
+                    </td>
+                    <td className="py-2 px-3 border-r border-slate-200">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300">
+                        ORANGE &bull; Due Soon (&le;30d)
+                      </span>
+                    </td>
+                    <td className="py-2 px-3 text-slate-600 text-[11px]">
+                      Equipment scheduled for periodic maintenance, refill, or testing within the next 30 calendar days.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 font-bold text-rose-800 border-r border-slate-200">Overdue Equipment</td>
+                    <td className="py-2 px-3 text-center font-mono font-bold text-rose-700 border-r border-slate-200">
+                      {overdueCount}
+                    </td>
+                    <td className="py-2 px-3 border-r border-slate-200">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-800 border border-rose-300">
+                        RED &bull; Overdue
+                      </span>
+                    </td>
+                    <td className="py-2 px-3 text-slate-600 text-[11px]">
+                      Equipment whose scheduled next service or hydro-testing due date has elapsed.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 font-bold text-slate-700 border-r border-slate-200">Not Inspected Equipment</td>
+                    <td className="py-2 px-3 text-center font-mono font-bold text-slate-700 border-r border-slate-200">
+                      {notInspectedCount}
+                    </td>
+                    <td className="py-2 px-3 border-r border-slate-200">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-300">
+                        GREY &bull; Not Inspected
+                      </span>
+                    </td>
+                    <td className="py-2 px-3 text-slate-600 text-[11px]">
+                      Registered equipment with no documented field inspection record in the current cycle.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-              <div className="p-2.5 rounded-lg bg-white border border-emerald-300 flex items-start gap-2.5">
-                <span className="w-4 h-4 rounded-full bg-[#059669] shrink-0 mt-0.5" />
-                <div>
-                  <div className="font-extrabold text-[#059669] text-xs">OK / VERIFIED (#059669)</div>
-                  <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">
-                    Equipment tested, pressure gauge in normal zone, weight within permissible 10% limit, valid AMC.
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-2.5 rounded-lg bg-white border border-amber-300 flex items-start gap-2.5">
-                <span className="w-4 h-4 rounded-full bg-[#D97706] shrink-0 mt-0.5" />
-                <div>
-                  <div className="font-extrabold text-[#D97706] text-xs">DUE SOON (#D97706)</div>
-                  <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">
-                    Periodic inspection or annual refill due within next 30 days. Auto work order dispatched.
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-2.5 rounded-lg bg-white border border-rose-300 flex items-start gap-2.5">
-                <span className="w-4 h-4 rounded-full bg-[#DC2626] shrink-0 mt-0.5" />
-                <div>
-                  <div className="font-extrabold text-[#DC2626] text-xs">EXPIRED / OVERDUE (#DC2626)</div>
-                  <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">
-                    Mandatory service expired, hydro test overdue, or physical defect observed. Non-compliant for Form-B.
-                  </p>
-                </div>
-              </div>
-            </div>
+            <p className="text-[10px] text-slate-500 mt-1.5 italic">{compliance?.formulaDescription}</p>
           </div>
 
-          {/* Key Findings Bullet List (from Corrective Actions & Observations) */}
-          <div className="mb-6">
+          {/* Step 5: Applicable Indian Standards (BIS) Per Registered Equipment Category */}
+          <div className="mb-5">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
-                <AlertCircle className="w-4 h-4 text-[#C2410C]" />
-                <span>Key Findings &amp; High-Priority Observations</span>
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-900">
+                2. Applicable Indian Standards (BIS) By Registered Equipment Category
               </h3>
-              <span className="text-[11px] font-semibold text-slate-500">
-                {keyFindings.length} active findings recorded
-              </span>
+              <a
+                href="https://standards.bis.gov.in/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] font-mono text-[#C2410C] underline"
+              >
+                Source: https://standards.bis.gov.in/
+              </a>
             </div>
 
-            {keyFindings.length === 0 ? (
-              <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/70 text-emerald-900 text-xs flex items-center gap-2.5">
-                <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>
-                  <strong>Nil Adverse Observations:</strong> All fire safety installations across this premise are currently in
-                  sound operational condition with zero outstanding corrective actions.
-                </span>
+            {applicableStandardsDetailed.length === 0 ? (
+              <div className="p-3.5 rounded-lg border border-slate-300 bg-slate-50 text-xs text-slate-600">
+                No equipment categories are currently registered for this premises. Applicable BIS technical standards
+                (such as <strong>IS 2190:2024</strong> for portable/mobile first-aid fire extinguishers) are displayed only
+                when matching equipment categories are registered.
               </div>
             ) : (
-              <div className="space-y-2">
-                {keyFindings.map((finding: any, idx: number) => {
-                  const isHigh = finding.severity === 'HIGH' || finding.severity === 'CRITICAL';
-                  const ageDays = calculateAgeDays(finding.openedAt);
-                  return (
-                    <div
-                      key={finding.id || idx}
-                      className="p-3 rounded-lg border border-slate-200 bg-slate-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
-                    >
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
-                              isHigh ? 'bg-red-100 text-red-800 border border-red-200' : 'bg-amber-100 text-amber-800 border border-amber-200'
-                            }`}
-                          >
-                            {finding.severity || 'MEDIUM'}
-                          </span>
-                          <span className="font-mono font-bold text-slate-900">
-                            Asset: {finding.assetRef || 'Facility'}
-                          </span>
-                          <span className="text-slate-400">&bull;</span>
-                          <span className="text-[11px] text-slate-500">Age: {ageDays} days open</span>
-                        </div>
-                        <div className="font-bold text-slate-900">{finding.title}</div>
-                        {finding.description && (
-                          <div className="text-[11px] text-slate-600 leading-snug">{finding.description}</div>
-                        )}
-                      </div>
-
-                      <div className="shrink-0 text-left sm:text-right">
-                        <span
-                          className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-md inline-block ${
-                            finding.status === 'CLOSED'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : finding.status === 'REPAIRED'
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-rose-100 text-rose-800'
-                          }`}
-                        >
-                          {finding.status || 'OPEN'}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="border border-slate-300 rounded-lg overflow-hidden">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-100 text-slate-800 uppercase text-[10px] font-bold border-b border-slate-300">
+                    <tr>
+                      <th className="py-2 px-3 border-r border-slate-300">Equipment Category</th>
+                      <th className="py-2 px-3 border-r border-slate-300">BIS Standard &amp; Revision</th>
+                      <th className="py-2 px-3">Verified Scope of Applicability</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {applicableStandardsDetailed.map((std: any, idx: number) => (
+                      <tr key={std.categoryCode || idx}>
+                        <td className="py-2 px-3 font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap">
+                          {std.categoryLabel}
+                        </td>
+                        <td className="py-2 px-3 font-mono font-bold text-[#C2410C] border-r border-slate-200 whitespace-nowrap">
+                          <div>{std.standardCode}</div>
+                          <div className="text-[9.5px] text-slate-500 font-sans font-normal">{std.revisionOrVersion}</div>
+                        </td>
+                        <td className="py-2 px-3 text-[11px] text-slate-600 leading-snug">
+                          <div className="font-semibold text-slate-800">{std.title}</div>
+                          <div>{std.scopeDescription}</div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
 
-          {/* Next-Due Schedule Table */}
-          <div className="mb-4">
+          {/* Next Service Dates Schedule */}
+          <div>
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
                 <Calendar className="w-4 h-4 text-[#C2410C]" />
-                <span>Next-Due Statutory Maintenance Radar (Next 10 Assets)</span>
+                <span>3. Upcoming &amp; Next Service Due Dates (Top 10 Registered Units)</span>
               </h3>
-              <span className="text-[11px] text-slate-500">IS 2190 &amp; IS 3844 Maintenance Schedule</span>
             </div>
 
             <div className="border border-slate-300 rounded-lg overflow-hidden">
@@ -932,73 +1437,52 @@ export default function ComplianceReportPage() {
                 <thead className="bg-slate-100 text-slate-700 uppercase text-[10px] font-bold border-b border-slate-300">
                   <tr>
                     <th className="py-2 px-2.5 border-r border-slate-300 text-center">S.No</th>
-                    <th className="py-2 px-3 border-r border-slate-300">Asset Tag ID</th>
-                    <th className="py-2 px-3 border-r border-slate-300">Equipment Type</th>
-                    <th className="py-2 px-3 border-r border-slate-300">Floor &amp; Premise Location</th>
-                    <th className="py-2 px-3 border-r border-slate-300">Next Service Due</th>
-                    <th className="py-2 px-3 border-r border-slate-300">Window</th>
-                    <th className="py-2 px-3 text-right">Required Action</th>
+                    <th className="py-2 px-3 border-r border-slate-300">Equipment ID</th>
+                    <th className="py-2 px-3 border-r border-slate-300">Type &amp; Capacity</th>
+                    <th className="py-2 px-3 border-r border-slate-300">Floor &amp; Location</th>
+                    <th className="py-2 px-3 border-r border-slate-300">Last Service Date</th>
+                    <th className="py-2 px-3 border-r border-slate-300">Next Due Date</th>
+                    <th className="py-2 px-3 text-center">Inspection Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
                   {nextDueSchedule.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="py-4 px-3 text-center text-slate-500">
-                        No equipment maintenance dates scheduled yet.
+                        No equipment service due dates recorded for this premises.
                       </td>
                     </tr>
                   ) : (
-                    nextDueSchedule.map((eq, idx) => {
-                      const isOverdue = eq.currentStatus === 'OVERDUE';
-                      const isDueSoon = eq.currentStatus === 'DUE_SOON';
-                      const windowLabel = isOverdue
-                        ? 'OVERDUE'
-                        : isDueSoon
-                        ? 'Within 30 Days'
-                        : 'Routine Cycle';
-
-                      return (
-                        <tr key={eq.id || idx} className="hover:bg-slate-50">
-                          <td className="py-2 px-2.5 text-center text-slate-500 border-r border-slate-200">
-                            {idx + 1}
-                          </td>
-                          <td className="py-2 px-3 font-mono font-bold text-slate-900 border-r border-slate-200">
-                            {eq.qrCode || '—'}
-                          </td>
-                          <td className="py-2 px-3 font-semibold text-slate-800 border-r border-slate-200">
-                            {eq.type} ({eq.capacity || 'Standard'})
-                          </td>
-                          <td className="py-2 px-3 text-slate-600 border-r border-slate-200">
-                            {eq.location || '—'}
-                          </td>
-                          <td className="py-2 px-3 font-semibold border-r border-slate-200 whitespace-nowrap">
-                            <span
-                              className={
-                                isOverdue ? 'text-red-700 font-bold' : isDueSoon ? 'text-amber-700 font-bold' : 'text-slate-800'
-                              }
-                            >
-                              {formatSafeDate(eq.nextDueDate)}
-                            </span>
-                          </td>
-                          <td className="py-2 px-3 border-r border-slate-200 whitespace-nowrap">
-                            <span
-                              className={`text-[9px] font-bold px-2 py-0.5 rounded ${
-                                isOverdue
-                                  ? 'bg-red-100 text-red-800'
-                                  : isDueSoon
-                                  ? 'bg-amber-100 text-amber-800'
-                                  : 'bg-slate-100 text-slate-700'
-                              }`}
-                            >
-                              {windowLabel}
-                            </span>
-                          </td>
-                          <td className="py-2 px-3 text-right font-medium text-slate-700 whitespace-nowrap">
-                            {isOverdue ? 'Immediate Refill / Hydro Test' : isDueSoon ? 'Inspection & Weight Check' : 'Routine Quarterly Audit'}
-                          </td>
-                        </tr>
-                      );
-                    })
+                    nextDueSchedule.map((eq, idx) => (
+                      <tr key={eq.id || idx} className="hover:bg-slate-50">
+                        <td className="py-2 px-2.5 text-center text-slate-500 border-r border-slate-200">{idx + 1}</td>
+                        <td className="py-2 px-3 font-mono font-bold text-slate-900 border-r border-slate-200">
+                          {eq.qrCode || '—'}
+                        </td>
+                        <td className="py-2 px-3 font-semibold text-slate-800 border-r border-slate-200">
+                          {eq.type} {eq.capacity ? `(${eq.capacity})` : ''}
+                        </td>
+                        <td className="py-2 px-3 text-slate-600 border-r border-slate-200">
+                          {eq.floor ? `${eq.floor} • ` : ''}
+                          {eq.location || '—'}
+                        </td>
+                        <td className="py-2 px-3 text-slate-600 border-r border-slate-200 whitespace-nowrap">
+                          {eq.hasActualInspectionRecord ? formatSafeDate(eq.latestInspectionDate || eq.lastServiceDate) : 'Not Inspected'}
+                        </td>
+                        <td className="py-2 px-3 font-semibold border-r border-slate-200 whitespace-nowrap">
+                          {formatSafeDate(eq.nextDueDate)}
+                        </td>
+                        <td className="py-2 px-3 text-center whitespace-nowrap">
+                          <span
+                            className={`text-[9.5px] font-bold px-2 py-0.5 rounded border ${getReportStatusBadgeStyle(
+                              eq.badgeColor || 'grey'
+                            )}`}
+                          >
+                            {eq.statusLabel || eq.inspectionStatus}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
                   )}
                 </tbody>
               </table>
@@ -1007,129 +1491,108 @@ export default function ComplianceReportPage() {
         </div>
 
         {/* Page 2 Footer */}
-        <StatutoryFooter pageNumber={2} totalPages={totalPages} />
+        <ReportPageFooter pageNumber={2} />
       </div>
 
       {/* ========================================================================= */}
-      {/* PAGE 3: FULL ASSET REGISTER                                               */}
+      {/* PAGE 3: EQUIPMENT REGISTER (Step 9 Page 3)                                */}
       {/* ========================================================================= */}
       <div
         data-testid="report-page-3-register"
-        className="max-w-[210mm] mx-auto bg-white shadow-2xl border border-slate-200 rounded-sm sm:p-12 p-6 text-slate-900 print:shadow-none print:border-none print:max-w-none print:p-0 mb-8 print-page-break flex flex-col justify-between min-h-[275mm]"
+        className="max-w-[210mm] mx-auto bg-white shadow-2xl border border-slate-200 rounded-sm sm:p-10 p-6 text-slate-900 print:shadow-none print:border-none print:max-w-none print:p-0 mb-8 print-page-break flex flex-col justify-between min-h-[275mm]"
       >
         <div>
-          {/* Section Header */}
-          <div className="border-b-2 border-slate-900 pb-3 mb-6 flex items-center justify-between">
+          <div className="border-b-2 border-slate-900 pb-3 mb-5 flex items-center justify-between">
             <div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-[#C2410C]">Section 02</span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#C2410C]">Page 3 &bull; Section 02</span>
               <h2 className="text-lg sm:text-xl font-black uppercase text-slate-900">
-                Premise Fire Safety Asset Register &amp; Verification Schedule
+                Fire Safety Equipment Register
               </h2>
             </div>
             <div className="text-right text-[11px] text-slate-500 font-mono">
-              Total Assets: {equipments.length}
+              Total Registered Units: {equipments.length}
             </div>
           </div>
 
           <p className="text-xs text-slate-600 mb-4 leading-relaxed">
-            Every fire safety apparatus installed within <strong>{building?.name || 'this facility'}</strong> is catalogued
-            below with unique Asset Tag ID, capacity rating, physical floor/zone location, last certified servicing date, and
-            next statutory due date.
+            Complete register of fire safety equipment logged for <strong>{building?.name || 'this premises'}</strong>,
+            recording Equipment ID, Type, Make, Model, Capacity, Serial Number, Floor, Location, Last Service Date, Next Due
+            Date, and Actual Inspection Status.
           </p>
 
-          {/* Full Asset Register Table */}
           <div className="border border-slate-300 rounded-lg overflow-x-auto mb-6">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100 text-slate-800 uppercase text-[10px] font-bold border-b border-slate-300">
+            <table className="w-full text-left text-[11px]">
+              <thead className="bg-slate-100 text-slate-800 uppercase text-[9.5px] font-bold border-b border-slate-300">
                 <tr>
-                  <th className="py-2.5 px-2 border-r border-slate-300 text-center">S.No</th>
-                  <th className="py-2.5 px-3 border-r border-slate-300">Asset Tag ID</th>
-                  <th className="py-2.5 px-3 border-r border-slate-300">Type &amp; Capacity</th>
-                  <th className="py-2.5 px-3 border-r border-slate-300">Floor / Premise Zone</th>
-                  <th className="py-2.5 px-2.5 border-r border-slate-300">Make / Serial</th>
-                  <th className="py-2.5 px-2.5 border-r border-slate-300 whitespace-nowrap">Last Serviced</th>
-                  <th className="py-2.5 px-2.5 border-r border-slate-300 whitespace-nowrap">Next Due</th>
-                  <th className="py-2.5 px-2 text-center">Status</th>
+                  <th className="py-2 px-2 border-r border-slate-300 text-center">S.No</th>
+                  <th className="py-2 px-2.5 border-r border-slate-300">Equipment ID</th>
+                  <th className="py-2 px-2.5 border-r border-slate-300">Type &amp; Capacity</th>
+                  <th className="py-2 px-2.5 border-r border-slate-300">Make / Model / Serial No.</th>
+                  <th className="py-2 px-2.5 border-r border-slate-300">Floor &amp; Location</th>
+                  <th className="py-2 px-2 border-r border-slate-300 whitespace-nowrap">Last Service</th>
+                  <th className="py-2 px-2 border-r border-slate-300 whitespace-nowrap">Next Due</th>
+                  <th className="py-2 px-2.5 text-center">Actual Inspection Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {equipments.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-8 px-4 text-center text-slate-500 bg-slate-50/60">
-                      <p className="font-bold text-slate-700 text-xs mb-1">
-                        Pending Equipment Registration (0 Assets Logged)
-                      </p>
-                      <p className="text-[11px] text-slate-500 max-w-lg mx-auto">
-                        No fire safety equipment units have been added to this building schedule yet. Add extinguishers,
-                        hydrants, or panels from the Dashboard to complete this Form-B schedule.
-                      </p>
+                    <td colSpan={8} className="py-8 px-4 text-center text-slate-600 bg-slate-50">
+                      <p className="font-bold text-slate-800 text-xs mb-1">INSUFFICIENT DATA — 0 Registered Assets</p>
+                      <p className="text-[11px] text-slate-600 max-w-lg mx-auto">{ZERO_ASSET_MESSAGE}</p>
                     </td>
                   </tr>
                 ) : (
                   equipments.map((eq: any, index: number) => {
-                    const statusStr = String(eq?.currentStatus || eq?.status || 'COMPLIANT').toUpperCase();
-                    const isPass = statusStr === 'COMPLIANT' || statusStr === 'VERIFIED' || statusStr === 'OPERATIONAL';
-                    const isDue = statusStr === 'DUE_SOON';
-                    const isOver = statusStr === 'OVERDUE' || statusStr === 'DEFECTIVE';
                     const isEven = index % 2 === 0;
-
                     return (
-                      <tr key={eq?.id || index} className={isEven ? 'bg-white hover:bg-slate-50' : 'bg-slate-50/70 hover:bg-slate-100/70'}>
-                        <td className="py-2 px-2 text-slate-500 border-r border-slate-200 text-center font-mono text-[11px]">
+                      <tr
+                        key={eq?.id || index}
+                        className={isEven ? 'bg-white hover:bg-slate-50' : 'bg-slate-50/70 hover:bg-slate-100/70'}
+                      >
+                        <td className="py-2 px-2 text-slate-500 border-r border-slate-200 text-center font-mono">
                           {index + 1}
                         </td>
-                        <td className="py-2 px-3 font-mono font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap">
-                          {eq?.qrCode || '—'}
+                        <td className="py-2 px-2.5 font-mono font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap">
+                          <div>{eq?.qrCode || '—'}</div>
+                          <div className="text-[9px] text-slate-500 font-sans font-normal">{eq?.applicableStandard || ''}</div>
                         </td>
-                        <td className="py-2 px-3 font-semibold text-slate-800 border-r border-slate-200">
-                          <div>
-                            {eq?.type || 'Extinguisher'}
-                            {eq?.capacity ? ` (${eq.capacity})` : ''}
+                        <td className="py-2 px-2.5 font-semibold text-slate-800 border-r border-slate-200">
+                          <div>{eq?.type || 'Unspecified'}</div>
+                          <div className="text-[10px] text-slate-500 font-normal">
+                            Capacity: {eq?.capacity || 'Not Specified'}
                           </div>
-                          {eq?.inspectionNotes && (
-                            <div className="text-[10px] text-slate-500 font-normal mt-0.5 line-clamp-1">
-                              {eq.inspectionNotes}
-                            </div>
-                          )}
                         </td>
-                        <td className="py-2 px-3 text-slate-700 border-r border-slate-200">
-                          <div className="font-medium">{eq?.location || '—'}</div>
-                          {eq?.floor && <div className="text-[10px] text-slate-500">Floor: {eq.floor}</div>}
+                        <td className="py-2 px-2.5 text-slate-700 border-r border-slate-200 text-[10px]">
+                          <div>
+                            <strong>Make:</strong> {eq?.manufacturer || 'Not Specified'}
+                          </div>
+                          <div>
+                            <strong>Model:</strong> {eq?.model || 'Not Specified'}
+                          </div>
+                          <div className="font-mono text-[9.5px] text-slate-500">
+                            S/N: {eq?.serialNumber || 'Not Specified'}
+                          </div>
                         </td>
-                        <td className="py-2 px-2.5 text-slate-600 border-r border-slate-200 text-[11px]">
-                          <div>{eq?.manufacturer || eq?.model || 'ISI Mark'}</div>
-                          {eq?.serialNumber && (
-                            <div className="font-mono text-[9px] text-slate-400">S/N: {eq.serialNumber}</div>
-                          )}
+                        <td className="py-2 px-2.5 text-slate-700 border-r border-slate-200">
+                          <div className="font-semibold">{eq?.floor || 'Floor Not Specified'}</div>
+                          <div className="text-[10px] text-slate-600">{eq?.location || 'Location Not Specified'}</div>
                         </td>
-                        <td className="py-2 px-2.5 text-slate-600 border-r border-slate-200 whitespace-nowrap text-[11px]">
-                          {formatSafeDate(eq?.lastServiceDate)}
+                        <td className="py-2 px-2 text-slate-700 border-r border-slate-200 whitespace-nowrap text-[10px]">
+                          {eq?.hasActualInspectionRecord
+                            ? formatSafeDate(eq?.latestInspectionDate || eq?.lastServiceDate)
+                            : 'Not Inspected'}
                         </td>
-                        <td className="py-2 px-2.5 font-semibold border-r border-slate-200 whitespace-nowrap text-[11px]">
+                        <td className="py-2 px-2 font-semibold border-r border-slate-200 whitespace-nowrap text-[10px]">
+                          {formatSafeDate(eq?.nextDueDate)}
+                        </td>
+                        <td className="py-2 px-2.5 text-center whitespace-nowrap">
                           <span
-                            className={
-                              isOver ? 'text-red-700 font-bold' : isDue ? 'text-amber-700 font-bold' : 'text-slate-800'
-                            }
+                            className={`font-black text-[9.5px] px-2 py-0.5 rounded border inline-block ${getReportStatusBadgeStyle(
+                              eq?.badgeColor || 'grey'
+                            )}`}
                           >
-                            {formatSafeDate(eq?.nextDueDate)}
-                          </span>
-                          {eq?.hydroDueDate && (
-                            <div className="text-[9px] text-slate-400 font-normal">
-                              Hydro: {formatSafeDate(eq.hydroDueDate)}
-                            </div>
-                          )}
-                        </td>
-                        <td className="py-2 px-2 text-center whitespace-nowrap">
-                          <span
-                            className={`font-black text-[9px] px-2 py-0.5 rounded inline-block ${
-                              isPass
-                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                                : isDue
-                                ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                                : 'bg-red-100 text-red-800 border border-red-200'
-                            }`}
-                          >
-                            {isPass ? 'OK' : isDue ? 'DUE SOON' : 'ACTION'}
+                            {eq?.statusLabel || eq?.inspectionStatus || 'Not Inspected'}
                           </span>
                         </td>
                       </tr>
@@ -1139,128 +1602,141 @@ export default function ComplianceReportPage() {
               </tbody>
             </table>
           </div>
-
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-[11px] text-slate-600 flex items-start gap-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-            <span>
-              <strong>Statutory Asset Integrity Note:</strong> All equipment serials and physical locations have been verified
-              on-site by licensed technicians. Asset verification and service history can be audited at{' '}
-              <span className="font-mono font-bold text-slate-800">{getVerifyUrl()}</span>.
-            </span>
-          </div>
         </div>
 
         {/* Page 3 Footer */}
-        <StatutoryFooter pageNumber={3} totalPages={totalPages} />
+        <ReportPageFooter pageNumber={3} />
       </div>
 
       {/* ========================================================================= */}
-      {/* PAGE 4: INSPECTION EVIDENCE & FIELD PROOF                                 */}
+      {/* PAGE 4: FIELD INSPECTION EVIDENCE (Step 8 & Step 9 Page 4)                */}
       {/* ========================================================================= */}
       <div
         data-testid="report-page-4-evidence"
-        className="max-w-[210mm] mx-auto bg-white shadow-2xl border border-slate-200 rounded-sm sm:p-12 p-6 text-slate-900 print:shadow-none print:border-none print:max-w-none print:p-0 mb-8 print-page-break flex flex-col justify-between min-h-[275mm]"
+        className="max-w-[210mm] mx-auto bg-white shadow-2xl border border-slate-200 rounded-sm sm:p-10 p-6 text-slate-900 print:shadow-none print:border-none print:max-w-none print:p-0 mb-8 print-page-break flex flex-col justify-between min-h-[275mm]"
       >
         <div>
-          {/* Section Header */}
-          <div className="border-b-2 border-slate-900 pb-3 mb-6 flex items-center justify-between">
+          <div className="border-b-2 border-slate-900 pb-3 mb-5 flex items-center justify-between">
             <div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-[#C2410C]">Section 03</span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#C2410C]">Page 4 &bull; Section 03</span>
               <h2 className="text-lg sm:text-xl font-black uppercase text-slate-900">
-                Field Inspection Evidence &amp; Verification Stamps
+                Field Inspection Evidence &amp; Technician Verification Records
               </h2>
             </div>
             <div className="text-right text-[11px] text-slate-500 font-mono">
-              Total Inspections: {inspections.length}
+              Recorded Inspections: {inspections.length}
             </div>
           </div>
 
           <p className="text-xs text-slate-600 mb-4 leading-relaxed">
-            Inspection logs recorded by certified field technicians with tamper-evident GPS coordinates, on-site photo
-            thumbnails with burned-in stamps, checklist item outcomes, and digital signatory captures.
+            Documented field inspection logs showing actual uploaded photographs, capture timestamps, GPS verification status
+            (marked GPS Verified strictly when valid coordinates exist), assigned technician details, checklist parameters,
+            and field observations.
           </p>
 
-          {/* Inspection Records Grid */}
           {inspections.length === 0 ? (
-            <div className="p-8 border border-slate-200 rounded-xl bg-slate-50 text-center text-slate-500 text-xs mb-6">
+            <div className="p-8 border border-slate-200 rounded-xl bg-slate-50 text-center text-slate-600 text-xs mb-6">
               <Camera className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-              <p className="font-bold text-slate-700">No field inspection photos recorded yet</p>
+              <p className="font-bold text-slate-800">No Field Inspection Evidence Recorded</p>
               <p className="text-[11px] text-slate-500 mt-1">
-                Technicians capture real-time photo proof and GPS stamps via the VigilAMC Field App during scheduled audits.
+                No field inspection records or photographs have been submitted for this premises during the current reporting period.
               </p>
             </div>
           ) : (
             <div className="space-y-4 mb-6">
-              {inspections.slice(0, 4).map((insp: any, idx: number) => {
-                const inspPhotos = Array.isArray(insp.inspectionPhotos) && insp.inspectionPhotos.length > 0
-                  ? insp.inspectionPhotos
-                  : insp.photos
-                  ? [{ photoUrl: typeof insp.photos === 'string' && insp.photos.startsWith('[') ? JSON.parse(insp.photos)[0] : insp.photos, category: 'EVIDENCE' }]
-                  : [];
+              {inspections.slice(0, 5).map((insp: any, idx: number) => {
+                const inspPhotos =
+                  Array.isArray(insp.inspectionPhotos) && insp.inspectionPhotos.length > 0
+                    ? insp.inspectionPhotos
+                    : insp.photos
+                    ? [
+                        {
+                          photoUrl:
+                            typeof insp.photos === 'string' && insp.photos.startsWith('[')
+                              ? (() => {
+                                  try {
+                                    return JSON.parse(insp.photos)[0];
+                                  } catch {
+                                    return null;
+                                  }
+                                })()
+                              : insp.photos,
+                          category: 'EVIDENCE',
+                        },
+                      ].filter((p) => Boolean(p.photoUrl))
+                    : [];
 
-                const hasGPS = insp.latitude != null && insp.longitude != null;
+                const hasGPS = Boolean(insp.gpsVerified);
 
                 return (
                   <div
                     key={insp.id || idx}
-                    className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 print-avoid-break space-y-3"
+                    className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 print-avoid-break space-y-2.5"
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-2.5">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-slate-900 bg-white px-2.5 py-1 rounded border border-slate-300">
-                          {insp.equipment?.qrCode ? `Asset: ${insp.equipment.qrCode}` : `Inspection #${idx + 1}`}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-slate-900 bg-white px-2.5 py-0.5 rounded border border-slate-300">
+                          {insp.equipment?.qrCode ? `Equipment Ref: ${insp.equipment.qrCode}` : `Inspection Log #${idx + 1}`}
                         </span>
-                        <span className="text-xs font-semibold text-slate-700">
-                          Technician: <strong>{insp.technicianName || 'Certified Technician'}</strong>
+                        <span className="text-xs text-slate-700">
+                          Technician: <strong>{insp.technicianName || 'Field Service Technician'}</strong>{' '}
+                          <span className="text-[10px] text-slate-500">
+                            ({insp.technicianDesignation || 'Field Service Technician'}
+                            {insp.technicianEmployeeId ? ` • ID: ${insp.technicianEmployeeId}` : ''})
+                          </span>
                         </span>
                       </div>
 
-                      <div className="text-[11px] text-slate-500 flex items-center gap-2">
+                      <div className="text-[11px] text-slate-600 flex items-center gap-2">
                         <Calendar className="w-3.5 h-3.5 text-slate-400" />
                         <span>{formatSafeDateTime(insp.date || insp.createdAt)}</span>
                         <span
-                          className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
+                          className={`text-[9.5px] font-black uppercase px-2 py-0.5 rounded border ${
                             insp.status === 'PASSED'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : 'bg-amber-100 text-amber-800'
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                              : 'bg-rose-50 text-rose-800 border-rose-300'
                           }`}
                         >
-                          {insp.status || 'VERIFIED'}
+                          {insp.status || 'RECORDED'}
                         </span>
                       </div>
                     </div>
 
-                    {/* GPS & Checklist Summary Line */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                      <div className="flex items-start gap-1.5 text-slate-600">
+                      <div className="flex items-start gap-1.5 text-slate-700">
                         <MapPin className="w-3.5 h-3.5 text-[#C2410C] shrink-0 mt-0.5" />
-                        <span>
-                          {hasGPS
-                            ? `GPS Coordinates: ${Number(insp.latitude).toFixed(4)}° N, ${Number(insp.longitude).toFixed(
-                                4
-                              )}° E (±${insp.gpsAccuracy || 10}m)`
-                            : `Site Location: ${building?.name || 'On-site Premise'}`}
-                        </span>
+                        {hasGPS ? (
+                          <span>
+                            <strong className="text-emerald-800">GPS Verified:</strong>{' '}
+                            <span className="font-mono">
+                              {Number(insp.latitude).toFixed(4)}° N, {Number(insp.longitude).toFixed(4)}° E
+                            </span>
+                            {insp.gpsAccuracy ? ` (±${insp.gpsAccuracy}m)` : ''}
+                          </span>
+                        ) : (
+                          <span className="text-slate-600">
+                            <strong>GPS Status:</strong> Coordinates Not Recorded
+                          </span>
+                        )}
                       </div>
-                      <div className="text-slate-600 text-right sm:text-left">
-                        <span>Checklist: </span>
-                        <strong className="text-slate-800">
-                          Gauge: {insp.pressureGauge || 'NORMAL'} &bull; Condition: {insp.overallCondition || 'GOOD'}
+                      <div className="text-slate-700 sm:text-right">
+                        <span>Checklist Summary: </span>
+                        <strong className="text-slate-900">
+                          Pressure Gauge: {insp.pressureGauge || 'Not Recorded'} &bull; Condition:{' '}
+                          {insp.overallCondition || 'Not Recorded'}
                         </strong>
                       </div>
                     </div>
 
-                    {insp.remarks && (
-                      <div className="text-[11px] text-slate-600 italic bg-white p-2 rounded border border-slate-200">
-                        &ldquo;{insp.remarks}&rdquo;
-                      </div>
-                    )}
+                    <div className="text-[11px] text-slate-700 bg-white p-2 rounded border border-slate-200">
+                      <strong>Technician Observations:</strong>{' '}
+                      {insp.remarks ? insp.remarks : 'No adverse remarks recorded during this inspection.'}
+                    </div>
 
-                    {/* Photo Thumbnails with Burned-In Stamps */}
                     {inspPhotos.length > 0 && (
                       <div className="pt-1">
                         <div className="text-[10px] font-bold uppercase text-slate-500 mb-1.5">
-                          Evidence Photo Proof (Compressed Thumbnails &bull; Full-Res in App)
+                          Uploaded Field Photographs ({inspPhotos.length})
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                           {inspPhotos.slice(0, 4).map((ph: any, pIdx: number) => (
@@ -1276,48 +1752,20 @@ export default function ComplianceReportPage() {
                                   className="w-full h-full object-cover"
                                 />
                                 <div className="absolute bottom-0 inset-x-0 bg-black/75 text-white text-[8px] font-mono px-1 py-0.5 truncate">
-                                  {hasGPS ? `${Number(insp.latitude).toFixed(3)}°N, ${Number(insp.longitude).toFixed(3)}°E` : 'GPS Verified'}
+                                  {hasGPS
+                                    ? `GPS: ${Number(insp.latitude).toFixed(3)}°N, ${Number(insp.longitude).toFixed(3)}°E`
+                                    : 'No GPS Coordinates'}
                                 </div>
                               </div>
                               <div className="text-[9px] text-slate-600 pt-1 flex items-center justify-between">
-                                <span className="font-semibold uppercase truncate">{ph.category || 'INSPECTION'}</span>
-                                <span className="text-slate-400 font-mono text-[8px]">
+                                <span className="font-semibold uppercase truncate">{ph.category || 'PHOTO'}</span>
+                                <span className="text-slate-500 font-mono text-[8px]">
                                   {formatSafeDate(ph.capturedAt || insp.date)}
                                 </span>
                               </div>
                             </div>
                           ))}
                         </div>
-                      </div>
-                    )}
-
-                    {/* Guard & Technician Signatures where captured */}
-                    {(insp.customerSignature || insp.technicianSignature) && (
-                      <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-xs">
-                        {insp.technicianSignature && (
-                          <div>
-                            <div className="text-[9px] uppercase font-bold text-slate-500">Technician Signature:</div>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={insp.technicianSignature}
-                              alt="Technician Signature"
-                              className="h-8 w-auto max-w-[120px] object-contain"
-                            />
-                          </div>
-                        )}
-                        {insp.customerSignature && (
-                          <div className="text-right">
-                            <div className="text-[9px] uppercase font-bold text-slate-500">
-                              Client / Guard Signoff ({insp.customerName || 'Authorized Signatory'}):
-                            </div>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={insp.customerSignature}
-                              alt="Client Signoff Signature"
-                              className="h-8 w-auto max-w-[120px] object-contain ml-auto"
-                            />
-                          </div>
-                        )}
                       </div>
                     )}
                   </div>
@@ -1328,179 +1776,208 @@ export default function ComplianceReportPage() {
         </div>
 
         {/* Page 4 Footer */}
-        <StatutoryFooter pageNumber={4} totalPages={totalPages} />
+        <ReportPageFooter pageNumber={4} />
       </div>
 
       {/* ========================================================================= */}
-      {/* PAGE 5: FINDINGS & CORRECTIVE ACTIONS                                     */}
+      {/* PAGE 5: FINDINGS, CORRECTIVE ACTIONS, SIGNATURES & LEGAL DISCLAIMER       */}
       {/* ========================================================================= */}
       <div
         data-testid="report-page-5-findings"
-        className="max-w-[210mm] mx-auto bg-white shadow-2xl border border-slate-200 rounded-sm sm:p-12 p-6 text-slate-900 print:shadow-none print:border-none print:max-w-none print:p-0 mb-8 print-page-break flex flex-col justify-between min-h-[275mm]"
+        className="max-w-[210mm] mx-auto bg-white shadow-2xl border border-slate-200 rounded-sm sm:p-10 p-6 text-slate-900 print:shadow-none print:border-none print:max-w-none print:p-0 mb-8 print-page-break flex flex-col justify-between min-h-[275mm]"
       >
         <div>
-          {/* Section Header */}
-          <div className="border-b-2 border-slate-900 pb-3 mb-6 flex items-center justify-between">
+          <div className="border-b-2 border-slate-900 pb-3 mb-4 flex items-center justify-between">
             <div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-[#C2410C]">Section 04</span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#C2410C]">Page 5 &bull; Section 04</span>
               <h2 className="text-lg sm:text-xl font-black uppercase text-slate-900">
-                Corrective Actions Register &amp; Statutory Rectification Log
+                Findings, Corrective Actions, Signatures &amp; Legal Disclaimer
               </h2>
             </div>
             <div className="text-right text-[11px] text-slate-500 font-mono">
-              Open Findings: {openFindingsCount} &bull; Total: {correctiveActions.length}
+              Open Defects: {openFindingsCount} &bull; Resolved: {resolvedFindingsCount}
             </div>
           </div>
 
-          <p className="text-xs text-slate-600 mb-4 leading-relaxed">
-            Statutory compliance requires documenting every defect, leakage, pressure drop, or missing component identified
-            during inspections, together with corrective actions taken, workshop servicing records, and re-commissioning
-            verifications.
-          </p>
-
-          {/* Corrective Actions Table */}
-          <div className="border border-slate-300 rounded-lg overflow-x-auto mb-6">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100 text-slate-800 uppercase text-[10px] font-bold border-b border-slate-300">
-                <tr>
-                  <th className="py-2.5 px-2 border-r border-slate-300 text-center">S.No</th>
-                  <th className="py-2.5 px-3 border-r border-slate-300">Action Ref / Asset</th>
-                  <th className="py-2.5 px-3 border-r border-slate-300">Finding Description</th>
-                  <th className="py-2.5 px-2.5 border-r border-slate-300 text-center">Severity</th>
-                  <th className="py-2.5 px-2.5 border-r border-slate-300">Aging</th>
-                  <th className="py-2.5 px-3 border-r border-slate-300">Workshop &amp; Rectification Note</th>
-                  <th className="py-2.5 px-2.5 text-center">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {correctiveActions.length === 0 ? (
+          {/* Corrective Actions & Defects Table */}
+          <div className="mb-5">
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 mb-2">
+              1. Observed Defects, Severity, Corrective Actions &amp; Target Resolution Status
+            </h3>
+            <div className="border border-slate-300 rounded-lg overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-100 text-slate-800 uppercase text-[10px] font-bold border-b border-slate-300">
                   <tr>
-                    <td colSpan={7} className="py-8 px-4 text-center text-slate-500 bg-slate-50/60">
-                      <CheckCircle className="w-6 h-6 text-emerald-600 mx-auto mb-1.5" />
-                      <p className="font-bold text-slate-800 text-xs">Zero Corrective Actions Outstanding</p>
-                      <p className="text-[11px] text-slate-500 max-w-md mx-auto mt-0.5">
-                        No open defects or repair items recorded for this premise. All fire safety systems meet operating standards.
-                      </p>
-                    </td>
+                    <th className="py-2 px-2 border-r border-slate-300 text-center">S.No</th>
+                    <th className="py-2 px-2.5 border-r border-slate-300">Equipment Ref</th>
+                    <th className="py-2 px-3 border-r border-slate-300">Observed Defect &amp; Recommended Action</th>
+                    <th className="py-2 px-2 border-r border-slate-300 text-center">Severity</th>
+                    <th className="py-2 px-2.5 border-r border-slate-300">Rectification / Workshop Note</th>
+                    <th className="py-2 px-2 text-center">Status</th>
                   </tr>
-                ) : (
-                  correctiveActions.map((ca: any, idx: number) => {
-                    const isClosed = ca.status === 'CLOSED';
-                    const isRepaired = ca.status === 'REPAIRED';
-                    const ageDays = calculateAgeDays(ca.openedAt);
-                    const isHigh = ca.severity === 'HIGH' || ca.severity === 'CRITICAL';
-                    const isEven = idx % 2 === 0;
-
-                    return (
-                      <tr key={ca.id || idx} className={isEven ? 'bg-white hover:bg-slate-50' : 'bg-slate-50/70 hover:bg-slate-100/70'}>
-                        <td className="py-2.5 px-2 text-center text-slate-500 border-r border-slate-200 font-mono text-[11px]">
-                          {idx + 1}
-                        </td>
-                        <td className="py-2.5 px-3 font-mono font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap">
-                          <div>{ca.assetRef || ca.equipment?.qrCode || 'Facility'}</div>
-                          <div className="text-[9px] text-slate-400 font-normal">
-                            Opened: {formatSafeDate(ca.openedAt)}
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-3 text-slate-800 border-r border-slate-200">
-                          <div className="font-bold text-slate-900">{ca.title}</div>
-                          {ca.description && (
-                            <div className="text-[11px] text-slate-600 mt-0.5 leading-snug">{ca.description}</div>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-2.5 border-r border-slate-200 text-center whitespace-nowrap">
-                          <span
-                            className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
-                              isHigh
-                                ? 'bg-red-100 text-red-800 border border-red-200'
-                                : 'bg-amber-100 text-amber-800 border border-amber-200'
-                            }`}
-                          >
-                            {ca.severity || 'MEDIUM'}
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-2.5 text-slate-600 border-r border-slate-200 whitespace-nowrap text-[11px]">
-                          {ageDays} days
-                        </td>
-                        <td className="py-2.5 px-3 text-slate-700 border-r border-slate-200 text-[11px]">
-                          {ca.closeNote ? (
-                            <div className="text-emerald-800 font-medium">
-                              <strong>Resolution:</strong> {ca.closeNote}
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {totalCount === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-5 px-4 text-center text-slate-600 bg-slate-50">
+                        <p className="font-bold text-slate-800 text-xs">INSUFFICIENT DATA — No Equipment Registered</p>
+                        <p className="text-[11px] text-slate-600 mt-0.5">{ZERO_ASSET_MESSAGE}</p>
+                      </td>
+                    </tr>
+                  ) : notInspectedCount === totalCount ? (
+                    <tr>
+                      <td colSpan={6} className="py-5 px-4 text-center text-slate-600 bg-slate-50">
+                        <p className="font-bold text-slate-800 text-xs">{INCOMPLETE_INSPECTION_MESSAGE}</p>
+                        <p className="text-[11px] text-slate-600 mt-0.5">
+                          Registered assets have not yet been inspected. Defect status cannot be determined until field inspections are completed.
+                        </p>
+                      </td>
+                    </tr>
+                  ) : combinedFindings.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-5 px-4 text-center text-slate-600 bg-slate-50">
+                        <p className="font-bold text-slate-800 text-xs">
+                          No Open Defects Recorded Across Inspected Equipment ({inspectedCount} of {totalCount} Inspected)
+                        </p>
+                        {notInspectedCount > 0 && (
+                          <p className="text-[11px] text-amber-800 font-semibold mt-0.5">
+                            Note: {notInspectedCount} registered equipment unit(s) remain uninspected ({INCOMPLETE_INSPECTION_MESSAGE}).
+                          </p>
+                        )}
+                      </td>
+                    </tr>
+                  ) : (
+                    combinedFindings.map((ca: any, idx: number) => {
+                      const isClosed = ca.status === 'CLOSED' || ca.status === 'RESOLVED' || ca.status === 'VERIFIED';
+                      const isHigh = ca.severity === 'HIGH' || ca.severity === 'CRITICAL';
+                      return (
+                        <tr key={ca.id || idx} className="bg-white">
+                          <td className="py-2 px-2 text-center text-slate-500 border-r border-slate-200 font-mono">
+                            {idx + 1}
+                          </td>
+                          <td className="py-2 px-2.5 font-mono font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap">
+                            <div>{ca.assetRef}</div>
+                            <div className="text-[9px] text-slate-500 font-normal">
+                              Logged: {formatSafeDate(ca.openedAt)} ({calculateAgeDays(ca.openedAt)}d)
                             </div>
-                          ) : ca.workshopNote ? (
-                            <div>
-                              <strong>Workshop:</strong> {ca.workshopNote}
-                            </div>
-                          ) : (
-                            <span className="text-slate-400 italic">Pending technician dispatch</span>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-2.5 text-center whitespace-nowrap">
-                          <span
-                            className={`font-black text-[9px] px-2 py-0.5 rounded inline-block ${
-                              isClosed
-                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                                : isRepaired
-                                ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                                : 'bg-rose-100 text-rose-800 border border-rose-200'
-                            }`}
-                          >
-                            {ca.status || 'OPEN'}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+                          </td>
+                          <td className="py-2 px-3 text-slate-800 border-r border-slate-200">
+                            <div className="font-bold text-slate-900">{ca.title}</div>
+                            {ca.description && <div className="text-[10.5px] text-slate-600 mt-0.5">{ca.description}</div>}
+                          </td>
+                          <td className="py-2 px-2 border-r border-slate-200 text-center">
+                            <span
+                              className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border ${
+                                isHigh
+                                  ? 'bg-rose-50 text-rose-800 border-rose-300'
+                                  : 'bg-amber-50 text-amber-800 border-amber-300'
+                              }`}
+                            >
+                              {ca.severity || 'MEDIUM'}
+                            </span>
+                          </td>
+                          <td className="py-2 px-2.5 text-slate-700 border-r border-slate-200 text-[10.5px]">
+                            {ca.closeNote ? (
+                              <span className="text-emerald-800 font-medium">{ca.closeNote}</span>
+                            ) : ca.workshopNote ? (
+                              <span>{ca.workshopNote}</span>
+                            ) : (
+                              <span className="text-slate-500 italic">Rectification action pending</span>
+                            )}
+                          </td>
+                          <td className="py-2 px-2 text-center">
+                            <span
+                              className={`font-black text-[9px] px-2 py-0.5 rounded border ${
+                                isClosed
+                                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                                  : 'bg-rose-50 text-rose-800 border-rose-300'
+                              }`}
+                            >
+                              {ca.status || 'OPEN'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          {/* Statutory Signoff Certification on Last Page */}
-          <div className="pt-4 border-t border-slate-300 grid grid-cols-1 sm:grid-cols-2 gap-6 items-end">
-            <div className="space-y-1.5 text-xs text-slate-600">
-              <div className="font-extrabold text-slate-900 uppercase tracking-tight">
-                Statutory Compliance Endorsement
-              </div>
-              <p className="text-[11px] leading-relaxed">
-                Certified that the fire prevention and life safety measures in the aforesaid building have been inspected
-                in accordance with statutory norms, and this document constitutes the official <strong>Form &apos;B&apos;</strong>{' '}
-                inspection record for submission to local fire services and insurance authorities.
-              </p>
-              <div className="text-[10px] text-slate-500 font-mono pt-1">
-                Verify Authenticity: <strong className="text-slate-800">{getVerifyUrl()}</strong>
-              </div>
-            </div>
-
-            <div className="text-right space-y-1" data-testid="report-final-signatory">
-              {company?.signatorySignatureUrl && (
-                <div className="flex justify-end mb-1">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={company.signatorySignatureUrl}
-                    alt="Authorized Signatory Signature"
-                    className="h-10 w-auto max-w-[160px] object-contain"
-                  />
+          {/* 3-Party Signatures Block (Step 9 Page 5: Technician, Agency Representative, Client Acknowledgement) */}
+          <div className="mb-5">
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 mb-2">
+              2. Verification &amp; Acknowledgement Signatures
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div className="p-3 rounded-lg border border-slate-300 bg-slate-50 flex flex-col justify-between min-h-[90px]">
+                <div className="text-[10px] font-black uppercase text-slate-500">1. Field Service Technician</div>
+                <div className="pt-3">
+                  <div className="font-bold text-slate-900">
+                    {inspections[0]?.technicianName || 'Assigned Field Service Technician'}
+                  </div>
+                  <div className="text-[10px] text-slate-600">
+                    {inspections[0]?.technicianDesignation || 'Field Service Technician'}
+                  </div>
                 </div>
-              )}
-              <div className="h-6 flex items-center justify-end">
-                <span className="font-serif italic text-base font-bold text-slate-900">{signatoryName}</span>
               </div>
-              <div className="font-bold text-xs text-slate-900">
-                {company?.signatoryDesignation || 'Authorized Inspecting Officer'}
+
+              <div
+                className="p-3 rounded-lg border border-slate-300 bg-slate-50 flex flex-col justify-between min-h-[90px]"
+                data-testid="report-final-signatory"
+              >
+                <div className="text-[10px] font-black uppercase text-slate-500">2. Authorized Agency Representative</div>
+                {company?.signatorySignatureUrl && (
+                  <div className="my-1">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={company.signatorySignatureUrl}
+                      alt="Agency Representative Signature"
+                      className="h-8 w-auto max-w-[130px] object-contain"
+                    />
+                  </div>
+                )}
+                <div className="pt-1">
+                  <div className="font-bold text-slate-900">{signatoryName}</div>
+                  <div className="text-[10px] text-slate-600">
+                    {company?.signatoryDesignation || 'Authorized Agency Representative'} &bull; {company?.name}
+                  </div>
+                </div>
               </div>
-              <div className="text-[11px] text-slate-600">
-                For <strong>{company?.name || 'Vigil Fire & Safety Solutions'}</strong>
-              </div>
-              <div className="text-[10px] text-slate-500">
-                Govt. Licensed Fire Safety Agency (Lic: {company?.licenseNumber || 'DL/FIRE/LIC/2026/042'})
+
+              <div className="p-3 rounded-lg border border-slate-300 bg-slate-50 flex flex-col justify-between min-h-[90px]">
+                <div className="text-[10px] font-black uppercase text-slate-500">
+                  3. Client / Facility Representative Acknowledgement
+                </div>
+                <div className="pt-3">
+                  <div className="font-bold text-slate-900">
+                    {inspections[0]?.customerName || building?.client?.contactPerson || 'Premises Representative'}
+                  </div>
+                  <div className="text-[10px] text-slate-600">
+                    For {building?.client?.name || building?.name || 'Client Premises'}
+                  </div>
+                </div>
               </div>
             </div>
+          </div>
+
+          {/* STEP 10: PERMANENT LEGAL DISCLAIMER (Verbatim 6-Paragraph Box) */}
+          <div
+            data-testid="report-legal-disclaimer"
+            className="p-4 rounded-xl border-2 border-slate-800 bg-slate-50 text-[10.5px] text-slate-800 space-y-1.5 leading-relaxed"
+          >
+            <div className="font-black text-xs uppercase tracking-wider text-slate-900 border-b border-slate-300 pb-1 mb-1">
+              IMPORTANT LEGAL &amp; COMPLIANCE DISCLAIMER
+            </div>
+            {disclaimerParagraphs.map((para, idx) => (
+              <p key={idx}>{para}</p>
+            ))}
           </div>
         </div>
 
         {/* Page 5 Footer */}
-        <StatutoryFooter pageNumber={5} totalPages={totalPages} />
+        <ReportPageFooter pageNumber={5} />
       </div>
     </div>
   );

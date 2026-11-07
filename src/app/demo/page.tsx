@@ -178,8 +178,8 @@ const DEMO_VERIFY_RECORDS: Record<string, any> = {
     hydroTestDue: 'October 2028',
     pressureReading: '14.2 Bar (Green Zone)',
     inspectedBy: 'Arun Kumar (Lead Tech - Badge #TECH-402)',
-    agency: 'Apex Shield Fire AMC (Reg. DL/FIRE/2026/894)',
-    complianceStandard: 'IS 2190:2010 / NBC 2016 Part 4',
+    agency: 'Apex Shield Fire AMC Services',
+    complianceStandard: 'IS 2190:2024 / NBC 2016 Part 4',
   },
   'HYD-04': {
     tag: 'HYD-04',
@@ -194,7 +194,7 @@ const DEMO_VERIFY_RECORDS: Record<string, any> = {
     hydroTestDue: 'Annual Flow Tested (7 Bar)',
     pressureReading: 'Static 7.1 Bar / Flow Tested',
     inspectedBy: 'Vijay Singh (Badge #TECH-408)',
-    agency: 'Apex Shield Fire AMC (Reg. DL/FIRE/2026/894)',
+    agency: 'Apex Shield Fire AMC Services',
     complianceStandard: 'IS 3844 / IS 5290 / NBC 2016',
   },
   'CO2-02': {
@@ -1164,10 +1164,10 @@ export default function DemoPage() {
 
                     <div className="space-y-2 text-xs text-[#44403C] leading-relaxed pt-2">
                       <p>
-                        This audit certifies that all portable fire extinguishers, hydrant landing valves, and rising mains have been tested in accordance with <strong>IS 2190:2010</strong> and <strong>National Building Code (NBC) 2016 Part 4</strong>.
+                        This inspection report records that portable fire extinguishers, hydrant landing valves, and rising mains have been inspected with reference to <strong>IS 2190:2024</strong> and <strong>National Building Code (NBC) 2016 Part 4</strong>.
                       </p>
                       <p>
-                        Inspection verified by licensed agency auditor: <strong>Capt. Rajesh Varma (Retd.)</strong>. Digital record secured with timestamped GPS evidence.
+                        Inspection recorded by field technician: <strong>Rajesh Varma</strong>. Digital record secured with timestamped GPS evidence.
                       </p>
                     </div>
 
@@ -1188,13 +1188,13 @@ export default function DemoPage() {
                 {reportPage === 2 && (
                   <div className="space-y-4">
                     <h4 className="text-lg font-extrabold text-[#1C1917]">
-                      Page 2 · Regulatory Scope &amp; Compliance Standards
+                      Page 2 · Regulatory Scope &amp; Reference Standards
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-2">
                       <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
-                        <strong className="text-[#1C1917]">IS 2190:2010 Standards:</strong>
+                        <strong className="text-[#1C1917]">IS 2190:2024 (Fifth Revision):</strong>
                         <p className="text-stone-600 mt-1">
-                          Quarterly physical inspections, monthly visual inspections, and hydraulic pressure testing schedules verified.
+                          Quarterly physical inspections, monthly visual inspections, and hydraulic pressure testing schedules for portable and mobile fire extinguishers.
                         </p>
                       </div>
                       <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">

@@ -207,7 +207,7 @@ export default function ClientPortalPage() {
             {client.name}
           </h1>
           <p className="text-sm text-[#44403C] max-w-3xl leading-relaxed">
-            Welcome to your certified fire safety and statutory compliance dashboard. Here you can verify on-site inspection certificates, audit equipment readiness, download official Form-B reports, and sign digital delivery receipts.
+            Welcome to your fire safety inspection and maintenance portal. Here you can review on-site inspection reports, check equipment readiness, download AMC maintenance documentation, and sign digital delivery receipts.
           </p>
         </div>
 

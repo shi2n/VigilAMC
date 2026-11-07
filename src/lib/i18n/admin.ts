@@ -400,7 +400,7 @@ const DICTIONARY_EN: AdminDictionary = {
   // Module A — Inspection Approval Queue
   approvalsTabTitle: 'Approvals',
   approvalsQueueTitle: 'Inspection Approval Queue',
-  approvalsQueueSubtitle: 'Review submitted field inspections before they appear in official Form-B compliance reports.',
+  approvalsQueueSubtitle: 'Review submitted field inspections before they appear in fire safety inspection reports.',
   approvalsApproveBtn: 'Approve',
   approvalsBulkApproveBtn: 'Approve Selected',
   approvalsReturnBtn: 'Return with note',

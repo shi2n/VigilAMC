@@ -316,14 +316,13 @@ export function SettingsView({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[#1C1917] font-bold mb-1">
-                  Govt. Fire License Number *
+                  Fire Service License Number (If Applicable)
                 </label>
                 <input
                   type="text"
-                  required
-                  value={companyForm.licenseNumber}
+                  value={companyForm.licenseNumber || ''}
                   onChange={(e) => setCompanyForm({ ...companyForm, licenseNumber: e.target.value })}
-                  placeholder="e.g. DL/FIRE/LIC/2026/042"
+                  placeholder="Optional — enter only if agency holds a valid license"
                   className="glass-input w-full rounded-xl p-3 text-[#1C1917] font-medium shadow-xs"
                 />
               </div>
@@ -804,7 +803,7 @@ export function SettingsView({
                       signatoryDesignation: e.target.value,
                     })
                   }
-                  placeholder="e.g. Chief Fire Safety Auditor"
+                  placeholder="e.g. Agency Representative / Operations Lead"
                   className="glass-input w-full rounded-xl p-3 text-[#1C1917] font-medium shadow-xs"
                 />
               </div>

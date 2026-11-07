@@ -43,7 +43,7 @@ export default function ExtinguisherCalculatorPage() {
   const [buildingType, setBuildingType] = useState<BuildingType>('office');
   const [copied, setCopied] = useState(false);
 
-  // Coverage heuristics as per IS 2190:2010 guidance:
+  // Coverage heuristics as per IS 2190:2024 guidance:
   // Low risk: 1 unit per 300 m² (min 2 per floor)
   // Ordinary risk: 1 unit per 200 m² (min 2 per floor)
   // High risk: 1 unit per 100 m² (min 3 per floor)
@@ -270,7 +270,7 @@ Calculate live at: ${SITE_CONFIG.SITE_URL}/tools/extinguisher-calculator
         <div className="text-center space-y-3 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-orange-100 border border-orange-200 text-[#C2410C] text-xs font-bold rounded-full">
             <Calculator className="w-3.5 h-3.5 text-[#EA580C]" />
-            <span>Bureau of Indian Standards · IS 2190:2010</span>
+            <span>Bureau of Indian Standards · IS 2190:2024 (Fifth Revision)</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-[#1C1917] tracking-tight">
             Fire Extinguisher Requirement Calculator

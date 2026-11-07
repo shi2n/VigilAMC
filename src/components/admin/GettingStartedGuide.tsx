@@ -313,7 +313,7 @@ export function GuideModal({ isOpen, onClose, onNavigateTab, t }: GuideModalProp
       tab: 'REPORTS' as AdminNavTab,
       icon: FileText,
       title: t.navReports,
-      whatFor: 'Generate audit-compliant certificates and official Form-B inspection packages.',
+      whatFor: 'Generate jurisdiction-aware Fire Safety Inspection & Maintenance Reports.',
       howTo: [
         'Select any client building to preview the comprehensive inspection report.',
         'Export high-resolution PDFs with society details, equipment lists, and photos.',

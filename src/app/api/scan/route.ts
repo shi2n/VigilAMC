@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { sanitizeAgencyCredentials } from '@/lib/compliance-engine';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,7 +10,7 @@ export async function GET(request: Request) {
     const code = searchParams.get('code');
 
     if (!code) {
-      return NextResponse.json({ error: 'QR Code is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Asset Tag ID is required' }, { status: 400 });
     }
 
     const equipment = await (db as any).equipment.findUnique({
@@ -29,29 +30,18 @@ export async function GET(request: Request) {
     });
 
     if (!equipment) {
-      return NextResponse.json({ error: 'Equipment not found for this QR Code' }, { status: 404 });
+      return NextResponse.json({ error: 'Equipment not found for this Asset Tag' }, { status: 404 });
     }
 
     const org = equipment.building?.organization;
-    let signatoryName = 'Shaizan';
-    if (equipment.organizationId) {
-      const adminProfile = await (db as any).userProfile
-        .findFirst({
-          where: { organizationId: equipment.organizationId, role: 'ORG_ADMIN' },
-          orderBy: { createdAt: 'asc' },
-        })
-        .catch(() => null);
-      if (adminProfile?.fullName && adminProfile.fullName.trim().toLowerCase() !== 'jordan michael') {
-        signatoryName = adminProfile.fullName.trim();
-      }
-    }
+    const sanitizedAgency = sanitizeAgencyCredentials(org, null);
 
     const companyInfo = {
-      name: org?.name || 'Vigil Fire & Safety Solutions',
-      licenseNumber: org?.licenseNumber || 'DL/FIRE/LIC/2026/042',
-      phone: org?.phone || '+91 83838 90483',
-      email: org?.email || 'vigilamc@gmail.com',
-      signatoryName,
+      name: sanitizedAgency.legalName,
+      licenseNumber: sanitizedAgency.licenseNumber || 'Not Provided',
+      phone: sanitizedAgency.phone,
+      email: sanitizedAgency.email,
+      signatoryName: sanitizedAgency.signatoryName || 'Authorized Agency Representative',
     };
 
     const asset = {
@@ -62,11 +52,11 @@ export async function GET(request: Request) {
             company: companyInfo,
           }
         : null,
-      serialNumber: equipment.qrCode,
-      locationFloor: equipment.location,
-      locationWing: '',
+      serialNumber: equipment.serialNumber || equipment.qrCode,
+      locationFloor: equipment.floor || equipment.location,
+      locationWing: equipment.wing || '',
       locationSpecific: equipment.location,
-      brand: 'Standard ISI',
+      brand: equipment.manufacturer || 'Not Specified',
       lastRefillDate: equipment.lastServiceDate,
       nextRefillDueDate: equipment.nextDueDate,
       lastHydroTestDate: equipment.lastServiceDate,
@@ -81,7 +71,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ asset });
   } catch (error: any) {
-    console.error('Error in scan lookup:', error);
+    console.error('Error in asset lookup:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -98,7 +88,7 @@ export async function POST(request: Request) {
     } = body;
 
     if (!qrCode) {
-      return NextResponse.json({ error: 'QR code required' }, { status: 400 });
+      return NextResponse.json({ error: 'Asset Tag ID required' }, { status: 400 });
     }
 
     const equipment = await (db as any).equipment.findUnique({
@@ -123,7 +113,7 @@ export async function POST(request: Request) {
     const log = await (db as any).serviceLog.create({
       data: {
         equipmentId: equipment.id,
-        technicianName: technicianName || 'Technician',
+        technicianName: technicianName || 'Field Service Technician',
         actionType: actionType || 'Routine Maintenance',
         nextDueDate,
         notes: remarks || '',
@@ -132,7 +122,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, equipment: updatedEquipment, log });
   } catch (error: any) {
-    console.error('Error logging scan service:', error);
+    console.error('Error logging asset service:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

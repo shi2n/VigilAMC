@@ -261,7 +261,7 @@ export default function SampleReportPage() {
                 Apex Fire Protection &amp; Safety Engineers Pvt. Ltd.
               </div>
               <p className="text-xs font-semibold text-slate-700 mt-0.5">
-                Licensed Fire Protection Agency &bull; Lic: <strong>DL/FIRE/LIC/2026/042</strong>
+                Fire Protection &amp; AMC Maintenance Agency &bull; Reg: <strong>Not Provided (Sample Preview)</strong>
               </p>
               <p className="text-[11px] text-slate-500 mt-1 max-w-md">
                 Plot 18, Commercial Tech Zone, Okhla Phase III, New Delhi 110020 &bull; Phone: +91 83838 90483 &bull; Email: service@apexfireengineers.in
@@ -290,10 +290,10 @@ export default function SampleReportPage() {
                 [ See Section 3(3) and Rule 4(2) of Maharashtra Fire Prevention and Life Safety Measures Act, 2006 ]
               </span>
               <h1 className="text-lg sm:text-xl font-black uppercase tracking-tight text-slate-900">
-                FORM &apos;B&apos; &bull; CERTIFICATE BY LICENSED AGENCY
+                VIGILAMC FIRE SAFETY INSPECTION &amp; MAINTENANCE REPORT
               </h1>
               <p className="text-xs text-slate-600 font-medium uppercase mt-0.5">
-                Certificate regarding maintenance of fire prevention and life safety measures in good repair and efficient condition
+                Equipment Inspection, Maintenance Records and Field Verification Report (Delhi / Noida / Gurugram Sample)
               </p>
             </>
           ) : (
@@ -615,12 +615,12 @@ export default function SampleReportPage() {
               <div className="h-10 flex items-end">
                 <span className="font-serif italic text-sm font-bold text-slate-700">V. P. Deshmukh</span>
               </div>
-              <div className="font-bold text-xs text-slate-900">Chief Fire Safety Engineer (B.E. Fire)</div>
+              <div className="font-bold text-xs text-slate-900">Agency Representative (Sample)</div>
               <div className="text-[10px] text-slate-600">
                 For <strong>Apex Fire Protection &amp; Safety Engineers Pvt. Ltd.</strong>
               </div>
               <div className="text-[10px] text-slate-500 font-mono">
-                Licensed Agency No: <strong>DL/FIRE/LIC/2026/042</strong>
+                Agency Registration: <strong>Not Provided (Sample Document)</strong>
               </div>
             </div>
           </div>
@@ -629,7 +629,7 @@ export default function SampleReportPage() {
         {/* Regulatory Disclaimer Notice */}
         <div className="mt-8 pt-4 border-t border-slate-200 text-[10px] text-slate-500 text-center leading-relaxed">
           <p>
-            <strong>Statutory Compliance Disclaimer:</strong> Requirements, statutory report formats, and inspection cadences vary by state, municipal fire directorate, building occupancy type, and applicable fire safety acts. VigilAMC is pure software for organizing service records and workflow documentation. Final compliance filings must be reviewed, sealed, and endorsed by authorized licensed fire safety agencies.
+            <strong>LEGAL NOTICE &amp; COMPLIANCE DISCLAIMER:</strong> This document is generated using the VigilAMC software platform based on equipment registration, inspection records, maintenance inputs and photographic evidence entered by the servicing agency and/or authorized system users. VigilAMC is a fire safety inspection and maintenance management software platform and is not a government authority, fire service department, statutory licensing body or government certification agency. Unless explicitly issued or endorsed by the competent statutory authority under applicable law, this report does not constitute a Government Fire Safety Certificate, Fire NOC, statutory license or official government approval. Compliance determinations, statutory submissions and regulatory certifications remain subject to applicable central, state and local fire safety laws, rules, building codes and inspection by the competent authority.
           </p>
         </div>
       </div>

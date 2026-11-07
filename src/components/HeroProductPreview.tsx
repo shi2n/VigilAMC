@@ -484,7 +484,7 @@ export function HeroProductPreview({ onOpenModal }: HeroProductPreviewProps) {
                 </div>
 
                 <h3 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">
-                  Official Form-B reports generated with zero Excel copy-paste.
+                  Fire Safety Inspection &amp; Maintenance reports generated with zero Excel copy-paste.
                 </h3>
 
                 <p className="text-sm text-slate-600 leading-relaxed">
