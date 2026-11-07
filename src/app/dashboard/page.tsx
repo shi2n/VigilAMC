@@ -589,6 +589,7 @@ export default function AdminDashboardPage() {
           const orgKey = json.company?.id || json.user?.id || 'default';
           sessionStorage.setItem(LAST_ORG_CACHE_KEY, orgKey);
           sessionStorage.setItem(`vigilamc_dash_cache_${orgKey}`, JSON.stringify(json));
+          sessionStorage.setItem(`vigilamc_dash_cache_ts_${orgKey}`, String(Date.now()));
         } catch {
           // Ignore sessionStorage quota issues
         }
@@ -605,16 +606,21 @@ export default function AdminDashboardPage() {
   // Initial mount: paint immediately from sessionStorage if available (<50ms), then revalidate silently
   useEffect(() => {
     let hydratedFromCache = false;
+    let isFreshPrewarmedCache = false;
     try {
       const lastOrg = sessionStorage.getItem(LAST_ORG_CACHE_KEY);
       if (lastOrg) {
         const cachedRaw = sessionStorage.getItem(`vigilamc_dash_cache_${lastOrg}`);
+        const cachedTs = Number(sessionStorage.getItem(`vigilamc_dash_cache_ts_${lastOrg}`) || '0');
         if (cachedRaw) {
           const cachedJson = JSON.parse(cachedRaw);
           if (cachedJson && cachedJson.authenticated) {
             applyBootstrapPayload(cachedJson);
             setLoading(false);
             hydratedFromCache = true;
+            if (cachedTs && Date.now() - cachedTs < 8000) {
+              isFreshPrewarmedCache = true;
+            }
           }
         }
       }
@@ -622,7 +628,9 @@ export default function AdminDashboardPage() {
       // Ignore cache read error
     }
 
-    refreshDashboard({ silent: hydratedFromCache });
+    if (!isFreshPrewarmedCache) {
+      refreshDashboard({ silent: hydratedFromCache });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

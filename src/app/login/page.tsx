@@ -45,6 +45,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
+    router.prefetch('/dashboard');
     async function checkUser() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -223,16 +224,6 @@ export default function LoginPage() {
           );
         }
         resolvedAuthEmail = resolveData.email.trim().toLowerCase();
-      } else {
-        const resolveRes = await fetch('/api/auth/resolve-identifier', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ identifier: resolvedAuthEmail }),
-        });
-        if (resolveRes.status === 403) {
-          const resolveData = await resolveRes.json();
-          throw new Error(resolveData.error || 'This account has been deactivated.');
-        }
       }
 
       const cleanPassword = password.trim();
@@ -271,16 +262,38 @@ export default function LoginPage() {
       }
 
       if (data.user) {
-        const regRes = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: data.user.id,
-            email: data.user.email,
-            fullName: data.user.user_metadata?.full_name || '',
-            companyName: data.user.user_metadata?.company_name || '',
+        const accessToken = data.session?.access_token;
+        const [regRes] = await Promise.all([
+          fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: data.user.id,
+              email: data.user.email,
+              fullName: data.user.user_metadata?.full_name || '',
+              companyName: data.user.user_metadata?.company_name || '',
+            }),
           }),
-        });
+          accessToken
+            ? fetch('/api/dashboard/bootstrap', {
+                headers: { Authorization: `Bearer ${accessToken}` },
+              })
+                .then((r) => (r.ok ? r.json() : null))
+                .then((bootJson) => {
+                  if (bootJson?.authenticated && typeof window !== 'undefined') {
+                    try {
+                      const orgKey = bootJson.company?.id || bootJson.user?.id || 'default';
+                      sessionStorage.setItem('vigilamc_dash_last_org', orgKey);
+                      sessionStorage.setItem(`vigilamc_dash_cache_${orgKey}`, JSON.stringify(bootJson));
+                      sessionStorage.setItem(`vigilamc_dash_cache_ts_${orgKey}`, String(Date.now()));
+                    } catch {
+                      // Ignore storage quota errors
+                    }
+                  }
+                })
+                .catch(() => null)
+            : Promise.resolve(null),
+        ]);
 
         const regData = await regRes.json();
         if (!regRes.ok) {

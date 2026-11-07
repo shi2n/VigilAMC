@@ -38,21 +38,61 @@ export async function getCurrentUser(
       }
     }
 
+    const profileInclude = {
+      organization: {
+        include: {
+          subscription: true,
+        },
+      },
+      assignedBuildings: {
+        include: {
+          building: true,
+        },
+      },
+    };
+
+    let prefetchedProfile: any = null;
+    let prefetchedSub: string | null = null;
+
     // 3. Strictly verify Bearer token cryptographically via Supabase Auth server
+    //    while prefetching the Prisma profile in parallel to eliminate sequential latency
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.substring(7).trim();
       if (token) {
-        const {
-          data: { user },
-          error,
-        } = await supabase.auth.getUser(token);
-        if (!error && user) {
-          authUser = user;
+        try {
+          const parts = token.split('.');
+          if (parts.length === 3) {
+            const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+            if (typeof payload?.sub === 'string' && payload.sub.length > 0) {
+              prefetchedSub = payload.sub;
+            }
+          }
+        } catch {
+          // Ignore malformed JWT preview; cryptographic check below is authoritative
+        }
+
+        const [authRes, dbProfile] = await Promise.all([
+          supabase.auth.getUser(token),
+          prefetchedSub
+            ? (db as any).userProfile
+                .findUnique({
+                  where: { id: prefetchedSub },
+                  include: profileInclude,
+                })
+                .catch(() => null)
+            : Promise.resolve(null),
+        ]);
+
+        if (!authRes.error && authRes.data?.user) {
+          authUser = authRes.data.user;
+          if (authUser.id === prefetchedSub) {
+            prefetchedProfile = dbProfile;
+          }
         }
       }
     }
 
-    // 4. Strictly verify session cookie cryptographically via Supabase Auth server (never use unverified getSession or manual cookie decode)
+    // 4. Strictly verify session cookie cryptographically via Supabase Auth server
     if (!authUser) {
       const {
         data: { user },
@@ -67,21 +107,13 @@ export async function getCurrentUser(
       return null;
     }
 
-    let profile = await (db as any).userProfile.findUnique({
-      where: { id: authUser.id },
-      include: {
-        organization: {
-          include: {
-            subscription: true,
-          },
-        },
-        assignedBuildings: {
-          include: {
-            building: true,
-          },
-        },
-      },
-    });
+    let profile =
+      prefetchedProfile && authUser.id === prefetchedSub
+        ? prefetchedProfile
+        : await (db as any).userProfile.findUnique({
+            where: { id: authUser.id },
+            include: profileInclude,
+          });
 
     // If profile not found by auth id, check by email (handles Google OAuth for existing accounts)
     if (!profile && authUser.email) {

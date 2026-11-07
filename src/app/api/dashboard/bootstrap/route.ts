@@ -92,14 +92,8 @@ export async function GET(request: Request) {
       });
     }
 
-    // Module C2: Run idempotent lead-time auto-scheduler on dashboard load
-    await runAutoSchedulerForOrg({
-      organizationId,
-      actorUserId: auth.user?.id,
-      actorEmail: auth.user?.email,
-    }).catch((err) => console.warn('[bootstrap] Auto-scheduler skipped:', err));
-
     // Execute all tenant operational queries in ONE single Promise.all batch
+    // (Eliminates duplicate equipment/inspection joins and pre-bootstrap sequential waterfalls)
     const [
       clientsRaw,
       buildingsRaw,
@@ -145,27 +139,6 @@ export async function GET(request: Request) {
               phone: true,
               email: true,
             },
-          },
-          equipments: {
-            include: {
-              inspections: {
-                orderBy: { date: 'desc' },
-                take: 1,
-                select: {
-                  id: true,
-                  date: true,
-                  latitude: true,
-                  longitude: true,
-                  photos: true,
-                  isImported: true,
-                },
-              },
-              serviceLogs: {
-                orderBy: { servicedAt: 'desc' },
-                take: 1,
-              },
-            },
-            orderBy: { location: 'asc' },
           },
         },
         orderBy: { createdAt: 'desc' },
@@ -300,6 +273,64 @@ export async function GET(request: Request) {
     ]);
 
     const now = new Date();
+
+    // Group already-fetched equipments by buildingId in-memory (eliminates duplicate 4-table SQL join)
+    const equipmentsByBuildingId = new Map<string, any[]>();
+    for (const eq of equipmentsRaw) {
+      if (eq.buildingId) {
+        if (!equipmentsByBuildingId.has(eq.buildingId)) {
+          equipmentsByBuildingId.set(eq.buildingId, []);
+        }
+        equipmentsByBuildingId.get(eq.buildingId)!.push(eq);
+      }
+    }
+    for (const b of buildingsRaw) {
+      const list = equipmentsByBuildingId.get(b.id) || [];
+      list.sort((a: any, bEq: any) =>
+        String(a.location || '').localeCompare(String(bEq.location || ''))
+      );
+      b.equipments = list;
+    }
+
+    // Module C2: Fast in-memory check before invoking DB auto-scheduler
+    if (organization?.autoSchedulingEnabled !== false) {
+      const openEquipmentIds = new Set<string>();
+      for (const wo of workOrdersRaw) {
+        if (wo.equipmentId && ['OPEN', 'ASSIGNED', 'IN_PROGRESS'].includes(wo.status)) {
+          openEquipmentIds.add(wo.equipmentId);
+        }
+      }
+      let needsAutoSchedule = false;
+      for (const b of buildingsRaw) {
+        const leadDays = typeof b.leadTimeDays === 'number' ? b.leadTimeDays : 7;
+        for (const eq of b.equipments || []) {
+          const dueRaw = eq.nextDueDate || eq.refillDueDate || eq.hydroDueDate;
+          if (!dueRaw) continue;
+          const dueDate = new Date(dueRaw);
+          if (isNaN(dueDate.getTime())) continue;
+          const diffDays = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          if (diffDays <= leadDays && !openEquipmentIds.has(eq.id)) {
+            needsAutoSchedule = true;
+            break;
+          }
+        }
+        if (needsAutoSchedule) break;
+      }
+
+      if (needsAutoSchedule) {
+        const schedRes = await runAutoSchedulerForOrg({
+          organizationId,
+          actorUserId: auth.user?.id,
+          actorEmail: auth.user?.email,
+        }).catch((err) => {
+          console.warn('[bootstrap] Auto-scheduler skipped:', err);
+          return null;
+        });
+        if (schedRes?.createdTasks?.length) {
+          workOrdersRaw.unshift(...schedRes.createdTasks);
+        }
+      }
+    }
 
     // Count pending approvals per building in-memory
     const pendingApprovalsByBuilding = new Map<string, number>();
