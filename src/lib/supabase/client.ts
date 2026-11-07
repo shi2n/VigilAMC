@@ -5,13 +5,13 @@ export function createClient() {
   const supabaseUrl =
     envUrl && !envUrl.includes('hkjaaqpfkpflifqekztk')
       ? envUrl
-      : 'https://kncfoiafddjftpbkuuaa.supabase.co';
+      : 'https://hgsgboleolmgrggzodxa.supabase.co';
 
   const envKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
   const supabaseKey =
     envKey && !envUrl.includes('hkjaaqpfkpflifqekztk')
       ? envKey
-      : 'sb_publishable_ciHiV_UxZ3hkJlpsiftbDQ_6knRhTu1';
+      : 'sb_publishable_r6t5us-FRTOa2Pogh7XBEg_gEvUQ4he';
 
   return createBrowserClient(supabaseUrl, supabaseKey);
 }
