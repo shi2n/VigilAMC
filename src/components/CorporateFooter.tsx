@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { SITE_CONFIG } from '@/lib/siteConfig';
 import { GooglePlayBadge } from '@/components/GooglePlayBadge';
 import { AppStoreBadge } from '@/components/AppStoreBadge';
+import { StartupDirectoryBadges } from '@/components/StartupDirectoryBadges';
 
 export function CorporateFooter() {
   return (
@@ -211,6 +212,9 @@ export function CorporateFooter() {
             </ul>
           </div>
         </div>
+
+        {/* Verified Startup Directories & Launch Badges */}
+        <StartupDirectoryBadges variant="footer" />
 
         {/* Bottom Legal Line */}
         <div className="pt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-[#A8A29E]">

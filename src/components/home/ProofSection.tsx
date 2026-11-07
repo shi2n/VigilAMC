@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { StartupDirectoryBadges } from '@/components/StartupDirectoryBadges';
 import {
   FileCheck2,
   ShieldCheck,
@@ -405,6 +406,9 @@ export function ProofSection() {
             </div>
           </div>
         </div>
+
+        {/* Verified Startup Directories & Launch Badges */}
+        <StartupDirectoryBadges variant="glass" />
 
         {/* Final Charcoal CTA Band (#1C1917) with A7 scroll-progress ember glow scale (0.9 -> 1) + lifted glass card */}
         <div
