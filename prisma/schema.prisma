@@ -84,28 +84,35 @@ model UserProfile {
   @@index([organizationId])
   @@index([organizationId, role, status])
   @@index([status])
+  @@index([createdAt])
+  @@index([lastLoginAt])
 }
 
 model Organization {
-  id                     String             @id @default(cuid())
-  name                   String
-  contactPerson          String?
-  phone                  String?
-  email                  String?
-  address                String?
-  city                   String?
-  state                  String?
-  gstin                  String?
-  licenseNumber          String?
-  autoSchedulingEnabled  Boolean            @default(true)
-  brandLogoUrl           String?
-  signatoryName          String?
-  signatoryDesignation   String?
-  signatorySignatureUrl  String?
-  reportFooterText       String?
-  clientPortalEnabled    Boolean            @default(true)
-  publicVerificationEnabled Boolean         @default(true)
-  subscription           Subscription?
+  id                        String                   @id @default(cuid())
+  name                      String
+  contactPerson             String?
+  phone                     String?
+  email                     String?
+  address                   String?
+  city                      String?
+  state                     String?
+  gstin                     String?
+  licenseNumber             String?
+  autoSchedulingEnabled     Boolean                  @default(true)
+  brandLogoUrl              String?
+  signatoryName             String?
+  signatoryDesignation      String?
+  signatorySignatureUrl     String?
+  reportFooterText          String?
+  clientPortalEnabled       Boolean                  @default(true)
+  publicVerificationEnabled Boolean                  @default(true)
+  plan                      String                   @default("FOUNDING_MONTHLY") // TRIAL, FOUNDING_MONTHLY, FOUNDING_ANNUAL, BIG_AGENCY, CUSTOM
+  monthlyPrice              Int                      @default(3999)
+  subscriptionStatus        String                   @default("ACTIVE") // TRIAL, ACTIVE, EXPIRED
+  subscriptionExpiresAt     DateTime?
+  subscriptionNotes         String?
+  subscription              Subscription?
   users                  UserProfile[]
   clients                Client[]
   buildings              Building[]
@@ -129,6 +136,10 @@ model Organization {
   inspectionReports      InspectionReport[]
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
+
+  @@index([createdAt])
+  @@index([subscriptionStatus])
+  @@index([subscriptionExpiresAt])
 }
 
 model Company {
@@ -362,6 +373,8 @@ model Inspection {
   @@index([approvalStatus])
   @@index([organizationId, approvalStatus])
   @@index([organizationId, date])
+  @@index([createdAt])
+  @@index([date])
 }
 
 model InspectionPhoto {
@@ -471,6 +484,7 @@ model WorkOrder {
   @@index([assignedToId])
   @@index([status])
   @@index([organizationId, status])
+  @@index([createdAt])
 }
 
 model CorrectiveAction {
@@ -575,6 +589,7 @@ model ComplianceReport {
   @@index([organizationId])
   @@index([buildingId])
   @@index([status])
+  @@index([generatedAt])
 }
 
 model Notification {
@@ -607,6 +622,8 @@ model SyncQueue {
 
   @@index([technicianId])
   @@index([status])
+  @@index([createdAt])
+  @@index([syncedAt])
 }
 
 model ActivityLog {
@@ -623,6 +640,8 @@ model ActivityLog {
 
   @@index([organizationId])
   @@index([organizationId, createdAt])
+  @@index([createdAt])
+  @@index([action])
 }
 
 model Subscription {
@@ -726,6 +745,7 @@ model PortalUser {
   @@index([email])
   @@index([clientOrgId])
   @@index([organizationId])
+  @@index([createdAt])
 }
 
 model ReportAck {
@@ -740,6 +760,7 @@ model ReportAck {
   @@unique([reportRef, portalUserId])
   @@index([buildingId])
   @@index([portalUserId])
+  @@index([acknowledgedAt])
 }
 
 model JurisdictionTemplate {
@@ -890,6 +911,7 @@ model InspectionReport {
   @@index([buildingId])
   @@index([reportReferenceId])
   @@index([inspectionStatus])
+  @@index([generatedAt])
   @@map("inspection_reports")
 }
 
