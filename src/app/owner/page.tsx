@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import { redirect, notFound } from 'next/navigation';
 import { verifyOwnerSession } from '@/lib/ownerAuth';
 import OwnerConsoleClient from '@/components/owner/OwnerConsoleClient';
+import OwnerLoginGate from '@/components/owner/OwnerLoginGate';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,12 +16,8 @@ export const metadata: Metadata = {
 export default async function OwnerPage() {
   const authState = await verifyOwnerSession();
 
-  if (authState.status === 'SIGNED_OUT') {
-    redirect('/login');
-  }
-
   if (authState.status !== 'OWNER' || !authState.email) {
-    notFound();
+    return <OwnerLoginGate />;
   }
 
   return <OwnerConsoleClient ownerEmail={authState.email} />;

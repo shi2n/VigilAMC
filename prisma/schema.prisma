@@ -1001,3 +1001,16 @@ model ReportVerificationLog {
   @@index([queriedRef])
   @@map("report_verification_logs")
 }
+
+model OwnerCredential {
+  id           String    @id @default("singleton")
+  loginId      String    @default("shaizan@vigilamc.com")
+  passwordHash String
+  updatedBy    String?
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("owner_credentials")
+}
+

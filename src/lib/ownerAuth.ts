@@ -1,8 +1,14 @@
+import crypto from 'crypto';
 import { NextResponse } from 'next/server';
 import { headers, cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { extractCookie, TECH_SESSION_COOKIE, verifyTechSessionToken } from '@/lib/techSession';
+import { db } from '@/lib/db';
+
+export const OWNER_SESSION_COOKIE = 'vigil_owner_session';
+export const DEFAULT_OWNER_LOGIN_ID = 'shaizan@vigilamc.com';
+export const DEFAULT_OWNER_INITIAL_PASSWORD = 'VigilOwner@2026!';
 
 const DEFAULT_SUPER_ADMIN_FALLBACK = [
   'test-owner@example.com',
@@ -10,6 +16,110 @@ const DEFAULT_SUPER_ADMIN_FALLBACK = [
   'shaizan@vigilamc.com',
   'shaizansiddiqui99@gmail.com',
 ];
+
+function getOwnerSigningSecret(): string {
+  return (
+    process.env.SUPABASE_JWT_SECRET ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.DATABASE_URL ||
+    'vigilamc-owner-console-hmac-secret-2026'
+  );
+}
+
+export function hashOwnerPassword(plainPassword: string): string {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const derived = crypto
+    .pbkdf2Sync(plainPassword, salt, 100000, 32, 'sha256')
+    .toString('hex');
+  return `pbkdf2_sha256$${salt}$${derived}`;
+}
+
+export function verifyOwnerPassword(plainPassword: string, storedHash: string): boolean {
+  try {
+    if (!storedHash || !storedHash.startsWith('pbkdf2_sha256$')) return false;
+    const parts = storedHash.split('$');
+    if (parts.length !== 3) return false;
+    const [, salt, originalHex] = parts;
+    const derivedHex = crypto
+      .pbkdf2Sync(plainPassword, salt, 100000, 32, 'sha256')
+      .toString('hex');
+    const a = Buffer.from(originalHex, 'hex');
+    const b = Buffer.from(derivedHex, 'hex');
+    if (a.length !== b.length) return false;
+    return crypto.timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
+}
+
+export async function ensureOwnerCredential(): Promise<{
+  id: string;
+  loginId: string;
+  passwordHash: string;
+  updatedBy: string | null;
+  lastLoginAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}> {
+  const existing = await (db as any).ownerCredential.findUnique({
+    where: { id: 'singleton' },
+  });
+  if (existing) {
+    return existing;
+  }
+  const initialHash = hashOwnerPassword(DEFAULT_OWNER_INITIAL_PASSWORD);
+  return await (db as any).ownerCredential.create({
+    data: {
+      id: 'singleton',
+      loginId: DEFAULT_OWNER_LOGIN_ID,
+      passwordHash: initialHash,
+      updatedBy: 'system-init',
+    },
+  });
+}
+
+export interface OwnerSessionPayload {
+  loginId: string;
+  iat: number;
+  exp: number;
+}
+
+export function createOwnerSessionToken(loginId: string): string {
+  const nowSec = Math.floor(Date.now() / 1000);
+  const payload: OwnerSessionPayload = {
+    loginId: loginId.trim(),
+    iat: nowSec,
+    exp: nowSec + 7 * 24 * 60 * 60, // 7 days
+  };
+  const encoded = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
+  const sig = crypto
+    .createHmac('sha256', getOwnerSigningSecret())
+    .update(encoded)
+    .digest('base64url');
+  return `vowner.${encoded}.${sig}`;
+}
+
+export function verifyOwnerSessionToken(token?: string | null): OwnerSessionPayload | null {
+  try {
+    if (!token || !token.startsWith('vowner.')) return null;
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const [, encoded, sig] = parts;
+    const expectedSig = crypto
+      .createHmac('sha256', getOwnerSigningSecret())
+      .update(encoded)
+      .digest('base64url');
+    const a = Buffer.from(sig);
+    const b = Buffer.from(expectedSig);
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+    const payload = JSON.parse(Buffer.from(encoded, 'base64url').toString('utf8')) as OwnerSessionPayload;
+    const nowSec = Math.floor(Date.now() / 1000);
+    if (!payload.loginId || !payload.exp || payload.exp < nowSec) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
 
 function getSupabaseConfig() {
   const envUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -56,14 +166,13 @@ export interface OwnerAuthState {
 }
 
 /**
- * Evaluates current caller session against SUPER_ADMIN_EMAILS.
- * - Supports Supabase Auth session cookie and Authorization: Bearer <jwt>
- * - Detects technician cookie sessions (TECH_SESSION_COOKIE) as signed-in NON_OWNER
+ * Evaluates current caller session against:
+ * 1) Dedicated Owner Login ID & Password session cookie (vigil_owner_session)
+ * 2) Supabase Auth session cookie / Authorization Bearer against SUPER_ADMIN_EMAILS
+ * 3) Detects technician cookie sessions (TECH_SESSION_COOKIE) as signed-in NON_OWNER
  */
 export async function verifyOwnerSession(req?: Request): Promise<OwnerAuthState> {
   try {
-    let authUser: { id: string; email?: string | null } | null = null;
-
     let authHeader = req?.headers?.get('authorization') || req?.headers?.get('Authorization') || null;
     if (!authHeader) {
       try {
@@ -74,21 +183,45 @@ export async function verifyOwnerSession(req?: Request): Promise<OwnerAuthState>
       }
     }
 
-    if (authHeader?.startsWith('Bearer ')) {
-      const token = authHeader.slice(7).trim();
-      if (token) {
-        try {
-          const { supabaseUrl, supabaseKey } = getSupabaseConfig();
-          const directClient = createClient(supabaseUrl, supabaseKey, {
-            auth: { persistSession: false, autoRefreshToken: false },
-          });
-          const { data, error } = await directClient.auth.getUser(token);
-          if (!error && data?.user) {
-            authUser = data.user;
-          }
-        } catch {
-          // Ignore malformed token
+    // 1. Check dedicated Owner Console session cookie (or Bearer vowner.*)
+    let ownerCookieToken = extractCookie(req, OWNER_SESSION_COOKIE);
+    if (!ownerCookieToken) {
+      try {
+        const cookieStore = cookies();
+        ownerCookieToken = cookieStore.get(OWNER_SESSION_COOKIE)?.value || null;
+      } catch {
+        // Ignored outside Next.js cookies() scope
+      }
+    }
+    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+    const candidateOwnerToken =
+      ownerCookieToken || (bearerToken?.startsWith('vowner.') ? bearerToken : null);
+    if (candidateOwnerToken) {
+      const ownerPayload = verifyOwnerSessionToken(candidateOwnerToken);
+      if (ownerPayload) {
+        return {
+          status: 'OWNER',
+          email: ownerPayload.loginId,
+          userId: 'owner-credential',
+        };
+      }
+    }
+
+    // 2. Check Supabase Auth Bearer or SSR session cookie against SUPER_ADMIN_EMAILS
+    let authUser: { id: string; email?: string | null } | null = null;
+
+    if (bearerToken && !bearerToken.startsWith('vowner.')) {
+      try {
+        const { supabaseUrl, supabaseKey } = getSupabaseConfig();
+        const directClient = createClient(supabaseUrl, supabaseKey, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+        const { data, error } = await directClient.auth.getUser(bearerToken);
+        if (!error && data?.user) {
+          authUser = data.user;
         }
+      } catch {
+        // Ignore malformed token
       }
     }
 
@@ -120,7 +253,7 @@ export async function verifyOwnerSession(req?: Request): Promise<OwnerAuthState>
       };
     }
 
-    // Also check if caller is signed in via technician session cookie or technician Bearer token
+    // 3. Also check if caller is signed in via technician session cookie or technician Bearer token
     let techTokenFromCookie = extractCookie(req, TECH_SESSION_COOKIE);
     if (!techTokenFromCookie) {
       try {
@@ -130,9 +263,7 @@ export async function verifyOwnerSession(req?: Request): Promise<OwnerAuthState>
         // Ignored outside Next.js cookies() scope
       }
     }
-    const techTokenFromBearer =
-      authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
-    const candidateTechToken = techTokenFromCookie || techTokenFromBearer;
+    const candidateTechToken = techTokenFromCookie || bearerToken;
     if (candidateTechToken) {
       const payload = verifyTechSessionToken(candidateTechToken);
       if (payload) {
