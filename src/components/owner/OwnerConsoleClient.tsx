@@ -27,6 +27,10 @@ import {
   Briefcase,
   ChevronRight,
   Sparkles,
+  KeyRound,
+  LogOut,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
@@ -255,6 +259,17 @@ export default function OwnerConsoleClient({ ownerEmail }: OwnerConsoleClientPro
   const [editExpiresAt, setEditExpiresAt] = useState<string>('');
   const [editNotes, setEditNotes] = useState<string>('');
   const [savingSubscription, setSavingSubscription] = useState<boolean>(false);
+
+  // Owner Login ID & Password Edit Modal state
+  const [activeOwnerLoginId, setActiveOwnerLoginId] = useState<string>(ownerEmail);
+  const [isCredModalOpen, setIsCredModalOpen] = useState<boolean>(false);
+  const [newOwnerLoginId, setNewOwnerLoginId] = useState<string>(ownerEmail);
+  const [currentOwnerPassword, setCurrentOwnerPassword] = useState<string>('');
+  const [newOwnerPassword, setNewOwnerPassword] = useState<string>('');
+  const [confirmOwnerPassword, setConfirmOwnerPassword] = useState<string>('');
+  const [showOwnerPasswords, setShowOwnerPasswords] = useState<boolean>(false);
+  const [savingOwnerCreds, setSavingOwnerCreds] = useState<boolean>(false);
+  const [ownerCredError, setOwnerCredError] = useState<string | null>(null);
 
   const knownEventIdsRef = useRef<Set<string>>(new Set());
 
@@ -506,6 +521,115 @@ export default function OwnerConsoleClient({ ownerEmail }: OwnerConsoleClientPro
     }
   };
 
+  const openCredentialsModal = async () => {
+    setOwnerCredError(null);
+    setCurrentOwnerPassword('');
+    setNewOwnerPassword('');
+    setConfirmOwnerPassword('');
+    setNewOwnerLoginId(activeOwnerLoginId);
+    setIsCredModalOpen(true);
+
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch('/api/owner/credentials', { headers, cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.loginId) {
+          setActiveOwnerLoginId(data.loginId);
+          setNewOwnerLoginId(data.loginId);
+        }
+      }
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not load current Owner Login ID');
+    }
+  };
+
+  const handleSaveOwnerCredentials = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setOwnerCredError(null);
+
+    if (!currentOwnerPassword) {
+      const msg = 'Please enter your current Owner password.';
+      setOwnerCredError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    if (!newOwnerLoginId.trim() || newOwnerLoginId.trim().length < 3) {
+      const msg = 'Login ID must be at least 3 characters.';
+      setOwnerCredError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    if (newOwnerPassword && newOwnerPassword.length < 6) {
+      const msg = 'New password must be at least 6 characters.';
+      setOwnerCredError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    if (newOwnerPassword !== confirmOwnerPassword) {
+      const msg = 'New password and Confirm password do not match.';
+      setOwnerCredError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    setSavingOwnerCreds(true);
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch('/api/owner/credentials', {
+        method: 'PATCH',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          currentPassword: currentOwnerPassword,
+          newLoginId: newOwnerLoginId.trim(),
+          newPassword: newOwnerPassword,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error || `Failed to update credentials (HTTP ${res.status})`);
+      }
+
+      setActiveOwnerLoginId(data.loginId);
+      setIsCredModalOpen(false);
+      toast.success(
+        `Owner Login ID updated to ${data.loginId}${data.passwordChanged ? ' and password changed!' : '!'}`
+      );
+      await fetchAllConsoleData({ forceFresh: true });
+    } catch (err: any) {
+      const msg = err?.message || 'Failed to update Owner credentials';
+      setOwnerCredError(msg);
+      toast.error(msg);
+    } finally {
+      setSavingOwnerCreds(false);
+    }
+  };
+
+  const handleOwnerSignOut = async () => {
+    try {
+      const res = await fetch('/api/owner/auth', { method: 'DELETE' });
+      if (!res.ok) {
+        throw new Error('Failed to sign out of Owner Console');
+      }
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        // Ignore if not signed in via Supabase
+      }
+      toast.success('Owner Console locked.');
+      window.location.href = '/owner';
+    } catch (err: any) {
+      toast.error(err?.message || 'Error locking Owner Console');
+    }
+  };
+
   // Filtered agencies for Global Search
   const filteredAgencies = useMemo(() => {
     const q = globalSearch.trim().toLowerCase();
@@ -604,7 +728,7 @@ export default function OwnerConsoleClient({ ownerEmail }: OwnerConsoleClientPro
                 <div className="text-[11px] font-semibold text-[#44403C] flex items-center gap-2 flex-wrap">
                   <span>{formattedCurrentDate}</span>
                   <span>•</span>
-                  <span>Owner: {ownerEmail}</span>
+                  <span>Owner: {activeOwnerLoginId}</span>
                   {lastRefreshedAt && (
                     <>
                       <span>•</span>
@@ -615,22 +739,33 @@ export default function OwnerConsoleClient({ ownerEmail }: OwnerConsoleClientPro
               </div>
             </div>
 
-            <button
-              type="button"
-              data-testid="owner-refresh-btn"
-              onClick={() => fetchAllConsoleData({ forceFresh: true })}
-              disabled={refreshing}
-              className="md:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#EA580C] hover:bg-[#C2410C] text-white text-xs font-bold shadow-xs transition-colors cursor-pointer disabled:opacity-60"
-            >
-              <RefreshCw
-                className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin motion-reduce:animate-none' : ''}`}
-              />
-              <span>Refresh</span>
-            </button>
+            <div className="flex items-center gap-1.5 md:hidden">
+              <button
+                type="button"
+                onClick={openCredentialsModal}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#FFF8F2] border border-[#E5D5C5] text-[#1C1917] text-xs font-bold shadow-xs cursor-pointer"
+                title="Edit Owner Login ID & Password"
+              >
+                <KeyRound className="w-3.5 h-3.5 text-[#EA580C]" />
+                <span>Login / Pass</span>
+              </button>
+              <button
+                type="button"
+                data-testid="owner-refresh-btn"
+                onClick={() => fetchAllConsoleData({ forceFresh: true })}
+                disabled={refreshing}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#EA580C] hover:bg-[#C2410C] text-white text-xs font-bold shadow-xs transition-colors cursor-pointer disabled:opacity-60"
+              >
+                <RefreshCw
+                  className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin motion-reduce:animate-none' : ''}`}
+                />
+                <span>Refresh</span>
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2.5 w-full md:w-auto">
-            <div className="relative flex-1 md:w-80 lg:w-96">
+          <div className="flex items-center gap-2 w-full md:w-auto flex-wrap sm:flex-nowrap">
+            <div className="relative flex-1 md:w-72 lg:w-80">
               <Search className="w-4 h-4 text-[#44403C] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="search"
@@ -654,6 +789,17 @@ export default function OwnerConsoleClient({ ownerEmail }: OwnerConsoleClientPro
 
             <button
               type="button"
+              data-testid="owner-edit-credentials-btn"
+              onClick={openCredentialsModal}
+              className="hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#FFF8F2] hover:bg-[#FFF0E5] border border-[#E5D5C5] text-[#1C1917] text-xs font-bold shadow-xs transition-colors cursor-pointer shrink-0"
+              title="Edit Owner Login ID & Password"
+            >
+              <KeyRound className="w-3.5 h-3.5 text-[#EA580C]" />
+              <span>Edit Login / Password</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => fetchAllConsoleData({ forceFresh: true })}
               disabled={refreshing}
               className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#EA580C] hover:bg-[#C2410C] active:bg-[#9A3412] text-white text-xs font-bold shadow-xs transition-colors cursor-pointer disabled:opacity-60 shrink-0"
@@ -662,6 +808,17 @@ export default function OwnerConsoleClient({ ownerEmail }: OwnerConsoleClientPro
                 className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin motion-reduce:animate-none' : ''}`}
               />
               <span>{refreshing ? 'Refreshing...' : 'Refresh'}</span>
+            </button>
+
+            <button
+              type="button"
+              data-testid="owner-logout-btn"
+              onClick={handleOwnerSignOut}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-[#FEF2F2] border border-[#E5D5C5] text-[#44403C] hover:text-[#DC2626] text-xs font-bold shadow-xs transition-colors cursor-pointer shrink-0"
+              title="Lock Owner Console"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden lg:inline">Lock</span>
             </button>
           </div>
         </div>
@@ -2177,6 +2334,148 @@ export default function OwnerConsoleClient({ ownerEmail }: OwnerConsoleClientPro
                   className="px-4 py-2 rounded-xl bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold shadow-xs cursor-pointer disabled:opacity-60"
                 >
                   {savingSubscription ? 'Saving...' : 'Save Subscription'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isCredModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          data-testid="owner-credentials-modal"
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4"
+        >
+          <div className="bg-white rounded-2xl border border-[#E5D5C5] shadow-xl max-w-md w-full p-5 space-y-4 text-xs">
+            <div className="flex items-center justify-between border-b border-[#F0E4D8] pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-[#FFF3E8] border border-[#FED7AA] text-[#EA580C] flex items-center justify-center">
+                  <KeyRound className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-[#1C1917]">
+                    Edit Owner Login ID &amp; Password
+                  </h3>
+                  <p className="text-[11px] font-semibold text-[#44403C]">
+                    Update your private /owner console Login ID or Password
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCredModalOpen(false)}
+                className="p-1 rounded-lg text-[#44403C] hover:text-[#1C1917]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {ownerCredError && (
+              <div
+                role="alert"
+                className="p-3 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-[#DC2626] font-semibold flex items-center gap-2"
+              >
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <span>{ownerCredError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveOwnerCredentials} className="space-y-3.5">
+              <div>
+                <label className="block font-extrabold text-[#1C1917] mb-1">
+                  Owner Login ID (Username or Email)
+                </label>
+                <input
+                  type="text"
+                  required
+                  data-testid="cred-login-id-input"
+                  value={newOwnerLoginId}
+                  onChange={(e) => setNewOwnerLoginId(e.target.value)}
+                  placeholder="e.g. shaizan@vigilamc.com"
+                  className="w-full px-3 py-2 rounded-xl bg-[#FFF8F2] border border-[#E5D5C5] font-bold text-[#1C1917]"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-extrabold text-[#1C1917]">
+                    Current Owner Password <span className="text-[#DC2626]">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowOwnerPasswords((p) => !p)}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#EA580C] hover:text-[#C2410C]"
+                  >
+                    {showOwnerPasswords ? (
+                      <>
+                        <EyeOff className="w-3.5 h-3.5" /> Hide
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="w-3.5 h-3.5" /> Show
+                      </>
+                    )}
+                  </button>
+                </div>
+                <input
+                  type={showOwnerPasswords ? 'text' : 'password'}
+                  required
+                  data-testid="cred-current-password-input"
+                  value={currentOwnerPassword}
+                  onChange={(e) => setCurrentOwnerPassword(e.target.value)}
+                  placeholder="Enter current password to confirm"
+                  className="w-full px-3 py-2 rounded-xl bg-[#FFF8F2] border border-[#E5D5C5] font-semibold text-[#1C1917]"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-extrabold text-[#1C1917] mb-1">
+                    New Password (Optional)
+                  </label>
+                  <input
+                    type={showOwnerPasswords ? 'text' : 'password'}
+                    data-testid="cred-new-password-input"
+                    value={newOwnerPassword}
+                    onChange={(e) => setNewOwnerPassword(e.target.value)}
+                    placeholder="Leave blank to keep current"
+                    className="w-full px-3 py-2 rounded-xl bg-[#FFF8F2] border border-[#E5D5C5] font-semibold text-[#1C1917]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-extrabold text-[#1C1917] mb-1">
+                    Confirm New Password
+                  </label>
+                  <input
+                    type={showOwnerPasswords ? 'text' : 'password'}
+                    data-testid="cred-confirm-password-input"
+                    value={confirmOwnerPassword}
+                    onChange={(e) => setConfirmOwnerPassword(e.target.value)}
+                    placeholder="Repeat new password"
+                    className="w-full px-3 py-2 rounded-xl bg-[#FFF8F2] border border-[#E5D5C5] font-semibold text-[#1C1917]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#F0E4D8]">
+                <button
+                  type="button"
+                  onClick={() => setIsCredModalOpen(false)}
+                  disabled={savingOwnerCreds}
+                  className="px-4 py-2 rounded-xl bg-[#FFF8F2] border border-[#E5D5C5] font-bold text-[#44403C] hover:text-[#1C1917] cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  data-testid="cred-save-btn"
+                  disabled={savingOwnerCreds}
+                  className="px-4 py-2 rounded-xl bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold shadow-xs cursor-pointer disabled:opacity-60"
+                >
+                  {savingOwnerCreds ? 'Saving...' : 'Save Login & Password'}
                 </button>
               </div>
             </form>
