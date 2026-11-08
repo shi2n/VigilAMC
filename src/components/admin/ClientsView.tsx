@@ -128,10 +128,10 @@ export function ClientsView({
 
           <button
             onClick={onAddClient}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#C2410C] to-[#1C1917] hover:from-[#C2410C] hover:to-[#9A3412] text-white font-bold text-xs shadow-md hover:shadow-lg transition-all"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white font-bold text-xs shadow-sm transition-colors"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>Add New Client</span>
+            <span>Add client</span>
           </button>
         </div>
       </div>

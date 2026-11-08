@@ -499,8 +499,8 @@ export function WorkOrdersView({
                         </span>
                       )}
                       {isOverdue && (
-                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-rose-50 text-[#B91C1C] border border-[#B91C1C]/30">
-                          ✕ Overdue
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-50 text-[#B91C1C] border border-[#B91C1C]/30">
+                          Overdue
                         </span>
                       )}
                       <h4 className="text-sm font-bold text-[#1C1917]">{wo.title}</h4>
@@ -520,7 +520,7 @@ export function WorkOrdersView({
                         <User className="w-3.5 h-3.5 text-[#C2410C]" />
                         Assigned:{' '}
                         <strong className="font-semibold">
-                          {wo.assignedTo?.fullName || '⚠ Unassigned'}
+                          {wo.assignedTo?.fullName || 'Unassigned'}
                         </strong>
                       </span>
                       {wo.dueDate && (

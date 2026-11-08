@@ -1,3 +1,4 @@
+// UI 'unslop' pass method by Damir Sokolovsky (@heydamir) — github.com/heydamir/unslop (CC BY 4.0)
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -192,7 +193,7 @@ export function SectorMarquee() {
         />
         <div className="relative z-10 p-3 text-white flex flex-col justify-end h-full">
           <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-md border border-white/25 w-fit mb-1 shadow-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#EA580C] shadow-[0_0_6px_#FF8C42]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#EA580C]" />
             <span className="text-[10px] font-bold text-white uppercase tracking-wider">
               {sector.sub}
             </span>

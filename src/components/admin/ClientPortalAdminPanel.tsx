@@ -15,7 +15,6 @@ import {
   FileCheck2,
   AlertCircle,
   Loader2,
-  Sparkles,
   Link as LinkIcon
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -98,7 +97,7 @@ export function ClientPortalAdminPanel({ clients = [], buildings = [] }: ClientP
         toast.success(data.message || 'Invitation email dispatched successfully');
       } else {
         setGeneratedInviteLink(data.inviteLink);
-        toast.info('Magic invite link created — click Copy below to share with your client.');
+        toast.info('Client invite link created — click Copy below to share with your client.');
       }
 
       setContactName('');
@@ -115,7 +114,7 @@ export function ClientPortalAdminPanel({ clients = [], buildings = [] }: ClientP
     if (!generatedInviteLink) return;
     navigator.clipboard.writeText(generatedInviteLink);
     setCopiedLink(true);
-    toast.success('Magic invite link copied to clipboard!');
+    toast.success('Client invite link copied to clipboard');
     setTimeout(() => setCopiedLink(false), 2500);
   };
 
@@ -223,7 +222,7 @@ export function ClientPortalAdminPanel({ clients = [], buildings = [] }: ClientP
           <div className="bg-white p-5 sm:p-6 rounded-2xl border border-[#F0E4D8] shadow-sm space-y-4">
             <div className="space-y-0.5">
               <h3 className="text-sm font-bold text-[#1C1917] flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#EA580C]" />
+                <Mail className="w-4 h-4 text-[#EA580C]" />
                 Invite Client Contact to Portal
               </h3>
               <p className="text-xs text-[#44403C]">
@@ -303,7 +302,7 @@ export function ClientPortalAdminPanel({ clients = [], buildings = [] }: ClientP
               >
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-[#9A3412] flex items-center gap-1.5">
-                    <LinkIcon className="w-3.5 h-3.5 text-[#EA580C]" /> Magic Invite Link Ready (Valid for 30 minutes)
+                    <LinkIcon className="w-3.5 h-3.5 text-[#EA580C]" /> Invite link ready (valid for 30 minutes)
                   </span>
                   <span className="text-[10px] text-[#78716C]">Copy &amp; send via WhatsApp or email</span>
                 </div>

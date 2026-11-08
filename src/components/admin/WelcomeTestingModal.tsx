@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
-import { X, Building2, Smartphone, FileCheck2, Sparkles } from 'lucide-react';
+import { X, Building2, Smartphone, FileCheck2, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { getAdminDictionary } from '@/lib/i18n/admin';
 import { isDuplicateSubmission, clearSubmissionLock } from '@/lib/submissionGuard';
@@ -287,7 +287,6 @@ export function WelcomeTestingModal({
                       <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                     </span>
                     <span className="leading-snug">
-                      <span aria-hidden="true" className="mr-1.5">✅</span>
                       {item.text}
                     </span>
                   </li>
@@ -304,7 +303,7 @@ export function WelcomeTestingModal({
                 onClick={() => handleDismiss('cta')}
                 className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#EA580C] hover:bg-[#C2410C] active:bg-[#9A3412] px-5 py-3 text-sm font-extrabold text-white shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EA580C] focus-visible:ring-offset-2"
               >
-                <Sparkles className="h-4 w-4" aria-hidden="true" />
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 <span>{t.welcomeCta}</span>
               </button>
             </div>

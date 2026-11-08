@@ -158,7 +158,7 @@ export function MinimizeTray({ items, onRestore, onClose }: MinimizeTrayProps) {
             <span>
               {expanded ? '▲' : '▼'} {items.length} Minimized
             </span>
-            <span className="w-2 h-2 rounded-full bg-[#EA580C] animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-[#EA580C]" />
           </button>
         </div>
       ) : (

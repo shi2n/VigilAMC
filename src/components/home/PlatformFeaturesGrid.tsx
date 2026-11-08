@@ -1,3 +1,4 @@
+// UI 'unslop' pass method by Damir Sokolovsky (@heydamir) — github.com/heydamir/unslop (CC BY 4.0)
 'use client';
 
 import React from 'react';
@@ -24,53 +25,53 @@ interface FeatureItem {
 const features: FeatureItem[] = [
   {
     icon: <FileSpreadsheet className="w-5 h-5 text-[#C2410C]" />,
-    title: 'Excel Import with Templates',
-    description: 'Bulk upload entire building inventories and client registers in seconds with pre-mapped Excel templates.',
+    title: 'Excel import with templates',
+    description: 'Bulk upload building inventories and client registers with pre-mapped Excel templates.',
   },
   {
     icon: <ShieldCheck className="w-5 h-5 text-[#C2410C]" />,
-    title: 'Approvals Queue',
+    title: 'Approvals queue',
     description: 'Managerial review desk to audit technician checklists, GPS accuracy, and photo proof before signoff.',
   },
   {
     icon: <Wrench className="w-5 h-5 text-[#C2410C]" />,
-    title: 'Corrective-Action Tracking',
+    title: 'Corrective-action tracking',
     description: 'Track defects, broken seals, and low-pressure units with aging days, severity tags, and workshop notes.',
   },
   {
     icon: <RotateCw className="w-5 h-5 text-[#C2410C]" />,
-    title: 'Compliance Cycles & Auto Tasks',
+    title: 'Compliance cycles and auto tasks',
     description: 'Automated work order creation matching Maharashtra Form-B, Delhi Fire Rule 33, and NBC schedules.',
   },
   {
     icon: <Radar className="w-5 h-5 text-[#C2410C]" />,
-    title: 'Expiry Radar',
-    description: '30/60/90-day radar detecting cylinders due for refill, mandatory overhaul, or 5-year hydrostatic testing.',
+    title: 'Expiry radar',
+    description: 'Proactive 30, 60, and 90-day radar detecting cylinders due for refill, overhaul, or hydrostatic testing.',
   },
   {
     icon: <Map className="w-5 h-5 text-[#C2410C]" />,
-    title: 'Floor-Plan Asset Pins',
-    description: 'Interactive architectural floor plans with pinned equipment tags for rapid orientation during field visits.',
+    title: 'Floor-plan asset pins',
+    description: 'Architectural floor schematics with pinned equipment tags for rapid orientation during field visits.',
   },
   {
     icon: <Award className="w-5 h-5 text-[#C2410C]" />,
-    title: 'White-Label Reports',
-    description: 'A4 statutory certificates carrying your agency letterhead, government license number, logo, and seal.',
+    title: 'White-label reports',
+    description: 'A4 statutory certificates carrying your agency letterhead, state license number, logo, and digital signature.',
   },
   {
     icon: <Download className="w-5 h-5 text-[#C2410C]" />,
-    title: 'Monthly Register Export',
-    description: 'One-click spreadsheet export (XLSX) formatted for statutory submission to fire brigades and client auditors.',
+    title: 'Monthly register export',
+    description: 'Spreadsheet export (XLSX) formatted for statutory submission to fire brigades and client auditors.',
   },
   {
     icon: <Mail className="w-5 h-5 text-[#C2410C]" />,
-    title: 'Email-a-Report',
-    description: 'Instant client delivery with pre-filled professional email summaries and direct view links requiring no login.',
+    title: 'Email delivery receipts',
+    description: 'Client delivery with pre-filled email summaries and direct view links requiring no client login.',
   },
   {
     icon: <Building2 className="w-5 h-5 text-[#C2410C]" />,
-    title: 'Client Portal',
-    description: 'Dedicated client access allowing facility directors to view live asset compliance and download certificates.',
+    title: 'Client portal',
+    description: 'Dedicated read-only portal for facility managers to inspect compliance status and download certificates.',
   },
 ];
 
@@ -91,7 +92,7 @@ export function PlatformFeaturesGrid() {
             </span>
           </div>
           <h2 className="font-display font-bold text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#1C1917]">
-            Everything Needed to Run a Modern AMC Business
+            Everything needed to run a fire AMC business<span className="text-[#EA580C]">.</span>
           </h2>
           <p className="mt-4 text-base sm:text-lg text-[#44403C] leading-relaxed">
             From bulk asset onboarding to statutory compliance certificates — every core tool is built-in and ready on day one.
@@ -106,7 +107,7 @@ export function PlatformFeaturesGrid() {
               className="p-5 rounded-2xl bg-[#FFF8F2]/60 hover:bg-[#FFF8F2] border border-[#FED7AA]/60 hover:border-[#FED7AA] shadow-xs hover:shadow-md transition-[background-color,border-color,box-shadow] duration-180 flex flex-col justify-between group"
             >
               <div>
-                <div className="w-10 h-10 rounded-xl bg-white border border-[#FED7AA] flex items-center justify-center shadow-xs mb-3.5 group-hover:scale-105 transition-transform">
+                <div className="w-10 h-10 rounded-xl bg-white border border-[#FED7AA] flex items-center justify-center shadow-xs mb-3.5">
                   {feature.icon}
                 </div>
                 <h3 className="text-sm font-bold text-[#1C1917] tracking-tight group-hover:text-[#C2410C] transition-colors">

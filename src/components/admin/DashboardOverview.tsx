@@ -1,3 +1,4 @@
+// UI 'unslop' pass method by Damir Sokolovsky (@heydamir) — github.com/heydamir/unslop (CC BY 4.0)
 'use client';
 
 import React, { useState } from 'react';
@@ -178,8 +179,20 @@ export function DashboardOverview({
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
   const realSeries = analytics?.[selectedMetric]?.[selectedRange];
-  const activeSeries = realSeries || CHART_SERIES[selectedMetric][selectedRange];
-  const hasLiveDbData = analytics?.hasData ?? false;
+  const hasLiveDbData = Boolean(analytics?.hasData && realSeries && realSeries.values.some((v: number) => v > 0));
+  const activeSeries = hasLiveDbData && realSeries ? realSeries : {
+    labels: selectedRange === '7D'
+      ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+      : selectedRange === '30D'
+      ? ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4']
+      : selectedRange === '90D'
+      ? ['Month 1', 'Month 2', 'Month 3']
+      : ['Q1', 'Q2', 'Q3', 'Q4'],
+    values: selectedRange === '7D' ? [0, 0, 0, 0, 0, 0, 0] : selectedRange === '30D' ? [0, 0, 0, 0] : selectedRange === '90D' ? [0, 0, 0] : [0, 0, 0, 0],
+    unit: selectedMetric === 'COMPLIANCE' ? '%' : 'checks',
+    delta: '0 vs prior period',
+    up: true,
+  };
 
   // Compute First-Time Setup Checklist (1 to 5)
   const hasAgencyDetails = Boolean(
@@ -283,26 +296,6 @@ export function DashboardOverview({
 
   return (
     <div className="relative space-y-6">
-      {/* Ambient Radial Ember Glow Planes behind KPI cards (Critical Glass Rule) */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -top-8 left-[10%] w-[420px] h-[260px] rounded-full"
-        style={{
-          background:
-            'radial-gradient(circle, rgba(232, 89, 12, 0.20) 0%, rgba(255, 140, 66, 0.14) 48%, rgba(255, 248, 242, 0) 74%)',
-          filter: 'blur(85px)',
-        }}
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute top-[18%] right-[8%] w-[440px] h-[280px] rounded-full"
-        style={{
-          background:
-            'radial-gradient(circle, rgba(255, 140, 66, 0.20) 0%, rgba(232, 89, 12, 0.12) 50%, rgba(255, 248, 242, 0) 75%)',
-          filter: 'blur(90px)',
-        }}
-      />
-
       {/* Top Bar: Title, Badge, and Action Buttons */}
       <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-[#1C1917]/10">
         <div className="space-y-1">
@@ -356,16 +349,16 @@ export function DashboardOverview({
         <div
           onClick={() => onNavigateTab('FIRE_EQUIPMENT')}
           data-testid="kpi-card-overdue"
-          className={`glass-panel relative p-5 rounded-2xl transition-all duration-200 cursor-pointer group hover:-translate-y-0.5 ${
+          className={`glass-panel relative p-5 rounded-2xl transition-colors duration-150 cursor-pointer group ${
             kpis.overdueCount > 0
-              ? 'border-[#DC2626]/60 ring-2 ring-[#DC2626]/15'
+              ? 'border-[#DC2626]/60 ring-1 ring-[#DC2626]/20'
               : 'hover:border-[#EA580C]/45'
           }`}
         >
           <div className="flex items-center justify-between text-[#44403C] mb-2">
             <span className="text-xs font-semibold">Overdue equipment</span>
             <div
-              className={`p-2 rounded-xl transition-transform duration-150 group-hover:scale-105 ${
+              className={`p-2 rounded-xl ${
                 kpis.overdueCount > 0
                   ? 'bg-rose-50 text-[#DC2626] border border-[#DC2626]/20'
                   : 'bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA]'
@@ -375,7 +368,7 @@ export function DashboardOverview({
             </div>
           </div>
           <div
-            className={`text-2xl sm:text-3xl font-black tracking-tight tabular-nums ${
+            className={`text-2xl sm:text-3xl font-bold tracking-tight tabular-nums ${
               kpis.overdueCount > 0 ? 'text-[#DC2626]' : 'text-[#1C1917]'
             }`}
           >
@@ -390,15 +383,15 @@ export function DashboardOverview({
         <div
           onClick={() => onNavigateTab('FIRE_EQUIPMENT')}
           data-testid="kpi-card-due-soon"
-          className="glass-panel p-5 rounded-2xl hover:border-[#EA580C]/45 transition-all duration-200 cursor-pointer group hover:-translate-y-0.5"
+          className="glass-panel p-5 rounded-2xl hover:border-[#EA580C]/45 transition-colors duration-150 cursor-pointer group"
         >
           <div className="flex items-center justify-between text-[#44403C] mb-2">
             <span className="text-xs font-semibold">Due in 30 days</span>
-            <div className="p-2 rounded-xl bg-[#FFF0E6] text-[#D97706] border border-[#FED7AA] transition-transform duration-150 group-hover:scale-105">
+            <div className="p-2 rounded-xl bg-[#FFF0E6] text-[#D97706] border border-[#FED7AA]">
               <Clock className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-[#1C1917] tracking-tight tabular-nums">
+          <div className="text-2xl sm:text-3xl font-bold text-[#1C1917] tracking-tight tabular-nums">
             <NumberTicker value={kpis.dueSoonCount} />
           </div>
           <p className="text-[11px] text-[#44403C] mt-1">
@@ -410,15 +403,15 @@ export function DashboardOverview({
         <div
           onClick={() => onNavigateTab('INSPECTIONS_WORK')}
           data-testid="kpi-card-open-repairs"
-          className="glass-panel p-5 rounded-2xl hover:border-[#EA580C]/45 transition-all duration-200 cursor-pointer group hover:-translate-y-0.5"
+          className="glass-panel p-5 rounded-2xl hover:border-[#EA580C]/45 transition-colors duration-150 cursor-pointer group"
         >
           <div className="flex items-center justify-between text-[#44403C] mb-2">
             <span className="text-xs font-semibold">Open repairs</span>
-            <div className="p-2 rounded-xl bg-gradient-to-br from-[#EA580C] to-[#C2410C] text-white shadow-xs transition-transform duration-150 group-hover:scale-105">
+            <div className="p-2 rounded-xl bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA]">
               <Wrench className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-[#1C1917] tracking-tight tabular-nums">
+          <div className="text-2xl sm:text-3xl font-bold text-[#1C1917] tracking-tight tabular-nums">
             <NumberTicker value={kpis.openRepairsCount} />
           </div>
           <p className="text-[11px] text-[#44403C] mt-1">
@@ -430,15 +423,15 @@ export function DashboardOverview({
         <div
           onClick={() => onNavigateTab('INSPECTIONS_WORK')}
           data-testid="kpi-card-inspections-week"
-          className="glass-panel p-5 rounded-2xl hover:border-[#EA580C]/45 transition-all duration-200 cursor-pointer group hover:-translate-y-0.5"
+          className="glass-panel p-5 rounded-2xl hover:border-[#EA580C]/45 transition-colors duration-150 cursor-pointer group"
         >
           <div className="flex items-center justify-between text-[#44403C] mb-2">
             <span className="text-xs font-semibold">Inspections this week</span>
-            <div className="p-2 rounded-xl bg-emerald-50 text-[#059669] border border-[#059669]/20 transition-transform duration-150 group-hover:scale-105">
+            <div className="p-2 rounded-xl bg-emerald-50 text-[#059669] border border-[#059669]/20">
               <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-[#059669] tracking-tight tabular-nums">
+          <div className="text-2xl sm:text-3xl font-bold text-[#059669] tracking-tight tabular-nums">
             <NumberTicker value={kpis.inspectionsThisWeek} />
           </div>
           <p className="text-[11px] text-[#44403C] mt-1">
@@ -586,6 +579,15 @@ export function DashboardOverview({
             ))}
           </svg>
 
+          {/* Empty state notice if no live inspection points exist */}
+          {!hasLiveDbData && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none pb-6">
+              <div className="px-3 py-1.5 rounded-full bg-white/95 border border-[#FED7AA] text-xs font-medium text-[#44403C] shadow-xs">
+                {t.chartEmptyState}
+              </div>
+            </div>
+          )}
+
           {/* Glass Chart Tooltip */}
           {hoverIdx !== null && pts[hoverIdx] && (
             <div
@@ -682,7 +684,7 @@ export function DashboardOverview({
           {/* Progress bar */}
           <div className="w-full h-2 rounded-full bg-[#FED7AA]/50 overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-[#EA580C] via-[#FF8C42] to-[#059669] rounded-full transition-all duration-500"
+              className="h-full bg-[#EA580C] rounded-full transition-[width] duration-300 ease-out"
               style={{ width: `${progressPercent}%` }}
             />
           </div>

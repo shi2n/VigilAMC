@@ -95,7 +95,7 @@ export function BuildingsView({
 
         <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 shadow-sm space-y-1">
           <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
             Verified
           </span>
           <div className="flex items-baseline gap-2">
@@ -121,7 +121,7 @@ export function BuildingsView({
 
         <div className="p-4 rounded-2xl bg-rose-50/70 border border-rose-200 shadow-sm space-y-1">
           <span className="text-[11px] font-bold text-rose-800 uppercase tracking-wider flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+            <span className="w-2 h-2 rounded-full bg-red-500"></span>
             Overdue
           </span>
           <div className="flex items-baseline gap-2">
@@ -170,7 +170,7 @@ export function BuildingsView({
 
             <button
               onClick={onAddBuilding}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#C2410C] to-[#1C1917] hover:from-[#C2410C] hover:to-[#9A3412] text-white text-xs font-bold shadow-md hover:shadow-lg transition-all"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white text-xs font-bold shadow-sm transition-colors"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
               <span>Add Client &amp; Building</span>
@@ -234,12 +234,12 @@ export function BuildingsView({
                             }`}
                           >
                             {b.overallStatus === 'VERIFIED' || b.overallStatus === 'COMPLIANT'
-                              ? '✓ Verified'
+                              ? 'Verified'
                               : b.overallStatus === 'DUE_SOON'
-                              ? '⚠ Due Soon (30d)'
+                              ? 'Due soon (30d)'
                               : b.overallStatus === 'OVERDUE'
-                              ? '✕ Overdue'
-                              : '○ Not Yet Inspected'}
+                              ? 'Overdue'
+                              : 'Not inspected'}
                           </span>
                         </div>
 

@@ -1,3 +1,4 @@
+// UI 'unslop' pass method by Damir Sokolovsky (@heydamir) — github.com/heydamir/unslop (CC BY 4.0)
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -220,7 +221,7 @@ export function HeroGlass() {
                 Never Miss a Fire{' '}
                 <span className="text-[#C2410C]">Compliance</span>{' '}
                 <br className="hidden sm:inline" />
-                Deadline Again.
+                Deadline Again<span className="text-[#EA580C]">.</span>
               </h1>
             </div>
 
@@ -239,7 +240,7 @@ export function HeroGlass() {
                 data-testid="hero-live-demo-btn"
                 className="btn-flame inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-base shadow-[0_4px_14px_rgba(194,65,12,0.35)]"
               >
-                <span>See Live Demo</span>
+                <span>See live demo</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
@@ -247,13 +248,7 @@ export function HeroGlass() {
                 className="btn-ghost-flame inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-base"
               >
                 <FileCheck2 className="w-5 h-5" />
-                <span>Sample Report</span>
-              </Link>
-              <Link
-                href="/login"
-                className="btn-ghost-flame inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-base"
-              >
-                <span>Free Pilot</span>
+                <span>Sample report</span>
               </Link>
             </div>
 

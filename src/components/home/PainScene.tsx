@@ -1,3 +1,4 @@
+// UI 'unslop' pass method by Damir Sokolovsky (@heydamir) — github.com/heydamir/unslop (CC BY 4.0)
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -169,7 +170,7 @@ export function PainScene() {
               id="pain-heading"
               className="font-display font-bold tracking-[-0.02em] text-[#1C1917] text-[clamp(1.6rem,3vw,2.35rem)] leading-[1.15] max-w-[22ch]"
             >
-              Your agency shouldn&rsquo;t run on paper registers and WhatsApp proofs.
+              Your agency shouldn&rsquo;t run on paper registers and WhatsApp proofs<span className="text-[#EA580C]">.</span>
             </h2>
             <ul className="mt-5 space-y-3">
               {OLD_WAY.map((item) => (

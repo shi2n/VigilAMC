@@ -19,7 +19,6 @@ import {
   UserX,
   X,
   Check,
-  Sparkles,
   Copy,
   MessageCircle,
   Smartphone,
@@ -925,7 +924,7 @@ export function TechnicianManagement({
                           className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] shadow-xs transition-all"
                         >
                           <MessageCircle className="w-3.5 h-3.5" />
-                          <span>📲 Send on WhatsApp</span>
+                          <span>Send on WhatsApp</span>
                         </button>
 
                         <button
@@ -1061,7 +1060,7 @@ export function TechnicianManagement({
                       onClick={handleGeneratePinAndId}
                       className="text-[11px] font-bold text-[#C2410C] hover:text-[#9A3412] flex items-center gap-1"
                     >
-                      <Sparkles className="w-3 h-3" />
+                      <KeyRound className="w-3 h-3" />
                       <span>Generate PIN</span>
                     </button>
                   </div>
@@ -1214,7 +1213,7 @@ export function TechnicianManagement({
                 className="w-full py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-black text-xs shadow-lg transition-all flex items-center justify-center gap-2"
               >
                 <MessageCircle className="w-4 h-4 fill-slate-900" />
-                <span>📲 Send App &amp; Login ID on WhatsApp</span>
+                <span>Send app &amp; login ID on WhatsApp</span>
               </button>
 
               <div className="flex gap-2">
@@ -1421,7 +1420,7 @@ export function TechnicianManagement({
                     onClick={() => setNewPassword(generateSixDigitPin())}
                     className="text-[11px] font-bold text-[#C2410C] hover:text-[#9A3412] flex items-center gap-1"
                   >
-                    <Sparkles className="w-3 h-3" />
+                    <KeyRound className="w-3 h-3" />
                     <span>Generate PIN</span>
                   </button>
                 </div>
@@ -1559,7 +1558,7 @@ export function TechnicianManagement({
                                   : 'bg-amber-100 text-amber-900 border border-amber-200'
                               }`}
                             >
-                              {isVisit ? '📍 VISIT STAMP' : act.action}
+                              {isVisit ? 'Visit stamp' : act.action}
                             </span>
                             {isVisit && parsed?.buildingName && (
                               <span className="font-bold text-slate-900 text-xs">
@@ -1601,7 +1600,7 @@ export function TechnicianManagement({
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"
               >
                 <MessageCircle className="w-3.5 h-3.5" />
-                <span>📲 Send App &amp; Login ID on WhatsApp</span>
+                <span>Send app &amp; login ID on WhatsApp</span>
               </button>
               <button
                 onClick={() => setViewDetailTech(null)}

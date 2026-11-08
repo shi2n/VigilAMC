@@ -1,3 +1,4 @@
+// UI 'unslop' pass method by Damir Sokolovsky (@heydamir) — github.com/heydamir/unslop (CC BY 4.0)
 'use client';
 
 import React from 'react';
@@ -27,9 +28,9 @@ const toolCards: ToolCard[] = [
     icon: <LayoutDashboard className="w-6 h-6 text-[#C2410C]" />,
     badge: 'Interactive demo',
     badgeColor: 'bg-[#FFF0E6] text-[#C2410C] border-[#FED7AA]',
-    title: 'Live Product Demo',
+    title: 'Live product demo',
     description: 'Explore the full admin dashboard, approvals queue, and technician workflows without creating an account.',
-    ctaText: 'Open Live Demo',
+    ctaText: 'Open live demo',
     href: '/demo',
     testId: 'free-tool-demo',
   },
@@ -37,9 +38,9 @@ const toolCards: ToolCard[] = [
     icon: <Calculator className="w-6 h-6 text-[#C2410C]" />,
     badge: 'IS 2190 calculator',
     badgeColor: 'bg-[#FFF8F2] text-[#44403C] border-[#FED7AA]',
-    title: 'Extinguisher Calculator',
+    title: 'Extinguisher calculator',
     description: 'Calculate statutory fire extinguisher quantities, rating codes, and max travel distance based on NBC occupancy hazard.',
-    ctaText: 'Calculate Requirements',
+    ctaText: 'Calculate requirements',
     href: '/tools/extinguisher-calculator',
     testId: 'free-tool-calculator',
   },
@@ -47,9 +48,9 @@ const toolCards: ToolCard[] = [
     icon: <ShieldCheck className="w-6 h-6 text-[#C2410C]" />,
     badge: 'Audit verification',
     badgeColor: 'bg-[#FFF8F2] text-[#44403C] border-[#FED7AA]',
-    title: 'Verify Compliance Record',
+    title: 'Verify compliance record',
     description: 'Verify tamper-evident physical asset tags, service history, GPS coordinates, and inspection certificates online.',
-    ctaText: 'Verify Asset Tag',
+    ctaText: 'Verify asset tag',
     href: '/verify',
     testId: 'free-tool-verify',
   },
@@ -57,9 +58,9 @@ const toolCards: ToolCard[] = [
     icon: <Building2 className="w-6 h-6 text-[#C2410C]" />,
     badge: 'Client portal',
     badgeColor: 'bg-[#FFF8F2] text-[#44403C] border-[#FED7AA]',
-    title: 'Client Portal Login',
+    title: 'Client portal login',
     description: 'Facility directors and building owners can sign in to view real-time compliance status and download Form-B records.',
-    ctaText: 'Access Client Portal',
+    ctaText: 'Access client portal',
     href: '/portal/login',
     testId: 'free-tool-portal',
   },
@@ -82,7 +83,7 @@ export function FreeToolsSection() {
             </span>
           </div>
           <h2 className="font-display font-bold text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#1C1917]">
-            Free Tools &amp; Live Demos
+            Free tools and live demos<span className="text-[#EA580C]">.</span>
           </h2>
           <p className="mt-4 text-base sm:text-lg text-[#44403C] leading-relaxed">
             Test the platform right now, calculate your facility fire safety requirements, or verify an existing asset inspection.

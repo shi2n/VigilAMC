@@ -1,3 +1,4 @@
+// UI 'unslop' pass method by Damir Sokolovsky (@heydamir) — github.com/heydamir/unslop (CC BY 4.0)
 'use client';
 
 import React, { useState } from 'react';
@@ -40,7 +41,7 @@ export function VideoExplainerSection() {
             </span>
           </div>
           <h2 className="font-display font-bold text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#1C1917]">
-            How Fire-Safety Agencies Run on VigilAMC
+            How fire-safety agencies run on VigilAMC<span className="text-[#EA580C]">.</span>
           </h2>
           <p className="mt-4 text-base sm:text-lg text-[#44403C] leading-relaxed">
             Watch how modern fire AMC teams eliminate paperwork, verify physical visits with live GPS, and print statutory

@@ -9,7 +9,6 @@ import {
   ShieldCheck,
   Bell,
   Download,
-  Sparkles,
   CalendarClock,
   FileSignature,
   CheckCircle2,
@@ -450,7 +449,7 @@ export function SettingsView({
               <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#FFF0E6]/70 border border-[#FED7AA]">
                 <div className="space-y-0.5">
                   <div className="font-bold text-[#1C1917] flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-[#C2410C]" />
+                    <FileSignature className="w-3.5 h-3.5 text-[#C2410C]" />
                     <span>White-Label Client Certificates</span>
                   </div>
                   <p className="text-[11px] text-[#44403C]">

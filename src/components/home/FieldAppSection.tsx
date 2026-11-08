@@ -1,3 +1,4 @@
+// UI 'unslop' pass method by Damir Sokolovsky (@heydamir) — github.com/heydamir/unslop (CC BY 4.0)
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -73,7 +74,7 @@ export function FieldAppSection() {
                 id="field-app-heading"
                 className="font-display font-bold tracking-[-0.02em] text-[#1C1917] text-[clamp(1.75rem,3.4vw,2.5rem)] leading-[1.12]"
               >
-                Your technicians deserve a real field app
+                Your technicians deserve a real field app<span className="text-[#EA580C]">.</span>
               </h2>
 
               <p className="text-sm sm:text-base text-[#44403C] leading-relaxed max-w-2xl">

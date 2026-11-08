@@ -154,7 +154,7 @@ export function EmberLine({
             <span
               className={`w-2.5 h-2.5 rounded-full transition-transform duration-300 ${
                 isActive
-                  ? 'bg-[#EA580C] scale-125 ring-4 ring-[#EA580C]/25 shadow-[0_0_12px_rgba(234,88,12,0.7)]'
+                  ? 'bg-[#EA580C] scale-125 ring-4 ring-[#EA580C]/25'
                   : 'bg-[#FFFFFF] border border-[#C2410C]/40 scale-100'
               }`}
             />

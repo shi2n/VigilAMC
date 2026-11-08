@@ -1,3 +1,4 @@
+// UI 'unslop' pass method by Damir Sokolovsky (@heydamir) — github.com/heydamir/unslop (CC BY 4.0)
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -175,11 +176,11 @@ export function AdminSidebar({
           {!collapsed && (
             <div className="flex flex-col min-w-0 transition-opacity duration-150">
               <div className="flex items-center gap-1.5">
-                <span className="font-display font-extrabold text-base tracking-tight text-[#1C1917]">
+                <span className="font-display font-bold text-base tracking-tight text-[#1C1917]">
                   Vigil<span className="text-[#C2410C]">AMC</span>
                 </span>
-                <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA]">
-                  LIVE
+                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA]">
+                  Live
                 </span>
               </div>
               <p className="text-[11px] text-[#44403C] truncate max-w-[130px]">
@@ -302,7 +303,7 @@ export function AdminSidebar({
       <div className={`border-t border-[#1C1917]/10 bg-white/45 ${collapsed ? 'p-2.5' : 'p-3.5 space-y-2'}`}>
         <div className={`flex items-center ${collapsed ? 'flex-col gap-2 justify-center' : 'justify-between gap-2 min-w-0'}`}>
           <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-2.5 min-w-0'}`} title={displayName}>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#EA580C] to-[#C2410C] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+            <div className="w-8 h-8 rounded-full bg-[#EA580C] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
               {userInitials}
             </div>
             {!collapsed && (

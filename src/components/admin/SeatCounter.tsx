@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Users, Sparkles, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Users, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
 
 export interface SeatUsage {
   active: number;
@@ -39,8 +39,8 @@ export function SeatCounter({
             <div className="w-7 h-7 rounded-lg bg-[#FFF0E6] text-[#C2410C] flex items-center justify-center border border-[#C2410C]/30">
               <Users className="w-4 h-4" />
             </div>
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Technician Workforce
+            <span className="text-xs font-semibold text-[#44403C]">
+              Technician workforce
             </span>
             <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
               Free testing access

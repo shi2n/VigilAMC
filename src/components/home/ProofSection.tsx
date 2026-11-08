@@ -1,3 +1,4 @@
+// UI 'unslop' pass method by Damir Sokolovsky (@heydamir) — github.com/heydamir/unslop (CC BY 4.0)
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -32,8 +33,8 @@ const STATS: StatCardConfig[] = [
     target: 190,
     suffix: '+',
     unitLabel: ' hrs/yr',
-    label: 'Saved on Manual Paperwork',
-    sublabel: 'Per AMC agency by eliminating Excel & paper registers',
+    label: 'Saved on manual paperwork',
+    sublabel: 'Per AMC agency by eliminating Excel and paper registers',
   },
   {
     id: 'stat-savings',
@@ -41,7 +42,7 @@ const STATS: StatCardConfig[] = [
     prefix: '₹',
     suffix: '',
     unitLabel: '/yr',
-    label: 'Saved on Printing & Stationary',
+    label: 'Saved on printing and stationary',
     sublabel: 'Digital dual-signed PDF certificates replace triplicate books',
     formatLocale: true,
   },
@@ -50,15 +51,15 @@ const STATS: StatCardConfig[] = [
     target: 750,
     suffix: '+',
     unitLabel: ' pages',
-    label: 'Paper Registers Eliminated',
-    sublabel: 'Every building log stored safely in cloud & signed R2 proof',
+    label: 'Paper registers eliminated',
+    sublabel: 'Every building log stored safely in cloud and signed R2 proof',
   },
   {
     id: 'stat-speed',
     target: 10,
     suffix: '',
     unitLabel: ' sec',
-    label: 'To Generate Fire-NOC Report',
+    label: 'To generate fire-NOC report',
     sublabel: 'Instant Annex B / Form-B PDF right after on-site signature',
   },
 ];
@@ -421,7 +422,7 @@ export function ProofSection() {
               </div>
 
               <h3 className="font-display font-bold text-2xl sm:text-3xl lg:text-4xl text-[#FAFAF9] tracking-tight leading-tight">
-                See Exactly What a Fire Officer Sees During an Inspection
+                See exactly what a fire officer sees during an inspection<span className="text-[#EA580C]">.</span>
               </h3>
               <p className="mt-3 text-sm sm:text-base text-[#A8A29E] max-w-xl mx-auto leading-relaxed">
                 Open a real sample Fire Safety Compliance Report right now, or start your 30-day free pilot with your first building in under 10 minutes.
@@ -433,14 +434,14 @@ export function ProofSection() {
                   className="btn-flame inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-base shadow-lg"
                 >
                   <FileCheck2 className="w-5 h-5" />
-                  <span>See a Live Sample Report</span>
+                  <span>See a live sample report</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link
                   href="/login"
                   className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-white hover:bg-[#FFF8F2] text-[#1C1917] font-semibold text-base transition-all hover:-translate-y-0.5"
                 >
-                  <span>Start 30-Day Free Pilot</span>
+                  <span>Start your free 30-day pilot</span>
                 </Link>
               </div>
 
@@ -449,7 +450,7 @@ export function ProofSection() {
                   href="/login"
                   className="inline-flex items-center gap-1.5 text-xs text-white/80 hover:text-[#FF8C42] hover:underline transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
                 >
-                  <span>Already a customer? Login &rarr;</span>
+                  <span>Already an agency admin? Log in &rarr;</span>
                 </Link>
               </div>
 

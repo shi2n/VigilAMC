@@ -1,3 +1,4 @@
+// UI 'unslop' pass method by Damir Sokolovsky (@heydamir) — github.com/heydamir/unslop (CC BY 4.0)
 'use client';
 
 import React from 'react';
@@ -40,7 +41,7 @@ export function ProductOverviewSection() {
             </span>
           </div>
           <h2 className="font-display font-bold text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#1C1917] leading-tight">
-            See the Whole Platform in Action
+            See the whole platform in action<span className="text-[#EA580C]">.</span>
           </h2>
           <p className="mt-4 text-base sm:text-lg text-[#44403C] leading-relaxed">
             One connected operating system built specifically for Indian fire-safety AMC contractors — connecting your
@@ -64,7 +65,7 @@ export function ProductOverviewSection() {
                   <span>Central operations control</span>
                 </div>
                 <h3 className="font-display font-bold text-2xl sm:text-3xl text-[#1C1917] tracking-tight mt-2.5">
-                  Admin Dashboard Suite
+                  Admin dashboard suite
                 </h3>
                 <p className="text-sm sm:text-base text-[#44403C] mt-2 leading-relaxed">
                   Everything agency owners and operations managers need to oversee thousands of fire assets, coordinate
@@ -232,7 +233,7 @@ export function ProductOverviewSection() {
                   <span>Field operations app · Android live · iOS App Store soon</span>
                 </div>
                 <h3 className="font-display font-bold text-2xl sm:text-3xl text-[#1C1917] tracking-tight mt-2.5">
-                  Field Technician Mobile App
+                  Field technician mobile app
                 </h3>
                 <p className="text-sm sm:text-base text-[#44403C] mt-2 leading-relaxed">
                   Engineered specifically for technicians working in basement parking, deep electrical shafts, and remote

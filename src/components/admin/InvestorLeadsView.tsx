@@ -18,7 +18,6 @@ import {
   Briefcase,
   AlertCircle,
   MessageSquare,
-  Sparkles,
   ChevronDown,
 } from 'lucide-react';
 

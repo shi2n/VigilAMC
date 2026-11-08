@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Sparkles,
   CheckCircle2,
   Circle,
   ChevronRight,
@@ -129,7 +128,7 @@ export function GettingStartedChecklist({
         onClick={() => setDismissed(false)}
         className="text-xs text-[#C2410C] hover:text-[#9A3412] font-bold flex items-center gap-1.5 transition-colors"
       >
-        <Sparkles className="w-3.5 h-3.5" />
+        <ClipboardList className="w-3.5 h-3.5" />
         <span>Resume Setup Checklist ({completedCount}/{steps.length} done)</span>
       </button>
     );
@@ -142,12 +141,12 @@ export function GettingStartedChecklist({
   const progressPercent = Math.round((completedCount / steps.length) * 100);
 
   return (
-    <div id="getting-started-guide" className="glass-panel-dense rounded-2xl p-4 sm:p-5 border border-[#FED7AA] bg-gradient-to-br from-white/95 via-[#FFF8F2]/90 to-white/95 shadow-sm space-y-4">
+    <div id="getting-started-guide" className="glass-panel-dense rounded-2xl p-4 sm:p-5 border border-[#FED7AA] bg-white/95 shadow-sm space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <span className="p-1.5 rounded-lg bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA]">
-              <Sparkles className="w-4 h-4" />
+              <ClipboardList className="w-4 h-4" />
             </span>
             <h3 className="font-bold text-[#1C1917] text-sm sm:text-base">
               {t.guideChecklistTitle}
@@ -171,7 +170,7 @@ export function GettingStartedChecklist({
       {/* Progress Bar */}
       <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200">
         <div
-          className="bg-gradient-to-r from-[#EA580C] to-[#FF8C42] h-full transition-all duration-500 rounded-full"
+          className="bg-[#EA580C] h-full transition-[width] duration-300 rounded-full"
           style={{ width: `${progressPercent}%` }}
         />
       </div>
