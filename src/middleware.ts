@@ -2,31 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  const host = request.headers.get('host') || '';
-  const pathname = request.nextUrl.pathname;
-
-  // CRITICAL: NEVER redirect the Android field technician app, API endpoints, or static assets to another host.
-  // The Android app (com.vigilamc on Google Play) loads https://vigilamc.vercel.app/technician inside its WebView.
-  if (
-    pathname.startsWith('/technician') ||
-    pathname.startsWith('/api') ||
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/brand') ||
-    pathname.startsWith('/images') ||
-    pathname.includes('.') // sw.js, manifest.json, icons, images, static files
-  ) {
-    return NextResponse.next();
-  }
-
-  // Redirect public visits from vigilamc.vercel.app to www.vigilamc.com
-  if (host.includes('vigilamc.vercel.app')) {
-    const targetUrl = new URL(
-      `${pathname}${request.nextUrl.search}`,
-      'https://www.vigilamc.com'
-    );
-    return NextResponse.redirect(targetUrl, 308);
-  }
-
+  // Pass through all requests directly without forcing external domain redirects
   return NextResponse.next();
 }
 
