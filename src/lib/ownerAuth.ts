@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { headers } from 'next/headers';
+import { headers, cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { extractCookie, TECH_SESSION_COOKIE, verifyTechSessionToken } from '@/lib/techSession';
@@ -121,7 +121,15 @@ export async function verifyOwnerSession(req?: Request): Promise<OwnerAuthState>
     }
 
     // Also check if caller is signed in via technician session cookie or technician Bearer token
-    const techTokenFromCookie = extractCookie(req, TECH_SESSION_COOKIE);
+    let techTokenFromCookie = extractCookie(req, TECH_SESSION_COOKIE);
+    if (!techTokenFromCookie) {
+      try {
+        const cookieStore = cookies();
+        techTokenFromCookie = cookieStore.get(TECH_SESSION_COOKIE)?.value || null;
+      } catch {
+        // Ignored outside Next.js cookies() scope
+      }
+    }
     const techTokenFromBearer =
       authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
     const candidateTechToken = techTokenFromCookie || techTokenFromBearer;
