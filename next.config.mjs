@@ -29,6 +29,41 @@ const nextConfig = {
         destination: '/technician',
         permanent: false,
       },
+      {
+        source: '/admin',
+        destination: '/owner',
+        permanent: false,
+      },
+      {
+        source: '/owner-admin',
+        destination: '/owner',
+        permanent: false,
+      },
+      {
+        source: '/owner/admin',
+        destination: '/owner',
+        permanent: false,
+      },
+      {
+        source: '/owner-panel',
+        destination: '/owner',
+        permanent: false,
+      },
+      {
+        source: '/owner/login',
+        destination: '/owner',
+        permanent: false,
+      },
+      {
+        source: '/owner-console',
+        destination: '/owner',
+        permanent: false,
+      },
+      {
+        source: '/ownerconsole',
+        destination: '/owner',
+        permanent: false,
+      },
     ];
   },
 };

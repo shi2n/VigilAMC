@@ -18,11 +18,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Redirect public visits from vigilamc.vercel.app to vigilamc.com
+  // Redirect public visits from vigilamc.vercel.app to www.vigilamc.com
   if (host.includes('vigilamc.vercel.app')) {
     const targetUrl = new URL(
       `${pathname}${request.nextUrl.search}`,
-      'https://vigilamc.com'
+      'https://www.vigilamc.com'
     );
     return NextResponse.redirect(targetUrl, 308);
   }
