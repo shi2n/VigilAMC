@@ -24,34 +24,34 @@ const BUBBLES = [
     text: 'Did the technician actually visit?',
     initials: 'RS',
     who: 'Society secretary',
-    avatarBg: 'linear-gradient(135deg,#FF8C42,#EA580C)',
+    avatarBg: '#EA580C',
     slot: 'left-3 top-3 sm:-left-6 sm:top-6',
-    rot: -3,
+    rot: 0,
     dur: 5.4,
     phase: -1.2,
-    rate: 0.1,
+    rate: 0.08,
   },
   {
     text: 'Where is the photo proof?',
     initials: 'IN',
     who: 'Insurance surveyor',
-    avatarBg: 'linear-gradient(135deg,#C2410C,#9A3412)',
+    avatarBg: '#C2410C',
     slot: 'right-3 top-[34%] sm:-right-8 sm:top-[30%]',
-    rot: 3,
+    rot: 0,
     dur: 6.2,
     phase: -3.1,
-    rate: 0.06,
+    rate: 0.05,
   },
   {
     text: 'Fire Officer needs the report TODAY.',
     initials: 'FM',
     who: 'Facility manager',
-    avatarBg: 'linear-gradient(135deg,#D97706,#B45309)',
+    avatarBg: '#B45309',
     slot: 'left-4 bottom-4 sm:left-8 sm:-bottom-5',
-    rot: -2,
+    rot: 0,
     dur: 4.8,
     phase: -2.4,
-    rate: 0.14,
+    rate: 0.09,
   },
 ];
 
@@ -98,10 +98,9 @@ export function PainScene() {
         >
           {/* LEFT: the pain photo + question bubbles */}
           <div className="lg:col-span-5 relative mx-auto w-full max-w-[520px] lg:max-w-none">
-            <div aria-hidden="true" className="glow-blob -inset-10" style={{ opacity: 0.8 }} />
             <div
-              className="photo-tilt relative z-10 aspect-[4/3] rounded-3xl overflow-hidden border-[6px] border-white shadow-[0_36px_70px_-30px_rgba(28,25,23,0.38)]"
-              style={{ '--photo-rot': '1.5deg' } as React.CSSProperties}
+              className="photo-tilt relative z-10 aspect-[4/3] rounded-3xl overflow-hidden border-4 border-white shadow-[0_20px_50px_-20px_rgba(28,25,23,0.22)]"
+              style={{ '--photo-rot': '0deg' } as React.CSSProperties}
             >
               {/* Slow parallax on the photo itself (inset so edges never show) */}
               <div data-sc-parallax="0.04" className="absolute -inset-[10%]">
@@ -162,9 +161,9 @@ export function PainScene() {
 
           {/* RIGHT: headline + verified "old way" lines */}
           <div className={`lg:col-span-7 sc-reveal ${sceneIn ? 'is-visible' : ''}`}>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#DC2626]/10 border border-[#DC2626]/25 text-xs font-bold text-[#991B1B] mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#DC2626]/10 border border-[#DC2626]/20 text-xs font-semibold text-[#991B1B] mb-4">
               <XCircle className="w-4 h-4 text-[#DC2626]" />
-              <span>THE OLD WAY · PAPER LOGBOOKS &amp; WHATSAPP</span>
+              <span>The old way · Paper logbooks &amp; WhatsApp</span>
             </div>
             <h2
               id="pain-heading"
@@ -186,9 +185,9 @@ export function PainScene() {
         {/* Resolution row: verified "VigilAMC way" wins */}
         <div ref={resolveRef} className="mt-12 sm:mt-14">
           <div className="flex items-center justify-center lg:justify-start mb-3.5">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#059669]/15 border border-[#059669]/30 text-xs font-bold text-[#065F46]">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#059669]/10 border border-[#059669]/20 text-xs font-semibold text-[#065F46]">
               <CheckCircle2 className="w-4 h-4 text-[#059669]" />
-              THE VIGILAMC WAY · LIVE PROOF IN 10 SECONDS
+              The VigilAMC way · Live proof in 10 seconds
             </span>
           </div>
           <ul data-testid="vigil-way-row" className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4">

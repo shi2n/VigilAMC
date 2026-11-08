@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import {
-  Sparkles,
+  LayoutDashboard,
   Calculator,
   ShieldCheck,
   Building2,
@@ -24,8 +24,8 @@ interface ToolCard {
 
 const toolCards: ToolCard[] = [
   {
-    icon: <Sparkles className="w-6 h-6 text-[#C2410C]" />,
-    badge: 'INTERACTIVE WALKTHROUGH',
+    icon: <LayoutDashboard className="w-6 h-6 text-[#C2410C]" />,
+    badge: 'Interactive demo',
     badgeColor: 'bg-[#FFF0E6] text-[#C2410C] border-[#FED7AA]',
     title: 'Live Product Demo',
     description: 'Explore the full admin dashboard, approvals queue, and technician workflows without creating an account.',
@@ -34,9 +34,9 @@ const toolCards: ToolCard[] = [
     testId: 'free-tool-demo',
   },
   {
-    icon: <Calculator className="w-6 h-6 text-emerald-700" />,
-    badge: 'STATUTORY TOOL (IS 2190)',
-    badgeColor: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+    icon: <Calculator className="w-6 h-6 text-[#C2410C]" />,
+    badge: 'IS 2190 calculator',
+    badgeColor: 'bg-[#FFF8F2] text-[#44403C] border-[#FED7AA]',
     title: 'Extinguisher Calculator',
     description: 'Calculate statutory fire extinguisher quantities, rating codes, and max travel distance based on NBC occupancy hazard.',
     ctaText: 'Calculate Requirements',
@@ -44,9 +44,9 @@ const toolCards: ToolCard[] = [
     testId: 'free-tool-calculator',
   },
   {
-    icon: <ShieldCheck className="w-6 h-6 text-blue-700" />,
-    badge: 'PUBLIC AUDIT RADAR',
-    badgeColor: 'bg-blue-50 text-blue-800 border-blue-200',
+    icon: <ShieldCheck className="w-6 h-6 text-[#C2410C]" />,
+    badge: 'Audit verification',
+    badgeColor: 'bg-[#FFF8F2] text-[#44403C] border-[#FED7AA]',
     title: 'Verify Compliance Record',
     description: 'Verify tamper-evident physical asset tags, service history, GPS coordinates, and inspection certificates online.',
     ctaText: 'Verify Asset Tag',
@@ -54,9 +54,9 @@ const toolCards: ToolCard[] = [
     testId: 'free-tool-verify',
   },
   {
-    icon: <Building2 className="w-6 h-6 text-purple-700" />,
-    badge: 'CLIENT ACCESS',
-    badgeColor: 'bg-purple-50 text-purple-800 border-purple-200',
+    icon: <Building2 className="w-6 h-6 text-[#C2410C]" />,
+    badge: 'Client portal',
+    badgeColor: 'bg-[#FFF8F2] text-[#44403C] border-[#FED7AA]',
     title: 'Client Portal Login',
     description: 'Facility directors and building owners can sign in to view real-time compliance status and download Form-B records.',
     ctaText: 'Access Client Portal',
@@ -75,10 +75,10 @@ export function FreeToolsSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-14 sm:mb-18">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#FED7AA] shadow-[0_2px_8px_rgba(234,88,12,0.08)] mb-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#FED7AA] shadow-[0_1px_3px_rgba(28,25,23,0.06)] mb-4">
             <span className="w-2 h-2 rounded-full bg-[#EA580C]" />
-            <span className="text-xs font-bold uppercase tracking-wider text-[#C2410C]">
-              No Signup Required
+            <span className="text-xs font-semibold text-[#C2410C]">
+              No signup required
             </span>
           </div>
           <h2 className="font-display font-bold text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#1C1917]">
@@ -95,15 +95,15 @@ export function FreeToolsSection() {
             <div
               key={idx}
               data-testid={card.testId}
-              className="glass-panel rounded-2xl p-6 border border-[#FED7AA]/80 shadow-[0_10px_30px_-10px_rgba(28,25,23,0.08)] hover:shadow-lg transition-all duration-200 flex flex-col justify-between group"
+              className="glass-panel rounded-2xl p-6 border border-[#FED7AA]/80 shadow-[0_10px_30px_-10px_rgba(28,25,23,0.08)] hover:shadow-md transition-[box-shadow,border-color] duration-180 flex flex-col justify-between group"
             >
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-white border border-[#FED7AA] flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                  <div className="w-12 h-12 rounded-xl bg-white border border-[#FED7AA] flex items-center justify-center shadow-xs">
                     {card.icon}
                   </div>
                   <span
-                    className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border ${card.badgeColor}`}
+                    className={`text-[11px] font-semibold px-2 py-0.5 rounded-md border ${card.badgeColor}`}
                   >
                     {card.badge}
                   </span>
@@ -120,7 +120,7 @@ export function FreeToolsSection() {
               <div className="pt-6">
                 <Link
                   href={card.href}
-                  className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA] hover:border-[#EA580C] font-bold text-xs shadow-xs transition-all duration-200 group-hover:bg-[#C2410C] group-hover:text-white"
+                  className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA] hover:border-[#EA580C] font-semibold text-xs shadow-xs transition-[background-color,color,border-color] duration-150 group-hover:bg-[#C2410C] group-hover:text-white"
                 >
                   <span>{card.ctaText}</span>
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />

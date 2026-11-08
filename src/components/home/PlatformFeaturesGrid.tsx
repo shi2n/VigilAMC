@@ -12,7 +12,7 @@ import {
   Download,
   Mail,
   Building2,
-  Sparkles,
+  Flame,
 } from 'lucide-react';
 
 interface FeatureItem {
@@ -28,27 +28,27 @@ const features: FeatureItem[] = [
     description: 'Bulk upload entire building inventories and client registers in seconds with pre-mapped Excel templates.',
   },
   {
-    icon: <ShieldCheck className="w-5 h-5 text-emerald-600" />,
+    icon: <ShieldCheck className="w-5 h-5 text-[#C2410C]" />,
     title: 'Approvals Queue',
     description: 'Managerial review desk to audit technician checklists, GPS accuracy, and photo proof before signoff.',
   },
   {
-    icon: <Wrench className="w-5 h-5 text-amber-600" />,
+    icon: <Wrench className="w-5 h-5 text-[#C2410C]" />,
     title: 'Corrective-Action Tracking',
     description: 'Track defects, broken seals, and low-pressure units with aging days, severity tags, and workshop notes.',
   },
   {
-    icon: <RotateCw className="w-5 h-5 text-blue-600" />,
+    icon: <RotateCw className="w-5 h-5 text-[#C2410C]" />,
     title: 'Compliance Cycles & Auto Tasks',
     description: 'Automated work order creation matching Maharashtra Form-B, Delhi Fire Rule 33, and NBC schedules.',
   },
   {
-    icon: <Radar className="w-5 h-5 text-rose-600" />,
+    icon: <Radar className="w-5 h-5 text-[#C2410C]" />,
     title: 'Expiry Radar',
     description: '30/60/90-day radar detecting cylinders due for refill, mandatory overhaul, or 5-year hydrostatic testing.',
   },
   {
-    icon: <Map className="w-5 h-5 text-purple-600" />,
+    icon: <Map className="w-5 h-5 text-[#C2410C]" />,
     title: 'Floor-Plan Asset Pins',
     description: 'Interactive architectural floor plans with pinned equipment tags for rapid orientation during field visits.',
   },
@@ -58,12 +58,12 @@ const features: FeatureItem[] = [
     description: 'A4 statutory certificates carrying your agency letterhead, government license number, logo, and seal.',
   },
   {
-    icon: <Download className="w-5 h-5 text-teal-600" />,
+    icon: <Download className="w-5 h-5 text-[#C2410C]" />,
     title: 'Monthly Register Export',
     description: 'One-click spreadsheet export (XLSX) formatted for statutory submission to fire brigades and client auditors.',
   },
   {
-    icon: <Mail className="w-5 h-5 text-indigo-600" />,
+    icon: <Mail className="w-5 h-5 text-[#C2410C]" />,
     title: 'Email-a-Report',
     description: 'Instant client delivery with pre-filled professional email summaries and direct view links requiring no login.',
   },
@@ -84,10 +84,10 @@ export function PlatformFeaturesGrid() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-14 sm:mb-18">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FFF8F2] border border-[#FED7AA] shadow-[0_2px_8px_rgba(234,88,12,0.08)] mb-4">
-            <Sparkles className="w-3.5 h-3.5 text-[#C2410C]" />
-            <span className="text-xs font-bold uppercase tracking-wider text-[#C2410C]">
-              Engineered for Fire AMC Agencies
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FFF8F2] border border-[#FED7AA] shadow-[0_1px_3px_rgba(28,25,23,0.05)] mb-4">
+            <Flame className="w-3.5 h-3.5 text-[#C2410C]" />
+            <span className="text-xs font-semibold text-[#C2410C]">
+              Engineered for fire AMC agencies
             </span>
           </div>
           <h2 className="font-display font-bold text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#1C1917]">
@@ -103,7 +103,7 @@ export function PlatformFeaturesGrid() {
           {features.map((feature, idx) => (
             <div
               key={idx}
-              className="p-5 rounded-2xl bg-[#FFF8F2]/60 hover:bg-[#FFF8F2] border border-[#FED7AA]/60 hover:border-[#FED7AA] shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between group"
+              className="p-5 rounded-2xl bg-[#FFF8F2]/60 hover:bg-[#FFF8F2] border border-[#FED7AA]/60 hover:border-[#FED7AA] shadow-xs hover:shadow-md transition-[background-color,border-color,box-shadow] duration-180 flex flex-col justify-between group"
             >
               <div>
                 <div className="w-10 h-10 rounded-xl bg-white border border-[#FED7AA] flex items-center justify-center shadow-xs mb-3.5 group-hover:scale-105 transition-transform">

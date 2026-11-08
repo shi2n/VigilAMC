@@ -12,7 +12,6 @@ import {
   FileCheck2,
   ArrowRight,
   ChevronDown,
-  Sparkles,
   ScanLine,
   Award,
 } from 'lucide-react';
@@ -180,7 +179,7 @@ export function HeroGlass() {
         background: 'linear-gradient(180deg, #FFFFFF 0%, #FFF8F2 45%, #FFEBDD 85%, #FFF4EC 100%)',
       }}
     >
-      {/* PLANE 1 (Back): warm ember glow plane */}
+      {/* PLANE 1 (Back): subtle warm ambient plane */}
       <div
         ref={glowPlaneRef}
         aria-hidden="true"
@@ -192,8 +191,7 @@ export function HeroGlass() {
           className="absolute -left-24 -top-24 w-[560px] h-[420px] rounded-full"
           style={{
             background:
-              'radial-gradient(ellipse at center, rgba(255, 140, 66, 0.20) 0%, rgba(232, 89, 12, 0.10) 45%, rgba(255, 248, 242, 0) 72%)',
-            filter: 'blur(85px)',
+              'radial-gradient(ellipse at center, rgba(254, 215, 170, 0.15) 0%, transparent 70%)',
           }}
         />
       </div>
@@ -208,11 +206,11 @@ export function HeroGlass() {
             style={{ willChange: 'transform, opacity' }}
           >
             <div style={stagger(0)}>
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 border border-[#FED7AA] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_4px_14px_rgba(232,89,12,0.08)] mb-4 sm:mb-5 backdrop-blur-md">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-[#FED7AA] shadow-[0_1px_3px_rgba(28,25,23,0.05)] mb-4 sm:mb-5">
                 <span className="w-2 h-2 rounded-full bg-[#EA580C]" />
                 <Flame className="w-3.5 h-3.5 text-[#C2410C]" />
-                <span className="text-xs sm:text-[13px] font-semibold tracking-tight text-[#C2410C]">
-                  FIRE SAFETY AMC SOFTWARE · INDIA
+                <span className="text-xs sm:text-[13px] font-semibold text-[#C2410C]">
+                  Fire safety AMC software · India
                 </span>
               </div>
             </div>
@@ -220,15 +218,7 @@ export function HeroGlass() {
             <div style={stagger(1)}>
               <h1 className="font-display font-bold tracking-[-0.03em] text-[#1C1917] text-[2.1rem] sm:text-[2.6rem] lg:text-[2.95rem] xl:text-[3.2rem] leading-[1.08] max-w-[15ch] sm:max-w-none mx-auto lg:mx-0">
                 Never Miss a Fire{' '}
-                <span
-                  style={{
-                    backgroundImage: 'linear-gradient(90deg, #9A3412 0%, #C2410C 48%, #EA580C 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                  }}
-                >
-                  Compliance
-                </span>{' '}
+                <span className="text-[#C2410C]">Compliance</span>{' '}
                 <br className="hidden sm:inline" />
                 Deadline Again.
               </h1>
@@ -247,9 +237,8 @@ export function HeroGlass() {
               <Link
                 href="/demo"
                 data-testid="hero-live-demo-btn"
-                className="btn-flame inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-base shadow-[0_10px_28px_-6px_rgba(194,65,12,0.45)]"
+                className="btn-flame inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-base shadow-[0_4px_14px_rgba(194,65,12,0.35)]"
               >
-                <Sparkles className="w-5 h-5" />
                 <span>See Live Demo</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
@@ -286,26 +275,26 @@ export function HeroGlass() {
             >
               <span
                 data-testid="trust-chip-dpiit"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 border border-[#FED7AA]/90 backdrop-blur-sm"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 border border-[#FED7AA] shadow-xs"
               >
                 <Award className="w-3.5 h-3.5 text-[#EA580C]" />
                 DPIIT Recognized Startup
               </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 border border-[#FED7AA]/90 backdrop-blur-sm">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 border border-[#FED7AA] shadow-xs">
                 <MapPin className="w-3.5 h-3.5 text-[#C2410C]" />
                 GPS + Camera Proof
               </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 border border-[#FED7AA]/90 backdrop-blur-sm">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 border border-[#FED7AA] shadow-xs">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#059669]" />
                 NBC 2016 · IS 2190 Ready
               </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 border border-[#FED7AA]/90 backdrop-blur-sm">
-                <Sparkles className="w-3.5 h-3.5 text-[#C2410C]" />
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 border border-[#FED7AA] shadow-xs">
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#059669]" />
                 No Hardware Needed
               </span>
               <span
                 data-testid="trust-chip-no-qr"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 border border-[#FED7AA]/90 backdrop-blur-sm"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 border border-[#FED7AA] shadow-xs"
               >
                 <span className="relative inline-flex w-3.5 h-3.5" aria-hidden="true">
                   <ScanLine className="w-3.5 h-3.5 text-[#C2410C]" />
@@ -326,20 +315,17 @@ export function HeroGlass() {
             </div>
           </div>
 
-          {/* RIGHT: photo + flying product moments */}
+          {/* RIGHT: photo + verified product telemetry */}
           <div
             data-sc-scene=""
             data-testid="hero-photo-scene"
             className="lg:col-span-5 relative mx-auto w-full max-w-[520px] lg:max-w-none"
           >
-            {/* glow-blob behind the photo cluster */}
-            <div aria-hidden="true" className="glow-blob -inset-10 lg:-inset-16" style={{ opacity: 0.95 }} />
-
             {/* Photo card (parallax layer) */}
             <div data-sc-parallax="0.05" data-testid="hero-photo-card" className="relative z-10">
               <div
-                className="photo-tilt relative aspect-[4/3] lg:aspect-[4/5] rounded-[28px] overflow-hidden border-[6px] border-white shadow-[0_40px_80px_-30px_rgba(28,25,23,0.40),0_0_80px_rgba(232,89,12,0.14)] bg-[#FFF8F2]"
-                style={{ '--photo-rot': '-2deg' } as React.CSSProperties}
+                className="photo-tilt relative aspect-[4/3] lg:aspect-[4/5] rounded-[24px] overflow-hidden border-4 border-white shadow-[0_20px_50px_-20px_rgba(28,25,23,0.20)] bg-[#FFF8F2]"
+                style={{ '--photo-rot': '0deg' } as React.CSSProperties}
               >
                 <Image
                   src={heroTechnician}
@@ -356,7 +342,7 @@ export function HeroGlass() {
                   className="absolute inset-0"
                   style={{
                     background:
-                      'linear-gradient(180deg, rgba(28,25,23,0) 55%, rgba(28,25,23,0.18) 100%)',
+                      'linear-gradient(180deg, rgba(28,25,23,0) 60%, rgba(28,25,23,0.15) 100%)',
                   }}
                 />
               </div>
@@ -365,13 +351,13 @@ export function HeroGlass() {
             {/* 1. OVERDUE ALERT — overlaps photo top-left (mobile: inside top-left) */}
             <FlyCard
               testId="hero-fly-overdue"
-              slotClass="left-2 top-3 lg:-left-14 lg:top-8"
-              rate={0.12}
-              rot={-4}
+              slotClass="left-2 top-3 lg:-left-12 lg:top-8"
+              rate={0.08}
+              rot={0}
               dur={5.2}
               phase={-1.1}
               delay={420}
-              fromX={-24}
+              fromX={-16}
               fromY={0}
               entered={entered}
             >
@@ -379,7 +365,7 @@ export function HeroGlass() {
                 icon={iconBox('#FEE2E2', <AlertTriangle className="w-4 h-4 text-[#B91C1C]" />)}
                 title={
                   <span className="inline-flex items-center gap-1.5">
-                    <span className="px-1.5 py-[1px] rounded-md bg-[#FEE2E2] text-[#991B1B]">OVERDUE ALERT</span>
+                    <span className="px-1.5 py-[1px] rounded bg-[#FEE2E2] text-[#991B1B] font-semibold text-[11px]">Overdue alert</span>
                   </span>
                 }
                 detail="2 cylinders · Prestige Tower"
@@ -389,19 +375,19 @@ export function HeroGlass() {
             {/* 2. GPS LOCKED — overlaps photo top-left, lower (mobile: inside top-right) */}
             <FlyCard
               testId="hero-fly-gps"
-              slotClass="left-2 top-[44%] lg:right-auto lg:-left-20 lg:top-[30%]"
-              rate={0.08}
-              rot={3}
+              slotClass="left-2 top-[44%] lg:right-auto lg:-left-16 lg:top-[32%]"
+              rate={0.06}
+              rot={0}
               dur={6.1}
               phase={-3.4}
               delay={500}
-              fromX={-24}
+              fromX={-16}
               fromY={0}
               entered={entered}
             >
               <CardRow
-                icon={iconBox('linear-gradient(135deg,#FF8C42,#EA580C)', <MapPin className="w-4 h-4 text-white" />)}
-                title="GPS LOCKED"
+                icon={iconBox('#FFF0E6', <MapPin className="w-4 h-4 text-[#C2410C]" />)}
+                title="GPS locked"
                 detail="Within 20 m · 19.0658° N"
               />
             </FlyCard>
@@ -409,19 +395,19 @@ export function HeroGlass() {
             {/* 3. PHOTO PROOF — right edge (desktop only) */}
             <FlyCard
               testId="hero-fly-photo"
-              slotClass="hidden lg:block -right-12 top-[8%]"
-              rate={0.16}
-              rot={5}
+              slotClass="hidden lg:block -right-10 top-[10%]"
+              rate={0.10}
+              rot={0}
               dur={4.6}
               phase={-0.6}
               delay={580}
-              fromX={24}
+              fromX={16}
               fromY={0}
               entered={entered}
             >
               <CardRow
                 icon={iconBox('#D1FAE5', <CheckCircle2 className="w-4 h-4 text-[#047857]" />)}
-                title="PHOTO PROOF"
+                title="Photo proof"
                 detail="Live camera · Gallery blocked"
               />
             </FlyCard>
@@ -429,13 +415,13 @@ export function HeroGlass() {
             {/* 4. SIGNED — right edge, lower (desktop only) */}
             <FlyCard
               testId="hero-fly-signed"
-              slotClass="hidden lg:block -right-12 top-[68%]"
-              rate={-0.05}
-              rot={-3}
+              slotClass="hidden lg:block -right-10 top-[66%]"
+              rate={-0.04}
+              rot={0}
               dur={6.8}
               phase={-2.2}
               delay={660}
-              fromX={24}
+              fromX={16}
               fromY={0}
               entered={entered}
             >
@@ -453,7 +439,7 @@ export function HeroGlass() {
                     <path d="M2 20h20" stroke="#FED7AA" strokeWidth="1.5" strokeLinecap="round" />
                   </svg>
                 )}
-                title="SIGNED"
+                title="Dual-signed"
                 detail="R. Sharma + Facility Mgr"
               />
             </FlyCard>
@@ -461,19 +447,19 @@ export function HeroGlass() {
             {/* 5. CERTIFICATE READY — bottom-left overlapping the gutter */}
             <FlyCard
               testId="hero-fly-certificate"
-              slotClass="left-3 bottom-3 lg:-left-24 lg:bottom-10"
-              rate={0.1}
-              rot={-2}
+              slotClass="left-3 bottom-3 lg:-left-20 lg:bottom-8"
+              rate={0.08}
+              rot={0}
               dur={5.6}
               phase={-4.2}
               delay={740}
-              fromX={-24}
-              fromY={12}
+              fromX={-16}
+              fromY={10}
               entered={entered}
             >
               <CardRow
-                icon={iconBox('linear-gradient(135deg,#C2410C,#9A3412)', <FileCheck2 className="w-4 h-4 text-white" />)}
-                title="CERTIFICATE READY"
+                icon={iconBox('#FFF0E6', <FileCheck2 className="w-4 h-4 text-[#C2410C]" />)}
+                title="Certificate ready"
                 detail="Form-B PDF · 10 sec"
               />
             </FlyCard>
@@ -481,14 +467,14 @@ export function HeroGlass() {
             {/* 6. Stat chip (desktop only) */}
             <FlyCard
               testId="hero-fly-stat"
-              slotClass="hidden lg:block right-6 -bottom-5"
-              rate={0.14}
-              rot={4}
+              slotClass="hidden lg:block right-6 -bottom-4"
+              rate={0.08}
+              rot={0}
               dur={4.2}
               phase={-1.8}
               delay={820}
               fromX={0}
-              fromY={24}
+              fromY={16}
               entered={entered}
             >
               <div className="flex items-center gap-2 whitespace-nowrap">

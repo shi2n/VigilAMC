@@ -11,7 +11,6 @@ import {
   ArrowRight,
   ShieldCheck,
   CheckCircle2,
-  Sparkles,
   Flame,
 } from 'lucide-react';
 
@@ -34,10 +33,10 @@ export function VideoExplainerSection() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FFF0E6] border border-[#FED7AA] shadow-[0_2px_8px_rgba(234,88,12,0.08)] mb-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FFF0E6] border border-[#FED7AA] shadow-[0_1px_3px_rgba(28,25,23,0.05)] mb-4">
             <Flame className="w-3.5 h-3.5 text-[#C2410C]" />
-            <span className="text-xs font-bold uppercase tracking-wider text-[#C2410C]">
-              40-Second Service Explainer
+            <span className="text-xs font-semibold text-[#C2410C]">
+              40-second service explainer
             </span>
           </div>
           <h2 className="font-display font-bold text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#1C1917]">
@@ -81,12 +80,12 @@ export function VideoExplainerSection() {
                   <button
                     type="button"
                     aria-label="Play VigilAMC product explainer video"
-                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-[#C2410C] to-[#EA580C] text-white flex items-center justify-center shadow-[0_0_40px_rgba(234,88,12,0.6)] group-hover:scale-110 group-hover:shadow-[0_0_55px_rgba(234,88,12,0.8)] transition-all duration-200 cursor-pointer"
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#C2410C] hover:bg-[#9A3412] text-white flex items-center justify-center shadow-lg hover:shadow-xl transition-[background-color,box-shadow,transform] duration-180 hover:scale-105 cursor-pointer"
                   >
                     <Play className="w-7 h-7 sm:w-9 sm:h-9 fill-white translate-x-0.5" />
                   </button>
-                  <span className="text-white text-xs sm:text-sm font-bold tracking-wide uppercase px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/20">
-                    Watch in 40 Seconds
+                  <span className="text-white text-xs sm:text-sm font-semibold tracking-normal px-3.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/20">
+                    Watch in 40 seconds
                   </span>
                 </div>
 
@@ -120,7 +119,7 @@ export function VideoExplainerSection() {
               className="w-full px-5 py-3.5 text-left flex items-center justify-between gap-3 text-xs sm:text-sm font-bold text-slate-800 hover:text-[#C2410C] hover:bg-slate-100/60 transition-colors cursor-pointer"
             >
               <span className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#EA580C]" />
+                <Volume2 className="w-4 h-4 text-[#EA580C]" />
                 <span>Video Transcript &amp; Spoken Highlights</span>
               </span>
               {transcriptOpen ? (

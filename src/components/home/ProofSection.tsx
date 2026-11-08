@@ -13,7 +13,6 @@ import {
   ShieldAlert,
   Download,
   Users2,
-  Sparkles,
 } from 'lucide-react';
 
 interface StatCardConfig {
@@ -243,26 +242,6 @@ export function ProofSection() {
           'linear-gradient(180deg, #FFF8F2 0%, #FFE8D6 45%, #FFF4EC 82%, #FFFFFF 100%)',
       }}
     >
-      {/* Ambient Radial Ember Glow Planes behind Stat Cards & Guarantee Band */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute top-[14%] left-[15%] w-[460px] h-[360px] rounded-full"
-        style={{
-          background:
-            'radial-gradient(circle, rgba(232, 89, 12, 0.22) 0%, rgba(255, 140, 66, 0.15) 48%, rgba(255, 248, 242, 0) 74%)',
-          filter: 'blur(90px)',
-        }}
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute top-[18%] right-[14%] w-[480px] h-[360px] rounded-full"
-        style={{
-          background:
-            'radial-gradient(circle, rgba(255, 140, 66, 0.22) 0%, rgba(232, 89, 12, 0.14) 50%, rgba(255, 248, 242, 0) 74%)',
-          filter: 'blur(90px)',
-        }}
-      />
-
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Heading */}
         <div
@@ -270,8 +249,8 @@ export function ProofSection() {
             sectionVisible ? 'is-visible' : ''
           } text-center max-w-3xl mx-auto mb-10 sm:mb-12`}
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 border border-[#FED7AA] text-xs font-bold uppercase tracking-wider text-[#C2410C] mb-3 backdrop-blur-sm">
-            Real Numbers · Real Audit Proof
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-[#FED7AA] text-xs font-semibold text-[#C2410C] mb-3">
+            Real numbers · Real audit proof
           </div>
           <h2
             id="proof-heading"
@@ -366,7 +345,7 @@ export function ProofSection() {
         >
           <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs sm:text-sm font-semibold text-[#1C1917] pb-4 mb-4 border-b border-[#FED7AA]/80 text-center">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFF0E6] border border-[#FED7AA] text-[#C2410C]">
-              <Sparkles className="w-3.5 h-3.5 text-[#EA580C]" />
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#059669]" />
               Free 1-building pilot
             </span>
             <span className="text-[#C2410C] font-bold">·</span>

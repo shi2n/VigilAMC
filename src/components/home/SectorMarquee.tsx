@@ -211,12 +211,12 @@ export function SectorMarquee() {
   return (
     <div className="mt-12 sm:mt-16 relative">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-4">
-        <div className="text-xs font-bold uppercase tracking-wider text-[#C2410C]">
+        <div className="text-xs font-semibold text-[#C2410C]">
           Built for every building type under Indian fire safety norms
         </div>
-        {/* Small flying stat chip overlapping marquee edge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/85 border border-[#FED7AA] text-[11px] font-semibold text-[#1C1917] shadow-sm backdrop-blur-sm">
-          <span className="w-2 h-2 rounded-full bg-[#059669] animate-pulse" />
+        {/* Small stat chip */}
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/90 border border-[#FED7AA] text-[11px] font-medium text-[#1C1917] shadow-xs">
+          <span className="w-2 h-2 rounded-full bg-[#059669]" />
           <span>Active in 500+ commercial sites</span>
         </div>
       </div>

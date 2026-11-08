@@ -21,7 +21,6 @@ import {
   Languages,
   Menu,
   ArrowRight,
-  Sparkles,
 } from 'lucide-react';
 
 export function ProductOverviewSection() {
@@ -34,10 +33,10 @@ export function ProductOverviewSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16 sm:mb-20">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#FED7AA] shadow-[0_2px_8px_rgba(234,88,12,0.08)] mb-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#FED7AA] shadow-[0_1px_3px_rgba(28,25,23,0.06)] mb-4">
             <span className="w-2 h-2 rounded-full bg-[#EA580C]" />
-            <span className="text-xs font-bold uppercase tracking-wider text-[#C2410C]">
-              Complete Fire Safety Operations Suite
+            <span className="text-xs font-semibold text-[#C2410C]">
+              Complete fire safety operations suite
             </span>
           </div>
           <h2 className="font-display font-bold text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#1C1917] leading-tight">
@@ -60,9 +59,9 @@ export function ProductOverviewSection() {
             {/* Left Column: Callout Bullets */}
             <div className="lg:col-span-5 space-y-6 order-2 lg:order-1">
               <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-[#FFF0E6] text-[#C2410C] font-bold text-xs uppercase tracking-wide border border-[#FED7AA]">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-[#FFF0E6] text-[#C2410C] font-semibold text-xs border border-[#FED7AA]">
                   <LayoutDashboard className="w-3.5 h-3.5" />
-                  <span>Central Operations Control</span>
+                  <span>Central operations control</span>
                 </div>
                 <h3 className="font-display font-bold text-2xl sm:text-3xl text-[#1C1917] tracking-tight mt-2.5">
                   Admin Dashboard Suite
@@ -153,7 +152,7 @@ export function ProductOverviewSection() {
                   href="/demo"
                   className="btn-flame inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs shadow-md"
                 >
-                  <Sparkles className="w-4 h-4" />
+                  <LayoutDashboard className="w-4 h-4" />
                   <span>Try Dashboard in Live Demo</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
@@ -163,14 +162,8 @@ export function ProductOverviewSection() {
             {/* Right Column: Laptop Device Frame with Real Product Screenshot */}
             <div className="lg:col-span-7 order-1 lg:order-2">
               <div className="relative mx-auto max-w-full">
-                {/* Glow behind laptop */}
-                <div
-                  aria-hidden="true"
-                  className="absolute -inset-4 bg-gradient-to-tr from-[#EA580C]/15 to-[#FF8C42]/20 rounded-3xl blur-2xl"
-                />
-
                 {/* Laptop Top Bezel & Screen Frame */}
-                <div className="relative rounded-2xl bg-[#1C1917] p-2.5 sm:p-3 shadow-[0_30px_70px_-20px_rgba(28,25,23,0.35)] border border-slate-800">
+                <div className="relative rounded-2xl bg-[#1C1917] p-2.5 sm:p-3 shadow-[0_24px_50px_-20px_rgba(28,25,23,0.30)] border border-slate-800">
                   {/* Laptop Web Camera Dot */}
                   <div className="w-2 h-2 rounded-full bg-slate-700 mx-auto mb-2 opacity-80" />
 
@@ -206,14 +199,8 @@ export function ProductOverviewSection() {
             {/* Left Column: Phone Frame with Real App Screenshot */}
             <div className="lg:col-span-5 flex justify-center order-1">
               <div className="relative w-full max-w-[290px] sm:max-w-[320px]">
-                {/* Glow behind phone */}
-                <div
-                  aria-hidden="true"
-                  className="absolute -inset-4 bg-gradient-to-tr from-[#EA580C]/20 to-[#059669]/15 rounded-[48px] blur-2xl"
-                />
-
                 {/* Smartphone Device Frame */}
-                <div className="relative rounded-[42px] bg-[#1C1917] p-3 shadow-[0_30px_70px_-15px_rgba(28,25,23,0.40)] border-4 border-slate-800">
+                <div className="relative rounded-[42px] bg-[#1C1917] p-3 shadow-[0_24px_50px_-15px_rgba(28,25,23,0.30)] border-4 border-slate-800">
                   {/* Dynamic Island / Earpiece speaker */}
                   <div className="w-20 h-4 bg-black rounded-full mx-auto mb-2 flex items-center justify-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-slate-800" />
@@ -240,9 +227,9 @@ export function ProductOverviewSection() {
             {/* Right Column: Callout Bullets */}
             <div className="lg:col-span-7 space-y-6 order-2">
               <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-emerald-50 text-emerald-800 font-bold text-xs uppercase tracking-wide border border-emerald-200">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-emerald-50 text-emerald-800 font-semibold text-xs border border-emerald-200">
                   <Smartphone className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Field Operations App · Android Live · iOS App Store Soon</span>
+                  <span>Field operations app · Android live · iOS App Store soon</span>
                 </div>
                 <h3 className="font-display font-bold text-2xl sm:text-3xl text-[#1C1917] tracking-tight mt-2.5">
                   Field Technician Mobile App

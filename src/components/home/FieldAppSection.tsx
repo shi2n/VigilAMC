@@ -54,26 +54,6 @@ export function FieldAppSection() {
           'linear-gradient(180deg, #FFFFFF 0%, #FFF8F2 50%, #FFF0E6 100%)',
       }}
     >
-      {/* Radial Ember Glows Behind Glass Panels */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute top-[15%] left-[10%] w-[440px] h-[340px] rounded-full"
-        style={{
-          background:
-            'radial-gradient(circle, rgba(232, 89, 12, 0.20) 0%, rgba(255, 140, 66, 0.14) 48%, rgba(255, 248, 242, 0) 74%)',
-          filter: 'blur(85px)',
-        }}
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute bottom-[12%] right-[10%] w-[460px] h-[360px] rounded-full"
-        style={{
-          background:
-            'radial-gradient(circle, rgba(255, 140, 66, 0.22) 0%, rgba(232, 89, 12, 0.14) 50%, rgba(255, 248, 242, 0) 74%)',
-          filter: 'blur(90px)',
-        }}
-      />
-
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div
           className={`sc-reveal ${
@@ -84,9 +64,9 @@ export function FieldAppSection() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
             {/* Left Column: Copy + Exact Claims + Official Badges */}
             <div className="lg:col-span-7 space-y-5">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FFF0E6] border border-[#FED7AA] text-xs font-bold uppercase tracking-wider text-[#C2410C] shadow-xs">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FFF0E6] border border-[#FED7AA] text-xs font-semibold text-[#C2410C] shadow-xs">
                 <Smartphone className="w-3.5 h-3.5 text-[#EA580C]" />
-                <span>MOBILE APP · ANDROID LIVE · iOS APP STORE SOON</span>
+                <span>Mobile app · Android live · iOS App Store soon</span>
               </div>
 
               <h2
@@ -106,9 +86,7 @@ export function FieldAppSection() {
                     key={claim}
                     className="flex items-start gap-2.5 text-sm sm:text-[15px] font-medium text-[#1C1917]"
                   >
-                    <span className="shrink-0 leading-snug" aria-hidden="true">
-                      ✅
-                    </span>
+                    <CheckCircle2 className="w-4 h-4 text-[#059669] shrink-0 mt-0.5" />
                     <span>{claim}</span>
                   </li>
                 ))}

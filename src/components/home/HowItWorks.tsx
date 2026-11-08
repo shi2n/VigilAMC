@@ -8,7 +8,6 @@ import {
   FileCheck2,
   CheckCircle2,
   ShieldAlert,
-  Sparkles,
   MessageCircle,
 } from 'lucide-react';
 import scenePump from '../../../public/images/scene-pump.jpg';
@@ -41,7 +40,7 @@ const STEPS: Step[] = [
     photoAlt: 'Fire technician reviewing a tablet beside red fire pumps and pressure gauges in a pump room',
     photoPosition: 'object-[40%_35%]',
     badge: '30/15/7-day alerts',
-    badgeRot: -3,
+    badgeRot: 0,
   },
   {
     number: '02',
@@ -54,7 +53,7 @@ const STEPS: Step[] = [
     photoAlt: 'Technician holding a phone next to a red hydrant landing valve on a rooftop at golden hour',
     photoPosition: 'object-[55%_45%]',
     badge: 'GPS · Camera · Voice',
-    badgeRot: 2,
+    badgeRot: 0,
   },
   {
     number: '03',
@@ -67,7 +66,7 @@ const STEPS: Step[] = [
     photoAlt: 'Facility manager signing on a tablet held by a fire technician in a bright building lobby',
     photoPosition: 'object-[50%_45%]',
     badge: 'Dual-signed · Tamper-evident',
-    badgeRot: -2,
+    badgeRot: 0,
   },
 ];
 
@@ -102,17 +101,14 @@ export function HowItWorks() {
         background: 'linear-gradient(180deg, #FFF8F2 0%, #FFF4EC 50%, #FFEBDD 100%)',
       }}
     >
-      <div aria-hidden="true" className="glow-blob top-[30%] left-[8%] w-[440px] h-[380px]" />
-      <div aria-hidden="true" className="glow-blob top-[34%] right-[8%] w-[460px] h-[380px]" />
-
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Plain-language explainer (comprehension anchor — position unchanged) */}
         <div
           className={`sc-reveal ${revealed ? 'is-visible' : ''} glass-panel-dense max-w-4xl mx-auto mb-10 rounded-2xl p-5 sm:p-6 border-l-4 !border-l-[#EA580C]`}
         >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 mb-3 border-b border-[#1C1917]/10">
-            <div className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#C2410C]">
-              <Sparkles className="w-4 h-4 text-[#EA580C]" />
+            <div className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-[#C2410C]">
+              <ShieldAlert className="w-4 h-4 text-[#EA580C]" />
               <span>Wait — What is a &ldquo;Fire AMC&rdquo; in plain English?</span>
             </div>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFF0E6] border border-[#FED7AA] text-xs font-semibold text-[#C2410C] w-fit">
@@ -133,8 +129,8 @@ export function HowItWorks() {
           style={{ transitionDelay: '60ms' }}
           className={`sc-reveal ${revealed ? 'is-visible' : ''} text-center max-w-3xl mx-auto mb-9`}
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 border border-[#FED7AA] text-xs font-bold uppercase tracking-wider text-[#C2410C] mb-3 backdrop-blur-sm">
-            Simple 3-Step Story
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-[#FED7AA] text-xs font-semibold text-[#C2410C] mb-3">
+            Simple 3-step process
           </div>
           <h2
             id="how-it-works-heading"
@@ -174,8 +170,8 @@ export function HowItWorks() {
                     className="absolute inset-0"
                     style={{ background: 'linear-gradient(180deg, rgba(28,25,23,0) 50%, rgba(28,25,23,0.22) 100%)' }}
                   />
-                  <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#C2410C] text-white font-display font-bold text-xs tracking-wide shadow-md">
-                    STEP {step.number}
+                  <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#C2410C] text-white font-display font-semibold text-xs tracking-wide shadow-xs">
+                    Step {step.number}
                   </span>
                 </div>
 
