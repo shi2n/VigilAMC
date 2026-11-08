@@ -3,12 +3,13 @@ import { db } from '@/lib/db';
 import { getCurrentUser, logAuditActivity } from '@/lib/auth';
 import { checkPlanLimit } from '@/lib/plans';
 import { ensureR2PhotoUrl } from '@/lib/r2';
+import { getCalendarDayDiff } from '@/lib/dateUtils';
 
 export const dynamic = 'force-dynamic';
 
-function deriveEquipmentDbStatus(nextDueDate: Date): string {
-  const now = new Date();
-  const diffDays = Math.ceil((nextDueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+function deriveEquipmentDbStatus(nextDueDate: Date | string | null | undefined): string {
+  const diffDays = getCalendarDayDiff(nextDueDate);
+  if (diffDays === null) return 'COMPLIANT';
   if (diffDays < 0) return 'OVERDUE';
   if (diffDays <= 30) return 'DUE_SOON';
   return 'COMPLIANT';

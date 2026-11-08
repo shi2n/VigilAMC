@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { extractCalendarDateParts } from '@/lib/dateUtils';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 
@@ -85,7 +86,7 @@ export async function PUT(
         complianceRuleName: complianceRuleName !== undefined ? (complianceRuleName ? complianceRuleName.trim() : null) : existing.complianceRuleName,
         complianceCycle: complianceCycle !== undefined ? complianceCycle : (repCycle || existing.complianceCycle),
         cycleIntervalMos: computedInterval || 6,
-        nextFilingDueDate: nextFilingDueDate ? new Date(nextFilingDueDate) : existing.nextFilingDueDate,
+        nextFilingDueDate: nextFilingDueDate ? (() => { const p = extractCalendarDateParts(nextFilingDueDate); return p ? new Date(Date.UTC(p.year, p.month - 1, p.day)) : new Date(nextFilingDueDate); })() : existing.nextFilingDueDate,
         clientId: clientId !== undefined ? clientId : existing.clientId,
       },
       include: { client: true },

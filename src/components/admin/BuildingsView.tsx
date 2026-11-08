@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { formatCalendarDate, getCalendarDayDiff } from '@/lib/dateUtils';
 import Link from 'next/link';
 import {
   Building2,
@@ -258,23 +259,29 @@ export function BuildingsView({
                           <span>•</span>
                           <span>
                             Filing Due:{' '}
-                            {b.nextFilingDueDate && !isNaN(new Date(b.nextFilingDueDate).getTime()) ? (
-                              <strong
-                                className={
-                                  b.filingDaysRemaining !== null && b.filingDaysRemaining <= 30
-                                    ? 'text-amber-600 font-bold'
-                                    : 'text-slate-800'
-                                }
-                              >
-                                {new Date(b.nextFilingDueDate).toLocaleDateString('en-IN', {
-                                  day: 'numeric',
-                                  month: 'short',
-                                  year: 'numeric',
-                                })}{' '}
-                                {b.filingDaysRemaining !== null &&
-                                  `(${b.filingDaysRemaining > 0 ? `${b.filingDaysRemaining}d left` : `${Math.abs(b.filingDaysRemaining)}d overdue`})`}
-                              </strong>
-                            ) : (
+                            {b.nextFilingDueDate ? (() => {
+                              const diff = b.filingDaysRemaining !== undefined && b.filingDaysRemaining !== null
+                                ? b.filingDaysRemaining
+                                : getCalendarDayDiff(b.nextFilingDueDate);
+                              const notice = diff === null
+                                ? 'No due date set'
+                                : diff === 0
+                                ? 'Due today'
+                                : diff < 0
+                                ? `${Math.abs(diff)}d overdue`
+                                : `${diff}d left`;
+                              const colorCls = diff !== null && diff < 0
+                                ? 'text-rose-600 font-bold'
+                                : diff !== null && diff <= 30
+                                ? 'text-amber-600 font-bold'
+                                : 'text-slate-800';
+
+                              return (
+                                <strong className={colorCls}>
+                                  {formatCalendarDate(b.nextFilingDueDate)} ({notice})
+                                </strong>
+                              );
+                            })() : (
                               <strong className="text-slate-500">No due date set</strong>
                             )}
                           </span>
@@ -382,15 +389,7 @@ export function BuildingsView({
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                               {(b.equipments ?? []).map((eq: any) => {
-                                const hasDue = Boolean(
-                                  eq.nextDueDate && !isNaN(new Date(eq.nextDueDate).getTime())
-                                );
-                                const diffDays = hasDue
-                                  ? Math.ceil(
-                                      (new Date(eq.nextDueDate).getTime() - new Date().getTime()) /
-                                        (1000 * 60 * 60 * 24)
-                                    )
-                                  : null;
+                                const diffDays = getCalendarDayDiff(eq.nextDueDate);
                                 const status =
                                   diffDays !== null && diffDays < 0
                                     ? 'OVERDUE'
@@ -415,22 +414,10 @@ export function BuildingsView({
                                     </td>
                                     <td className="py-3 px-4 text-slate-600">{eq.location}</td>
                                     <td className="py-3 px-4 text-slate-500">
-                                      {eq.lastServiceDate && !isNaN(new Date(eq.lastServiceDate).getTime())
-                                        ? new Date(eq.lastServiceDate).toLocaleDateString('en-IN', {
-                                            day: 'numeric',
-                                            month: 'short',
-                                            year: 'numeric',
-                                          })
-                                        : '—'}
+                                      {formatCalendarDate(eq.lastServiceDate)}
                                     </td>
                                     <td className="py-3 px-4 font-semibold text-slate-800">
-                                      {hasDue
-                                        ? new Date(eq.nextDueDate).toLocaleDateString('en-IN', {
-                                            day: 'numeric',
-                                            month: 'short',
-                                            year: 'numeric',
-                                          })
-                                        : '—'}
+                                      {eq.nextDueDate ? formatCalendarDate(eq.nextDueDate) : '—'}
                                       <span
                                         className={`block text-[10px] font-normal ${
                                           diffDays !== null && diffDays < 0
@@ -442,6 +429,8 @@ export function BuildingsView({
                                       >
                                         {diffDays === null
                                           ? 'No due date set'
+                                          : diffDays === 0
+                                          ? 'Due today'
                                           : diffDays < 0
                                           ? `${Math.abs(diffDays)}d overdue`
                                           : diffDays <= 30
@@ -450,13 +439,7 @@ export function BuildingsView({
                                       </span>
                                     </td>
                                     <td className="py-3 px-4 text-[#1C1917] font-semibold">
-                                      {eq.hydroDueDate && !isNaN(new Date(eq.hydroDueDate).getTime())
-                                        ? new Date(eq.hydroDueDate).toLocaleDateString('en-IN', {
-                                            day: 'numeric',
-                                            month: 'short',
-                                            year: 'numeric',
-                                          })
-                                        : '—'}
+                                      {formatCalendarDate(eq.hydroDueDate)}
                                     </td>
                                     <td className="py-3 px-4">
                                       <span

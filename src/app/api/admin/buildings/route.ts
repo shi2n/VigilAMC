@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getCalendarDayDiff } from '@/lib/dateUtils';
 import { db } from '@/lib/db';
 import { getCurrentUser, logAuditActivity, isPlatformOwner } from '@/lib/auth';
 import { checkPlanLimit } from '@/lib/plans';
@@ -88,9 +89,7 @@ export async function GET(request: Request) {
         overallStatus = 'VERIFIED';
       }
 
-      const filingDaysRemaining = b.nextFilingDueDate
-        ? Math.ceil((new Date(b.nextFilingDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-        : null;
+      const filingDaysRemaining = b.nextFilingDueDate ? getCalendarDayDiff(b.nextFilingDueDate) : null;
 
       return {
         id: b.id,

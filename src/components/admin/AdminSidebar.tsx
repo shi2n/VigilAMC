@@ -152,7 +152,7 @@ export function AdminSidebar({
     >
       {/* Brand Header */}
       <div
-        className={`border-b border-[#1C1917]/10 flex items-center ${
+        className={`border-b border-[#1C1917]/10 flex items-center shrink-0 ${
           collapsed ? 'p-3 flex-col gap-2 justify-center' : 'p-4 sm:p-5 justify-between'
         }`}
       >
@@ -217,7 +217,7 @@ export function AdminSidebar({
       </div>
 
       {/* Navigation List with layoutId sliding pill */}
-      <div className={`flex-1 overflow-y-auto p-2.5 space-y-1.5 scrollbar-thin ${collapsed ? 'px-2' : 'px-3'}`}>
+      <div className={`flex-1 min-h-0 overflow-y-auto p-2.5 space-y-1.5 scrollbar-thin ${collapsed ? 'px-2' : 'px-3'}`}>
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = normalizedActiveTab === item.id;
@@ -300,7 +300,7 @@ export function AdminSidebar({
       </div>
 
       {/* Admin User Profile & Sign Out Footer */}
-      <div className={`border-t border-[#1C1917]/10 bg-white/45 ${collapsed ? 'p-2.5' : 'p-3.5 space-y-2'}`}>
+      <div className={`border-t border-[#1C1917]/10 bg-white/45 shrink-0 ${collapsed ? 'p-2.5' : 'p-3.5 space-y-2'}`}>
         <div className={`flex items-center ${collapsed ? 'flex-col gap-2 justify-center' : 'justify-between gap-2 min-w-0'}`}>
           <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-2.5 min-w-0'}`} title={displayName}>
             <div className="w-8 h-8 rounded-full bg-[#EA580C] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
@@ -336,7 +336,7 @@ export function AdminSidebar({
   return (
     <>
       {/* Desktop Permanent Sidebar */}
-      <aside className="hidden lg:block shrink-0 h-screen sticky top-0 z-30">
+      <aside className="hidden lg:flex lg:flex-col shrink-0 h-full z-30">
         {renderNavList('sidebar-active-pill-desktop', isCollapsed)}
       </aside>
 

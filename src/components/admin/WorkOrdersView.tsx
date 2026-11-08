@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { formatCalendarDate, getCalendarDayDiff } from '@/lib/dateUtils';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { toast } from 'sonner';
 import {
@@ -56,7 +57,7 @@ export function WorkOrdersView({
   const [buildings, setBuildings] = useState<any[]>(initialBuildings || []);
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<
-    'ALL' | 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED'
+    'ALL' | 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
   >('ALL');
   const [search, setSearch] = useState('');
   const [rippleRowId, setRippleRowId] = useState<string | null>(null);
@@ -364,6 +365,16 @@ export function WorkOrdersView({
             >
               Completed ({workOrders.filter((w) => w.status === 'COMPLETED').length})
             </button>
+            <button
+              onClick={() => setStatusFilter('CANCELLED')}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                statusFilter === 'CANCELLED'
+                  ? 'bg-slate-700 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-[#1C1917]'
+              }`}
+            >
+              Cancelled ({workOrders.filter((w) => w.status === 'CANCELLED').length})
+            </button>
           </div>
         </div>
 
@@ -440,10 +451,11 @@ export function WorkOrdersView({
         ) : (
           <div className="divide-y divide-[#FED7AA]/60">
             {filteredOrders.map((wo, idx) => {
+              const dueDiff = getCalendarDayDiff(wo.dueDate);
               const isOverdue =
                 ['OPEN', 'ASSIGNED', 'IN_PROGRESS'].includes(wo.status) &&
-                wo.dueDate &&
-                new Date(wo.dueDate) < new Date();
+                dueDiff !== null &&
+                dueDiff < 0;
               const isUnassigned = !wo.assignedToId && !wo.assignedTo;
 
               return (
@@ -532,7 +544,7 @@ export function WorkOrdersView({
                             }`}
                           >
                             <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                            Due: {new Date(wo.dueDate).toLocaleDateString('en-IN')}
+                            Due: {formatCalendarDate(wo.dueDate)}
                           </span>
                         </>
                       )}
@@ -541,6 +553,7 @@ export function WorkOrdersView({
 
                   <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
                     <select
+                      data-testid="workorder-status-select"
                       value={wo.status || 'OPEN'}
                       onChange={(e) => handleUpdateStatus(wo.id, e.target.value)}
                       className="px-2.5 py-1.5 rounded-lg bg-white border border-[#FED7AA] text-xs font-bold text-[#1C1917] shadow-xs focus:outline-none focus:border-[#C2410C] focus:ring-2 focus:ring-[#C2410C]/20"

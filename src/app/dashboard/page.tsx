@@ -40,6 +40,13 @@ import dynamic from 'next/dynamic';
 import type { ImportType } from '@/lib/excelImport';
 import { INDIAN_STATES_AND_UTS, REPORTING_CYCLES } from '@/lib/constants/india';
 import { isDuplicateSubmission, clearSubmissionLock } from '@/lib/submissionGuard';
+import {
+  toCalendarDateInput,
+  addCalendarMonths,
+  addCalendarDays,
+  getCalendarDayDiff,
+  formatCalendarDate,
+} from '@/lib/dateUtils';
 import { getAdminDictionary } from '@/lib/i18n/admin';
 import { WelcomeTestingModal } from '@/components/admin/WelcomeTestingModal';
 
@@ -149,35 +156,20 @@ const GuideModal = dynamic(
 const LAST_ORG_CACHE_KEY = 'vigilamc_dash_last_org';
 
 function toDateInputString(d?: Date | string | null): string {
-  const dt = d ? new Date(d) : new Date();
-  if (isNaN(dt.getTime())) {
-    return new Date().toISOString().split('T')[0];
-  }
-  const yyyy = dt.getFullYear();
-  const mm = String(dt.getMonth() + 1).padStart(2, '0');
-  const dd = String(dt.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
+  return toCalendarDateInput(d, true);
 }
 
 function addMonthsToDateString(dateStr: string, months: number): string {
-  const base = dateStr ? new Date(dateStr) : new Date();
-  const dt = isNaN(base.getTime()) ? new Date() : new Date(base.getTime());
-  dt.setMonth(dt.getMonth() + (Number(months) || 12));
-  return toDateInputString(dt);
+  return addCalendarMonths(dateStr, months);
 }
 
 function addDaysToTodayString(days: number): string {
-  const dt = new Date();
-  dt.setDate(dt.getDate() + days);
-  return toDateInputString(dt);
+  return addCalendarDays(new Date(), days);
 }
-
 
 function getEquipmentLiveStatus(eq: any) {
   if (!eq) return { text: 'Not Inspected', cls: 'bg-[#FFF8F2] text-slate-700 border border-[#FED7AA]' };
-  const diffDays = eq.nextDueDate
-    ? Math.ceil((new Date(eq.nextDueDate).getTime() - new Date().setHours(0, 0, 0, 0)) / (1000 * 60 * 60 * 24))
-    : null;
+  const diffDays = getCalendarDayDiff(eq.nextDueDate);
   const isOverdue = (diffDays !== null && diffDays < 0) || eq.status === 'OVERDUE' || eq.liveStatus === 'OVERDUE';
   const isDueSoon = !isOverdue && ((diffDays !== null && diffDays <= 30) || eq.status === 'DUE_SOON' || eq.liveStatus === 'DUE_SOON');
   const isVerified = !isOverdue && !isDueSoon && (eq.status === 'VERIFIED' || eq.status === 'COMPLIANT' || eq.liveStatus === 'COMPLIANT' || eq.liveStatus === 'VERIFIED');
@@ -1561,7 +1553,7 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#FFF8F2] flex flex-col lg:flex-row text-[#1C1917] selection:bg-[#FFF0E6] selection:text-[#C2410C]" style={{ backgroundImage: "radial-gradient(circle at 12% 8%, rgba(232, 89, 12, 0.18) 0%, rgba(255, 140, 66, 0.12) 28%, rgba(255, 248, 242, 0) 60%), radial-gradient(circle at 86% 24%, rgba(255, 140, 66, 0.16) 0%, rgba(255, 248, 242, 0) 55%)" }}>
+    <div className="relative h-screen lg:h-dvh overflow-hidden bg-[#FFF8F2] flex flex-col lg:flex-row text-[#1C1917] selection:bg-[#FFF0E6] selection:text-[#C2410C]" style={{ backgroundImage: "radial-gradient(circle at 12% 8%, rgba(232, 89, 12, 0.18) 0%, rgba(255, 140, 66, 0.12) 28%, rgba(255, 248, 242, 0) 60%), radial-gradient(circle at 86% 24%, rgba(255, 140, 66, 0.16) 0%, rgba(255, 248, 242, 0) 55%)" }}>
       
       {/* Toast Alert */}
       {toastMessage && (
@@ -1590,7 +1582,7 @@ export default function AdminDashboardPage() {
       />
 
       {/* Main Content Area */}
-      <main ref={mainRef} className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-6 overflow-y-auto">
+      <main ref={mainRef} className="flex-1 min-w-0 h-full p-4 sm:p-6 lg:p-8 space-y-6 overflow-y-auto">
         
         {/* Top Header Bar permanently mounted */}
         <div data-testid="dashboard-glass-topbar" className="glass-panel-dense rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -3307,6 +3299,21 @@ export default function AdminDashboardPage() {
                             className="px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors"
                           >
                             +1 Year (Standard)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setEditEquipmentModal({
+                                ...editEquipmentModal,
+                                nextDueDate: addMonthsToDateString(
+                                  editEquipmentModal.lastServiceDate || toDateInputString(new Date()),
+                                  6
+                                ),
+                              })
+                            }
+                            className="px-2 py-0.5 rounded-md bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 text-[10px] font-bold transition-colors"
+                          >
+                            +6 Months
                           </button>
                           <button
                             type="button"

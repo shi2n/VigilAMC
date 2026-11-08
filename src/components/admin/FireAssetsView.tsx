@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { formatCalendarDate, getCalendarDayDiff } from '@/lib/dateUtils';
 import { motion, useReducedMotion } from 'motion/react';
 import { Layers, Search, Edit, Trash2, MapPin, FileSpreadsheet, Plus } from 'lucide-react';
 
@@ -142,15 +143,7 @@ export function FireAssetsView({
             </thead>
             <tbody className="divide-y divide-[#FED7AA]/60">
               {equipmentsList.map((eq, idx) => {
-                const hasDue = Boolean(
-                  eq.nextDueDate && !isNaN(new Date(eq.nextDueDate).getTime())
-                );
-                const diffDays = hasDue
-                  ? Math.ceil(
-                      (new Date(eq.nextDueDate).getTime() - new Date().getTime()) /
-                        (1000 * 60 * 60 * 24)
-                    )
-                  : null;
+                const diffDays = getCalendarDayDiff(eq.nextDueDate);
                 const isOverdue =
                   (diffDays !== null && diffDays < 0) ||
                   eq.status === 'OVERDUE' ||
@@ -204,22 +197,10 @@ export function FireAssetsView({
                     </td>
                     <td className="py-3 px-4 text-slate-500">{eq.location}</td>
                     <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
-                      {eq.lastServiceDate && !isNaN(new Date(eq.lastServiceDate).getTime())
-                        ? new Date(eq.lastServiceDate).toLocaleDateString('en-IN', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                          })
-                        : '—'}
+                      {formatCalendarDate(eq.lastServiceDate)}
                     </td>
                     <td className="py-3 px-4 font-semibold text-slate-800 whitespace-nowrap">
-                      {hasDue
-                        ? new Date(eq.nextDueDate).toLocaleDateString('en-IN', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                          })
-                        : '—'}
+                      {eq.nextDueDate ? formatCalendarDate(eq.nextDueDate) : '—'}
                       <span
                         className={`block text-[10px] font-normal ${
                           isOverdue
@@ -231,6 +212,8 @@ export function FireAssetsView({
                       >
                         {diffDays === null
                           ? 'No due date set'
+                          : diffDays === 0
+                          ? 'Due today'
                           : isOverdue
                           ? `Overdue by ${Math.abs(diffDays)}d`
                           : isDueSoon
@@ -241,27 +224,24 @@ export function FireAssetsView({
                     <td className="py-3 px-4 font-semibold text-[#1C1917] whitespace-nowrap">
                       {eq.hydroDueDate && !isNaN(new Date(eq.hydroDueDate).getTime()) ? (
                         (() => {
-                          const hydroDiff = Math.ceil(
-                            (new Date(eq.hydroDueDate).getTime() - new Date().getTime()) /
-                              (1000 * 60 * 60 * 24)
-                          );
+                          const hydroDiff = getCalendarDayDiff(eq.hydroDueDate);
                           return (
                             <>
-                              {new Date(eq.hydroDueDate).toLocaleDateString('en-IN', {
-                                day: 'numeric',
-                                month: 'short',
-                                year: 'numeric',
-                              })}
+                              {formatCalendarDate(eq.hydroDueDate)}
                               <span
                                 className={`block text-[10px] font-bold ${
-                                  hydroDiff < 0
+                                  hydroDiff !== null && hydroDiff < 0
                                     ? 'text-[#DC2626]'
-                                    : hydroDiff <= 30
+                                    : hydroDiff !== null && hydroDiff <= 30
                                     ? 'text-[#D97706]'
                                     : 'text-[#059669]'
                                 }`}
                               >
-                                {hydroDiff < 0
+                                {hydroDiff === null
+                                  ? 'No due date set'
+                                  : hydroDiff === 0
+                                  ? 'Hydro due today'
+                                  : hydroDiff < 0
                                   ? `Hydro overdue (${Math.abs(hydroDiff)}d)`
                                   : hydroDiff <= 30
                                   ? `Hydro due (${hydroDiff}d)`

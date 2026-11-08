@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getAuthenticatedActor } from '@/lib/techSession';
+import { getCurrentUser } from '@/lib/auth';
 import { notifyOnAssignment } from '@/lib/notify';
 
 export const dynamic = 'force-dynamic';
@@ -16,7 +17,7 @@ const WORK_ORDER_INCLUDE = {
 
 export async function GET(request: Request) {
   try {
-    const auth = await getAuthenticatedActor(request);
+    const auth = (await getCurrentUser(request)) || (await getAuthenticatedActor(request));
     if (!auth || !auth.organization) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -46,7 +47,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const auth = await getAuthenticatedActor(request);
+    const auth = (await getCurrentUser(request)) || (await getAuthenticatedActor(request));
     if (!auth || !auth.organization) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -168,7 +169,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const auth = await getAuthenticatedActor(request);
+    const auth = (await getCurrentUser(request)) || (await getAuthenticatedActor(request));
     if (!auth || !auth.organization) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
