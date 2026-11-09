@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { formatCalendarDate, getCalendarDayDiff } from '@/lib/dateUtils';
+import { formatCalendarDate, getCalendarDayDiff, getCalendarMonthDiff } from '@/lib/dateUtils';
 import Link from 'next/link';
 import {
   Building2,
@@ -276,7 +276,9 @@ export function BuildingsView({
                                 ? 'No due date set'
                                 : diff === 0
                                 ? 'Due today'
-                                : diff < 0
+                                : diff === -1
+                                ? '1d overdue'
+                                : diff < -1
                                 ? `${Math.abs(diff)}d overdue`
                                 : `${diff}d left`;
                               const colorCls = diff !== null && diff < 0
@@ -457,11 +459,13 @@ export function BuildingsView({
                                           ? 'No due date set'
                                           : diffDays === 0
                                           ? 'Due today'
-                                          : diffDays < 0
+                                          : diffDays === -1
+                                          ? '1d overdue'
+                                          : diffDays < -1
                                           ? `${Math.abs(diffDays)}d overdue`
                                           : diffDays <= 30
                                           ? `Due in ${diffDays}d`
-                                          : `${Math.round(diffDays / 30)} mos left`}
+                                          : `${Math.max(1, getCalendarMonthDiff(eq.nextDueDate) ?? 1)} mos left`}
                                       </span>
                                     </td>
                                     <td className="py-3 px-4 text-[#1C1917] font-semibold">

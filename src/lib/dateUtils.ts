@@ -30,9 +30,9 @@ export function extractCalendarDateParts(input: string | Date | null | undefined
     const d = new Date(trimmed);
     if (isNaN(d.getTime())) return null;
     return {
-      year: d.getFullYear(),
-      month: d.getMonth() + 1,
-      day: d.getDate(),
+      year: d.getUTCFullYear(),
+      month: d.getUTCMonth() + 1,
+      day: d.getUTCDate(),
     };
   }
   if (input instanceof Date) {
@@ -44,6 +44,16 @@ export function extractCalendarDateParts(input: string | Date | null | undefined
     };
   }
   return null;
+}
+
+/**
+ * Converts a calendar date string (YYYY-MM-DD or ISO) or Date into a Date object at UTC 12:00:00 (noon).
+ * Storing at UTC noon prevents day-drifts across time zones worldwide when serialized or loaded from DB.
+ */
+export function parseCalendarDateToUtc(input: string | Date | null | undefined): Date | null {
+  const parts = extractCalendarDateParts(input);
+  if (!parts) return null;
+  return new Date(Date.UTC(parts.year, parts.month - 1, parts.day, 12, 0, 0));
 }
 
 /**
@@ -106,24 +116,65 @@ export function getCalendarDayDiff(
 }
 
 /**
+ * Calculates exact whole calendar-month difference between target and base date.
+ * Does not use 30-day blocks.
+ * E.g. from 2025-10-16 to 2026-04-16 -> 6 months.
+ * E.g. from 2026-01-31 to 2026-02-28 -> 1 month.
+ */
+export function getCalendarMonthDiff(
+  target: string | Date | null | undefined,
+  baseDate: Date = new Date()
+): number | null {
+  const tParts = extractCalendarDateParts(target);
+  if (!tParts) return null;
+  const bParts = extractCalendarDateParts(baseDate);
+  if (!bParts) return null;
+
+  let months = (tParts.year - bParts.year) * 12 + (tParts.month - bParts.month);
+  const daysInTargetMonth = new Date(tParts.year, tParts.month, 0).getDate();
+  const clampedBaseDay = Math.min(bParts.day, daysInTargetMonth);
+  if (tParts.day < clampedBaseDay) {
+    months -= 1;
+  }
+  return Math.max(0, months);
+}
+
+/**
  * Human readable label for calendar day difference.
  * today: "Due today"
  * tomorrow: "1d left" (or "Due in 1d")
  * yesterday: "1d overdue"
  * <0: "Xd overdue"
  * <=30: "Due in Xd" / "Xd left"
- * >30: "X mos left"
+ * >30: "N mos left" (calendar-month diff) or "Xd left" if daysOnly is requested
  */
 export function formatCalendarDueNotice(
   diffDays: number | null,
-  options: { dueTodayText?: string; inFormat?: boolean } = {}
+  options: {
+    dueTodayText?: string;
+    inFormat?: boolean;
+    target?: string | Date;
+    baseDate?: Date;
+    daysOnly?: boolean;
+  } = {}
 ): string {
   if (diffDays === null) return 'No due date set';
   if (diffDays === 0) return options.dueTodayText || 'Due today';
+  if (diffDays === -1) return '1d overdue';
   if (diffDays < 0) return `${Math.abs(diffDays)}d overdue`;
+  if (options.daysOnly) return `${diffDays}d left`;
   if (diffDays <= 30) return options.inFormat ? `Due in ${diffDays}d` : `${diffDays}d left`;
-  const mos = Math.round(diffDays / 30);
-  return `${mos} mos left`;
+
+  let mos: number | null = null;
+  if (options.target) {
+    mos = getCalendarMonthDiff(options.target, options.baseDate);
+  } else {
+    const bDate = options.baseDate || new Date();
+    const tDate = new Date(bDate.getTime() + diffDays * 86400000);
+    mos = getCalendarMonthDiff(tDate, bDate);
+  }
+  const finalMos = Math.max(1, mos ?? 1);
+  return `${finalMos} mos left`;
 }
 
 /**

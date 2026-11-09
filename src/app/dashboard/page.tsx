@@ -292,6 +292,7 @@ export default function AdminDashboardPage() {
   const [editClientModal, setEditClientModal] = useState<any>(null);
   const [editBuildingModal, setEditBuildingModal] = useState<any>(null);
   const [editEquipmentModal, setEditEquipmentModal] = useState<any>(null);
+  const [editEquipDueDateMode, setEditEquipDueDateMode] = useState<'auto' | 'manual'>('auto');
   const [compressingPhoto, setCompressingPhoto] = useState(false);
 
   const prefersReducedMotion = useReducedMotion();
@@ -1025,10 +1026,7 @@ export default function AdminDashboardPage() {
     let overdue = 0;
     let dueSoon = 0;
     for (const eq of equipmentsList) {
-      const hasDueDate = Boolean(eq.nextDueDate && !isNaN(new Date(eq.nextDueDate).getTime()));
-      const diffDays = hasDueDate
-        ? Math.ceil((new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-        : null;
+      const diffDays = getCalendarDayDiff(eq.nextDueDate, now);
       if ((diffDays !== null && diffDays < 0) || eq.status === 'OVERDUE' || eq.liveStatus === 'OVERDUE') overdue++;
       else if ((diffDays !== null && diffDays <= 30) || eq.status === 'DUE_SOON' || eq.liveStatus === 'DUE_SOON') dueSoon++;
     }
@@ -1863,11 +1861,18 @@ export default function AdminDashboardPage() {
                         dueDate: addDaysToTodayString(7),
                         notes: '',
                       });
+                      const interval = Number(eq.serviceIntervalMonths) || 12;
+                      const normalizedLast = toDateInputString(eq.lastServiceDate);
+                      const normalizedNext = toDateInputString(eq.nextDueDate);
+                      const autoNext = addMonthsToDateString(normalizedLast, interval);
+                      const isAuto = !eq.nextDueDate || normalizedNext === autoNext;
+                      setEditEquipDueDateMode(isAuto ? 'auto' : 'manual');
                       const normalizedEq = {
                         ...eq,
-                        lastServiceDate: toDateInputString(eq.lastServiceDate),
-                        nextDueDate: toDateInputString(eq.nextDueDate),
-                        hydroDueDate: toDateInputString(eq.hydroDueDate || eq.nextDueDate),
+                        serviceIntervalMonths: interval,
+                        lastServiceDate: normalizedLast,
+                        nextDueDate: normalizedNext,
+                        hydroDueDate: eq.hydroDueDate ? toDateInputString(eq.hydroDueDate) : '',
                       };
                       initialEquipmentRef.current = { ...normalizedEq };
                       setEditEquipmentModal(normalizedEq);
@@ -1926,10 +1931,18 @@ export default function AdminDashboardPage() {
                         dueDate: addDaysToTodayString(7),
                         notes: '',
                       });
+                      const interval = Number(eq.serviceIntervalMonths) || 12;
+                      const normalizedLast = toDateInputString(eq.lastServiceDate);
+                      const normalizedNext = toDateInputString(eq.nextDueDate);
+                      const autoNext = addMonthsToDateString(normalizedLast, interval);
+                      const isAuto = !eq.nextDueDate || normalizedNext === autoNext;
+                      setEditEquipDueDateMode(isAuto ? 'auto' : 'manual');
                       const normalizedEq = {
                         ...eq,
-                        lastServiceDate: toDateInputString(eq.lastServiceDate),
-                        nextDueDate: toDateInputString(eq.nextDueDate),
+                        serviceIntervalMonths: interval,
+                        lastServiceDate: normalizedLast,
+                        nextDueDate: normalizedNext,
+                        hydroDueDate: eq.hydroDueDate ? toDateInputString(eq.hydroDueDate) : '',
                       };
                       initialEquipmentRef.current = { ...normalizedEq };
                       setEditEquipmentModal(normalizedEq);
@@ -2574,45 +2587,51 @@ export default function AdminDashboardPage() {
                       className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
                     />
                   </div>
-                  <div className="sm:col-span-2 flex flex-wrap items-center gap-1.5 pt-1">
-                    <span className="text-[10px] font-bold uppercase text-slate-400 mr-1">Quick Presets:</span>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setEquipmentForm({
-                          ...equipmentForm,
-                          nextDueDate: addMonthsToDateString(equipmentForm.lastServiceDate, 12),
-                        })
-                      }
-                      className="px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors"
-                    >
-                      +1 Year (Standard)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setEquipmentForm({
-                          ...equipmentForm,
-                          nextDueDate: addDaysToTodayString(15),
-                        })
-                      }
-                      className="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors"
-                    >
-                      Due in 15 Days
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setEquipmentForm({
-                          ...equipmentForm,
-                          nextDueDate: addDaysToTodayString(-5),
-                        })
-                      }
-                      className="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors"
-                    >
-                      Overdue (-5 Days)
-                    </button>
-                  </div>
+                  {(() => {
+                    const baseDate = equipmentForm.lastServiceDate || toDateInputString(new Date());
+                    const p1 = addMonthsToDateString(baseDate, 12);
+                    const p2 = addMonthsToDateString(baseDate, 6);
+                    const p3 = addDaysToTodayString(15);
+                    const p4 = addDaysToTodayString(-5);
+
+                    return (
+                      <div className="sm:col-span-2 flex flex-wrap items-center gap-1.5 pt-1">
+                        <span className="text-[10px] font-bold uppercase text-slate-400 mr-1">Quick Presets:</span>
+                        <button
+                          type="button"
+                          onClick={() => setEquipmentForm({ ...equipmentForm, nextDueDate: p1 })}
+                          className="group px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors inline-flex items-center gap-1"
+                        >
+                          <span>+1 Year (Standard)</span>
+                          <span className="font-mono text-[9px] opacity-75">({p1})</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEquipmentForm({ ...equipmentForm, nextDueDate: p2 })}
+                          className="group px-2 py-0.5 rounded-md bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 text-[10px] font-bold transition-colors inline-flex items-center gap-1"
+                        >
+                          <span>+6 Months</span>
+                          <span className="font-mono text-[9px] opacity-75">({p2})</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEquipmentForm({ ...equipmentForm, nextDueDate: p3 })}
+                          className="group px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors inline-flex items-center gap-1"
+                        >
+                          <span>Due in 15 Days</span>
+                          <span className="font-mono text-[9px] opacity-75">({p3})</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEquipmentForm({ ...equipmentForm, nextDueDate: p4 })}
+                          className="group px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors inline-flex items-center gap-1"
+                        >
+                          <span>Overdue (-5 Days)</span>
+                          <span className="font-mono text-[9px] opacity-75">({p4})</span>
+                        </button>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 <div className="pt-2 flex justify-end gap-2">
@@ -2771,45 +2790,51 @@ export default function AdminDashboardPage() {
                           className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
                         />
                       </div>
-                      <div className="sm:col-span-2 flex flex-wrap items-center gap-1.5 pt-1">
-                        <span className="text-[10px] font-bold uppercase text-slate-400 mr-1">Quick Presets:</span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setSingleEquipForm({
-                              ...singleEquipForm,
-                              nextDueDate: addMonthsToDateString(singleEquipForm.lastServiceDate, 12),
-                            })
-                          }
-                          className="px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors"
-                        >
-                          +1 Year (Standard)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setSingleEquipForm({
-                              ...singleEquipForm,
-                              nextDueDate: addDaysToTodayString(15),
-                            })
-                          }
-                          className="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors"
-                        >
-                          Due in 15 Days
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setSingleEquipForm({
-                              ...singleEquipForm,
-                              nextDueDate: addDaysToTodayString(-5),
-                            })
-                          }
-                          className="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors"
-                        >
-                          Overdue (-5 Days)
-                        </button>
-                      </div>
+                      {(() => {
+                        const baseDate = singleEquipForm.lastServiceDate || toDateInputString(new Date());
+                        const p1 = addMonthsToDateString(baseDate, 12);
+                        const p2 = addMonthsToDateString(baseDate, 6);
+                        const p3 = addDaysToTodayString(15);
+                        const p4 = addDaysToTodayString(-5);
+
+                        return (
+                          <div className="sm:col-span-2 flex flex-wrap items-center gap-1.5 pt-1">
+                            <span className="text-[10px] font-bold uppercase text-slate-400 mr-1">Quick Presets:</span>
+                            <button
+                              type="button"
+                              onClick={() => setSingleEquipForm({ ...singleEquipForm, nextDueDate: p1 })}
+                              className="group px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors inline-flex items-center gap-1"
+                            >
+                              <span>+1 Year (Standard)</span>
+                              <span className="font-mono text-[9px] opacity-75">({p1})</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSingleEquipForm({ ...singleEquipForm, nextDueDate: p2 })}
+                              className="group px-2 py-0.5 rounded-md bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 text-[10px] font-bold transition-colors inline-flex items-center gap-1"
+                            >
+                              <span>+6 Months</span>
+                              <span className="font-mono text-[9px] opacity-75">({p2})</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSingleEquipForm({ ...singleEquipForm, nextDueDate: p3 })}
+                              className="group px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors inline-flex items-center gap-1"
+                            >
+                              <span>Due in 15 Days</span>
+                              <span className="font-mono text-[9px] opacity-75">({p3})</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSingleEquipForm({ ...singleEquipForm, nextDueDate: p4 })}
+                              className="group px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors inline-flex items-center gap-1"
+                            >
+                              <span>Overdue (-5 Days)</span>
+                              <span className="font-mono text-[9px] opacity-75">({p4})</span>
+                            </button>
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     <div>
@@ -3214,16 +3239,22 @@ export default function AdminDashboardPage() {
                         <label className="block text-slate-700 font-bold mb-1">Refill / Service Interval (Months)</label>
                         <input
                           type="number"
+                          min={1}
+                          max={120}
                           value={editEquipmentModal.serviceIntervalMonths || 12}
                           onChange={(e) => {
-                            const mos = Number(e.target.value);
+                            const mos = Number(e.target.value) || 1;
+                            const nextDue =
+                              editEquipDueDateMode === 'auto'
+                                ? addMonthsToDateString(
+                                    editEquipmentModal.lastServiceDate || toDateInputString(new Date()),
+                                    mos
+                                  )
+                                : editEquipmentModal.nextDueDate;
                             setEditEquipmentModal({
                               ...editEquipmentModal,
                               serviceIntervalMonths: mos,
-                              nextDueDate: addMonthsToDateString(
-                                editEquipmentModal.lastServiceDate || toDateInputString(new Date()),
-                                mos
-                              ),
+                              nextDueDate: nextDue,
                             });
                           }}
                           className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C] focus:outline-none"
@@ -3241,22 +3272,64 @@ export default function AdminDashboardPage() {
                             value={editEquipmentModal.lastServiceDate || toDateInputString(new Date())}
                             onChange={(e) => {
                               const val = e.target.value;
+                              const interval = Number(editEquipmentModal.serviceIntervalMonths) || 12;
+                              const nextDue =
+                                editEquipDueDateMode === 'auto'
+                                  ? addMonthsToDateString(val, interval)
+                                  : editEquipmentModal.nextDueDate;
                               setEditEquipmentModal({
                                 ...editEquipmentModal,
                                 lastServiceDate: val,
-                                nextDueDate: addMonthsToDateString(val, editEquipmentModal.serviceIntervalMonths || 12),
+                                nextDueDate: nextDue,
                               });
                             }}
                             className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
                           />
                         </div>
                         <div>
-                          <label className="block text-slate-700 font-bold mb-1">Next Service Due Date *</label>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="text-slate-700 font-bold">Next Service Due Date *</label>
+                            {editEquipDueDateMode === 'auto' ? (
+                              <span
+                                data-testid="badge-due-date-auto"
+                                className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1 select-none"
+                                title="Auto-calculated from Last Service Date + Refill Interval"
+                              >
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                Auto
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                data-testid="badge-due-date-manual"
+                                onClick={() => {
+                                  setEditEquipDueDateMode('auto');
+                                  const interval = Number(editEquipmentModal.serviceIntervalMonths) || 12;
+                                  const recomputed = addMonthsToDateString(
+                                    editEquipmentModal.lastServiceDate || toDateInputString(new Date()),
+                                    interval
+                                  );
+                                  setEditEquipmentModal({
+                                    ...editEquipmentModal,
+                                    nextDueDate: recomputed,
+                                  });
+                                }}
+                                className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA] hover:bg-[#FED7AA] transition-colors flex items-center gap-1 cursor-pointer"
+                                title="Manual date set. Click to switch back to Auto calculation."
+                              >
+                                <span>Manual</span>
+                                <span className="underline font-normal text-[9px]">(Reset to Auto)</span>
+                              </button>
+                            )}
+                          </div>
                           <input
                             type="date"
                             required
                             value={editEquipmentModal.nextDueDate || toDateInputString(new Date())}
-                            onChange={(e) => setEditEquipmentModal({ ...editEquipmentModal, nextDueDate: e.target.value })}
+                            onChange={(e) => {
+                              setEditEquipDueDateMode('manual');
+                              setEditEquipmentModal({ ...editEquipmentModal, nextDueDate: e.target.value });
+                            }}
                             className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
                           />
                         </div>
@@ -3267,11 +3340,7 @@ export default function AdminDashboardPage() {
                           <input
                             type="date"
                             data-testid="equipment-modal-hydro-due"
-                            value={
-                              editEquipmentModal.hydroDueDate
-                                ? toDateInputString(editEquipmentModal.hydroDueDate)
-                                : editEquipmentModal.nextDueDate || toDateInputString(new Date())
-                            }
+                            value={editEquipmentModal.hydroDueDate || ''}
                             onChange={(e) =>
                               setEditEquipmentModal({
                                 ...editEquipmentModal,
@@ -3283,63 +3352,87 @@ export default function AdminDashboardPage() {
                         </div>
 
                         {/* Quick Presets Row */}
-                        <div className="sm:col-span-2 flex flex-wrap items-center gap-1.5 pt-1">
-                          <span className="text-[10px] font-bold uppercase text-slate-400 mr-1">Quick Presets:</span>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setEditEquipmentModal({
-                                ...editEquipmentModal,
-                                nextDueDate: addMonthsToDateString(
-                                  editEquipmentModal.lastServiceDate || toDateInputString(new Date()),
-                                  12
-                                ),
-                              })
-                            }
-                            className="px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors"
-                          >
-                            +1 Year (Standard)
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setEditEquipmentModal({
-                                ...editEquipmentModal,
-                                nextDueDate: addMonthsToDateString(
-                                  editEquipmentModal.lastServiceDate || toDateInputString(new Date()),
-                                  6
-                                ),
-                              })
-                            }
-                            className="px-2 py-0.5 rounded-md bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 text-[10px] font-bold transition-colors"
-                          >
-                            +6 Months
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setEditEquipmentModal({
-                                ...editEquipmentModal,
-                                nextDueDate: addDaysToTodayString(15),
-                              })
-                            }
-                            className="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors"
-                          >
-                            Due in 15 Days
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setEditEquipmentModal({
-                                ...editEquipmentModal,
-                                nextDueDate: addDaysToTodayString(-5),
-                              })
-                            }
-                            className="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors"
-                          >
-                            Overdue (-5 Days)
-                          </button>
-                        </div>
+                        {(() => {
+                          const baseServiceDate = editEquipmentModal.lastServiceDate || toDateInputString(new Date());
+                          const preset1Year = addMonthsToDateString(baseServiceDate, 12);
+                          const preset6Mos = addMonthsToDateString(baseServiceDate, 6);
+                          const preset15Days = addDaysToTodayString(15);
+                          const presetOverdue5 = addDaysToTodayString(-5);
+
+                          return (
+                            <div className="sm:col-span-2 flex flex-wrap items-center gap-1.5 pt-1">
+                              <span className="text-[10px] font-bold uppercase text-slate-400 mr-1">Quick Presets:</span>
+                              <button
+                                type="button"
+                                title={`Set Next Service Due Date to ${preset1Year} (Last Service + 12 calendar months)`}
+                                onClick={() => {
+                                  setEditEquipDueDateMode('manual');
+                                  setEditEquipmentModal({
+                                    ...editEquipmentModal,
+                                    nextDueDate: preset1Year,
+                                  });
+                                }}
+                                className="group px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors inline-flex items-center gap-1 cursor-pointer active:scale-95"
+                              >
+                                <span>+1 Year (Standard)</span>
+                                <span className="font-mono text-[9px] text-emerald-600/80 group-hover:text-emerald-800">
+                                  ({preset1Year})
+                                </span>
+                              </button>
+                              <button
+                                type="button"
+                                title={`Set Next Service Due Date to ${preset6Mos} (Last Service + 6 calendar months)`}
+                                onClick={() => {
+                                  setEditEquipDueDateMode('manual');
+                                  setEditEquipmentModal({
+                                    ...editEquipmentModal,
+                                    nextDueDate: preset6Mos,
+                                  });
+                                }}
+                                className="group px-2 py-0.5 rounded-md bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 text-[10px] font-bold transition-colors inline-flex items-center gap-1 cursor-pointer active:scale-95"
+                              >
+                                <span>+6 Months</span>
+                                <span className="font-mono text-[9px] text-sky-600/80 group-hover:text-sky-800">
+                                  ({preset6Mos})
+                                </span>
+                              </button>
+                              <button
+                                type="button"
+                                title={`Set Next Service Due Date to ${preset15Days} (Today + 15 calendar days)`}
+                                onClick={() => {
+                                  setEditEquipDueDateMode('manual');
+                                  setEditEquipmentModal({
+                                    ...editEquipmentModal,
+                                    nextDueDate: preset15Days,
+                                  });
+                                }}
+                                className="group px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors inline-flex items-center gap-1 cursor-pointer active:scale-95"
+                              >
+                                <span>Due in 15 Days</span>
+                                <span className="font-mono text-[9px] text-amber-600/80 group-hover:text-amber-800">
+                                  ({preset15Days})
+                                </span>
+                              </button>
+                              <button
+                                type="button"
+                                title={`Set Next Service Due Date to ${presetOverdue5} (Today - 5 calendar days)`}
+                                onClick={() => {
+                                  setEditEquipDueDateMode('manual');
+                                  setEditEquipmentModal({
+                                    ...editEquipmentModal,
+                                    nextDueDate: presetOverdue5,
+                                  });
+                                }}
+                                className="group px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors inline-flex items-center gap-1 cursor-pointer active:scale-95"
+                              >
+                                <span>Overdue (-5 Days)</span>
+                                <span className="font-mono text-[9px] text-rose-600/80 group-hover:text-rose-800">
+                                  ({presetOverdue5})
+                                </span>
+                              </button>
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       {/* Equipment Photo Block */}
@@ -3580,11 +3673,18 @@ export default function AdminDashboardPage() {
           onViewAsset={(eq) => {
             setFloorPlansBuilding(null);
             ensureTechniciansLoaded();
+            const interval = Number(eq.serviceIntervalMonths) || 12;
+            const normalizedLast = toDateInputString(eq.lastServiceDate);
+            const normalizedNext = toDateInputString(eq.nextDueDate);
+            const autoNext = addMonthsToDateString(normalizedLast, interval);
+            const isAuto = !eq.nextDueDate || normalizedNext === autoNext;
+            setEditEquipDueDateMode(isAuto ? 'auto' : 'manual');
             const normalizedEq = {
               ...eq,
-              lastServiceDate: toDateInputString(eq.lastServiceDate),
-              nextDueDate: toDateInputString(eq.nextDueDate),
-              hydroDueDate: toDateInputString(eq.hydroDueDate || eq.nextDueDate),
+              serviceIntervalMonths: interval,
+              lastServiceDate: normalizedLast,
+              nextDueDate: normalizedNext,
+              hydroDueDate: eq.hydroDueDate ? toDateInputString(eq.hydroDueDate) : '',
             };
             initialEquipmentRef.current = { ...normalizedEq };
             setEditEquipmentModal(normalizedEq);

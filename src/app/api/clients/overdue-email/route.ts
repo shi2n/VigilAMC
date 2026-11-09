@@ -44,7 +44,7 @@ function processClientData(client: any) {
           assetType: `Statutory Compliance Cycle (${b.reportingCycle || 'Half-Yearly'})`,
           dueDate: formatCalendarDate(b.nextFilingDueDate),
           status: st,
-          dueNotice: formatCalendarDueNotice(diff),
+          dueNotice: formatCalendarDueNotice(diff, { daysOnly: true }),
           diffDays: diff,
         });
       }
@@ -77,7 +77,7 @@ function processClientData(client: any) {
             assetType: `${eq.type || 'Equipment'}${eq.capacity ? ` (${eq.capacity})` : ''}`,
             dueDate: formatCalendarDate(eq.nextDueDate),
             status: st,
-            dueNotice: formatCalendarDueNotice(diff),
+            dueNotice: formatCalendarDueNotice(diff, { target: eq.nextDueDate }),
             diffDays: diff,
           });
         }
@@ -103,7 +103,7 @@ function processClientData(client: any) {
             assetType: ca.title || 'Required Maintenance Action',
             dueDate: formatCalendarDate(ca.dueDate),
             status: st,
-            dueNotice: formatCalendarDueNotice(diff),
+            dueNotice: formatCalendarDueNotice(diff, { target: ca.dueDate }),
             diffDays: diff,
           });
         }

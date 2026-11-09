@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { formatCalendarDate, getCalendarDayDiff } from '@/lib/dateUtils';
+import { formatCalendarDate, getCalendarDayDiff, getCalendarMonthDiff } from '@/lib/dateUtils';
 import { motion, useReducedMotion } from 'motion/react';
 import { Layers, Search, Edit, Trash2, MapPin, FileSpreadsheet, Plus } from 'lucide-react';
 
@@ -215,10 +215,10 @@ export function FireAssetsView({
                           : diffDays === 0
                           ? 'Due today'
                           : isOverdue
-                          ? `Overdue by ${Math.abs(diffDays)}d`
+                          ? (diffDays === -1 ? '1d overdue' : `Overdue by ${Math.abs(diffDays)}d`)
                           : isDueSoon
                           ? `Due in ${diffDays}d`
-                          : `${Math.max(1, Math.round(diffDays / 30))} mos left`}
+                          : `${Math.max(1, getCalendarMonthDiff(eq.nextDueDate) ?? 1)} mos left`}
                       </span>
                     </td>
                     <td className="py-3 px-4 font-semibold text-[#1C1917] whitespace-nowrap">

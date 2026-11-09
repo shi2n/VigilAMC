@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import { ensureR2PhotoUrl, deleteFromR2 } from '@/lib/r2';
-import { getCalendarDayDiff } from '@/lib/dateUtils';
+import { getCalendarDayDiff, parseCalendarDateToUtc } from '@/lib/dateUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -96,16 +96,16 @@ export async function PUT(
       }
     }
 
-    const finalLastServiceDate = lastServiceDate ? new Date(lastServiceDate) : existing.lastServiceDate;
-    const finalNextDueDate = nextDueDate ? new Date(nextDueDate) : existing.nextDueDate;
+    const finalLastServiceDate = lastServiceDate ? parseCalendarDateToUtc(lastServiceDate) : existing.lastServiceDate;
+    const finalNextDueDate = nextDueDate ? parseCalendarDateToUtc(nextDueDate) : existing.nextDueDate;
     const rawHydro = hydroDueDate !== undefined ? hydroDueDate : nextHydroTestDue;
     const finalHydroDueDate =
       rawHydro === undefined
         ? existing.hydroDueDate
-        : rawHydro && !isNaN(new Date(rawHydro).getTime())
-        ? new Date(rawHydro)
+        : rawHydro
+        ? parseCalendarDateToUtc(rawHydro)
         : null;
-    const derivedStatus = deriveEquipmentDbStatus(new Date(finalNextDueDate));
+    const derivedStatus = deriveEquipmentDbStatus(finalNextDueDate);
 
     const updated = await (db as any).equipment.update({
       where: { id: params.id },

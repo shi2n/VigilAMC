@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { getCurrentUser, logAuditActivity } from '@/lib/auth';
 import { checkPlanLimit } from '@/lib/plans';
 import { ensureR2PhotoUrl } from '@/lib/r2';
-import { getCalendarDayDiff } from '@/lib/dateUtils';
+import { getCalendarDayDiff, parseCalendarDateToUtc, addCalendarMonths } from '@/lib/dateUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -137,10 +137,10 @@ export async function POST(request: Request) {
     }
 
     const intervalMos = Number(serviceIntervalMonths) || 12;
-    const serviceDateObj = lastServiceDate ? new Date(lastServiceDate) : new Date();
+    const serviceDateObj = lastServiceDate ? parseCalendarDateToUtc(lastServiceDate)! : parseCalendarDateToUtc(new Date())!;
     const nextDueObj = nextDueDate
-      ? new Date(nextDueDate)
-      : new Date(serviceDateObj.getTime() + intervalMos * 30 * 24 * 60 * 60 * 1000);
+      ? parseCalendarDateToUtc(nextDueDate)!
+      : parseCalendarDateToUtc(addCalendarMonths(serviceDateObj, intervalMos))!;
     const derivedStatus = deriveEquipmentDbStatus(nextDueObj);
 
     // Single Equipment Creation
