@@ -565,8 +565,8 @@ export default function ContactPage() {
                     {SITE_CONFIG.PHONE_DISPLAY}
                   </a>
                   <span className="text-slate-300">&bull;</span>
-                  <a href={`mailto:${SITE_CONFIG.CONTACT_EMAIL}`} className="text-[#C2410C] hover:underline">
-                    {SITE_CONFIG.CONTACT_EMAIL}
+                  <a href={`mailto:${SITE_CONFIG.PRIMARY_GMAIL}`} className="text-[#C2410C] hover:underline">
+                    {SITE_CONFIG.PRIMARY_GMAIL}
                   </a>
                 </div>
               </div>

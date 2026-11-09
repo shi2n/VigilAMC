@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 import { SITE_CONFIG } from '@/lib/siteConfig';
 
 export const metadata: Metadata = {
-  title: 'Contact Us | VigilAMC Technologies',
+  title: 'Agency Onboarding & Setup | Schedule an Agency Demo | VigilAMC',
   description:
-    'Get in touch with VigilAMC for agency onboarding, custom fire compliance workflows, or technical support.',
+    'Schedule an Agency Demo or Request Workflow Setup. Speak directly with our product team to import your client asset rosters, configure mobile field checklists, and compile Form-B reports in minutes.',
   alternates: {
     canonical: '/contact',
   },

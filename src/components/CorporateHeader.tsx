@@ -22,7 +22,7 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
     { name: 'How It Works', href: '/#how-it-works' },
     { name: 'Sample Report', href: '/sample-report' },
     { name: 'Mobile App', href: '/#field-app', badge: 'iOS Soon' },
-    { name: 'Contact', href: '/#contact' },
+    { name: 'Contact', href: '/contact' },
   ];
 
   return (
