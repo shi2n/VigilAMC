@@ -14,7 +14,9 @@ import {
   Trash2,
   FileSpreadsheet,
   Layers,
+  Mail,
 } from 'lucide-react';
+import { EmailOverdueModal } from './EmailOverdueModal';
 
 interface BuildingsViewProps {
   buildings: any[];
@@ -57,6 +59,13 @@ export function BuildingsView({
   clientFilterName,
   onClearClientFilter,
 }: BuildingsViewProps) {
+  const [overdueModalBuilding, setOverdueModalBuilding] = React.useState<{
+    id: string;
+    name: string;
+    clientEmail?: string | null;
+    clientName?: string | null;
+  } | null>(null);
+
   return (
     <div className="space-y-6">
       {clientFilterName && (
@@ -335,6 +344,23 @@ export function BuildingsView({
                       </Link>
 
                       <button
+                        type="button"
+                        onClick={() => {
+                          setOverdueModalBuilding({
+                            id: b.id,
+                            name: b.name,
+                            clientEmail: b.client?.email || null,
+                            clientName: b.client?.name || b.name,
+                          });
+                        }}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-[#DC2626] border border-rose-200 text-xs font-bold transition-all shadow-sm"
+                        title={`Email overdue & due-soon update for ${b.name}`}
+                      >
+                        <Mail className="w-3.5 h-3.5" />
+                        <span>Overdue Update</span>
+                      </button>
+
+                      <button
                         onClick={() => onEditBuilding(b)}
                         className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors"
                         title="Edit Building Details"
@@ -490,6 +516,16 @@ export function BuildingsView({
           </div>
         )}
       </div>
+
+      {overdueModalBuilding && (
+        <EmailOverdueModal
+          isOpen={Boolean(overdueModalBuilding)}
+          onClose={() => setOverdueModalBuilding(null)}
+          buildingId={overdueModalBuilding.id}
+          clientName={overdueModalBuilding.clientName}
+          clientEmail={overdueModalBuilding.clientEmail}
+        />
+      )}
     </div>
   );
 }

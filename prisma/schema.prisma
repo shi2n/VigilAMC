@@ -78,6 +78,7 @@ model UserProfile {
   deviceTokens      DeviceToken[]
   deletionRequests  AccountDeletionRequest[]
   credentials       TechnicianCredential[]
+  emailLogs         EmailLog[]
   createdAt         DateTime                       @default(now())
   updatedAt         DateTime                       @updatedAt
 
@@ -134,6 +135,7 @@ model Organization {
   jurisdictionTemplates  JurisdictionTemplate[]
   legalReferences        LegalReference[]
   inspectionReports      InspectionReport[]
+  emailLogs              EmailLog[]
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
 
@@ -1000,5 +1002,26 @@ model ReportVerificationLog {
   @@index([inspectionReportId])
   @@index([queriedRef])
   @@map("report_verification_logs")
+}
+
+model EmailLog {
+  id             String        @id @default(cuid())
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  kind           String        // 'REPORT' | 'OVERDUE_DIGEST'
+  to             String
+  cc             String?
+  subject        String
+  refId          String?       // buildingId or clientId
+  resendId       String?       // Resend message ID
+  sentAt         DateTime      @default(now())
+  createdById    String?
+  createdBy      UserProfile?  @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now())
+
+  @@index([organizationId])
+  @@index([organizationId, kind])
+  @@index([sentAt])
+  @@map("EmailLog")
 }
 

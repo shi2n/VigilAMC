@@ -15,12 +15,14 @@ import {
   FileSpreadsheet,
   Clock,
   Scale,
+  Mail,
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { formatStandardDate } from '@/lib/constants/india';
 import { ClientPortalAdminPanel } from './ClientPortalAdminPanel';
 import { ComplianceReportManagementView } from './ComplianceReportManagementView';
+import { EmailReportModal } from './EmailReportModal';
 import { SITE_CONFIG } from '@/lib/siteConfig';
 import {
   REPORT_TYPES,
@@ -55,6 +57,12 @@ export function ReportsView({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [designerOpen, setDesignerOpen] = useState<boolean>(false);
   const [exportingRegister, setExportingRegister] = useState<boolean>(false);
+  const [emailModalBuilding, setEmailModalBuilding] = useState<{
+    id: string;
+    name: string;
+    clientEmail?: string | null;
+    clientName?: string | null;
+  } | null>(null);
 
   const handleExportMonthlyRegister = async () => {
     setExportingRegister(true);
@@ -486,6 +494,23 @@ export function ReportsView({
                       <button
                         type="button"
                         onClick={() => {
+                          setEmailModalBuilding({
+                            id: b.id,
+                            name: b.name,
+                            clientEmail: b.client?.email || null,
+                            clientName: b.client?.name || null,
+                          });
+                        }}
+                        className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-[#EA580C] to-[#C2410C] hover:from-[#C2410C] hover:to-[#9A3412] text-white text-xs font-bold transition-all shadow-xs"
+                        title="Directly email Form B PDF report to client"
+                      >
+                        <Mail className="w-3.5 h-3.5" />
+                        <span>Email to Client</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
                           setDesignerConfig((prev) => ({
                             ...prev,
                             buildingId: b.id,
@@ -681,6 +706,17 @@ export function ReportsView({
             </div>
           </div>
         </div>
+      )}
+
+      {emailModalBuilding && (
+        <EmailReportModal
+          isOpen={Boolean(emailModalBuilding)}
+          onClose={() => setEmailModalBuilding(null)}
+          buildingId={emailModalBuilding.id}
+          buildingName={emailModalBuilding.name}
+          clientEmail={emailModalBuilding.clientEmail}
+          clientName={emailModalBuilding.clientName}
+        />
       )}
     </div>
   );

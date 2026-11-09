@@ -29,6 +29,7 @@ import {
   Save,
 } from 'lucide-react';
 import { SITE_CONFIG } from '@/lib/siteConfig';
+import { EmailReportModal } from '@/components/admin/EmailReportModal';
 import {
   REPORT_TYPES,
   ReportTypeCode,
@@ -116,6 +117,7 @@ export default function ComplianceReportPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastTone, setToastTone] = useState<'success' | 'error'>('success');
   const [copiedLink, setCopiedLink] = useState(false);
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
 
   const showToast = (msg: string, tone: 'success' | 'error' = 'success') => {
     setToastTone(tone);
@@ -722,6 +724,16 @@ export default function ComplianceReportPage() {
               title="Customize recipient contact"
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setEmailModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-[#EA580C] to-[#C2410C] hover:from-[#C2410C] hover:to-[#9A3412] text-white font-extrabold text-xs shadow-md transition-all cursor-pointer"
+              title="Email Form B report directly to client"
+            >
+              <Mail className="w-3.5 h-3.5" />
+              <span>Email to Client</span>
             </button>
 
             <button
@@ -1979,6 +1991,20 @@ export default function ComplianceReportPage() {
         {/* Page 5 Footer */}
         <ReportPageFooter pageNumber={5} />
       </div>
+
+      {emailModalOpen && building && (
+        <EmailReportModal
+          isOpen={emailModalOpen}
+          onClose={() => setEmailModalOpen(false)}
+          buildingId={building.id}
+          buildingName={building.name}
+          clientEmail={clientEmail || building.client?.email || null}
+          clientName={building.client?.name || null}
+          onSuccess={() => {
+            showToast('Form B Report PDF successfully emailed to client!');
+          }}
+        />
+      )}
     </div>
   );
 }

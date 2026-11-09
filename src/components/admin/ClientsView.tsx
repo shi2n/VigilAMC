@@ -14,8 +14,10 @@ import {
   ArrowUpDown,
   ChevronRight,
   ShieldCheck,
+  Mail,
 } from 'lucide-react';
 import type { AdminDictionary } from '@/lib/i18n/admin';
+import { EmailOverdueModal } from './EmailOverdueModal';
 
 interface ClientsViewProps {
   clientsList: any[];
@@ -42,6 +44,11 @@ export function ClientsView({
 }: ClientsViewProps) {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'COMPLIANCE_ASC' | 'COMPLIANCE_DESC' | 'EXPIRING_DESC' | 'NAME_ASC'>('COMPLIANCE_ASC');
+  const [overdueModalClient, setOverdueModalClient] = useState<{
+    id: string;
+    name: string;
+    email?: string | null;
+  } | null>(null);
 
   const filteredAndSortedClients = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -295,6 +302,20 @@ export function ClientsView({
                     )}
                     <button
                       type="button"
+                      onClick={() => {
+                        setOverdueModalClient({
+                          id: c.id,
+                          name: c.name,
+                          email: c.email || null,
+                        });
+                      }}
+                      className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-[#DC2626] border border-rose-200"
+                      title={`Email Overdue & Due-Date Update to ${c.name}`}
+                    >
+                      <Mail className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => onEditClient(c)}
                       className="p-1.5 rounded-lg bg-[#FFF8F2] hover:bg-[#FFF0E6] text-[#44403C] hover:text-[#1C1917] border border-[#FED7AA]"
                       title="Edit Client"
@@ -319,6 +340,16 @@ export function ClientsView({
             );
           })}
         </div>
+      )}
+
+      {overdueModalClient && (
+        <EmailOverdueModal
+          isOpen={Boolean(overdueModalClient)}
+          onClose={() => setOverdueModalClient(null)}
+          clientId={overdueModalClient.id}
+          clientName={overdueModalClient.name}
+          clientEmail={overdueModalClient.email}
+        />
       )}
     </div>
   );
