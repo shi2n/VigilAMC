@@ -39,29 +39,45 @@ export function CorporateFooter() {
                 Field app on Google Play &amp; Coming Soon to Apple App Store.
               </span>
             </div>
-            <div className="pt-1 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[#A8A29E]">
-              <a
-                href={`mailto:${SITE_CONFIG.CONTACT_EMAIL}`}
-                className="hover:text-[#FAFAF9] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
-              >
-                {SITE_CONFIG.CONTACT_EMAIL}
-              </a>
-              <span aria-hidden="true">&middot;</span>
-              <a
-                href={SITE_CONFIG.PHONE_TEL}
-                className="hover:text-[#FAFAF9] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
-              >
-                {SITE_CONFIG.PHONE_DISPLAY}
-              </a>
-              <span aria-hidden="true">&middot;</span>
-              <a
-                href={SITE_CONFIG.SOCIAL.LINKEDIN}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-[#FF8C42] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
-              >
-                @vigilamc
-              </a>
+            <div className="pt-2 flex flex-col gap-1 text-xs text-[#A8A29E]">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="text-[#FAFAF9] font-semibold">Direct Email:</span>
+                <a
+                  href={`mailto:${SITE_CONFIG.EMAILS.support}`}
+                  className="hover:text-[#FF8C42] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
+                >
+                  {SITE_CONFIG.EMAILS.support}
+                </a>
+                <span aria-hidden="true">&middot;</span>
+                <a
+                  href={`mailto:${SITE_CONFIG.EMAILS.founder}`}
+                  className="hover:text-[#FF8C42] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
+                >
+                  {SITE_CONFIG.EMAILS.founder}
+                </a>
+              </div>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <a
+                  href={`mailto:${SITE_CONFIG.EMAILS.cofounder}`}
+                  className="hover:text-[#FF8C42] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
+                >
+                  {SITE_CONFIG.EMAILS.cofounder}
+                </a>
+                <span aria-hidden="true">&middot;</span>
+                <a
+                  href={`mailto:${SITE_CONFIG.EMAILS.general}`}
+                  className="hover:text-[#FF8C42] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
+                >
+                  {SITE_CONFIG.EMAILS.general}
+                </a>
+                <span aria-hidden="true">&middot;</span>
+                <a
+                  href={SITE_CONFIG.PHONE_TEL}
+                  className="hover:text-[#FAFAF9] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
+                >
+                  {SITE_CONFIG.PHONE_DISPLAY}
+                </a>
+              </div>
             </div>
           </div>
 
@@ -158,11 +174,43 @@ export function CorporateFooter() {
                 </Link>
               </li>
               <li>
+                <Link
+                  href="/contact"
+                  className="inline-flex items-center min-h-[36px] text-[#FF8C42] hover:text-white font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
+                >
+                  Contact Us &amp; Direct Mailboxes
+                </Link>
+              </li>
+              <li>
                 <a
-                  href={`mailto:${SITE_CONFIG.CONTACT_EMAIL}`}
+                  href={`mailto:${SITE_CONFIG.EMAILS.support}`}
                   className="inline-flex items-center min-h-[36px] hover:text-[#FAFAF9] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
                 >
-                  Contact ({SITE_CONFIG.CONTACT_EMAIL})
+                  Support: {SITE_CONFIG.EMAILS.support}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={`mailto:${SITE_CONFIG.EMAILS.founder}`}
+                  className="inline-flex items-center min-h-[36px] hover:text-[#FAFAF9] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
+                >
+                  Founder: {SITE_CONFIG.EMAILS.founder}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={`mailto:${SITE_CONFIG.EMAILS.cofounder}`}
+                  className="inline-flex items-center min-h-[36px] hover:text-[#FAFAF9] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
+                >
+                  Co-Founder: {SITE_CONFIG.EMAILS.cofounder}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={`mailto:${SITE_CONFIG.EMAILS.general}`}
+                  className="inline-flex items-center min-h-[36px] hover:text-[#FAFAF9] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF8C42] rounded"
+                >
+                  General: {SITE_CONFIG.EMAILS.general}
                 </a>
               </li>
               <li>

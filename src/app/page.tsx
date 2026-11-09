@@ -12,6 +12,7 @@ import { PlatformFeaturesGrid } from '@/components/home/PlatformFeaturesGrid';
 import { VideoExplainerSection } from '@/components/home/VideoExplainerSection';
 import { FreeToolsSection } from '@/components/home/FreeToolsSection';
 import { FieldAppSection } from '@/components/home/FieldAppSection';
+import { ContactSection } from '@/components/home/ContactSection';
 import { ProofSection } from '@/components/home/ProofSection';
 
 export const metadata: Metadata = {
@@ -134,6 +135,9 @@ export default function HomePage() {
 
       {/* Screen 3E: VigilAMC Field Android App on Google Play */}
       <FieldAppSection />
+
+      {/* Screen 3F: Direct Team & Founder Desk Contact Section */}
+      <ContactSection />
 
       {/* Screen 4: Real Numbers + Guarantees + Founding Agency Promise + Final CTA */}
       <ProofSection />

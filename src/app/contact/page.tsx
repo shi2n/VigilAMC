@@ -158,15 +158,38 @@ export default function ContactPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-[#C2410C] shadow-sm">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-[#C2410C] shadow-sm shrink-0 mt-0.5">
                     <Mail className="w-4 h-4" />
                   </div>
-                  <div>
-                    <span className="text-slate-400 block text-[10px] uppercase font-bold">Email Inquiries</span>
-                    <a href={`mailto:${SITE_CONFIG.CONTACT_EMAIL}`} className="font-bold text-slate-800 hover:text-[#C2410C]">
-                      {SITE_CONFIG.CONTACT_EMAIL}
-                    </a>
+                  <div className="space-y-1.5 min-w-0">
+                    <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Direct Email Inquiries</span>
+                    <div className="grid grid-cols-1 gap-1 text-xs">
+                      <div>
+                        <span className="text-slate-400 font-medium mr-1.5">Support:</span>
+                        <a href={`mailto:${SITE_CONFIG.SUPPORT_EMAIL}`} className="font-bold text-slate-800 hover:text-[#C2410C] break-all">
+                          {SITE_CONFIG.SUPPORT_EMAIL}
+                        </a>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 font-medium mr-1.5">Founder:</span>
+                        <a href={`mailto:${SITE_CONFIG.FOUNDER_EMAIL}`} className="font-bold text-slate-800 hover:text-[#C2410C] break-all">
+                          {SITE_CONFIG.FOUNDER_EMAIL}
+                        </a>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 font-medium mr-1.5">Co-Founder:</span>
+                        <a href={`mailto:${SITE_CONFIG.COFOUNDER_EMAIL}`} className="font-bold text-slate-800 hover:text-[#C2410C] break-all">
+                          {SITE_CONFIG.COFOUNDER_EMAIL}
+                        </a>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 font-medium mr-1.5">General / Backup:</span>
+                        <a href={`mailto:${SITE_CONFIG.PRIMARY_GMAIL}`} className="font-bold text-slate-800 hover:text-[#C2410C] break-all">
+                          {SITE_CONFIG.PRIMARY_GMAIL}
+                        </a>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
