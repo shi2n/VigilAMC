@@ -16,6 +16,7 @@ export interface EmailResult {
   errorCode?: EmailErrorCode;
   message?: string;
   messageId?: string;
+  isDevSimulation?: boolean;
 }
 
 export interface EmailSenderInfo {
@@ -486,7 +487,32 @@ export async function sendEmail(options: SendEmailOptions): Promise<EmailResult>
     }
   }
 
-  // 3. Neither configured -> typed CONFIG_MISSING
+  // 3. Local Development Simulation Fallback:
+  // If running in development (e.g. npm run dev on localhost) and no Resend/SMTP key is set,
+  // simulate the email send so developer UI testing, PDF generation, and sent states work cleanly without throwing.
+  if (process.env.NODE_ENV === 'development') {
+    const devSimId = `dev_mock_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    console.log(`\n======================================================`);
+    console.log(`[VigilAMC Email DEV SIMULATION]`);
+    console.log(`To: ${validRecipients.join(', ')}`);
+    if (ccList && ccList.length > 0) console.log(`Cc: ${ccList.join(', ')}`);
+    console.log(`From: ${fromAddress}`);
+    console.log(`Reply-To: ${replyTo}`);
+    console.log(`Subject: ${subject.slice(0, 60)}`);
+    console.log(`Attachments (${attachments.length}): ${attachments.map(a => `${a.filename} (${a.content_type || 'application/octet-stream'}, ~${Math.round((a.content.length * 0.75) / 1024)} KB)`).join(', ') || 'None'}`);
+    console.log(`MessageId: ${devSimId}`);
+    console.log(`[Note] Email simulated locally in development mode. To send live emails to real inboxes, add RESEND_API_KEY=re_... in .env.local.`);
+    console.log(`======================================================\n`);
+
+    return {
+      success: true,
+      messageId: devSimId,
+      isDevSimulation: true,
+      message: 'Email simulated in development mode (logged to server console).',
+    };
+  }
+
+  // 4. In production without credentials -> typed CONFIG_MISSING
   return {
     success: false,
     errorCode: 'CONFIG_MISSING',

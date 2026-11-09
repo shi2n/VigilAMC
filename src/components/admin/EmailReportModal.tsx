@@ -82,7 +82,11 @@ export function EmailReportModal({
         minute: '2-digit',
       });
       setSentTime(timeFormatted);
-      toast.success(`Form B report email sent successfully to ${to}`);
+      if (data.isDevSimulation) {
+        toast.info(`Dev Mode: Form B report simulated & logged to terminal.`);
+      } else {
+        toast.success(`Form B report email sent successfully to ${to}`);
+      }
       if (onSuccess) {
         onSuccess(timeFormatted);
       }

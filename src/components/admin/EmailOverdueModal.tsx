@@ -158,7 +158,11 @@ export function EmailOverdueModal({
         minute: '2-digit',
       });
       setSentTime(timeFormatted);
-      toast.success(`Overdue update email successfully dispatched to ${to}`);
+      if (data.isDevSimulation) {
+        toast.info(`Dev Mode: Overdue update email simulated & logged to terminal.`);
+      } else {
+        toast.success(`Overdue update email successfully dispatched to ${to}`);
+      }
       if (onSuccess) {
         onSuccess(timeFormatted);
       }

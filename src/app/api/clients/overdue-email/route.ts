@@ -339,6 +339,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       messageId: emailResult.messageId,
+      isDevSimulation: Boolean(emailResult.isDevSimulation),
       sentAt: new Date().toISOString(),
       counts: summaryCounts,
       itemsCount: filteredItems.length,
