@@ -61,15 +61,10 @@ export function middleware(request: NextRequest) {
     return response;
   }
 
-  // 3. www.vigilamc.com -> canonical apex vigilamc.com (single 308 hop)
-  if (hostname === 'www.vigilamc.com') {
-    const destination = new URL(`https://vigilamc.com${pathname}${search}`);
-    const response = NextResponse.redirect(destination, 308);
-    response.headers.set('Cache-Control', 'public, max-age=0, must-revalidate');
-    return response;
-  }
-
-  // 4. Apex vigilamc.com serves directly (200) without any redirect
+  // 3. Apex vigilamc.com and www.vigilamc.com:
+  //    Platform-level (Vercel -> Settings -> Domains) is the single source of truth
+  //    for canonical domain routing (setting vigilamc.com as Primary in Vercel redirects www -> apex
+  //    at the edge without middleware conflicts or redirect loops).
   return NextResponse.next();
 }
 
