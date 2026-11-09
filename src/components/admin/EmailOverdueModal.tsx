@@ -48,6 +48,7 @@ export function EmailOverdueModal({
 
   const [sending, setSending] = useState(false);
   const [sentTime, setSentTime] = useState<string | null>(null);
+  const [configMissing, setConfigMissing] = useState(false);
 
   // Load preview data and client prefill from server
   useEffect(() => {
@@ -146,6 +147,9 @@ export function EmailOverdueModal({
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
+        if (data.errorCode === 'CONFIG_MISSING' || data.error?.includes('RESEND_API_KEY')) {
+          setConfigMissing(true);
+        }
         throw new Error(data.error || 'Failed to dispatch overdue update email');
       }
 
@@ -220,6 +224,18 @@ export function EmailOverdueModal({
 
         {/* Form Body */}
         <form onSubmit={handleSend} className="p-6 space-y-4 text-xs">
+          {configMissing && (
+            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 text-xs space-y-1 animate-in fade-in">
+              <div className="font-bold flex items-center gap-1.5 text-amber-900">
+                <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
+                <span>RESEND_API_KEY Not Configured</span>
+              </div>
+              <p className="text-[11px] text-amber-900 leading-relaxed">
+                Add <strong>RESEND_API_KEY</strong> in your <strong>Vercel Project Settings &rarr; Environment Variables</strong> (or in <code>.env.local</code> for local testing), then redeploy to dispatch live emails.
+              </p>
+            </div>
+          )}
+
           {dataError && (
             <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-[#DC2626] text-xs">
               {dataError}
