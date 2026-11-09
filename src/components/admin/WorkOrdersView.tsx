@@ -232,6 +232,64 @@ export function WorkOrdersView({
     }
   };
 
+  const handleAssignTechnician = async (id: string, techId: string) => {
+    const previousOrders = workOrders;
+    const targetTech = technicians.find((t) => t.id === techId);
+    const newStatus = techId ? 'ASSIGNED' : 'OPEN';
+
+    // Optimistic update
+    setWorkOrders((prev) =>
+      prev.map((wo) =>
+        wo.id === id
+          ? {
+              ...wo,
+              assignedToId: techId || null,
+              assignedTo: targetTech ? { id: targetTech.id, fullName: targetTech.fullName, email: targetTech.email } : null,
+              status: wo.status === 'COMPLETED' || wo.status === 'CANCELLED' ? wo.status : newStatus,
+            }
+          : wo
+      )
+    );
+
+    try {
+      const res = await fetch('/api/work-orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id,
+          assignedToId: techId || null,
+          status: newStatus,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setWorkOrders(previousOrders);
+        const errMsg = data?.error || 'Failed to assign technician';
+        toast.error(errMsg, { duration: 5500 });
+        showToast(errMsg);
+        await fetchWorkOrders();
+        return;
+      }
+      setRippleRowId(id);
+      window.setTimeout(() => {
+        setRippleRowId((curr) => (curr === id ? null : curr));
+      }, 650);
+      const msg = targetTech
+        ? `Task assigned to ${targetTech.fullName || 'technician'}`
+        : 'Task unassigned';
+      toast.success(msg);
+      showToast(msg);
+      await fetchWorkOrders();
+    } catch (e: any) {
+      console.error(e);
+      setWorkOrders(previousOrders);
+      const errMsg = e?.message || 'Failed to assign technician';
+      toast.error(errMsg, { duration: 5500 });
+      showToast(errMsg);
+      await fetchWorkOrders();
+    }
+  };
+
   const handleUpdateStatus = async (id: string, newStatus: string) => {
     const previousOrders = workOrders;
     // Optimistic update
@@ -524,17 +582,28 @@ export function WorkOrdersView({
                         {wo.building?.name || 'Facility'}
                       </span>
                       <span>&bull;</span>
-                      <span
-                        className={`flex items-center gap-1 ${
-                          isUnassigned ? 'text-[#B91C1C] font-bold' : 'text-slate-600'
-                        }`}
-                      >
+                      <div className="flex items-center gap-1.5">
                         <User className="w-3.5 h-3.5 text-[#C2410C]" />
-                        Assigned:{' '}
-                        <strong className="font-semibold">
-                          {wo.assignedTo?.fullName || 'Unassigned'}
-                        </strong>
-                      </span>
+                        <span className="text-slate-500">Tech:</span>
+                        <select
+                          data-testid="workorder-assign-tech-select"
+                          value={wo.assignedToId || ''}
+                          onChange={(e) => handleAssignTechnician(wo.id, e.target.value)}
+                          className={`px-2 py-1 rounded-lg border text-xs font-semibold focus:outline-none focus:border-[#C2410C] ${
+                            isUnassigned
+                              ? 'bg-amber-50/80 border-amber-300 text-amber-900 font-bold'
+                              : 'bg-white border-[#FED7AA] text-slate-800'
+                          }`}
+                          title="Assign or reassign technician"
+                        >
+                          <option value="">Unassigned</option>
+                          {technicians.map((t) => (
+                            <option key={t.id} value={t.id}>
+                              {t.fullName || t.email}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                       {wo.dueDate && (
                         <>
                           <span>&bull;</span>

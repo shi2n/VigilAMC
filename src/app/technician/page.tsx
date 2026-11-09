@@ -198,6 +198,13 @@ export default function TechnicianPWA() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotificationsDrawer, setShowNotificationsDrawer] = useState<boolean>(false);
 
+  // Freshness, Polling & Session Notification tracking
+  const knownTaskIdsRef = useRef<Set<string> | null>(null);
+  const [sessionNewTaskIds, setSessionNewTaskIds] = useState<Set<string>>(new Set());
+  const [pullY, setPullY] = useState<number>(0);
+  const [isPullRefreshing, setIsPullRefreshing] = useState<boolean>(false);
+  const touchStartYRef = useRef<number>(0);
+
 
   const toggleNavDrawer = useCallback((open: boolean) => {
     if (open) {
@@ -226,7 +233,7 @@ export default function TechnicianPWA() {
       const res = await fetch('/api/technician/notifications', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(id ? { id } : { markAll: true }),
+        body: JSON.stringify(id ? { id } : { markAllRead: true, markAll: true }),
       });
       if (res.ok) {
         if (id) {
@@ -296,6 +303,56 @@ export default function TechnicianPWA() {
       setToastMsg((prev) => (prev === msg ? null : prev));
     }, 4000);
   };
+
+  // Audible and Haptic notification for field technicians
+  const playChimeNotification = useCallback(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioCtx) {
+          const ctx = new AudioCtx();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(880, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.15);
+          gain.gain.setValueAtTime(0.18, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.35);
+        }
+      }
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        navigator.vibrate([150, 80, 150]);
+      }
+    } catch {
+      // Audio or vibration unavailable in background
+    }
+  }, []);
+
+  // Web Notification API (PWA & browser foreground/background tray)
+  const triggerWebNotification = useCallback(
+    (title: string, dueDate?: string | Date) => {
+      if (typeof window === 'undefined' || !('Notification' in window)) return;
+      if (Notification.permission === 'granted') {
+        try {
+          const dueStr = dueDate
+            ? ` · Due: ${formatLocalizedDate(dueDate, currentLang)}`
+            : '';
+          new Notification(t.pushTaskAssignedTitle || 'New Task Assigned', {
+            body: `Work Order: "${title}" assigned to you${dueStr}`,
+            icon: '/logo.jpg',
+            tag: `vigil-task-${title}`,
+          });
+        } catch (e) {
+          console.warn('Web notification dispatch failed:', e);
+        }
+      }
+    },
+    [currentLang, t.pushTaskAssignedTitle]
+  );
 
   // ----------------------------------------------------------------------------------
   // 1. INITIALIZATION: LANGUAGE + OFFLINE CACHE + LEGACY MIGRATION
@@ -631,17 +688,43 @@ export default function TechnicianPWA() {
 
       if (tasksRes && tasksRes.ok) {
         const tasksJson = await tasksRes.json();
-        const incomingTasks = tasksJson.tasks || [];
+        const incomingTasks: any[] = tasksJson.tasks || [];
 
-        // Check for newly assigned tasks since last load for Assignment Nudge (Section 8.7)
-        if (cachedTasks?.data && Array.isArray(cachedTasks.data)) {
-          const prevIds = new Set(cachedTasks.data.map((t: any) => t.id));
-          const newTask = incomingTasks.find((t: any) => !prevIds.has(t.id) && t.status !== 'COMPLETED');
-          if (newTask) {
-            setAssignmentNudge(newTask.title);
+        // Check for newly assigned tasks (both live refresh and cache diff)
+        const prevIds =
+          knownTaskIdsRef.current ||
+          (cachedTasks?.data && Array.isArray(cachedTasks.data)
+            ? new Set(cachedTasks.data.map((t: any) => t.id))
+            : null);
+
+        if (prevIds) {
+          const newAssignedTasks = incomingTasks.filter(
+            (t: any) =>
+              !prevIds.has(t.id) &&
+              t.status !== 'COMPLETED' &&
+              t.status !== 'CANCELLED'
+          );
+
+          if (newAssignedTasks.length > 0) {
+            const latest = newAssignedTasks[0];
+            // 1. In-app Nudge banner
+            setAssignmentNudge(latest.title);
+            // 2. In-app Toast
+            triggerToast(t.newTaskAssignedToast.replace('{title}', latest.title));
+            // 3. Mark for session NEW badge
+            setSessionNewTaskIds((prev) => {
+              const next = new Set(prev);
+              newAssignedTasks.forEach((nt: any) => next.add(nt.id));
+              return next;
+            });
+            // 4. Subtle audio chime + vibration
+            playChimeNotification();
+            // 5. System Web Notification
+            triggerWebNotification(latest.title, latest.dueDate);
           }
         }
 
+        knownTaskIdsRef.current = new Set(incomingTasks.map((t: any) => t.id));
         setTaskList(incomingTasks);
         scheduleOfflineDueReminders(incomingTasks);
         fetch('/api/technician/digest').catch(() => null);
@@ -654,6 +737,17 @@ export default function TechnicianPWA() {
         await setLocalCache('technician_history', historyJson.history || []);
       }
 
+      if (notifsRes && notifsRes.ok) {
+        const notifsJson = await notifsRes.json().catch(() => ({}));
+        if (Array.isArray(notifsJson.notifications)) {
+          const normalized = notifsJson.notifications.map((n: any) => ({
+            ...n,
+            isRead: n.read ?? n.isRead ?? false,
+          }));
+          setNotifications(normalized);
+        }
+      }
+
       setCachedDataNotice(false);
     } catch (err: any) {
       console.warn('Network load error, falling back to cached state:', err);
@@ -663,7 +757,7 @@ export default function TechnicianPWA() {
       setAuthChecking(false);
       await refreshOutboxCounts();
     }
-  }, [refreshOutboxCounts]);
+  }, [refreshOutboxCounts, playChimeNotification, triggerWebNotification, t.newTaskAssignedToast]);
 
   useEffect(() => {
     loadDashboardData();
@@ -709,13 +803,14 @@ export default function TechnicianPWA() {
     [isSyncing, t, loadDashboardData, refreshOutboxCounts]
   );
 
-  // Network Online / Visibility / Interval Auto-Sync Triggers
+  // Network Online / Visibility / Window Focus / 60s Interval Auto-Sync & Task Freshness Triggers
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const onOnline = () => {
       setIsOnline(true);
       triggerToast(t.networkRestoredToast);
+      loadDashboardData();
       handleTriggerSync({ force: true });
     };
     const onOffline = () => {
@@ -724,29 +819,42 @@ export default function TechnicianPWA() {
     };
     const onVisibility = () => {
       if (document.visibilityState === 'visible' && navigator.onLine) {
+        loadDashboardData();
         refreshOutboxCounts();
         handleTriggerSync({ force: false });
+      }
+    };
+    const onFocus = () => {
+      if (navigator.onLine) {
+        loadDashboardData();
       }
     };
 
     window.addEventListener('online', onOnline);
     window.addEventListener('offline', onOffline);
     document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('focus', onFocus);
 
-    // 30-second gentle retry interval when online with pending items (respecting backoff)
+    // 60-second gentle polling interval when online to refresh assigned tasks and notifications
     const interval = setInterval(() => {
-      if (navigator.onLine && pendingSyncCount > 0 && !isSyncing) {
-        handleTriggerSync({ force: false });
+      if (navigator.onLine && !isSyncing) {
+        if (document.visibilityState === 'visible') {
+          loadDashboardData();
+        }
+        if (pendingSyncCount > 0) {
+          handleTriggerSync({ force: false });
+        }
       }
-    }, 30000);
+    }, 60000);
 
     return () => {
       window.removeEventListener('online', onOnline);
       window.removeEventListener('offline', onOffline);
       document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('focus', onFocus);
       clearInterval(interval);
     };
-  }, [handleTriggerSync, pendingSyncCount, isSyncing, t]);
+  }, [handleTriggerSync, loadDashboardData, pendingSyncCount, isSyncing, t]);
 
   // ----------------------------------------------------------------------------------
   // 5. LANGUAGE SWITCHER HANDLER (Feature D)
@@ -1359,7 +1467,11 @@ export default function TechnicianPWA() {
           await fetch('/api/technician/tasks', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ taskId: task.id, status: newStatus }),
+            body: JSON.stringify({
+              taskId: task.id,
+              workOrderId: task.id,
+              status: newStatus,
+            }),
           }).catch(() => {});
         }
       }
@@ -1745,7 +1857,51 @@ export default function TechnicianPWA() {
       )}
 
       {/* Main Container constrained to mobile max-w-md */}
-      <div className="max-w-md w-full mx-auto flex-1 flex flex-col pb-8 overflow-x-hidden">
+      <div
+        className="max-w-md w-full mx-auto flex-1 flex flex-col pb-8 overflow-x-hidden"
+        onTouchStart={(e) => {
+          if (typeof window !== 'undefined' && window.scrollY === 0) {
+            touchStartYRef.current = e.touches[0].clientY;
+          } else {
+            touchStartYRef.current = 0;
+          }
+        }}
+        onTouchMove={(e) => {
+          if (touchStartYRef.current > 0 && typeof window !== 'undefined' && window.scrollY === 0) {
+            const currentY = e.touches[0].clientY;
+            const diff = currentY - touchStartYRef.current;
+            if (diff > 0) {
+              setPullY(Math.min(diff * 0.45, 80));
+            }
+          }
+        }}
+        onTouchEnd={async () => {
+          if (pullY > 45 && !isPullRefreshing) {
+            setIsPullRefreshing(true);
+            setPullY(45);
+            try {
+              await loadDashboardData();
+            } finally {
+              setTimeout(() => {
+                setIsPullRefreshing(false);
+                setPullY(0);
+              }, 400);
+            }
+          } else {
+            setPullY(0);
+          }
+          touchStartYRef.current = 0;
+        }}
+      >
+        {pullY > 0 && (
+          <div
+            className="flex items-center justify-center gap-2 py-2 text-xs font-bold text-[#EA580C] bg-[#FFF0E6] border-b border-[#FED7AA] transition-all"
+            style={{ height: `${pullY}px`, overflow: 'hidden' }}
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isPullRefreshing ? 'animate-spin' : ''}`} />
+            <span>{isPullRefreshing ? (t.syncing || 'Refreshing...') : 'Pull down to refresh'}</span>
+          </div>
+        )}
         {/* =========================================================================
             TOP APP HEADER (Section 3.1: Logo tile + wordmark + circular buttons + avatar)
         ========================================================================= */}
@@ -1906,7 +2062,12 @@ export default function TechnicianPWA() {
               <button
                 type="button"
                 disabled={isSyncing}
-                onClick={() => handleTriggerSync({ force: true })}
+                onClick={async () => {
+                  await Promise.allSettled([
+                    handleTriggerSync({ force: true }),
+                    loadDashboardData(),
+                  ]);
+                }}
                 className="px-2 py-1 rounded-lg bg-[#FFF0E6] hover:bg-[#FED7AA] text-[#C2410C] font-bold text-[10px] flex items-center gap-1 border border-[#FED7AA] active:scale-95 transition-all"
                 title={t.syncNow}
               >
@@ -2268,12 +2429,19 @@ export default function TechnicianPWA() {
                           <Building2 className="w-5 h-5" />
                         </div>
                         <div className="min-w-0">
-                          <h4 className="font-bold text-sm text-slate-900 truncate">
-                            {task.title}
-                          </h4>
+                          <div className="flex items-center gap-1.5">
+                            <h4 className="font-bold text-sm text-slate-900 truncate">
+                              {task.title}
+                            </h4>
+                            {sessionNewTaskIds.has(task.id) && (
+                              <span className="px-2 py-0.5 rounded-full bg-[#EA580C] text-white font-black text-[9px] uppercase tracking-wider animate-pulse shadow-xs shrink-0">
+                                {t.badgeNew || 'NEW'}
+                              </span>
+                            )}
+                          </div>
                           <div className="flex items-center gap-1 text-xs text-slate-500 mt-0.5 truncate">
                             <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                            <span>{task.buildingName} • {task.floorZone || 'Floor checklist'}</span>
+                            <span>{(task.buildingName || task.building?.name || 'Facility')} • {task.floorZone || 'Floor checklist'}</span>
                           </div>
                         </div>
                       </div>
@@ -2296,7 +2464,7 @@ export default function TechnicianPWA() {
                     <div className="flex items-center justify-between text-xs text-slate-600 pt-1 border-t border-slate-100">
                       <div className="flex items-center gap-1 font-mono text-[11px] text-slate-500">
                         <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Due: {new Date(task.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
+                        <span>Due: {task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Scheduled'}</span>
                       </div>
                       <div className="flex items-center gap-1 text-[11px] font-semibold text-slate-600">
                         <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" />
@@ -2310,7 +2478,7 @@ export default function TechnicianPWA() {
                       <button
                         type="button"
                         onClick={() => {
-                          const targetBldg = assignedBuildings.find((b: any) => b.id === task.buildingId);
+                          const targetBldg = assignedBuildings.find((b: any) => b.id === (task.buildingId || task.building?.id));
                           if (targetBldg) {
                             setSelectedBuilding(targetBldg);
                             recordVisitStamp(targetBldg.id, task.id);
@@ -2326,8 +2494,8 @@ export default function TechnicianPWA() {
                       <button
                         type="button"
                         onClick={() => {
-                          const bldg = assignedBuildings.find((b: any) => b.id === task.buildingId);
-                          const addr = bldg?.address || task.buildingName;
+                          const bldg = assignedBuildings.find((b: any) => b.id === (task.buildingId || task.building?.id));
+                          const addr = bldg?.address || task.buildingName || task.building?.name || '';
                           window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`, '_blank');
                         }}
                         className="py-2.5 px-3 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-[#FED7AA] font-bold text-xs shadow-xs text-center flex items-center justify-center gap-1 active:scale-[0.98]"
@@ -2512,7 +2680,7 @@ export default function TechnicianPWA() {
                   const mapDestination =
                     task.building?.latitude && task.building?.longitude
                       ? `${task.building.latitude},${task.building.longitude}`
-                      : encodeURIComponent(task.building?.address || task.building?.name || '');
+                      : encodeURIComponent(task.building?.address || task.building?.name || task.buildingName || '');
                   const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${mapDestination}`;
 
                   return (
@@ -2527,7 +2695,7 @@ export default function TechnicianPWA() {
                         <div className="space-y-0.5 truncate">
                           <div className="flex items-center gap-1.5 text-slate-800 text-xs font-bold truncate">
                             <Building2 className="w-3.5 h-3.5 text-[#C2410C] shrink-0" />
-                            <span className="truncate">{task.building?.name}</span>
+                            <span className="truncate">{task.building?.name || task.buildingName || 'Facility'}</span>
                           </div>
                           <div className="flex items-center gap-1 text-[11px] text-slate-500 truncate">
                             <Layers className="w-3 h-3 shrink-0 text-slate-400" />
@@ -2547,7 +2715,14 @@ export default function TechnicianPWA() {
 
                       {/* Title & Description */}
                       <div>
-                        <h4 className="text-sm font-extrabold text-slate-900 leading-snug">{task.title}</h4>
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="text-sm font-extrabold text-slate-900 leading-snug">{task.title}</h4>
+                          {sessionNewTaskIds.has(task.id) && (
+                            <span className="px-2 py-0.5 rounded-full bg-[#EA580C] text-white font-black text-[9px] uppercase tracking-wider animate-pulse shadow-xs shrink-0">
+                              {t.badgeNew || 'NEW'}
+                            </span>
+                          )}
+                        </div>
                         {task.description && (
                           <p className="text-xs text-slate-600 line-clamp-2 mt-0.5">{task.description}</p>
                         )}
@@ -2588,7 +2763,7 @@ export default function TechnicianPWA() {
                             type="button"
                             onClick={() => {
                               // Open checklist directly
-                              const bldg = assignedBuildings.find((b: any) => b.id === task.building?.id);
+                              const bldg = assignedBuildings.find((b: any) => b.id === (task.building?.id || task.buildingId));
                               if (bldg) {
                                 setSelectedBuilding(bldg);
                                 setActiveTab('CHECKLISTS');
@@ -3984,6 +4159,28 @@ export default function TechnicianPWA() {
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
+              {typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default' && (
+                <div className="p-3 rounded-2xl bg-[#FFF8F2] border border-[#FED7AA] flex items-center justify-between gap-2 shadow-xs">
+                  <div className="space-y-0.5 min-w-0">
+                    <p className="text-xs font-bold text-slate-900">Enable Push Alerts</p>
+                    <p className="text-[11px] text-slate-500">Get notified immediately when new tasks are assigned.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const res = await Notification.requestPermission();
+                        if (res === 'granted') triggerToast('Push notifications enabled!');
+                      } catch {
+                        // ignore
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-[#EA580C] hover:bg-[#C2410C] text-white text-xs font-bold shrink-0 transition-colors"
+                  >
+                    Allow
+                  </button>
+                </div>
+              )}
               {notifications.length === 0 ? (
                 <div className="text-center py-10 space-y-2 text-slate-400">
                   <Bell className="w-8 h-8 mx-auto text-slate-300" />
@@ -4272,6 +4469,33 @@ export default function TechnicianPWA() {
                   {pendingSyncCount} queued ›
                 </span>
               </button>
+
+              {typeof window !== 'undefined' && 'Notification' in window && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const perm = await Notification.requestPermission();
+                      if (perm === 'granted') {
+                        triggerToast('Push notifications enabled!');
+                      } else {
+                        triggerToast('Notifications: ' + perm);
+                      }
+                    } catch {
+                      triggerToast('Could not request notification permission');
+                    }
+                  }}
+                  className="w-full min-h-[48px] p-3 rounded-xl border border-slate-200 hover:border-[#FED7AA] flex items-center justify-between text-left transition-colors"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Bell className="w-4 h-4 text-[#EA580C]" />
+                    <span>Push Notifications</span>
+                  </div>
+                  <span className="text-slate-500 font-mono text-[11px] capitalize">
+                    {Notification.permission} ›
+                  </span>
+                </button>
+              )}
 
               <button
                 type="button"

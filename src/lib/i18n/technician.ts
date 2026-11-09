@@ -111,6 +111,7 @@ export interface TranslationDictionary {
   taskStartedToast: string;
   photoCompressedToast: string;
   newTaskAssignedToast: string;
+  badgeNew: string;
   assetCondition: string;
   pressureGauge: string;
   pressureNormal: string;
@@ -290,6 +291,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     taskStartedToast: '🚀 Task started! Status set to In Progress.',
     photoCompressedToast: '📸 Photo compressed ({size} saved) & stamped.',
     newTaskAssignedToast: '🔔 New task assigned: {title}',
+    badgeNew: 'NEW',
     assetCondition: 'Overall Equipment Condition',
     pressureGauge: 'Pressure Gauge Reading',
     pressureNormal: 'Normal (Green Zone)',
@@ -441,6 +443,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     taskStartedToast: '🚀 काम शुरू हुआ! स्थिति: चालू है।',
     photoCompressedToast: '📸 फोटो का साइज घटाकर ({size} बचाया) मुहर लगा दी गई।',
     newTaskAssignedToast: '🔔 नया काम मिला: {title}',
+    badgeNew: 'नया',
     assetCondition: 'उपकरण की हालत',
     pressureGauge: 'प्रेशर गेज का कांटा',
     pressureNormal: 'सामान्य (हरा जोन)',
@@ -592,6 +595,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     taskStartedToast: '🚀 काम सुरू झाले! स्थिती: सुरू आहे.',
     photoCompressedToast: '📸 फोटो आकार कमी करून ({size} वाचवले) शिक्का मारला.',
     newTaskAssignedToast: '🔔 नवीन काम नेमले: {title}',
+    badgeNew: 'नवीन',
     assetCondition: 'उपकरणाची स्थिती',
     pressureGauge: 'प्रेशर गेज काटा',
     pressureNormal: 'सामान्य (हिरवा पट्टा)',
@@ -743,6 +747,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     taskStartedToast: '🚀 કામ શરૂ થયું! સ્થિતિ: ચાલુ છે.',
     photoCompressedToast: '📸 ફોટો કમ્પ્રેસ કરીને ({size} બચાવ્યા) સ્ટેમ્પ લગાવ્યો.',
     newTaskAssignedToast: '🔔 નવું કામ સોંપાયું: {title}',
+    badgeNew: 'નવું',
     assetCondition: 'સાધનની સ્થિતિ',
     pressureGauge: 'પ્રેશર ગેજ કાંટો',
     pressureNormal: 'સામાન્ય (લીલો ભાગ)',
@@ -894,6 +899,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     taskStartedToast: '🚀 பணி தொடங்கியது! நிலை: நடக்கிறது.',
     photoCompressedToast: '📸 புகைப்படம் சுருக்கப்பட்டு ({size} சேமிப்பு) முத்திரையிடப்பட்டது.',
     newTaskAssignedToast: '🔔 புதிய பணி ஒதுக்கப்பட்டது: {title}',
+    badgeNew: 'புதியது',
     assetCondition: 'உபகரணத்தின் பொதுவான நிலை',
     pressureGauge: 'அழுத்த மானி அளவீடு',
     pressureNormal: 'இயல்பு (பச்சை மண்டலம்)',
@@ -1045,6 +1051,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     taskStartedToast: '🚀 పని ప్రారంభమైంది! స్థితి: జరుగుతోంది.',
     photoCompressedToast: '📸 ఫోటో పరిమాణం తగ్గించి ({size} ఆదా) స్టాంప్ వేయబడింది.',
     newTaskAssignedToast: '🔔 కొత్త పని కేటాయించబడింది: {title}',
+    badgeNew: 'కొత్తది',
     assetCondition: 'పరికరాల స్థితి',
     pressureGauge: 'ప్రెజర్ గేజ్ రీడింగ్',
     pressureNormal: 'సాధారణం (ఆకుపచ్చ జోన్)',
@@ -1196,6 +1203,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     taskStartedToast: '🚀 ಕೆಲಸ ಪ್ರಾರಂಭವಾಗಿದೆ! ಸ್ಥಿತಿ: ಪ್ರಗತಿಯಲ್ಲಿದೆ.',
     photoCompressedToast: '📸 ಫೋಟೋ ಗಾತ್ರ ಕುಗ್ಗಿಸಿ ({size} ಉಳಿಸಲಾಗಿದೆ) ಮುದ್ರೆ ಹಾಕಲಾಗಿದೆ.',
     newTaskAssignedToast: '🔔 ಹೊಸ ಕೆಲಸ ನಿಯೋಜಿಸಲಾಗಿದೆ: {title}',
+    badgeNew: 'ಹೊಸದು',
     assetCondition: 'ಉಪಕರಣದ ಸಾಮಾನ್ಯ ಸ್ಥಿತಿ',
     pressureGauge: 'ಒತ್ತಡ ಮಾಪಕ ರೀಡಿಂಗ್',
     pressureNormal: 'ಸಾಮಾನ್ಯ (ಹಸಿರು ವಲಯ)',
@@ -1347,6 +1355,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     taskStartedToast: '🚀 ജോലി ആരംഭിച്ചു! നില: നടക്കുന്നു.',
     photoCompressedToast: '📸 ഫോട്ടോ ചുരുക്കി ({size} ലാഭിച്ചു) മുദ്ര പതിപ്പിച്ചു.',
     newTaskAssignedToast: '🔔 പുതിയ ജോലി ലഭിച്ചു: {title}',
+    badgeNew: 'പുതിയത്',
     assetCondition: 'ഉപകരണത്തിന്റെ പൊതുസ്ഥിതി',
     pressureGauge: 'മർദ്ദ മാപിനി റീഡിംഗ്',
     pressureNormal: 'സാധാരണം (പച്ച മേഖല)',
@@ -1498,6 +1507,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     taskStartedToast: '🚀 কাজ শুরু হয়েছে! স্থিতি: চলছে।',
     photoCompressedToast: '📸 ছবির আকার কমিয়ে ({size} সাশ্রয়) সিলমোহর লাগানো হয়েছে।',
     newTaskAssignedToast: '🔔 নতুন কাজ বরাদ্দ হয়েছে: {title}',
+    badgeNew: 'নতুন',
     assetCondition: 'যন্ত্রপাতির সামগ্রিক অবস্থা',
     pressureGauge: 'প্রেশার গেজ রিডিং',
     pressureNormal: 'স্বাভাবিক (সবুজ দাগ)',
@@ -1649,6 +1659,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     taskStartedToast: '🚀 ਕੰਮ ਸ਼ੁਰੂ ਹੋਇਆ! ਸਥਿਤੀ: ਚੱਲ ਰਿਹਾ ਹੈ।',
     photoCompressedToast: '📸 ਫੋਟੋ ਦਾ ਆਕਾਰ ਘਟਾ ਕੇ ({size} ਬਚਾਏ) ਮੋਹਰ ਲਗਾ ਦਿੱਤੀ ਗਈ।',
     newTaskAssignedToast: '🔔 ਨਵਾਂ ਕੰਮ ਸੌਂਪਿਆ ਗਿਆ: {title}',
+    badgeNew: 'ਨਵਾਂ',
     assetCondition: 'ਸਾਮਾਨ ਦੀ ਹਾਲਤ',
     pressureGauge: 'ਪ੍ਰੈਸ਼ਰ ਗੇਜ ਰੀਡਿੰਗ',
     pressureNormal: 'ਸਧਾਰਨ (ਹਰਾ ਖੇਤਰ)',

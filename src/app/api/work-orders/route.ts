@@ -121,7 +121,9 @@ export async function POST(request: Request) {
       }
     }
 
-    // NON-NEGOTIABLE RULE 5: Work order creation status is ALWAYS 'OPEN'
+    // When assigned to a technician by human admin, status is 'ASSIGNED'. Unassigned tasks start as 'OPEN'.
+    const initialStatus = resolvedAssignedToId ? 'ASSIGNED' : 'OPEN';
+
     const workOrder = await (db as any).workOrder.create({
       data: {
         organizationId: auth.organization.id,
@@ -132,7 +134,7 @@ export async function POST(request: Request) {
         title: resolvedTitle,
         description: resolvedDescription,
         priority: priority || 'MEDIUM',
-        status: 'OPEN',
+        status: initialStatus,
         dueDate: parsedDueDate,
         notes: (notes || '').trim() || null,
       },
@@ -212,6 +214,12 @@ export async function PATCH(request: Request) {
     if (assignedToId !== undefined) {
       updateData.assignedToId =
         assignedToId && String(assignedToId).trim() !== '' ? String(assignedToId).trim() : null;
+      // If assigning a technician and status is not explicitly overridden, transition OPEN -> ASSIGNED
+      if (updateData.assignedToId && (!status || status === 'OPEN')) {
+        updateData.status = 'ASSIGNED';
+      } else if (!updateData.assignedToId && existing.status === 'ASSIGNED' && !status) {
+        updateData.status = 'OPEN';
+      }
     }
 
     const workOrder = await (db as any).workOrder.update({

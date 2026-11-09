@@ -150,6 +150,8 @@ export async function GET(request: Request) {
         completedAt: wo.completedAt,
         dueState,
         diffDays,
+        buildingId: wo.buildingId,
+        buildingName: wo.building?.name || 'Assigned Building',
         building: {
           id: wo.building?.id,
           name: wo.building?.name || 'Assigned Building',
@@ -207,6 +209,8 @@ export async function GET(request: Request) {
           completedAt: isRecentlyCompleted ? eq.inspections[0].date : null,
           dueState,
           diffDays,
+          buildingId: b.id,
+          buildingName: b.name || 'Assigned Building',
           building: {
             id: b.id,
             name: b.name,
@@ -273,7 +277,8 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { taskId, status, notes } = body;
+    const taskId = body.taskId || body.workOrderId;
+    const { status, notes } = body;
 
     if (!taskId || !status) {
       return NextResponse.json({ error: 'taskId and status are required' }, { status: 400 });

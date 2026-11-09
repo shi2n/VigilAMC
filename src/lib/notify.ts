@@ -79,7 +79,8 @@ export async function sendFcmMessage(
 ): Promise<boolean> {
   const rawServiceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   if (!rawServiceAccount) {
-    // Owner setup pending (§5.1) - graceful skip
+    // Owner setup pending - Firebase service account not configured in Vercel environment
+    console.info('[notify] FIREBASE_SERVICE_ACCOUNT_JSON not configured in environment. In-app notification and web push alert preserved; Android system push requires owner to set FIREBASE_SERVICE_ACCOUNT_JSON.');
     return false;
   }
 

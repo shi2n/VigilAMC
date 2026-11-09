@@ -48,8 +48,9 @@ export async function PATCH(request: Request) {
     const userId = auth.user.id;
     const body = await request.json().catch(() => ({}));
     const { id, markAllRead } = body;
+    const isMarkAll = Boolean(markAllRead || body.markAll);
 
-    if (markAllRead) {
+    if (isMarkAll) {
       await (db as any).notification.updateMany({
         where: {
           userId,
