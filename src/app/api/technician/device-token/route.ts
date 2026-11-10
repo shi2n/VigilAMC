@@ -12,13 +12,14 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const { fcmToken, platform = 'android' } = body;
+    const rawToken = body.fcmToken || body.pushToken || body.token;
+    const platform = body.platform || 'android';
 
-    if (!fcmToken || typeof fcmToken !== 'string' || fcmToken.trim().length === 0) {
+    if (!rawToken || typeof rawToken !== 'string' || rawToken.trim().length === 0) {
       return NextResponse.json({ error: 'fcmToken is required' }, { status: 400 });
     }
 
-    const cleanToken = fcmToken.trim();
+    const cleanToken = rawToken.trim();
     const technicianId = auth.user.id;
 
     // Upsert or replace device token for this device

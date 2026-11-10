@@ -65,6 +65,7 @@ import {
   registerNativePush,
   unregisterNativePush,
   scheduleOfflineDueReminders,
+  showLocalTaskNotification,
   capturePhotoNative,
   getNativeLocation,
   watchNativeLocation,
@@ -726,6 +727,15 @@ export default function TechnicianPWA() {
             playChimeNotification();
             // 5. System Web Notification
             triggerWebNotification(latest.title, latest.dueDate);
+            // 6. Native Android Local Notification Fallback (Capacitor)
+            if (isNativePlatform()) {
+              showLocalTaskNotification({
+                id: latest.id,
+                title: latest.title,
+                buildingName: latest.building?.name,
+                dueDate: latest.dueDate,
+              }).catch(() => null);
+            }
           }
         }
 
@@ -1024,6 +1034,14 @@ export default function TechnicianPWA() {
         }
       },
     });
+
+    // Check URL parameters for tapped notification deep link (?taskId=...)
+    if (typeof window !== 'undefined') {
+      const paramTaskId = new URLSearchParams(window.location.search).get('taskId');
+      if (paramTaskId) {
+        setActiveTab('TASKS');
+      }
+    }
 
     return () => {
       unbindLifecycle();
@@ -4017,6 +4035,12 @@ export default function TechnicianPWA() {
               <div className="flex justify-between">
                 <span className="text-slate-500">Outbox Queue:</span>
                 <span className="font-bold">{pendingSyncCount} pending, {failedSyncCount} failed</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Push Status:</span>
+                <span className="font-bold text-emerald-700">
+                  {isNativePlatform() ? 'Native FCM Active (channel: vigilamc-tasks)' : 'Web / PWA Mode (ready)'}
+                </span>
               </div>
             </div>
 

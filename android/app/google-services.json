@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "681130982340",
+    "project_id": "vigilamc-2fe0c",
+    "storage_bucket": "vigilamc-2fe0c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:681130982340:android:6ff9ee1e7fc0172535c291",
+        "android_client_info": {
+          "package_name": "com.vigilAMC"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA63pVlsLXEMXLduO7mgrFzeDoTBj-TLLA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:681130982340:android:9722a60a85d7de0835c291",
+        "android_client_info": {
+          "package_name": "com.vigilamc"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA63pVlsLXEMXLduO7mgrFzeDoTBj-TLLA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

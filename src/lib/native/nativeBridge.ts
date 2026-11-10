@@ -60,6 +60,24 @@ export async function registerNativePush(options?: {
   if (!isNativePlatform()) return null;
 
   try {
+    // 1. Create High-Priority Notification Channel for Home-Screen / System-Tray Notifications
+    try {
+      await PushNotifications.createChannel({
+        id: 'vigilamc-tasks',
+        name: 'VigilAMC Tasks',
+        description: 'Instant fire safety task assignment and inspection alerts',
+        importance: 5,
+        visibility: 1,
+        sound: 'default',
+        vibration: true,
+        lights: true,
+        lightColor: '#EA580C',
+      });
+    } catch (chErr) {
+      console.warn('[NativeBridge] Channel creation warning:', chErr);
+    }
+
+    // 2. Request Android 13+ POST_NOTIFICATIONS runtime permission
     let perm = await PushNotifications.checkPermissions();
     if (perm.receive === 'prompt' || perm.receive === 'prompt-with-rationale') {
       perm = await PushNotifications.requestPermissions();
@@ -70,16 +88,25 @@ export async function registerNativePush(options?: {
       return null;
     }
 
-    // Register FCM listener for received token
+    // 3. Register FCM listener for received token
     PushNotifications.addListener('registration', async (token: Token) => {
       const fcmToken = token.value;
       try {
         await Preferences.set({ key: 'vigil_fcm_token', value: fcmToken });
-        await fetch('/api/technician/device-token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fcmToken, platform: 'android' }),
-        });
+        // Post to /api/technician/push-token (and /api/technician/device-token)
+        await Promise.allSettled([
+          fetch('/api/technician/push-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fcmToken, pushToken: fcmToken, platform: 'android' }),
+          }),
+          fetch('/api/technician/device-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fcmToken, pushToken: fcmToken, platform: 'android' }),
+          }),
+        ]);
+        console.info('[NativeBridge] Registered push token with server');
       } catch (postErr) {
         console.warn('[NativeBridge] Could not post FCM token to backend:', postErr);
       }
@@ -117,15 +144,60 @@ export async function unregisterNativePush(): Promise<void> {
     const stored = await Preferences.get({ key: 'vigil_fcm_token' });
     const fcmToken = stored.value;
     if (fcmToken) {
-      await fetch('/api/technician/device-token', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fcmToken }),
-      }).catch(() => null);
+      await Promise.allSettled([
+        fetch('/api/technician/push-token', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fcmToken, pushToken: fcmToken }),
+        }),
+        fetch('/api/technician/device-token', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fcmToken, pushToken: fcmToken }),
+        }),
+      ]);
       await Preferences.remove({ key: 'vigil_fcm_token' });
     }
   } catch (err) {
     console.warn('[NativeBridge] Unregister push error:', err);
+  }
+}
+
+/**
+ * Fallback: post local notification for newly detected task assignment
+ */
+export async function showLocalTaskNotification(task: {
+  id: string;
+  title: string;
+  buildingName?: string;
+  dueDate?: string | null;
+}): Promise<void> {
+  if (!isNativePlatform()) return;
+  try {
+    const perm = await LocalNotifications.checkPermissions();
+    if (perm.display !== 'granted') {
+      const req = await LocalNotifications.requestPermissions();
+      if (req.display !== 'granted') return;
+    }
+    const dueStr = task.dueDate
+      ? ` · Due ${new Date(task.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}`
+      : '';
+    const bldgStr = task.buildingName ? ` · ${task.buildingName}` : '';
+    await LocalNotifications.schedule({
+      notifications: [
+        {
+          id: Math.abs(task.id.split('').reduce((acc, char) => (acc << 5) - acc + char.charCodeAt(0), 0)) % 100000,
+          title: 'New Task Assigned',
+          body: `${task.title}${bldgStr}${dueStr}`,
+          channelId: 'vigilamc-tasks',
+          smallIcon: 'ic_stat_fire',
+          iconColor: '#EA580C',
+          extra: { taskId: task.id, type: 'task_assigned' },
+        },
+      ],
+    });
+  } catch (err) {
+    console.warn('[NativeBridge] Fallback local notification error:', err);
   }
 }
 

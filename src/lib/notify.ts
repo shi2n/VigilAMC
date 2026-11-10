@@ -104,12 +104,16 @@ export async function sendFcmMessage(
         data: payload.data || {},
         android: {
           priority: 'HIGH',
+          ttl: '86400s',
+          collapse_key: payload.data?.taskId || 'vigilamc_tasks',
           notification: {
-            channel_id: 'vigil_field_tasks',
+            channel_id: 'vigilamc-tasks',
             color: '#EA580C',
+            icon: 'ic_stat_fire',
             sound: 'default',
             default_sound: true,
             default_vibrate_timings: true,
+            notification_priority: 'PRIORITY_MAX',
           },
         },
       },
@@ -126,8 +130,19 @@ export async function sendFcmMessage(
 
     if (!response.ok) {
       const errBody = await response.text();
-      console.warn(`[notify] FCM send failed (${response.status}): ${errBody}`);
-      // Stale or unregistered token cleanup can happen on 404 UNREGISTERED
+      console.warn(`[notify] FCM v1 send failed (${response.status}): ${errBody}`);
+      // Clean up stale or unregistered tokens so subsequent dispatches do not fail
+      if (
+        response.status === 404 ||
+        errBody.includes('UNREGISTERED') ||
+        errBody.includes('NOT_FOUND') ||
+        errBody.includes('INVALID_ARGUMENT')
+      ) {
+        console.info(`[notify] Deleting unregistered/stale FCM token ${fcmToken.slice(0, 10)}... from DB`);
+        await (db as any).deviceToken.deleteMany({
+          where: { fcmToken },
+        }).catch(() => null);
+      }
       return false;
     }
 
@@ -145,6 +160,7 @@ interface NotifyAssignmentParams {
   title?: string;
   message?: string;
   taskTitle?: string;
+  buildingName?: string;
   buildingCount?: number;
   link?: string;
   taskId?: string;
@@ -182,18 +198,28 @@ export async function notifyOnAssignment(params: NotifyAssignmentParams): Promis
 
     let resolvedTitle = params.title;
     let resolvedMessage = params.message;
+    let resolvedBuildingName = params.buildingName;
+
+    if (!resolvedBuildingName && taskId) {
+      try {
+        const wo = await (db as any).workOrder.findUnique({
+          where: { id: taskId },
+          select: { building: { select: { name: true } } },
+        });
+        if (wo?.building?.name) {
+          resolvedBuildingName = wo.building.name;
+        }
+      } catch {}
+    }
 
     if (params.type === 'WORK_ORDER') {
       resolvedTitle = dict.pushTaskAssignedTitle || TRANSLATIONS.en.pushTaskAssignedTitle || 'New Task Assigned';
       const taskName = params.taskTitle || params.title || 'Work Order';
+      const bldgPart = resolvedBuildingName ? ` · ${resolvedBuildingName}` : '';
       const dueStr = dueDate
-        ? ` · Due: ${new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short' }).format(dueDate)}`
+        ? ` · due ${new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short' }).format(dueDate)}`
         : '';
-      const template =
-        dict.pushTaskAssignedBody ||
-        TRANSLATIONS.en.pushTaskAssignedBody ||
-        'Work Order: "{title}" assigned to you{due}';
-      resolvedMessage = template.replace('{title}', taskName).replace('{due}', dueStr);
+      resolvedMessage = `${taskName}${bldgPart}${dueStr}`;
     } else if (params.type === 'BUILDING') {
       resolvedTitle =
         dict.pushBuildingAssignedTitle ||
@@ -244,10 +270,11 @@ export async function notifyOnAssignment(params: NotifyAssignmentParams): Promis
     // 4. Dispatch FCM Push to each device token
     let anyPushSuccess = false;
     const fcmData: Record<string, string> = {
-      type: params.type,
-      ...(link ? { link } : {}),
-      ...(taskId ? { taskId } : {}),
+      type: 'task_assigned',
+      taskId: taskId || '',
+      link: link || (taskId ? `/technician?taskId=${taskId}` : '/technician'),
       ...(dueDate ? { dueDate: dueDate.toISOString() } : {}),
+      ...(resolvedBuildingName ? { building: resolvedBuildingName } : {}),
     };
 
     for (const dt of deviceTokens) {
