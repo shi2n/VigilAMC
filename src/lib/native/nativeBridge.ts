@@ -48,6 +48,52 @@ export function registerNativeLifecycle(onResume: () => void): () => void {
 }
 
 /**
+ * Send the cached or new FCM push token to the server with technician auth headers
+ */
+export async function syncNativePushToken(): Promise<string | null> {
+  if (!isNativePlatform()) return null;
+  try {
+    const stored = await Preferences.get({ key: 'vigil_fcm_token' });
+    const fcmToken = stored?.value;
+    if (!fcmToken) return null;
+
+    const techToken = typeof window !== 'undefined' ? localStorage.getItem('vigil_tech_token') : null;
+    const authHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (techToken) {
+      authHeaders['Authorization'] = `Bearer ${techToken}`;
+    }
+
+    const payload = JSON.stringify({
+      fcmToken,
+      pushToken: fcmToken,
+      platform: 'android',
+      techToken: techToken || undefined,
+    });
+
+    await Promise.allSettled([
+      fetch('/api/technician/push-token', {
+        method: 'POST',
+        credentials: 'include',
+        headers: authHeaders,
+        body: payload,
+      }),
+      fetch('/api/technician/device-token', {
+        method: 'POST',
+        credentials: 'include',
+        headers: authHeaders,
+        body: payload,
+      }),
+    ]);
+    return fcmToken;
+  } catch (syncErr) {
+    console.warn('[NativeBridge] Failed to sync push token to server:', syncErr);
+    return null;
+  }
+}
+
+/**
  * Initialize Push Notifications (FCM) on native Android
  * - Requests POST_NOTIFICATIONS runtime permission (Android 13+)
  * - Registers device token with /api/technician/device-token
@@ -93,19 +139,7 @@ export async function registerNativePush(options?: {
       const fcmToken = token.value;
       try {
         await Preferences.set({ key: 'vigil_fcm_token', value: fcmToken });
-        // Post to /api/technician/push-token (and /api/technician/device-token)
-        await Promise.allSettled([
-          fetch('/api/technician/push-token', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fcmToken, pushToken: fcmToken, platform: 'android' }),
-          }),
-          fetch('/api/technician/device-token', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fcmToken, pushToken: fcmToken, platform: 'android' }),
-          }),
-        ]);
+        await syncNativePushToken();
         console.info('[NativeBridge] Registered push token with server');
       } catch (postErr) {
         console.warn('[NativeBridge] Could not post FCM token to backend:', postErr);
@@ -127,8 +161,9 @@ export async function registerNativePush(options?: {
     // Request native registration
     await PushNotifications.register();
 
-    const stored = await Preferences.get({ key: 'vigil_fcm_token' });
-    return stored.value || null;
+    // Ensure currently cached token is also synced to backend
+    const syncedToken = await syncNativePushToken();
+    return syncedToken;
   } catch (err) {
     console.warn('[NativeBridge] Push notifications setup error:', err);
     return null;

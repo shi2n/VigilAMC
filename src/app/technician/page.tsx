@@ -65,6 +65,7 @@ import {
   isNativePlatform,
   registerNativeLifecycle,
   registerNativePush,
+  syncNativePushToken,
   unregisterNativePush,
   scheduleOfflineDueReminders,
   showLocalTaskNotification,
@@ -967,6 +968,7 @@ export default function TechnicianPWA() {
         }
         setSessionExpiredAlert(false);
         triggerToast('✅ Signed in successfully!');
+        syncNativePushToken().catch(() => null);
         await loadDashboardData();
         handleTriggerSync({ force: true });
         return;
@@ -1001,6 +1003,7 @@ export default function TechnicianPWA() {
       if (authData.session) {
         setSessionExpiredAlert(false);
         triggerToast('✅ Signed in successfully!');
+        syncNativePushToken().catch(() => null);
         await loadDashboardData();
         handleTriggerSync({ force: true });
       }
@@ -1016,6 +1019,7 @@ export default function TechnicianPWA() {
     if (!isNativePlatform()) return;
 
     const unbindLifecycle = registerNativeLifecycle(async () => {
+      syncNativePushToken().catch(() => null);
       await loadDashboardData();
     });
 
@@ -1880,6 +1884,14 @@ export default function TechnicianPWA() {
                 )}
               </button>
             </form>
+
+            {/* Native Android App Notice */}
+            <div className="pt-3 border-t border-[#FED7AA]/50 text-center">
+              <div className="inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl bg-[#FFF8F2] border border-[#FED7AA] text-[#C2410C] font-semibold text-[11px]">
+                <BellRing className="w-3.5 h-3.5 text-[#EA580C]" />
+                <span>Home-Screen FCM Notifications require installed APK v1.0.3</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -4079,7 +4091,28 @@ export default function TechnicianPWA() {
                 </div>
               </div>
 
-              <div className="pt-1 flex items-center justify-end">
+              <div className="pt-1 flex items-center justify-between gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const token = await syncNativePushToken();
+                    if (token) {
+                      triggerToast(`🔔 FCM Token active (${token.slice(0, 10)}...)`);
+                    } else if (isNativePlatform()) {
+                      triggerToast('⏳ Registering token with Firebase...');
+                      registerNativePush().then((t) => {
+                        if (t) triggerToast(`🔔 FCM Token registered: ${t.slice(0, 10)}...`);
+                        else triggerToast('⚠️ Waiting for Google Play Services token');
+                      });
+                    } else {
+                      triggerToast('ℹ️ Push tray notifications require the installed APK');
+                    }
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-white border border-[#FED7AA] hover:border-[#EA580C] text-[#C2410C] font-bold text-[11px] shadow-2xs flex items-center gap-1.5 active:scale-95 transition-all"
+                >
+                  <BellRing className="w-3.5 h-3.5" />
+                  <span>Sync / Test FCM Token</span>
+                </button>
                 <button
                   type="button"
                   onClick={async () => {

@@ -1,17 +1,26 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getAuthenticatedActor } from '@/lib/techSession';
+import { getAuthenticatedActor, verifyTechSessionToken } from '@/lib/techSession';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
-    const auth = await getAuthenticatedActor(request);
+    let auth = await getAuthenticatedActor(request);
+    const body = await request.json().catch(() => ({}));
+
+    // Fallback: Verify techToken passed in body if cookies/Bearer weren't captured
+    if ((!auth || !auth.user) && body.techToken) {
+      const payload = verifyTechSessionToken(body.techToken);
+      if (payload?.userId) {
+        auth = { user: { id: payload.userId, email: payload.email || '' } } as any;
+      }
+    }
+
     if (!auth || !auth.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json().catch(() => ({}));
     const rawToken = body.fcmToken || body.pushToken || body.token;
     const platform = body.platform || 'android';
 
