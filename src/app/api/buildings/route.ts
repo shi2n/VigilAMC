@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import { detectJurisdictionFromBuilding } from '@/lib/compliance-engine';
+import { calendarDayDiff, fromDbDate, todayCalendarDateString } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,7 +36,7 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     });
 
-    const now = new Date();
+    const todayStr = todayCalendarDateString();
     const mapped = buildings.map((b: any) => {
       let compliantCount = 0;
       let dueCount = 0;
@@ -45,7 +46,7 @@ export async function GET() {
       b.equipments.forEach((eq: any) => {
         const hasInspection = Boolean(eq.inspections && eq.inspections.length > 0);
         const diffDays = eq.nextDueDate
-          ? Math.ceil((new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+          ? calendarDayDiff(fromDbDate(eq.nextDueDate), todayStr)
           : 999999;
         if (diffDays < 0 || eq.status === 'OVERDUE' || eq.status === 'DEFECTIVE') overdueCount++;
         else if (diffDays <= 30 || eq.status === 'DUE_SOON') dueCount++;

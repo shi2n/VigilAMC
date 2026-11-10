@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { compressImageToDataUrl } from '@/lib/compressImage';
 import type { AdminDictionary } from '@/lib/i18n/admin';
+import { dueState } from '@/lib/dates';
 
 interface FloorPlansModalProps {
   building: any | null;
@@ -29,20 +30,23 @@ function computePinCompliance(eq: any): {
   colorHex: string;
   label: string;
 } {
-  const now = new Date();
   const dueRaw = eq?.nextDueDate || eq?.refillDueDate || eq?.hydroDueDate;
-  const dueDate = dueRaw && !isNaN(new Date(dueRaw).getTime()) ? new Date(dueRaw) : null;
-  const diffDays = dueDate
-    ? Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-    : null;
-
-  if ((diffDays !== null && diffDays < 0) || eq?.status === 'OVERDUE' || eq?.status === 'DEFECTIVE') {
+  if (!dueRaw) {
+    return { status: 'OK', colorHex: '#059669', label: 'OK' };
+  }
+  if (eq?.status === 'OVERDUE' || eq?.status === 'DEFECTIVE') {
     return { status: 'EXPIRED', colorHex: '#DC2626', label: 'EXPIRED' };
   }
-  if ((diffDays !== null && diffDays <= 30) || eq?.status === 'DUE_SOON') {
+  if (eq?.status === 'DUE_SOON') {
     return { status: 'DUE_SOON', colorHex: '#D97706', label: 'DUE SOON' };
   }
-  return { status: 'OK', colorHex: '#059669', label: 'OK' };
+  const res = dueState(dueRaw);
+  const colors = {
+    EXPIRED: '#DC2626',
+    DUE_SOON: '#D97706',
+    OK: '#059669',
+  };
+  return { status: res.state, colorHex: colors[res.state], label: res.state === 'DUE_SOON' ? 'DUE SOON' : res.state };
 }
 
 export function FloorPlansModal({

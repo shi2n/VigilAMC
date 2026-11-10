@@ -1,6 +1,12 @@
 import { db } from '@/lib/db';
 import { logAuditActivity } from '@/lib/auth';
 import { notifyOnAssignment } from '@/lib/notify';
+import {
+  toDbDate,
+  addCalendarDays,
+  todayCalendarDateString,
+  calendarDayDiff,
+} from '@/lib/dates';
 
 export interface AutoScheduleResult {
   createdCount: number;
@@ -103,10 +109,10 @@ export async function runAutoSchedulerForOrg(params: {
       const dueRaw = eq.nextDueDate || eq.refillDueDate || eq.hydroDueDate;
       if (!dueRaw && !targetEquipmentId) continue;
 
-      const dueDate = dueRaw ? new Date(dueRaw) : new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-      if (isNaN(dueDate.getTime())) continue;
+      const dueDate = dueRaw ? toDbDate(dueRaw) : toDbDate(addCalendarDays(todayCalendarDateString(), 7));
+      if (!dueDate || isNaN(dueDate.getTime())) continue;
 
-      const diffDays = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      const diffDays = calendarDayDiff(dueDate, now);
 
       // Eligible if within lead window (or overdue) OR explicitly targeted via "Schedule visit"
       const isWithinWindow = targetEquipmentId ? true : diffDays <= leadDays;

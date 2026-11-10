@@ -18,6 +18,7 @@ import {
   computeReportIntegrityHash,
   DEFAULT_LEGAL_REFERENCES,
 } from '@/lib/compliance-engine';
+import { todayCalendarDateString, addCalendarMonths, parseCalendarDate } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -452,16 +453,19 @@ export async function GET(
 
     // Step 2: Generate non-Form-B Report Reference Number
     const reportNumber = `VAMC-RPT/${activeJurisdictionCode}/${now.getFullYear()}/${building.id.slice(-5).toUpperCase()}`;
-    const cyclePeriod = `${now.toLocaleString('en-IN', { month: 'short' })} ${now.getFullYear()} - ${new Date(
-      now.getTime() + 180 * 24 * 60 * 60 * 1000
-    ).toLocaleString('en-IN', { month: 'short' })} ${new Date(
-      now.getTime() + 180 * 24 * 60 * 60 * 1000
-    ).getFullYear()}`;
+    const todayStr = todayCalendarDateString();
+    const cycleEndStr = addCalendarMonths(todayStr, 6);
+    const startCal = parseCalendarDate(todayStr);
+    const endCal = parseCalendarDate(cycleEndStr);
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const cyclePeriod = startCal && endCal
+      ? `${monthNames[startCal.month - 1]} ${startCal.year} - ${monthNames[endCal.month - 1]} ${endCal.year}`
+      : 'Current Cycle';
 
     const integrityHash = computeReportIntegrityHash({
       reportReferenceId: reportNumber,
       buildingId: building.id,
-      generatedAtIso: now.toISOString().slice(0, 10),
+      generatedAtIso: todayStr,
       totalRegistered: complianceResult.counts.totalRegistered,
       operationalCount: complianceResult.counts.operationalCount,
       nonOperationalCount: complianceResult.counts.nonOperationalCount,

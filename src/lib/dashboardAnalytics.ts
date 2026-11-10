@@ -4,6 +4,8 @@
  * and prioritized "Needs Your Attention" live operational digest.
  */
 
+import { calendarDayDiff } from './dates';
+
 export interface TrendBucket {
   labels: string[];
   values: number[];
@@ -57,13 +59,13 @@ export function computeAttentionDigest(params: {
   // Module B3: Corrective Actions open > 15 days (count + oldest age)
   const agedCorrectiveActions = correctiveActions.filter((ca: any) => {
     if (!ca || ca.status === 'CLOSED' || !ca.openedAt) return false;
-    const ageDays = Math.floor((now.getTime() - new Date(ca.openedAt).getTime()) / (1000 * 60 * 60 * 24));
+    const ageDays = Math.max(0, -calendarDayDiff(ca.openedAt, now));
     return ageDays > 15;
   });
   if (agedCorrectiveActions.length > 0) {
     const oldestAge = Math.max(
       ...agedCorrectiveActions.map((ca: any) =>
-        Math.floor((now.getTime() - new Date(ca.openedAt).getTime()) / (1000 * 60 * 60 * 24))
+        Math.max(0, -calendarDayDiff(ca.openedAt, now))
       )
     );
     digest.push({
@@ -83,7 +85,7 @@ export function computeAttentionDigest(params: {
     const overdueBuildings = new Set<string>();
     equipments.forEach((eq: any) => {
       const diff = eq.nextDueDate
-        ? Math.ceil((new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+        ? calendarDayDiff(eq.nextDueDate, now)
         : null;
       if ((diff !== null && diff < 0) || eq.status === 'OVERDUE' || eq.liveStatus === 'OVERDUE') {
         if (eq.building?.name) overdueBuildings.add(eq.building.name);

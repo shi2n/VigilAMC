@@ -4,6 +4,22 @@
  * Method references: local calendar day arithmetic & clamp-to-month-end logic.
  */
 
+import {
+  calendarDayDiff,
+  addCalendarDays,
+  addCalendarMonths,
+  formatDisplay,
+  dueState,
+} from './dates';
+
+export {
+  calendarDayDiff,
+  addCalendarDays,
+  addCalendarMonths,
+  formatDisplay,
+  dueState,
+};
+
 export interface CalendarDateParts {
   year: number;
   month: number; // 1-12
@@ -104,15 +120,8 @@ export function getCalendarDayDiff(
   target: string | Date | null | undefined,
   baseDate: Date = new Date()
 ): number | null {
-  const tParts = extractCalendarDateParts(target);
-  if (!tParts) return null;
-  const bYear = baseDate.getFullYear();
-  const bMonth = baseDate.getMonth();
-  const bDay = baseDate.getDate();
-
-  const utarget = Date.UTC(tParts.year, tParts.month - 1, tParts.day);
-  const ubase = Date.UTC(bYear, bMonth, bDay);
-  return Math.round((utarget - ubase) / (1000 * 60 * 60 * 24));
+  if (!target) return null;
+  return calendarDayDiff(target, baseDate);
 }
 
 /**
@@ -170,43 +179,11 @@ export function formatCalendarDueNotice(
     mos = getCalendarMonthDiff(options.target, options.baseDate);
   } else {
     const bDate = options.baseDate || new Date();
-    const tDate = new Date(bDate.getTime() + diffDays * 86400000);
+    const tDate = addCalendarDays(bDate, diffDays);
     mos = getCalendarMonthDiff(tDate, bDate);
   }
   const finalMos = Math.max(1, mos ?? 1);
   return `${finalMos} mos left`;
 }
 
-/**
- * Calendar month math (same day of month, clamped to month end).
- * E.g., 2026-01-31 + 1 month -> 2026-02-28 (NOT March!).
- * E.g., 2026-01-15 + 6 months -> 2026-07-15.
- */
-export function addCalendarMonths(inputDate: string | Date | null | undefined, months: number): string {
-  const parts = extractCalendarDateParts(inputDate) || extractCalendarDateParts(new Date())!;
-  const targetMonthIndex = parts.month - 1 + Number(months || 0);
-  const targetYear = parts.year + Math.floor(targetMonthIndex / 12);
-  const normalizedMonthIndex = ((targetMonthIndex % 12) + 12) % 12; // 0-11
-  const targetMonth = normalizedMonthIndex + 1;
 
-  // Maximum days in targetMonth of targetYear:
-  const daysInTargetMonth = new Date(targetYear, targetMonth, 0).getDate();
-  const clampedDay = Math.min(parts.day, daysInTargetMonth);
-
-  const yyyy = String(targetYear).padStart(4, '0');
-  const mm = String(targetMonth).padStart(2, '0');
-  const dd = String(clampedDay).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-/**
- * Add days to a calendar date string (or today).
- */
-export function addCalendarDays(inputDate: string | Date | null | undefined, days: number): string {
-  const parts = extractCalendarDateParts(inputDate) || extractCalendarDateParts(new Date())!;
-  const dt = new Date(parts.year, parts.month - 1, parts.day + Number(days || 0), 12, 0, 0);
-  const yyyy = dt.getFullYear();
-  const mm = String(dt.getMonth() + 1).padStart(2, '0');
-  const dd = String(dt.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
-}

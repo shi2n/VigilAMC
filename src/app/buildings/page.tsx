@@ -17,6 +17,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { getNocStatus } from '@/lib/compliance';
+import { addCalendarMonths, todayCalendarDateString } from '@/lib/dates';
 
 export default function BuildingsPage() {
   const [buildings, setBuildings] = useState<any[]>([]);
@@ -39,7 +40,7 @@ export default function BuildingsPage() {
     contactEmail: '',
     fireNocNumber: '',
     nocAuthority: 'Delhi Fire Service (DFS)',
-    nocExpiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    nocExpiryDate: addCalendarMonths(todayCalendarDateString(), 12),
   });
 
   const fetchBuildings = async () => {

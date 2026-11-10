@@ -20,6 +20,7 @@ import {
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { formatStandardDate } from '@/lib/constants/india';
+import { toDateInputString, calendarDayDiff, fromDbDate, todayCalendarDateString } from '@/lib/dates';
 import { ClientPortalAdminPanel } from './ClientPortalAdminPanel';
 import { ComplianceReportManagementView } from './ComplianceReportManagementView';
 import { EmailReportModal } from './EmailReportModal';
@@ -105,9 +106,7 @@ export function ReportsView({
         );
 
         const formatDt = (d: any) =>
-          d && !isNaN(new Date(d).getTime())
-            ? new Date(d).toISOString().split('T')[0]
-            : '—';
+          d ? toDateInputString(d) : '—';
 
         const lastInspectionStr = latestApproved
           ? `${formatDt(latestApproved.timestamp || latestApproved.createdAt)} (${
@@ -384,11 +383,10 @@ export function ReportsView({
               {filteredBuildings.map((b) => {
                 const bEquipments = b.equipments || [];
                 const totalEq = bEquipments.length;
-                const now = new Date();
+                const todayStr = todayCalendarDateString();
                 const overdueEq = bEquipments.filter((e: any) => {
-                  const hasDue = Boolean(e.nextDueDate && !isNaN(new Date(e.nextDueDate).getTime()));
-                  const diffDays = hasDue
-                    ? Math.ceil((new Date(e.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+                  const diffDays = e.nextDueDate
+                    ? calendarDayDiff(fromDbDate(e.nextDueDate), todayStr)
                     : null;
                   return (
                     (diffDays !== null && diffDays < 0) ||

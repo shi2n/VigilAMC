@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { addCalendarMonths, toDbDate, fromDbDate, todayCalendarDateString } from '@/lib/dates';
 
 export async function GET() {
   try {
@@ -63,8 +64,8 @@ export async function POST(request: Request) {
         buildingId,
         contractNumber: contractNumber || `AMC/${new Date().getFullYear()}/${Math.floor(100 + Math.random() * 900)}`,
         annualValue: parseFloat(annualValue) || 60000,
-        startDate: new Date(startDate || new Date()),
-        endDate: new Date(endDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)),
+        startDate: startDate ? toDbDate(fromDbDate(startDate)) : toDbDate(todayCalendarDateString()),
+        endDate: endDate ? toDbDate(fromDbDate(endDate)) : toDbDate(addCalendarMonths(todayCalendarDateString(), 12)),
         totalVisitsPerYear: Number(totalVisitsPerYear) || 4,
         paymentStatus: paymentStatus || 'PAID',
         status: status || 'ACTIVE',

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getPortalActor } from '@/lib/portalSession';
+import { calendarDayDiff } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -84,9 +85,7 @@ export async function GET(request: Request) {
 
       const eqs = (b.equipments || []).map((eq: any) => {
         totalAssets += 1;
-        const d = eq.nextDueDate ? new Date(eq.nextDueDate) : null;
-        const diffDays =
-          d && !isNaN(d.getTime()) ? Math.ceil((d.getTime() - now.getTime()) / 86400000) : null;
+        const diffDays = eq.nextDueDate ? calendarDayDiff(eq.nextDueDate, now) : null;
 
         let liveStatus = 'OK';
         if ((diffDays !== null && diffDays < 0) || eq.status === 'OVERDUE') {

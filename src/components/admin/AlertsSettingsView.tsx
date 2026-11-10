@@ -14,6 +14,7 @@ import {
   Info,
 } from 'lucide-react';
 import { formatStandardDate } from '@/lib/constants/india';
+import { addCalendarDays, todayCalendarDateString, toDbDate } from '@/lib/dates';
 
 interface AlertsSettingsViewProps {
   company?: any;
@@ -35,14 +36,14 @@ export function AlertsSettingsView({ company, showToast }: AlertsSettingsViewPro
   const [emailLogs, setEmailLogs] = useState([
     {
       id: '1',
-      date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
+      date: toDbDate(addCalendarDays(todayCalendarDateString(), -2))?.toISOString() || '',
       recipient: company?.email || 'service@agency.in',
       subject: 'Upcoming Inspection Reminder (30 Days) - Horizon Tower',
       status: 'DELIVERED',
     },
     {
       id: '2',
-      date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(),
+      date: toDbDate(addCalendarDays(todayCalendarDateString(), -7))?.toISOString() || '',
       recipient: company?.email || 'service@agency.in',
       subject: 'Critical Expiry Notice (7 Days) - Emerald Heights Block A',
       status: 'DELIVERED',

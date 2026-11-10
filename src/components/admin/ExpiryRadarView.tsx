@@ -11,6 +11,7 @@ import {
   Clock,
 } from 'lucide-react';
 import type { AdminDictionary } from '@/lib/i18n/admin';
+import { calendarDayDiff, fromDbDate, todayCalendarDateString, parseCalendarDate } from '@/lib/dates';
 
 interface ExpiryRadarViewProps {
   equipments: any[];
@@ -48,20 +49,25 @@ export function ExpiryRadarView({
   }, [workOrders, locallyScheduledIds]);
 
   const evaluatedRows = useMemo(() => {
-    const now = new Date();
+    const todayStr = todayCalendarDateString();
     return (equipments || [])
       .map((eq: any) => {
         const dueRaw = eq.nextDueDate || eq.refillDueDate || eq.hydroDueDate;
-        const dueDate = dueRaw && !isNaN(new Date(dueRaw).getTime()) ? new Date(dueRaw) : null;
-        const diffDays = dueDate
-          ? Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+        const dueCalStr = dueRaw ? fromDbDate(dueRaw) : null;
+        const diffDays = dueCalStr
+          ? calendarDayDiff(dueCalStr, todayStr)
           : null;
-        const monthKey = dueDate
-          ? dueDate.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
+        const monthKey = dueCalStr
+          ? (() => {
+              const cal = parseCalendarDate(dueCalStr);
+              if (!cal) return 'Unscheduled Due Date';
+              const mNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+              return `${mNames[cal.month - 1]} ${cal.year}`;
+            })()
           : 'Unscheduled Due Date';
         return {
           ...eq,
-          parsedDueDate: dueDate,
+          parsedDueDate: dueRaw ? new Date(dueRaw) : null,
           diffDays,
           monthKey,
         };

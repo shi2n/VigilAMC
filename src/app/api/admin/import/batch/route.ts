@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser, logAuditActivity } from '@/lib/auth';
 import { ImportType, DuplicateStrategy } from '@/lib/excelImport';
+import { addCalendarMonths, toDbDate, fromDbDate, todayCalendarDateString } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -241,10 +242,10 @@ export async function POST(request: Request) {
           }
 
           const building = await getOrCreateBuilding(parsedData.buildingName || 'Main Facility');
-          const lastServ = parsedData.lastServiceDate ? new Date(parsedData.lastServiceDate) : new Date();
+          const lastServ = parsedData.lastServiceDate ? toDbDate(fromDbDate(parsedData.lastServiceDate)) : toDbDate(todayCalendarDateString());
           const nextDue = parsedData.nextDueDate
-            ? new Date(parsedData.nextDueDate)
-            : new Date(lastServ.getTime() + 365 * 24 * 60 * 60 * 1000);
+            ? toDbDate(fromDbDate(parsedData.nextDueDate))
+            : toDbDate(addCalendarMonths(fromDbDate(lastServ), 12));
 
           await (db as any).equipment.create({
             data: {
@@ -334,8 +335,8 @@ export async function POST(request: Request) {
                 type: 'Fire Extinguisher',
                 capacity: 'ABC Dry Powder 6kg',
                 location: 'Inspection Location',
-                lastServiceDate: parsedData.date ? new Date(parsedData.date) : new Date(),
-                nextDueDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+                lastServiceDate: parsedData.date ? toDbDate(fromDbDate(parsedData.date)) : toDbDate(todayCalendarDateString()),
+                nextDueDate: toDbDate(addCalendarMonths(todayCalendarDateString(), 12)),
                 currentStatus: parsedData.status === 'PASSED' ? 'COMPLIANT' : 'OVERDUE',
               },
             });

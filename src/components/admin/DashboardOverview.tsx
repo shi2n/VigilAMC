@@ -23,6 +23,7 @@ import { NumberTicker } from '@/components/ui/number-ticker';
 import { AttentionDigestItem, DashboardAnalytics } from '@/lib/dashboardAnalytics';
 import { GettingStartedChecklist } from '@/components/admin/GettingStartedGuide';
 import { AdminDictionary, adminDictEnglish } from '@/lib/i18n/admin';
+import { calendarDayDiff, fromDbDate, todayCalendarDateString } from '@/lib/dates';
 import { SITE_CONFIG } from '@/lib/siteConfig';
 import { X, ExternalLink } from 'lucide-react';
 
@@ -266,12 +267,11 @@ export function DashboardOverview({
     });
   });
 
-  const now = new Date();
+  const todayStr = todayCalendarDateString();
   const needsAttentionList = allEquipments
     .map((eq) => {
-      const hasValidDue = Boolean(eq.nextDueDate && !isNaN(new Date(eq.nextDueDate).getTime()));
-      const diffDays = hasValidDue
-        ? Math.ceil((new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      const diffDays = eq.nextDueDate
+        ? calendarDayDiff(fromDbDate(eq.nextDueDate), todayStr)
         : 999999;
       return { ...eq, diffDays };
     })

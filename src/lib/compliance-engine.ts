@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { calendarDayDiff } from './dates';
 
 /**
  * ============================================================================
@@ -644,7 +645,7 @@ export function calculateBuildingCompliance(params: {
 
     const parsedDue = eq.nextDueDate ? new Date(eq.nextDueDate) : null;
     const nextDue = parsedDue && !isNaN(parsedDue.getTime()) ? parsedDue : null;
-    const diffDays = nextDue ? Math.ceil((nextDue.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
+    const diffDays = nextDue ? calendarDayDiff(nextDue, now) : null;
 
     const hasValidGps = Boolean(
       typeof latestInspection?.latitude === 'number' &&

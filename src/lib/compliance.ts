@@ -1,3 +1,5 @@
+import { calendarDayDiff } from './dates';
+
 export type ComplianceStatus = 'NOT_INSPECTED' | 'DUE_SOON' | 'OVERDUE' | 'VERIFIED';
 
 export interface EquipmentStatusResult {
@@ -16,7 +18,7 @@ export function evaluateEquipmentStatus(eq: any, now: Date = new Date()): Equipm
   const parsedDue = eq.nextDueDate ? new Date(eq.nextDueDate) : null;
   const nextDue = parsedDue && !isNaN(parsedDue.getTime()) ? parsedDue : null;
   const hasDue = Boolean(nextDue);
-  const diffDays = nextDue ? Math.ceil((nextDue.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 999999;
+  const diffDays = nextDue ? calendarDayDiff(nextDue, now) : 999999;
 
   const latestInspection = eq.inspections?.[0] || eq.serviceLogs?.[0] || null;
   const hasInspection = Boolean(latestInspection);
@@ -191,10 +193,7 @@ export interface NocStatus {
 }
 
 export function getNocStatus(expiryDate: Date | string): NocStatus {
-  const expiry = new Date(expiryDate);
-  const now = new Date();
-  const diffTime = expiry.getTime() - now.getTime();
-  const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const daysRemaining = calendarDayDiff(expiryDate);
 
   if (daysRemaining <= 0) {
     return {
@@ -240,9 +239,7 @@ export function getAssetRefillStatus(nextRefillDate?: Date | string | null) {
       badgeClass: 'bg-slate-100 text-slate-700 border border-slate-300',
     };
   }
-  const due = new Date(nextRefillDate);
-  const now = new Date();
-  const diffDays = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  const diffDays = calendarDayDiff(nextRefillDate);
 
   if (diffDays < 0) {
     return {

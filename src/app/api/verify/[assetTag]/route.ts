@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { checkVerifyRateLimit } from '@/lib/portalSession';
+import { calendarDayDiff } from '@/lib/dates';
 import {
   PERMANENT_LEGAL_DISCLAIMER_PARAGRAPHS,
   classifyEquipmentCategory,
@@ -251,11 +252,7 @@ export async function GET(
     }
 
     const now = new Date();
-    const dueDate = equipment.nextDueDate ? new Date(equipment.nextDueDate) : null;
-    const diffDays =
-      dueDate && !isNaN(dueDate.getTime())
-        ? Math.ceil((dueDate.getTime() - now.getTime()) / 86400000)
-        : null;
+    const diffDays = equipment.nextDueDate ? calendarDayDiff(equipment.nextDueDate, now) : null;
 
     let computedStatus = 'OK';
     if ((diffDays !== null && diffDays < 0) || equipment.status === 'OVERDUE' || equipment.status === 'DEFECTIVE') {

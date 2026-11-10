@@ -2,6 +2,12 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getAuthenticatedActor } from '@/lib/techSession';
 import { logAuditActivity } from '@/lib/auth';
+import {
+  toDbDate,
+  addCalendarDays,
+  todayCalendarDateString,
+  calendarDayDiff,
+} from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,14 +32,14 @@ export async function GET(request: Request) {
     });
 
     // Weekly admin notification for still-open >15d items (Module B3)
-    const now = new Date();
-    const fifteenDaysAgo = new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000);
+    const todayStr = todayCalendarDateString();
+    const fifteenDaysAgoStr = addCalendarDays(todayStr, -15);
     const agedOpen = actions.filter(
-      (a: any) => a.status !== 'CLOSED' && new Date(a.openedAt) <= fifteenDaysAgo
+      (a: any) => a.status !== 'CLOSED' && a.openedAt && calendarDayDiff(a.openedAt, todayStr) <= -15
     );
 
     if (agedOpen.length > 0) {
-      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const sevenDaysAgo = toDbDate(addCalendarDays(todayStr, -7));
       const recentNotif = await (db as any).notification
         .findFirst({
           where: {
@@ -47,7 +53,7 @@ export async function GET(request: Request) {
       if (!recentNotif) {
         const oldestDays = Math.max(
           ...agedOpen.map((a: any) =>
-            Math.floor((now.getTime() - new Date(a.openedAt).getTime()) / (1000 * 60 * 60 * 24))
+            Math.max(0, -calendarDayDiff(a.openedAt, todayStr))
           )
         );
         await (db as any).notification

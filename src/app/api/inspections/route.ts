@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { logAuditActivity } from '@/lib/auth';
 import { getAuthenticatedActor } from '@/lib/techSession';
 import { ensureR2PhotoUrl } from '@/lib/r2';
+import { addCalendarMonths, addCalendarDays, todayCalendarDateString, toDbDate } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -200,16 +201,16 @@ export async function POST(request: Request) {
         select: { id: true, qrCode: true, serviceIntervalMonths: true, photoUrl: true },
       });
 
-      const now = new Date();
+      const todayStr = todayCalendarDateString();
       const months = Number(eq?.serviceIntervalMonths) || 12;
-      const nextDueDate = new Date(now.getTime() + months * 30.5 * 24 * 60 * 60 * 1000);
+      const nextDueStr = addCalendarMonths(todayStr, months);
       const isDefect = status === 'FAILED' || status === 'SERVICE_REQUIRED' || status === 'REPLACEMENT_REQUIRED';
 
       await (db as any).equipment.update({
         where: { id: equipmentId },
         data: {
-          lastServiceDate: now,
-          nextDueDate: isDefect ? now : nextDueDate,
+          lastServiceDate: toDbDate(todayStr),
+          nextDueDate: toDbDate(isDefect ? todayStr : nextDueStr),
           status: isDefect ? 'DEFECTIVE' : 'COMPLIANT',
           ...(primaryPhotoUrl ? { photoUrl: primaryPhotoUrl } : {}),
         },
@@ -220,8 +221,8 @@ export async function POST(request: Request) {
         data: {
           equipmentId,
           technicianName: resolvedTechName,
-          servicedAt: now,
-          nextDueDate: isDefect ? now : nextDueDate,
+          servicedAt: toDbDate(todayStr),
+          nextDueDate: toDbDate(isDefect ? todayStr : nextDueStr),
           actionType: isDefect
             ? `Defect Flagged: ${Array.isArray(issueChips) && issueChips.length > 0 ? issueChips.join(', ') : 'Refill / Repair Needed'}`
             : 'GPS Field Inspection Verified (PASS)',
@@ -265,7 +266,7 @@ export async function POST(request: Request) {
               description: defectDesc,
               priority: 'HIGH',
               status: 'OPEN',
-              dueDate: new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000),
+              dueDate: toDbDate(addCalendarDays(todayStr, 3)),
             },
           })
           .catch(() => null);

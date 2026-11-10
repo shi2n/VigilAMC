@@ -100,6 +100,7 @@ import {
   OutboxItem,
   SyncDiagnosticLog,
 } from '@/lib/offline/techOutbox';
+import { todayCalendarDateString, addCalendarDays, addCalendarMonths, fromDbDate, calendarDayDiff } from '@/lib/dates';
 
 interface GPSCoordinates {
   latitude: number;
@@ -1602,14 +1603,16 @@ export default function TechnicianPWA() {
   // ----------------------------------------------------------------------------------
   const filteredHistory = useMemo(() => {
     const s = historySearch.trim().toLowerCase();
-    const now = Date.now();
-    let minTime = 0;
-    if (historyDateRange === 'week') minTime = now - 7 * 24 * 60 * 60 * 1000;
-    if (historyDateRange === 'month') minTime = now - 30 * 24 * 60 * 60 * 1000;
+    const todayStr = todayCalendarDateString();
+    let minDateStr = '';
+    if (historyDateRange === 'week') minDateStr = addCalendarDays(todayStr, -7);
+    if (historyDateRange === 'month') minDateStr = addCalendarMonths(todayStr, -1);
 
     return historyList.filter((item) => {
-      const itemTs = new Date(item.date).getTime();
-      if (minTime > 0 && itemTs < minTime) return false;
+      if (minDateStr) {
+        const itemDateStr = fromDbDate(item.date);
+        if (calendarDayDiff(itemDateStr, minDateStr) < 0) return false;
+      }
       if (historyResultFilter !== 'ALL' && item.result !== historyResultFilter) return false;
       if (s) {
         const bName = (item.building?.name || '').toLowerCase();

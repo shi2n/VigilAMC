@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getAuthenticatedActor } from '@/lib/techSession';
+import { calendarDayDiff } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -129,11 +130,10 @@ export async function GET(request: Request) {
       }
       if (!floorZone) floorZone = 'General';
 
-      const dueTs = wo.dueDate ? new Date(wo.dueDate).getTime() : 0;
       let dueState: 'EXPIRED' | 'DUE_SOON' | 'OK' = 'OK';
       let diffDays = 0;
-      if (dueTs > 0) {
-        diffDays = Math.ceil((dueTs - now.getTime()) / (1000 * 60 * 60 * 24));
+      if (wo.dueDate) {
+        diffDays = calendarDayDiff(wo.dueDate, now);
         if (diffDays < 0) dueState = 'EXPIRED';
         else if (diffDays <= 2) dueState = 'DUE_SOON';
         else dueState = 'OK';
@@ -176,12 +176,11 @@ export async function GET(request: Request) {
         if (coveredEquipmentIds.has(eq.id)) continue;
 
         const isRecentlyCompleted = (eq.inspections || []).length > 0;
-        const dueTs = eq.nextDueDate ? new Date(eq.nextDueDate).getTime() : 0;
         let diffDays = 0;
         let dueState: 'EXPIRED' | 'DUE_SOON' | 'OK' = 'OK';
 
-        if (dueTs > 0) {
-          diffDays = Math.ceil((dueTs - now.getTime()) / (1000 * 60 * 60 * 24));
+        if (eq.nextDueDate) {
+          diffDays = calendarDayDiff(eq.nextDueDate, now);
           if (diffDays < 0 || eq.status === 'OVERDUE' || eq.status === 'DEFECTIVE') {
             dueState = 'EXPIRED';
           } else if (diffDays <= 2 || eq.status === 'DUE_SOON') {

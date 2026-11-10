@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import { toDateInputString } from './dates';
 
 export type ImportType =
   | 'CLIENTS'
@@ -852,7 +853,7 @@ export function validateRow(
         errors.push(`Unrecognized date format in "${field.label}": "${rawVal}"`);
         suggestedCorrections.push(`Use YYYY-MM-DD or DD/MM/YYYY date format`);
       } else {
-        parsedData[field.key] = parsedDate.toISOString();
+        parsedData[field.key] = toDateInputString(parsedDate);
       }
     } else if (field.type === 'enum' && field.enumValues) {
       const upperVal = String(rawVal).toUpperCase().replace(/\s+/g, '_');

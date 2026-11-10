@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { getAuthenticatedActor } from '@/lib/techSession';
 import { ensureR2PhotoUrl } from '@/lib/r2';
 import { logAuditActivity } from '@/lib/auth';
+import { toDbDate, addCalendarMonths, toDateInputString } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -280,7 +281,8 @@ export async function POST(request: Request) {
 
             if (eq) {
               const months = Number(eq.serviceIntervalMonths) || 12;
-              const nextDueDate = new Date(authoritativeDate.getTime() + months * 30.5 * 24 * 60 * 60 * 1000);
+              const nextDueStr = addCalendarMonths(toDateInputString(authoritativeDate), months);
+              const nextDueDate = toDbDate(nextDueStr);
               const isDefect =
                 safeStatus === 'FAILED' ||
                 safeStatus === 'SERVICE_REQUIRED' ||

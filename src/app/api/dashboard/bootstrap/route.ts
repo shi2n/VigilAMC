@@ -5,6 +5,7 @@ import { evaluateEquipmentStatus } from '@/lib/compliance';
 import { getPlanConfig, PLAN_CONFIGS } from '@/lib/plans';
 import { computeAttentionDigest, computeTrendAnalytics } from '@/lib/dashboardAnalytics';
 import { runAutoSchedulerForOrg } from '@/lib/autoScheduler';
+import { calendarDayDiff, fromDbDate, todayCalendarDateString } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -273,6 +274,7 @@ export async function GET(request: Request) {
     ]);
 
     const now = new Date();
+    const todayStr = todayCalendarDateString();
 
     // Group already-fetched equipments by buildingId in-memory (eliminates duplicate 4-table SQL join)
     const equipmentsByBuildingId = new Map<string, any[]>();
@@ -306,9 +308,7 @@ export async function GET(request: Request) {
         for (const eq of b.equipments || []) {
           const dueRaw = eq.nextDueDate || eq.refillDueDate || eq.hydroDueDate;
           if (!dueRaw) continue;
-          const dueDate = new Date(dueRaw);
-          if (isNaN(dueDate.getTime())) continue;
-          const diffDays = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          const diffDays = calendarDayDiff(fromDbDate(dueRaw), todayStr);
           if (diffDays <= leadDays && !openEquipmentIds.has(eq.id)) {
             needsAutoSchedule = true;
             break;
@@ -388,9 +388,7 @@ export async function GET(request: Request) {
       }
 
       const filingDaysRemaining = b.nextFilingDueDate
-        ? Math.ceil(
-            (new Date(b.nextFilingDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-          )
+        ? calendarDayDiff(fromDbDate(b.nextFilingDueDate), todayStr)
         : null;
 
       return {

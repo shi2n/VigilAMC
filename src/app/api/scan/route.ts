@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { sanitizeAgencyCredentials } from '@/lib/compliance-engine';
+import { addCalendarMonths, todayCalendarDateString, toDbDate } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -99,13 +100,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Equipment not found' }, { status: 404 });
     }
 
-    const nextDueDate = new Date(Date.now() + (equipment.serviceIntervalMonths || 12) * 30 * 24 * 60 * 60 * 1000);
+    const todayStr = todayCalendarDateString();
+    const intervalMonths = equipment.serviceIntervalMonths || 12;
+    const nextDueStr = addCalendarMonths(todayStr, intervalMonths);
 
     const updatedEquipment = await (db as any).equipment.update({
       where: { id: equipment.id },
       data: {
-        lastServiceDate: new Date(),
-        nextDueDate,
+        lastServiceDate: toDbDate(todayStr),
+        nextDueDate: toDbDate(nextDueStr),
         status: newStatus || 'COMPLIANT',
       },
     });
@@ -115,7 +118,7 @@ export async function POST(request: Request) {
         equipmentId: equipment.id,
         technicianName: technicianName || 'Field Service Technician',
         actionType: actionType || 'Routine Maintenance',
-        nextDueDate,
+        nextDueDate: toDbDate(nextDueStr),
         notes: remarks || '',
       },
     });

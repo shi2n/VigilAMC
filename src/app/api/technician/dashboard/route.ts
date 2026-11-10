@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getAuthenticatedActor } from '@/lib/techSession';
+import { calendarDayDiff, addCalendarDays, fromDbDate, todayCalendarDateString } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -137,9 +138,8 @@ export async function GET(request: Request) {
       });
     }
 
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const thirtyDaysAgo = now.getTime() - 30 * 24 * 60 * 60 * 1000;
+    const todayStr = todayCalendarDateString();
+    const thirtyDaysAgoStr = addCalendarDays(todayStr, -30);
 
     // Map buildings with live asset counts, floors, and due status
     const evaluatedBuildings = assignedBuildings.map((b: any) => {
@@ -149,18 +149,20 @@ export async function GET(request: Request) {
       let checkedRecently = 0;
 
       const enrichedEquipments = (b.equipments || []).map((eq: any) => {
-        const diffDays = Math.ceil(
-          (new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-        );
+        const diffDays = eq.nextDueDate
+          ? calendarDayDiff(fromDbDate(eq.nextDueDate), todayStr)
+          : 999999;
         const latestInsp = eq.inspections?.[0] || null;
-        const lastCheckTs = latestInsp?.date
-          ? new Date(latestInsp.date).getTime()
+        const lastCheckDateStr = latestInsp?.date
+          ? fromDbDate(latestInsp.date)
           : eq.lastServiceDate
-          ? new Date(eq.lastServiceDate).getTime()
-          : 0;
+          ? fromDbDate(eq.lastServiceDate)
+          : null;
 
-        const isCheckedToday = lastCheckTs >= todayStart;
-        const isCheckedCycle = lastCheckTs >= thirtyDaysAgo && eq.status !== 'DEFECTIVE' && diffDays > 0;
+        const isCheckedToday = lastCheckDateStr === todayStr;
+        const isCheckedCycle = lastCheckDateStr
+          ? calendarDayDiff(lastCheckDateStr, thirtyDaysAgoStr) >= 0 && eq.status !== 'DEFECTIVE' && diffDays > 0
+          : false;
 
         if (isCheckedToday || isCheckedCycle) {
           checkedRecently++;

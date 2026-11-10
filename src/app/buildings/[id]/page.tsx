@@ -22,6 +22,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { getNocStatus, getAssetRefillStatus, EQUIPMENT_TYPES } from '@/lib/compliance';
+import { todayCalendarDateString, addCalendarMonths } from '@/lib/dates';
 
 export default function BuildingDetailPage() {
   const params = useParams();
@@ -77,10 +78,10 @@ export default function BuildingDetailPage() {
         locationWing: num % 2 === 0 ? 'Wing A' : 'Wing B',
         locationSpecific: `Near Lift Corridor Floor ${targetFloor}`,
         mfgYear: new Date().getFullYear(),
-        lastRefillDate: new Date(),
-        nextRefillDueDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-        lastHydroTestDate: new Date(),
-        nextHydroTestDueDate: new Date(Date.now() + 1095 * 24 * 60 * 60 * 1000),
+        lastRefillDate: todayCalendarDateString(),
+        nextRefillDueDate: addCalendarMonths(todayCalendarDateString(), 12),
+        lastHydroTestDate: todayCalendarDateString(),
+        nextHydroTestDueDate: addCalendarMonths(todayCalendarDateString(), 36),
         status: 'OPERATIONAL',
         weightKg: batchCapacity.includes('6') ? 9.8 : batchCapacity.includes('4.5') ? 12.8 : 7.0,
       });

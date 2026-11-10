@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { calendarDayDiff, fromDbDate, todayCalendarDateString } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -77,21 +78,19 @@ export async function GET(request: Request) {
       }),
     ]);
 
-    const now = new Date();
+    const todayStr = todayCalendarDateString();
     let compliantCount = 0;
     let dueCount = 0;
     let overdueCount = 0;
 
     equipments.forEach((eq: any) => {
-      if (!eq.nextDueDate || isNaN(new Date(eq.nextDueDate).getTime())) {
+      if (!eq.nextDueDate) {
         if (eq.status === 'OVERDUE') overdueCount++;
         else if (eq.status === 'DUE_SOON') dueCount++;
         else compliantCount++;
         return;
       }
-      const diffDays = Math.ceil(
-        (new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-      );
+      const diffDays = calendarDayDiff(fromDbDate(eq.nextDueDate), todayStr);
       if (diffDays < 0) {
         overdueCount++;
       } else if (diffDays <= 30) {

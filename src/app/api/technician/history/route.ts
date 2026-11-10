@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getAuthenticatedActor } from '@/lib/techSession';
+import { addCalendarDays, addCalendarMonths, toDbDate, todayCalendarDateString } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,12 +23,12 @@ export async function GET(request: Request) {
     const resultFilter = searchParams.get('result'); // 'PASSED', 'FAILED', 'SERVICE_REQUIRED'
     const search = (searchParams.get('search') || '').trim().toLowerCase();
 
-    const now = new Date();
+    const todayStr = todayCalendarDateString();
     let startDate: Date | null = null;
     if (dateRange === 'week') {
-      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      startDate = toDbDate(addCalendarDays(todayStr, -7));
     } else if (dateRange === 'month') {
-      startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      startDate = toDbDate(addCalendarMonths(todayStr, -1));
     }
 
     // 1. Fetch completed inspections for this technician

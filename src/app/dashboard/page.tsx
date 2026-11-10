@@ -42,11 +42,17 @@ import { INDIAN_STATES_AND_UTS, REPORTING_CYCLES } from '@/lib/constants/india';
 import { isDuplicateSubmission, clearSubmissionLock } from '@/lib/submissionGuard';
 import {
   toCalendarDateInput,
-  addCalendarMonths,
-  addCalendarDays,
   getCalendarDayDiff,
   formatCalendarDate,
 } from '@/lib/dateUtils';
+import {
+  toDateInputString,
+  addCalendarMonths,
+  addCalendarDays,
+  calendarDayDiff,
+  todayCalendarDateString,
+  fromDbDate,
+} from '@/lib/dates';
 import { getAdminDictionary } from '@/lib/i18n/admin';
 import { WelcomeTestingModal } from '@/components/admin/WelcomeTestingModal';
 
@@ -155,17 +161,7 @@ const GuideModal = dynamic(
 
 const LAST_ORG_CACHE_KEY = 'vigilamc_dash_last_org';
 
-function toDateInputString(d?: Date | string | null): string {
-  return toCalendarDateInput(d, true);
-}
-
-function addMonthsToDateString(dateStr: string, months: number): string {
-  return addCalendarMonths(dateStr, months);
-}
-
-function addDaysToTodayString(days: number): string {
-  return addCalendarDays(new Date(), days);
-}
+// Shared date helpers imported directly from @/lib/dates
 
 function getEquipmentLiveStatus(eq: any) {
   if (!eq) return { text: 'Not Inspected', cls: 'bg-[#FFF8F2] text-slate-700 border border-[#FED7AA]' };
@@ -303,7 +299,7 @@ export default function AdminDashboardPage() {
   const [assignTaskForm, setAssignTaskForm] = useState({
     technicianId: '',
     type: 'Routine Inspection',
-    dueDate: addDaysToTodayString(7),
+    dueDate: addCalendarDays(todayCalendarDateString(), 7),
     notes: '',
   });
 
@@ -374,7 +370,7 @@ export default function AdminDashboardPage() {
       setAssignTaskForm({
         technicianId: '',
         type: 'Routine Inspection',
-        dueDate: addDaysToTodayString(7),
+        dueDate: addCalendarDays(todayCalendarDateString(), 7),
         notes: '',
       });
       refreshDashboard({ silent: true });
@@ -425,7 +421,7 @@ export default function AdminDashboardPage() {
     locationBase: 'Floor Landing Corridor',
     serviceIntervalMonths: 12,
     lastServiceDate: toDateInputString(new Date()),
-    nextDueDate: addMonthsToDateString(toDateInputString(new Date()), 12),
+    nextDueDate: addCalendarMonths(toDateInputString(new Date()), 12),
   });
 
   // Single add equipment form state
@@ -436,7 +432,7 @@ export default function AdminDashboardPage() {
     location: '',
     serviceIntervalMonths: 12,
     lastServiceDate: toDateInputString(new Date()),
-    nextDueDate: addMonthsToDateString(toDateInputString(new Date()), 12),
+    nextDueDate: addCalendarMonths(toDateInputString(new Date()), 12),
     photoUrl: '',
   });
 
@@ -855,7 +851,7 @@ export default function AdminDashboardPage() {
           location: '',
           serviceIntervalMonths: 12,
           lastServiceDate: toDateInputString(new Date()),
-          nextDueDate: addMonthsToDateString(toDateInputString(new Date()), 12),
+          nextDueDate: addCalendarMonths(toDateInputString(new Date()), 12),
           photoUrl: '',
         });
         await refreshDashboard({ silent: true });
@@ -1401,7 +1397,7 @@ export default function AdminDashboardPage() {
         location: '',
         serviceIntervalMonths: 12,
         lastServiceDate: toDateInputString(new Date()),
-        nextDueDate: addMonthsToDateString(toDateInputString(new Date()), 12),
+        nextDueDate: addCalendarMonths(toDateInputString(new Date()), 12),
         photoUrl: '',
       });
       setMinimizedModals((prev) => prev.filter((m) => m !== 'ADD_SINGLE_EQUIP'));
@@ -1858,13 +1854,13 @@ export default function AdminDashboardPage() {
                       setAssignTaskForm({
                         technicianId: '',
                         type: 'Routine Inspection',
-                        dueDate: addDaysToTodayString(7),
+                        dueDate: addCalendarDays(todayCalendarDateString(), 7),
                         notes: '',
                       });
                       const interval = Number(eq.serviceIntervalMonths) || 12;
                       const normalizedLast = toDateInputString(eq.lastServiceDate);
                       const normalizedNext = toDateInputString(eq.nextDueDate);
-                      const autoNext = addMonthsToDateString(normalizedLast, interval);
+                      const autoNext = addCalendarMonths(normalizedLast, interval);
                       const isAuto = !eq.nextDueDate || normalizedNext === autoNext;
                       setEditEquipDueDateMode(isAuto ? 'auto' : 'manual');
                       const normalizedEq = {
@@ -1928,13 +1924,13 @@ export default function AdminDashboardPage() {
                       setAssignTaskForm({
                         technicianId: '',
                         type: 'Routine Inspection',
-                        dueDate: addDaysToTodayString(7),
+                        dueDate: addCalendarDays(todayCalendarDateString(), 7),
                         notes: '',
                       });
                       const interval = Number(eq.serviceIntervalMonths) || 12;
                       const normalizedLast = toDateInputString(eq.lastServiceDate);
                       const normalizedNext = toDateInputString(eq.nextDueDate);
-                      const autoNext = addMonthsToDateString(normalizedLast, interval);
+                      const autoNext = addCalendarMonths(normalizedLast, interval);
                       const isAuto = !eq.nextDueDate || normalizedNext === autoNext;
                       setEditEquipDueDateMode(isAuto ? 'auto' : 'manual');
                       const normalizedEq = {
@@ -2569,7 +2565,7 @@ export default function AdminDashboardPage() {
                         setEquipmentForm({
                           ...equipmentForm,
                           lastServiceDate: val,
-                          nextDueDate: addMonthsToDateString(val, equipmentForm.serviceIntervalMonths),
+                          nextDueDate: addCalendarMonths(val, equipmentForm.serviceIntervalMonths),
                         });
                       }}
                       className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
@@ -2589,10 +2585,10 @@ export default function AdminDashboardPage() {
                   </div>
                   {(() => {
                     const baseDate = equipmentForm.lastServiceDate || toDateInputString(new Date());
-                    const p1 = addMonthsToDateString(baseDate, 12);
-                    const p2 = addMonthsToDateString(baseDate, 6);
-                    const p3 = addDaysToTodayString(15);
-                    const p4 = addDaysToTodayString(-5);
+                    const p1 = addCalendarMonths(baseDate, 12);
+                    const p2 = addCalendarMonths(baseDate, 6);
+                    const p3 = addCalendarDays(todayCalendarDateString(), 15);
+                    const p4 = addCalendarDays(todayCalendarDateString(), -5);
 
                     return (
                       <div className="sm:col-span-2 flex flex-wrap items-center gap-1.5 pt-1">
@@ -2774,7 +2770,7 @@ export default function AdminDashboardPage() {
                             setSingleEquipForm({
                               ...singleEquipForm,
                               lastServiceDate: val,
-                              nextDueDate: addMonthsToDateString(val, singleEquipForm.serviceIntervalMonths),
+                              nextDueDate: addCalendarMonths(val, singleEquipForm.serviceIntervalMonths),
                             });
                           }}
                           className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
@@ -2792,10 +2788,10 @@ export default function AdminDashboardPage() {
                       </div>
                       {(() => {
                         const baseDate = singleEquipForm.lastServiceDate || toDateInputString(new Date());
-                        const p1 = addMonthsToDateString(baseDate, 12);
-                        const p2 = addMonthsToDateString(baseDate, 6);
-                        const p3 = addDaysToTodayString(15);
-                        const p4 = addDaysToTodayString(-5);
+                        const p1 = addCalendarMonths(baseDate, 12);
+                        const p2 = addCalendarMonths(baseDate, 6);
+                        const p3 = addCalendarDays(todayCalendarDateString(), 15);
+                        const p4 = addCalendarDays(todayCalendarDateString(), -5);
 
                         return (
                           <div className="sm:col-span-2 flex flex-wrap items-center gap-1.5 pt-1">
@@ -3246,7 +3242,7 @@ export default function AdminDashboardPage() {
                             const mos = Number(e.target.value) || 1;
                             const nextDue =
                               editEquipDueDateMode === 'auto'
-                                ? addMonthsToDateString(
+                                ? addCalendarMonths(
                                     editEquipmentModal.lastServiceDate || toDateInputString(new Date()),
                                     mos
                                   )
@@ -3275,7 +3271,7 @@ export default function AdminDashboardPage() {
                               const interval = Number(editEquipmentModal.serviceIntervalMonths) || 12;
                               const nextDue =
                                 editEquipDueDateMode === 'auto'
-                                  ? addMonthsToDateString(val, interval)
+                                  ? addCalendarMonths(val, interval)
                                   : editEquipmentModal.nextDueDate;
                               setEditEquipmentModal({
                                 ...editEquipmentModal,
@@ -3305,7 +3301,7 @@ export default function AdminDashboardPage() {
                                 onClick={() => {
                                   setEditEquipDueDateMode('auto');
                                   const interval = Number(editEquipmentModal.serviceIntervalMonths) || 12;
-                                  const recomputed = addMonthsToDateString(
+                                  const recomputed = addCalendarMonths(
                                     editEquipmentModal.lastServiceDate || toDateInputString(new Date()),
                                     interval
                                   );
@@ -3354,10 +3350,10 @@ export default function AdminDashboardPage() {
                         {/* Quick Presets Row */}
                         {(() => {
                           const baseServiceDate = editEquipmentModal.lastServiceDate || toDateInputString(new Date());
-                          const preset1Year = addMonthsToDateString(baseServiceDate, 12);
-                          const preset6Mos = addMonthsToDateString(baseServiceDate, 6);
-                          const preset15Days = addDaysToTodayString(15);
-                          const presetOverdue5 = addDaysToTodayString(-5);
+                          const preset1Year = addCalendarMonths(baseServiceDate, 12);
+                          const preset6Mos = addCalendarMonths(baseServiceDate, 6);
+                          const preset15Days = addCalendarDays(todayCalendarDateString(), 15);
+                          const presetOverdue5 = addCalendarDays(todayCalendarDateString(), -5);
 
                           return (
                             <div className="sm:col-span-2 flex flex-wrap items-center gap-1.5 pt-1">
@@ -3676,7 +3672,7 @@ export default function AdminDashboardPage() {
             const interval = Number(eq.serviceIntervalMonths) || 12;
             const normalizedLast = toDateInputString(eq.lastServiceDate);
             const normalizedNext = toDateInputString(eq.nextDueDate);
-            const autoNext = addMonthsToDateString(normalizedLast, interval);
+            const autoNext = addCalendarMonths(normalizedLast, interval);
             const isAuto = !eq.nextDueDate || normalizedNext === autoNext;
             setEditEquipDueDateMode(isAuto ? 'auto' : 'manual');
             const normalizedEq = {

@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import EmberLine from '@/components/home/EmberLine';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { calendarDayDiff, fromDbDate, todayCalendarDateString, toDateInputString } from '@/lib/dates';
 import {
   Printer,
   ArrowLeft,
@@ -75,10 +76,8 @@ function normalizeWhatsAppPhone(rawPhone: string): string {
 
 function calculateAgeDays(dateVal: any): number {
   if (!dateVal) return 0;
-  const d = new Date(dateVal);
-  if (isNaN(d.getTime())) return 0;
-  const diffMs = Date.now() - d.getTime();
-  return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+  const diff = calendarDayDiff(todayCalendarDateString(), fromDbDate(dateVal));
+  return Math.max(0, diff);
 }
 
 export default function ComplianceReportPage() {
@@ -161,14 +160,14 @@ export default function ComplianceReportPage() {
         setLocalAuthority(json.building?.localAuthority || '');
         setFscNumber(json.building?.fscNumber || '');
         setFscValidityDate(
-          json.building?.fscValidityDate ? new Date(json.building.fscValidityDate).toISOString().slice(0, 10) : ''
+          json.building?.fscValidityDate ? toDateInputString(json.building.fscValidityDate) : ''
         );
         setFireNocNumber(json.building?.fireNocNumber || '');
         setFireNocIssueDate(
-          json.building?.fireNocIssueDate ? new Date(json.building.fireNocIssueDate).toISOString().slice(0, 10) : ''
+          json.building?.fireNocIssueDate ? toDateInputString(json.building.fireNocIssueDate) : ''
         );
         setFireNocExpiryDate(
-          json.building?.fireNocExpiryDate ? new Date(json.building.fireNocExpiryDate).toISOString().slice(0, 10) : ''
+          json.building?.fireNocExpiryDate ? toDateInputString(json.building.fireNocExpiryDate) : ''
         );
 
         if (typeof document !== 'undefined' && json.building?.name) {

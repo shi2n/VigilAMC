@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
+import {
+  toDbDate,
+  addCalendarDays,
+  todayCalendarDateString,
+} from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -98,10 +103,10 @@ export async function GET(request: Request) {
     // Detailed metrics if single technician selected
     let techMetrics: any = null;
     if (technicianId && technicianId !== 'ALL') {
-      const now = new Date();
-      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const todayStr = todayCalendarDateString();
+      const startOfToday = toDbDate(todayStr);
+      const sevenDaysAgo = toDbDate(addCalendarDays(todayStr, -7));
+      const thirtyDaysAgo = toDbDate(addCalendarDays(todayStr, -30));
 
       const [
         todayChecks,

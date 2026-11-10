@@ -43,6 +43,7 @@ import {
   generateErrorReportWorkbook,
 } from '@/lib/excelImport';
 import { AdminDictionary, getAdminDictionary } from '@/lib/i18n/admin';
+import { todayCalendarDateString } from '@/lib/dates';
 
 interface ImportModalProps {
   isOpen: boolean;
@@ -443,7 +444,7 @@ export function ImportModal({
     const wb = generateErrorReportWorkbook(selectedType, collectedErrors);
     XLSX.writeFile(
       wb,
-      `Import_Errors_${selectedType}_${new Date().toISOString().slice(0, 10)}.xlsx`
+      `Import_Errors_${selectedType}_${todayCalendarDateString()}.xlsx`
     );
   };
 

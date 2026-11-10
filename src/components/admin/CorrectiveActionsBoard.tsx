@@ -13,6 +13,7 @@ import {
   Layers,
 } from 'lucide-react';
 import type { AdminDictionary } from '@/lib/i18n/admin';
+import { calendarDayDiff, fromDbDate, todayCalendarDateString } from '@/lib/dates';
 
 const STATUS_STEPS = ['OPEN', 'DISPATCHED', 'REPAIRED', 'VERIFIED', 'CLOSED'] as const;
 type CorrectiveStatus = (typeof STATUS_STEPS)[number];
@@ -37,10 +38,11 @@ interface CorrectiveActionsBoardProps {
 }
 
 function computeAgeDays(openedAt: string | Date, closedAt?: string | Date | null): number {
-  const start = new Date(openedAt);
-  const end = closedAt ? new Date(closedAt) : new Date();
-  if (isNaN(start.getTime())) return 0;
-  return Math.max(0, Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+  if (!openedAt) return 0;
+  const startStr = fromDbDate(openedAt);
+  const endStr = closedAt ? fromDbDate(closedAt) : todayCalendarDateString();
+  const diff = calendarDayDiff(endStr, startStr);
+  return Math.max(0, diff);
 }
 
 export function CorrectiveActionsBoard({

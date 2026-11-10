@@ -17,6 +17,7 @@ import {
   Building2,
 } from 'lucide-react';
 import Link from 'next/link';
+import { toDateInputString } from '@/lib/dates';
 
 type SubTab =
   | 'JURISDICTIONS_TEMPLATES'
@@ -104,8 +105,8 @@ export function ComplianceReportManagementView() {
           gstin: ac.gstin || '',
           licenseNumber: ac.licenseNumber || '',
           issuingAuthority: ac.issuingAuthority || '',
-          issueDate: ac.issueDate ? new Date(ac.issueDate).toISOString().slice(0, 10) : '',
-          expiryDate: ac.expiryDate ? new Date(ac.expiryDate).toISOString().slice(0, 10) : '',
+          issueDate: ac.issueDate ? toDateInputString(ac.issueDate) : '',
+          expiryDate: ac.expiryDate ? toDateInputString(ac.expiryDate) : '',
           supportingDocUrl: '',
           verificationStatus: ac.verificationStatus || 'NOT_PROVIDED',
           reviewNotes: '',
