@@ -22,6 +22,8 @@ function isExemptPath(pathname: string): boolean {
   if (
     pathname.startsWith('/_next/') ||
     pathname === '/sw.js' ||
+    pathname === '/sw-field-v2.js' ||
+    pathname.startsWith('/sw-') ||
     pathname === '/manifest.json' ||
     pathname === '/icon.svg' ||
     pathname === '/robots.txt' ||

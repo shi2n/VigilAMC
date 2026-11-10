@@ -207,10 +207,22 @@ export interface TranslationDictionary {
   gpsRecalibrate?: string;
   refreshData?: string;
   appVersion?: string;
+  tasksLoadFailed?: string;
+  retryLoading?: string;
+  offlineSavedDataChip?: string;
+  wrongOriginNotice?: string;
+  wrongOriginOpenApp?: string;
+  wrongOriginFlushing?: string;
 }
 
 export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
   en: {
+    tasksLoadFailed: "Couldn't load tasks",
+    retryLoading: "Retry",
+    offlineSavedDataChip: "Offline · showing saved data",
+    wrongOriginNotice: "Please reopen from the app icon or use the app link",
+    wrongOriginOpenApp: "Open Field App",
+    wrongOriginFlushing: "Preserving saved records...",
     welcomeBack: 'Welcome back',
     myTasksTab: 'My Tasks',
     checklistsTab: 'Checklists',
@@ -363,6 +375,12 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     syncHealth: "Sync Status",
   },
   hi: {
+    tasksLoadFailed: "कार्य लोड नहीं हो सके",
+    retryLoading: "पुनः प्रयास करें",
+    offlineSavedDataChip: "ऑफ़लाइन · सहेजा गया डेटा दिखाया जा रहा है",
+    wrongOriginNotice: "कृपया ऐप आइकन से पुनः खोलें या ऐप लिंक का उपयोग करें",
+    wrongOriginOpenApp: "फ़ील्ड ऐप खोलें",
+    wrongOriginFlushing: "सहेजे गए रिकॉर्ड सुरक्षित किए जा रहे हैं...",
     welcomeBack: 'स्वागत है',
     myTasksTab: 'आज के काम',
     checklistsTab: 'चेकलिस्ट',
@@ -515,6 +533,12 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     syncHealth: "सिंक स्थिति",
   },
   mr: {
+    tasksLoadFailed: "कामे लोड करता आली नाहीत",
+    retryLoading: "पुन्हा प्रयत्न करा",
+    offlineSavedDataChip: "ऑफलाइन · जतन केलेला डेटा दाखवत आहे",
+    wrongOriginNotice: "कृपया अॅप आयकॉनवरून पुन्हा उघडा किंवा अॅप लिंक वापरा",
+    wrongOriginOpenApp: "फील्ड अॅप उघडा",
+    wrongOriginFlushing: "जतन केलेल्या नोंदी सुरक्षित करत आहे...",
     welcomeBack: 'स्वागत आहे',
     myTasksTab: 'आजची कामे',
     checklistsTab: 'चेकलिस्ट',
@@ -667,6 +691,12 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     syncHealth: "सिंक स्थिती",
   },
   gu: {
+    tasksLoadFailed: "કાર્યો લોડ થઈ શક્યા નથી",
+    retryLoading: "ફરી પ્રયાસ કરો",
+    offlineSavedDataChip: "ઑફલાઇન · સાચવેલ ડેટા દર્શાવે છે",
+    wrongOriginNotice: "કૃપા કરીને એપ્લિકેશન આઇકોન પરથી ફરીથી ખોલો અથવા એપ્લિકેશન લિંકનો ઉપયોગ કરો",
+    wrongOriginOpenApp: "ફીલ્ડ એપ્લિકેશન ખોલો",
+    wrongOriginFlushing: "સાચવેલા રેકોર્ડ્સ સાચવી રહ્યા છીએ...",
     welcomeBack: 'સ્વાગત છે',
     myTasksTab: 'આજના કામ',
     checklistsTab: 'ચેકલિસ્ટ',
@@ -819,6 +849,12 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     syncHealth: "સિંક સ્થિતિ",
   },
   ta: {
+    tasksLoadFailed: "பணிகளை ஏற்ற முடியவில்லை",
+    retryLoading: "மீண்டும் முயற்சிக்கவும்",
+    offlineSavedDataChip: "ஆஃப்லைன் · சேமிக்கப்பட்ட தரவு காட்டப்படுகிறது",
+    wrongOriginNotice: "தயவுசெய்து பயன்பாட்டு ஐகானிலிருந்து மீண்டும் திறக்கவும் அல்லது பயன்பாட்டு இணைப்பைப் பயன்படுத்தவும்",
+    wrongOriginOpenApp: "ஃபீல்ட் பயன்பாட்டைத் திறக்கவும்",
+    wrongOriginFlushing: "சேமிக்கப்பட்ட பதிவுகள் பாதுகாக்கப்படுகின்றன...",
     welcomeBack: 'மீண்டும் வருக',
     myTasksTab: 'இன்றைய பணிகள்',
     checklistsTab: 'சரிபார்ப்புப் பட்டியல்',
@@ -971,6 +1007,12 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     syncHealth: "ஒத்திசைவு நிலை",
   },
   te: {
+    tasksLoadFailed: "టాస్క్‌లను లోడ్ చేయడం సాధ్యపడలేదు",
+    retryLoading: "మళ్ళీ ప్రయత్నించండి",
+    offlineSavedDataChip: "ఆఫ్‌లైన్ · సేవ్ చేసిన డేటాను చూపుతోంది",
+    wrongOriginNotice: "దయచేసి యాప్ ఐకాన్ నుండి మళ్ళీ తెరవండి లేదా యాప్ లింక్‌ను ఉపయోగించండి",
+    wrongOriginOpenApp: "ఫీల్డ్ యాప్‌ను తెరవండి",
+    wrongOriginFlushing: "సేవ్ చేసిన రికార్డులను భద్రపరుస్తున్నాము...",
     welcomeBack: 'స్వాగతం',
     myTasksTab: 'నేటి పనులు',
     checklistsTab: 'చెక్లిస్ట్',
@@ -1123,6 +1165,12 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     syncHealth: "సింక్ స్థితి",
   },
   kn: {
+    tasksLoadFailed: "ಕಾರ್ಯಗಳನ್ನು ಲೋಡ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ",
+    retryLoading: "ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ",
+    offlineSavedDataChip: "ಆಫ್‌ಲೈನ್ · ಉಳಿಸಿದ ಡೇಟಾವನ್ನು ತೋರಿಸಲಾಗುತ್ತಿದೆ",
+    wrongOriginNotice: "ದಯವಿಟ್ಟು ಅಪ್ಲಿಕೇಶನ್ ಐಕಾನ್‌ನಿಂದ ಪುನಃ ತೆರೆಯಿರಿ ಅಥವಾ ಅಪ್ಲಿಕೇಶನ್ ಲಿಂಕ್ ಬಳಸಿ",
+    wrongOriginOpenApp: "ಫೀಲ್ಡ್ ಅಪ್ಲಿಕೇಶನ್ ತೆರೆಯಿರಿ",
+    wrongOriginFlushing: "ಉಳಿಸಲಾದ ದಾಖಲೆಗಳನ್ನು ಸಂರಕ್ಷಿಸಲಾಗುತ್ತಿದೆ...",
     welcomeBack: 'ಸ್ವಾಗತ',
     myTasksTab: 'ಇಂದಿನ ಕೆಲಸಗಳು',
     checklistsTab: 'ಪರಿಶೀಲನಾ ಪಟ್ಟಿ',
@@ -1275,6 +1323,12 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     syncHealth: "ಸಿಂಕ್ ಸ್ಥಿತಿ",
   },
   ml: {
+    tasksLoadFailed: "ടാസ്കുകൾ ലോഡുചെയ്യാനായില്ല",
+    retryLoading: "വീണ്ടും ശ്രമിക്കുക",
+    offlineSavedDataChip: "ഓഫ്‌ലൈൻ · സംരക്ഷിച്ച ഡാറ്റ കാണിക്കുന്നു",
+    wrongOriginNotice: "ദയവായി ആപ്പ് ഐക്കണിൽ നിന്ന് വീണ്ടും തുറക്കുക അല്ലെങ്കിൽ ആപ്പ് ലിങ്ക് ഉപയോഗിക്കുക",
+    wrongOriginOpenApp: "ഫീൽഡ് ആപ്പ് തുറക്കുക",
+    wrongOriginFlushing: "സംരക്ഷിച്ച രേഖകൾ സംരക്ഷിക്കുന്നു...",
     welcomeBack: 'സ്വാഗതം',
     myTasksTab: 'ഇന്നത്തെ ജോലികൾ',
     checklistsTab: 'ചെക്ക്‌ലിസ്റ്റ്',
@@ -1427,6 +1481,12 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     syncHealth: "സിങ്ക് അവസ്ഥ",
   },
   bn: {
+    tasksLoadFailed: "টাস্ক লোড করা যায়নি",
+    retryLoading: "আবার চেষ্টা করুন",
+    offlineSavedDataChip: "অফলাইন · সংরক্ষিত ডেটা দেখানো হচ্ছে",
+    wrongOriginNotice: "দয়া করে অ্যাপ আইকন থেকে পুনরায় খুলুন বা অ্যাপ লিঙ্কটি ব্যবহার করুন",
+    wrongOriginOpenApp: "ফিল্ড অ্যাপ খুলুন",
+    wrongOriginFlushing: "সংরক্ষিত রেকর্ড সংরক্ষণ করা হচ্ছে...",
     welcomeBack: 'স্বাগতম',
     myTasksTab: 'আজকের কাজ',
     checklistsTab: 'চেকলিস্ট',
@@ -1579,6 +1639,12 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     syncHealth: "সিঙ্ক অবস্থা",
   },
   pa: {
+    tasksLoadFailed: "ਕੰਮ ਲੋਡ ਨਹੀਂ ਕੀਤੇ ਜਾ ਸਕੇ",
+    retryLoading: "ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ",
+    offlineSavedDataChip: "ਔਫਲਾਈਨ · ਸੁਰੱਖਿਅਤ ਕੀਤਾ ਡੇਟਾ ਦਿਖਾਇਆ ਜਾ ਰਿਹਾ ਹੈ",
+    wrongOriginNotice: "ਕਿਰਪਾ ਕਰਕੇ ਐਪ ਆਈਕਨ ਤੋਂ ਦੁਬਾਰਾ ਖੋਲ੍ਹੋ ਜਾਂ ਐਪ ਲਿੰਕ ਦੀ ਵਰਤੋਂ ਕਰੋ",
+    wrongOriginOpenApp: "ਫੀਲਡ ਐਪ ਖੋਲ੍ਹੋ",
+    wrongOriginFlushing: "ਸੁਰੱਖਿਅਤ ਕੀਤੇ ਰਿਕਾਰਡ ਸੰਭਾਲੇ ਜਾ ਰਹੇ ਹਨ...",
     welcomeBack: 'ਜੀ ਆਇਆਂ ਨੂੰ',
     myTasksTab: 'ਅੱਜ ਦੇ ਕੰਮ',
     checklistsTab: 'ਚੈੱਕਲਿਸਟ',

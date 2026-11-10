@@ -380,11 +380,12 @@ export default function AdminDashboardPage() {
       const payload = {
         equipmentId: editEquipmentModal.id,
         buildingId: editEquipmentModal.buildingId || editEquipmentModal.building?.id,
+        assignedToId: assignTaskForm.technicianId,
         technicianId: assignTaskForm.technicianId,
         type: assignTaskForm.type,
         dueDate: assignTaskForm.dueDate,
         notes: assignTaskForm.notes,
-        status: 'OPEN', // Non-negotiable Rule 5
+        status: 'ASSIGNED',
       };
 
       const res = await fetch('/api/work-orders', {
@@ -3792,7 +3793,7 @@ export default function AdminDashboardPage() {
                               <ClipboardList className="w-4 h-4" />
                               <h4 className="font-bold text-sm text-[#1C1917]">Create Repair Task</h4>
                             </div>
-                            <span className="text-[10px] text-slate-500 font-medium">Status created as OPEN</span>
+                            <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold uppercase border border-emerald-200">Status: ASSIGNED</span>
                           </div>
 
                           {techniciansList.length === 0 ? (

@@ -599,7 +599,7 @@ export function WorkOrdersView({
                           <option value="">Unassigned</option>
                           {technicians.map((t) => (
                             <option key={t.id} value={t.id}>
-                              {t.fullName || t.email}
+                              {t.fullName || t.email}{t.employeeId && t.employeeId !== '—' ? ` · ${t.employeeId}` : ''}
                             </option>
                           ))}
                         </select>
@@ -723,7 +723,7 @@ export function WorkOrdersView({
                       <option value="">Unassigned</option>
                       {technicians.map((t) => (
                         <option key={t.id} value={t.id}>
-                          {t.fullName} ({t.status})
+                          {t.fullName || t.email}{t.employeeId && t.employeeId !== '—' ? ` · ${t.employeeId}` : ''} ({t.status || 'ACTIVE'})
                         </option>
                       ))}
                     </select>
