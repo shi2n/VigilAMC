@@ -14,15 +14,13 @@ import {
   CheckCircle2,
   Trash2,
   CreditCard,
-  TrendingUp,
   Settings as SettingsIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AlertsSettingsView } from './AlertsSettingsView';
 import { AdminUsersView } from './AdminUsersView';
 import { SubscriptionManager } from './SubscriptionManager';
-import { InvestorLeadsView } from './InvestorLeadsView';
-import { ALL_INDIAN_LANGUAGES } from '@/lib/i18n/admin';
+import { ALL_INDIAN_LANGUAGES, AdminDictionary } from '@/lib/i18n/admin';
 import { compressImageToDataUrl, uploadCompressedPhoto } from '@/lib/compressImage';
 
 export type SettingsSubTab =
@@ -30,7 +28,6 @@ export type SettingsSubTab =
   | 'TEAM'
   | 'ALERTS'
   | 'SUBSCRIPTION'
-  | 'LEADS'
   | 'PREFERENCES'
   // Backward compatibility aliases
   | 'AGENCY'
@@ -57,6 +54,9 @@ interface SettingsViewProps {
   initialPlan?: any;
   onRefreshDashboard?: () => Promise<void> | void;
   onNavigateTab?: (tab: any) => void;
+  currentLanguage?: string;
+  onLanguageChange?: (lang: string) => void;
+  t?: AdminDictionary;
 }
 
 export function SettingsView({
@@ -77,6 +77,9 @@ export function SettingsView({
   initialPlan,
   onRefreshDashboard,
   onNavigateTab,
+  currentLanguage,
+  onLanguageChange,
+  t,
 }: SettingsViewProps) {
   const [internalSubTab, setInternalSubTab] = useState<SettingsSubTab>('PROFILE');
   const [whiteLabelEnabled, setWhiteLabelEnabled] = useState<boolean>(true);
@@ -84,15 +87,26 @@ export function SettingsView({
   const [refillServiceFee, setRefillServiceFee] = useState<string>('650');
   const [selectedLang, setSelectedLang] = useState<string>(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('vigilamc_admin_language') || userProfile?.preferredLanguage || 'en';
+      return localStorage.getItem('vigilamc_admin_language') || userProfile?.preferredLanguage || currentLanguage || 'en';
     }
-    return userProfile?.preferredLanguage || 'en';
+    return userProfile?.preferredLanguage || currentLanguage || 'en';
   });
+
+  useEffect(() => {
+    if (currentLanguage) {
+      setSelectedLang(currentLanguage);
+    }
+  }, [currentLanguage]);
 
   const handleSelectLanguage = async (code: string) => {
     setSelectedLang(code);
+    if (onLanguageChange) {
+      onLanguageChange(code);
+    }
     try {
-      localStorage.setItem('vigilamc_admin_language', code);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('vigilamc_admin_language', code);
+      }
       await fetch('/api/auth/me', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -108,7 +122,7 @@ export function SettingsView({
 
   const rawSubTab = externalSubTab || internalSubTab;
   const activeSubTab: SettingsSubTab =
-    rawSubTab === 'AGENCY' || rawSubTab === 'BRANDING'
+    rawSubTab === 'AGENCY' || rawSubTab === 'BRANDING' || (rawSubTab as string) === 'LEADS'
       ? 'PROFILE'
       : rawSubTab === 'ADMINS'
       ? 'TEAM'
@@ -121,13 +135,12 @@ export function SettingsView({
     setInternalSubTab(tab);
   };
 
-  // 6 Owner-Approved Settings Tabs: Profile · Team · Alerts · Subscription · Website Leads · Preferences
+  // 5 Owner-Approved Settings Tabs: Profile · Team · Alerts · Subscription · Preferences
   const agencyTabs = [
     { id: 'PROFILE' as SettingsSubTab, label: 'Profile', icon: Building2 },
     { id: 'TEAM' as SettingsSubTab, label: 'Team', icon: Users },
     { id: 'ALERTS' as SettingsSubTab, label: 'Alerts', icon: Bell },
     { id: 'SUBSCRIPTION' as SettingsSubTab, label: 'Subscription', icon: CreditCard },
-    { id: 'LEADS' as SettingsSubTab, label: 'Website Leads', icon: TrendingUp },
     { id: 'PREFERENCES' as SettingsSubTab, label: 'Preferences', icon: SettingsIcon },
   ];
 
@@ -749,11 +762,6 @@ export function SettingsView({
           onPlanChanged={onRefreshDashboard}
         />
       )}
-
-      {/* =========================================================================
-          TAB: WEBSITE LEADS / INVESTOR LEADS
-      ========================================================================= */}
-      {activeSubTab === 'LEADS' && <InvestorLeadsView />}
 
       {/* =========================================================================
           TAB: PREFERENCES (LANGUAGE, COMPLIANCE CYCLES, IMPORT & EXPORT)

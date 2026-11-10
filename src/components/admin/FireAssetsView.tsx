@@ -4,6 +4,7 @@ import React from 'react';
 import { formatCalendarDate, getCalendarDayDiff, getCalendarMonthDiff } from '@/lib/dateUtils';
 import { motion, useReducedMotion } from 'motion/react';
 import { Layers, Search, Edit, Trash2, MapPin, FileSpreadsheet, Plus } from 'lucide-react';
+import { AdminDictionary } from '@/lib/i18n/admin';
 
 interface FireAssetsViewProps {
   equipmentsList: any[];
@@ -16,6 +17,7 @@ interface FireAssetsViewProps {
   onDeleteEquipment: (id: string, qrCode: string) => void;
   onOpenExport: () => void;
   onOpenImport?: () => void;
+  t?: AdminDictionary;
 }
 
 export function FireAssetsView({
@@ -29,6 +31,7 @@ export function FireAssetsView({
   onDeleteEquipment,
   onOpenExport,
   onOpenImport,
+  t,
 }: FireAssetsViewProps) {
   const prefersReducedMotion = useReducedMotion();
 
@@ -42,7 +45,7 @@ export function FireAssetsView({
               <Layers className="w-4 h-4" />
             </div>
             <h2 className="text-base sm:text-lg font-bold text-[#1C1917] tracking-tight">
-              Fire Equipment Schedule &amp; Inventory
+              {t?.navEquipment || 'Fire Equipment'} Schedule &amp; Inventory
             </h2>
             <span className="px-2.5 py-0.5 rounded-full bg-[#FFF0E6] text-[#C2410C] border border-[#C2410C]/30 text-xs font-semibold">
               {equipmentsList.length} Units
@@ -60,7 +63,7 @@ export function FireAssetsView({
             onChange={(e) => setEquipFilterBuilding(e.target.value)}
             className="bg-white border border-[#FED7AA] rounded-xl px-3 py-2 text-xs text-[#1C1917] font-medium focus:outline-none focus:border-[#C2410C] shadow-xs w-full sm:w-auto"
           >
-            <option value="ALL">All Buildings</option>
+            <option value="ALL">{t?.filterAll || 'All'} Buildings</option>
             {buildings.map((b: any) => (
               <option key={b.id} value={b.id}>
                 {b.name}
@@ -88,7 +91,7 @@ export function FireAssetsView({
               title="Import Fire Equipment from Excel (.xlsx)"
             >
               <FileSpreadsheet className="w-4 h-4" />
-              <span>Import Equipment</span>
+              <span>{t?.actionImport ? `${t.actionImport} (${t?.navEquipment || 'Equipment'})` : 'Import Equipment'}</span>
             </button>
           )}
 
@@ -98,7 +101,7 @@ export function FireAssetsView({
             title="Export Fire Equipment to Excel (.xlsx)"
           >
             <FileSpreadsheet className="w-4 h-4" />
-            <span>Export Equipment</span>
+            <span>{t?.actionExport || 'Export Equipment'}</span>
           </button>
         </div>
       </div>

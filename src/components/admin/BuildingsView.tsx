@@ -18,6 +18,7 @@ import {
   MoreHorizontal,
 } from 'lucide-react';
 import { EmailOverdueModal } from './EmailOverdueModal';
+import { AdminDictionary } from '@/lib/i18n/admin';
 
 interface BuildingsViewProps {
   buildings: any[];
@@ -41,6 +42,7 @@ interface BuildingsViewProps {
   onOpenFloorPlans?: (b: any) => void;
   clientFilterName?: string | null;
   onClearClientFilter?: () => void;
+  t?: AdminDictionary;
 }
 
 export function BuildingsView({
@@ -59,6 +61,7 @@ export function BuildingsView({
   onOpenFloorPlans,
   clientFilterName,
   onClearClientFilter,
+  t,
 }: BuildingsViewProps) {
   const [overdueModalBuilding, setOverdueModalBuilding] = React.useState<{
     id: string;
@@ -93,14 +96,14 @@ export function BuildingsView({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
         <div className="p-4 glass-panel-dense rounded-2xl shadow-sm space-y-1">
           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-            Total Buildings
+            {t?.kpiTotalBuildings || 'Total Buildings'}
           </span>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl sm:text-3xl font-black text-[#1C1917]">
               {summary.totalBuildings}
             </span>
             <span className="text-xs text-slate-500 font-medium">
-              ({summary.totalEquipments} assets)
+              ({summary.totalEquipments} {t?.kpiTotalEquipment || 'assets'})
             </span>
           </div>
         </div>
@@ -121,7 +124,7 @@ export function BuildingsView({
         <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 shadow-sm space-y-1">
           <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-            Due Soon (&lt;30d)
+            {t?.kpiDueSoon || 'Due Soon (<30d)'}
           </span>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl sm:text-3xl font-black text-amber-900">
@@ -134,7 +137,7 @@ export function BuildingsView({
         <div className="p-4 rounded-2xl bg-rose-50/70 border border-rose-200 shadow-sm space-y-1">
           <span className="text-[11px] font-bold text-rose-800 uppercase tracking-wider flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-red-500"></span>
-            Overdue
+            {t?.kpiOverdueChecks || 'Overdue'}
           </span>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl sm:text-3xl font-black text-rose-900">
@@ -152,7 +155,7 @@ export function BuildingsView({
           <div className="flex items-center gap-2.5">
             <Building2 className="w-5 h-5 text-[#C2410C]" />
             <h2 className="text-sm sm:text-base font-bold text-[#1C1917] tracking-tight">
-              Managed Buildings &amp; Societies
+              {t?.navClients || 'Managed Buildings & Societies'}
             </h2>
             <span className="px-2.5 py-0.5 rounded-full bg-[#FFF0E6] text-[#C2410C] border border-[#C2410C]/30 text-xs font-semibold">
               {buildings.length} Registered
@@ -167,7 +170,7 @@ export function BuildingsView({
                 title="Import Buildings from Excel (.xlsx)"
               >
                 <FileSpreadsheet className="w-4 h-4" />
-                <span>Import Buildings</span>
+                <span>{t?.actionImport ? `${t.actionImport} (${t?.navClients || 'Buildings'})` : 'Import Buildings'}</span>
               </button>
             )}
 
@@ -177,7 +180,7 @@ export function BuildingsView({
               title="Export Buildings to Excel (.xlsx)"
             >
               <FileSpreadsheet className="w-4 h-4" />
-              <span>Export Excel</span>
+              <span>{t?.actionExport || 'Export Excel'}</span>
             </button>
 
             <button
@@ -185,7 +188,7 @@ export function BuildingsView({
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white text-xs font-bold shadow-sm transition-colors"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
-              <span>Add Client &amp; Building</span>
+              <span>{t?.actionAddBuilding || 'Add Client & Building'}</span>
             </button>
           </div>
         </div>

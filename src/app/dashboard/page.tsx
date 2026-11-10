@@ -228,6 +228,39 @@ export default function AdminDashboardPage() {
   const [isRevalidating, setIsRevalidating] = useState(false);
   const [expandedBuildingId, setExpandedBuildingId] = useState<string | null>(null);
 
+  // Reactive Dashboard Language (synced from localStorage -> user profile -> fallback 'en')
+  const [currentLanguage, setCurrentLanguage] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('vigilamc_admin_language') || 'en';
+    }
+    return 'en';
+  });
+
+  const t = useMemo(() => getAdminDictionary(currentLanguage), [currentLanguage]);
+
+  useEffect(() => {
+    const stored = typeof window !== 'undefined' ? localStorage.getItem('vigilamc_admin_language') : null;
+    if (!stored && data?.profile?.preferredLanguage) {
+      setCurrentLanguage(data.profile.preferredLanguage);
+    }
+  }, [data?.profile?.preferredLanguage]);
+
+  const handleLanguageChange = useCallback((code: string) => {
+    setCurrentLanguage(code);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('vigilamc_admin_language', code);
+      } catch {}
+    }
+    setData((prev: any) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        profile: prev.profile ? { ...prev.profile, preferredLanguage: code } : prev.profile,
+      };
+    });
+  }, []);
+
   // Theme Mode: Strictly light theme per brand guidelines
   useEffect(() => {
     document.documentElement.classList.remove('dark');
@@ -1137,29 +1170,29 @@ export default function AdminDashboardPage() {
   // Tab definitions & metadata
   const TAB_CONFIG: Record<string, { label: string; icon: any; badge?: number | string }> = useMemo(
     () => ({
-      OVERVIEW: { label: 'Home', icon: LayoutDashboard },
-      CLIENTS_SITES: { label: 'Buildings', icon: Building2 },
-      FIRE_EQUIPMENT: { label: 'Equipment', icon: Flame },
+      OVERVIEW: { label: t.navOverview || 'Home', icon: LayoutDashboard },
+      CLIENTS_SITES: { label: t.navClients || 'Buildings', icon: Building2 },
+      FIRE_EQUIPMENT: { label: t.navEquipment || 'Equipment', icon: Flame },
       INSPECTIONS_WORK: {
-        label: 'Inspections & Repairs',
+        label: t.navInspections || 'Inspections & Repairs',
         icon: CheckCircle2,
         badge: liveOpenRepairsCount > 0 ? liveOpenRepairsCount : undefined,
       },
-      FIELD_TEAM: { label: 'Technicians', icon: Users },
-      CLIENT_PORTAL: { label: 'Client Login', icon: ShieldCheck },
-      REPORTS: { label: 'Reports', icon: FileText },
-      SETTINGS: { label: 'Settings', icon: SettingsIcon },
+      FIELD_TEAM: { label: t.navFieldTeam || 'Technicians', icon: Users },
+      CLIENT_PORTAL: { label: t.portalNavTab || 'Client Login', icon: ShieldCheck },
+      REPORTS: { label: t.navReports || 'Reports', icon: FileText },
+      SETTINGS: { label: t.navSettings || 'Settings', icon: SettingsIcon },
       // Legacy alias mappings
-      HOME: { label: 'Home', icon: LayoutDashboard },
-      SITES: { label: 'Buildings', icon: Building2 },
-      BUILDINGS: { label: 'Buildings', icon: Building2 },
-      EQUIPMENT: { label: 'Equipment', icon: Flame },
-      INSPECTIONS: { label: 'Inspections & Repairs', icon: CheckCircle2 },
-      REPAIRS: { label: 'Inspections & Repairs', icon: CheckCircle2 },
-      TECHNICIANS: { label: 'Technicians', icon: Users },
-      CLIENT_LOGIN: { label: 'Client Login', icon: ShieldCheck },
+      HOME: { label: t.navOverview || 'Home', icon: LayoutDashboard },
+      SITES: { label: t.navClients || 'Buildings', icon: Building2 },
+      BUILDINGS: { label: t.navClients || 'Buildings', icon: Building2 },
+      EQUIPMENT: { label: t.navEquipment || 'Equipment', icon: Flame },
+      INSPECTIONS: { label: t.navInspections || 'Inspections & Repairs', icon: CheckCircle2 },
+      REPAIRS: { label: t.navInspections || 'Inspections & Repairs', icon: CheckCircle2 },
+      TECHNICIANS: { label: t.navFieldTeam || 'Technicians', icon: Users },
+      CLIENT_LOGIN: { label: t.portalNavTab || 'Client Login', icon: ShieldCheck },
     }),
-    [liveOpenRepairsCount]
+    [liveOpenRepairsCount, t]
   );
 
   // Open or switch to a section tab (A2 & A3: 6-tab cap with LRU eviction)
@@ -1602,6 +1635,7 @@ export default function AdminDashboardPage() {
         userProfile={data?.profile}
         onLogout={handleLogout}
         openRepairsCount={liveOpenRepairsCount}
+        t={t}
       />
 
       {/* Main Content Area */}
@@ -1623,14 +1657,14 @@ export default function AdminDashboardPage() {
                 <span className="text-xs font-semibold text-[#C2410C]">VigilAMC</span>
                 <span className="text-slate-400">/</span>
                 <h1 className="text-lg sm:text-xl font-black text-[#1C1917] tracking-tight">
-                  {(activeTab === 'OVERVIEW' || activeTab === 'HOME') && 'Home'}
-                  {(activeTab === 'CLIENTS_SITES' || activeTab === 'SITES' || activeTab === 'BUILDINGS') && 'Buildings'}
-                  {(activeTab === 'FIRE_EQUIPMENT' || activeTab === 'EQUIPMENT') && 'Equipment'}
-                  {(activeTab === 'INSPECTIONS_WORK' || activeTab === 'INSPECTIONS' || activeTab === 'REPAIRS') && 'Inspections & Repairs'}
-                  {(activeTab === 'FIELD_TEAM' || activeTab === 'TECHNICIANS') && 'Technicians'}
-                  {activeTab === 'REPORTS' && 'Reports'}
-                  {(activeTab === 'CLIENT_PORTAL' || activeTab === 'CLIENT_LOGIN') && 'Client Login'}
-                  {activeTab === 'SETTINGS' && 'Settings'}
+                  {(activeTab === 'OVERVIEW' || activeTab === 'HOME') && (t.navOverview || 'Home')}
+                  {(activeTab === 'CLIENTS_SITES' || activeTab === 'SITES' || activeTab === 'BUILDINGS') && (t.navClients || 'Buildings')}
+                  {(activeTab === 'FIRE_EQUIPMENT' || activeTab === 'EQUIPMENT') && (t.navEquipment || 'Equipment')}
+                  {(activeTab === 'INSPECTIONS_WORK' || activeTab === 'INSPECTIONS' || activeTab === 'REPAIRS') && (t.navInspections || 'Inspections & Repairs')}
+                  {(activeTab === 'FIELD_TEAM' || activeTab === 'TECHNICIANS') && (t.navFieldTeam || 'Technicians')}
+                  {activeTab === 'REPORTS' && (t.navReports || 'Reports')}
+                  {(activeTab === 'CLIENT_PORTAL' || activeTab === 'CLIENT_LOGIN') && (t.portalNavTab || 'Client Login')}
+                  {activeTab === 'SETTINGS' && (t.navSettings || 'Settings')}
                 </h1>
                 {isRevalidating && (
                   <span title="Syncing latest data..." className="inline-flex items-center ml-1">
@@ -1838,7 +1872,7 @@ export default function AdminDashboardPage() {
                 buildings={buildings}
                 attentionDigest={data?.attentionDigest || []}
                 analytics={data?.analytics}
-                t={getAdminDictionary(data?.profile?.preferredLanguage || 'en')}
+                t={t}
                 onNavigateTab={handleOpenTab}
                 onAddEquipment={() => {
                   if (buildings.length > 0) {
@@ -1947,6 +1981,7 @@ export default function AdminDashboardPage() {
                     onOpenFloorPlans={(b) => setFloorPlansBuilding(b)}
                     clientFilterName={clientFilter?.name || null}
                     onClearClientFilter={() => setClientFilter(null)}
+                    t={t}
                     onEditEquipment={(eq) => {
                       ensureTechniciansLoaded();
                       setAssignTaskOpen(false);
@@ -1987,7 +2022,7 @@ export default function AdminDashboardPage() {
                       setClientsSitesSubTab('BUILDINGS');
                     }}
                     onOpenClientPortal={(clientId) => handleOpenTab('CLIENT_PORTAL')}
-                    t={getAdminDictionary(data?.profile?.preferredLanguage || 'en')}
+                    t={t}
                   />
                 )}
               </div>
@@ -2046,6 +2081,7 @@ export default function AdminDashboardPage() {
                   onDeleteEquipment={handleDeleteEquipment}
                   onOpenExport={() => handleOpenExport('FIRE_ASSETS')}
                   onOpenImport={() => handleOpenImport('FIRE_ASSETS')}
+                  t={t}
                 />
               </div>
             )}
@@ -2205,6 +2241,7 @@ export default function AdminDashboardPage() {
                     buildings={data?.buildings || []}
                     equipments={equipmentsList}
                     onRefreshDashboard={() => refreshDashboard({ silent: true })}
+                    t={t}
                   />
                 )}
 
@@ -2217,7 +2254,7 @@ export default function AdminDashboardPage() {
                       setPrefillFinding(prefill);
                       setInspectionsWorkSubTab('FINDINGS');
                     }}
-                    t={getAdminDictionary(data?.profile?.preferredLanguage || 'en')}
+                    t={t}
                   />
                 )}
 
@@ -2231,7 +2268,7 @@ export default function AdminDashboardPage() {
                     onRefreshDashboard={() => refreshDashboard({ silent: true })}
                     prefillFinding={prefillFinding}
                     onClearPrefill={() => setPrefillFinding(null)}
-                    t={getAdminDictionary(data?.profile?.preferredLanguage || 'en')}
+                    t={t}
                   />
                 )}
 
@@ -2242,7 +2279,7 @@ export default function AdminDashboardPage() {
                     showToast={showToast}
                     onRefreshDashboard={() => refreshDashboard({ silent: true })}
                     onNavigateToWorkOrders={() => setInspectionsWorkSubTab('REPAIRS')}
-                    t={getAdminDictionary(data?.profile?.preferredLanguage || 'en')}
+                    t={t}
                   />
                 )}
 
@@ -2301,7 +2338,7 @@ export default function AdminDashboardPage() {
                                 onRefreshDashboard={() => refreshDashboard({ silent: true })}
                                 prefillFinding={prefillFinding}
                                 onClearPrefill={() => setPrefillFinding(null)}
-                                t={getAdminDictionary(data?.profile?.preferredLanguage || 'en')}
+                                t={t}
                               />
                             </div>
                           )}
@@ -2375,7 +2412,7 @@ export default function AdminDashboardPage() {
                     initialPlan={subscriptionData?.plan}
                     agencyName={company?.name}
                     onRefreshDashboard={() => refreshDashboard({ silent: true })}
-                    t={getAdminDictionary(data?.profile?.preferredLanguage || 'en')}
+                    t={t}
                   />
                 )}
 
@@ -2451,6 +2488,9 @@ export default function AdminDashboardPage() {
                 initialPlan={subscriptionData?.plan}
                 onRefreshDashboard={() => refreshDashboard({ silent: true })}
                 onNavigateTab={handleOpenTab}
+                currentLanguage={currentLanguage}
+                onLanguageChange={handleLanguageChange}
+                t={t}
               />
             )}
                 </div>
@@ -2464,7 +2504,7 @@ export default function AdminDashboardPage() {
           isOpen={guideModalOpen}
           onClose={() => setGuideModalOpen(false)}
           onNavigateTab={(tab) => handleOpenTab(tab)}
-          t={getAdminDictionary(data?.profile?.preferredLanguage || 'en')}
+          t={t}
         />
 
         {/* Excel Export Dialog */}
@@ -2484,7 +2524,7 @@ export default function AdminDashboardPage() {
           onSuccess={() => {
             refreshDashboard({ silent: true });
           }}
-          t={getAdminDictionary(data?.profile?.preferredLanguage || 'en')}
+          t={t}
         />
 
       {/* =========================================================================
@@ -3956,7 +3996,7 @@ export default function AdminDashboardPage() {
             setEditEquipmentModal(normalizedEq);
           }}
           showToast={showToast}
-          t={getAdminDictionary(data?.profile?.preferredLanguage || 'en')}
+          t={t}
         />
       )}
 

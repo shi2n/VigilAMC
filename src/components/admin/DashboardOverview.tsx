@@ -275,7 +275,7 @@ export function DashboardOverview({
           }`}
         >
           <div className="flex items-center justify-between text-[#44403C] mb-2">
-            <span className="text-xs font-semibold">Overdue equipment</span>
+            <span className="text-xs font-semibold">{t.kpiOverdueChecks || 'Overdue equipment'}</span>
             <div
               className={`p-2 rounded-xl ${
                 kpis.overdueCount > 0
@@ -305,7 +305,7 @@ export function DashboardOverview({
           className="glass-panel p-5 rounded-2xl hover:border-[#EA580C]/45 transition-colors duration-150 cursor-pointer group"
         >
           <div className="flex items-center justify-between text-[#44403C] mb-2">
-            <span className="text-xs font-semibold">Due in 30 days</span>
+            <span className="text-xs font-semibold">{t.kpiDueSoon || 'Due in 30 days'}</span>
             <div className="p-2 rounded-xl bg-[#FFF0E6] text-[#D97706] border border-[#FED7AA]">
               <Clock className="w-4 h-4" />
             </div>
@@ -325,7 +325,7 @@ export function DashboardOverview({
           className="glass-panel p-5 rounded-2xl hover:border-[#EA580C]/45 transition-colors duration-150 cursor-pointer group"
         >
           <div className="flex items-center justify-between text-[#44403C] mb-2">
-            <span className="text-xs font-semibold">Open repairs</span>
+            <span className="text-xs font-semibold">{t.kpiOpenRepairs || 'Open repairs'}</span>
             <div className="p-2 rounded-xl bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA]">
               <Wrench className="w-4 h-4" />
             </div>
@@ -345,7 +345,7 @@ export function DashboardOverview({
           className="glass-panel p-5 rounded-2xl hover:border-[#EA580C]/45 transition-colors duration-150 cursor-pointer group"
         >
           <div className="flex items-center justify-between text-[#44403C] mb-2">
-            <span className="text-xs font-semibold">Inspections this week</span>
+            <span className="text-xs font-semibold">{t.chartSeriesInspections || 'Inspections this week'}</span>
             <div className="p-2 rounded-xl bg-emerald-50 text-[#059669] border border-[#059669]/20">
               <CheckCircle2 className="w-4 h-4" />
             </div>
@@ -371,7 +371,7 @@ export function DashboardOverview({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-display text-sm sm:text-base font-bold text-[#1C1917]">
-                Compliance &amp; Field Velocity Trend
+                {t.chartTitle || 'Compliance & Field Velocity Trend'}
               </h3>
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#059669]/12 text-[#059669] border border-[#059669]/25">
                 <TrendingUp className="w-3 h-3" />
@@ -379,7 +379,7 @@ export function DashboardOverview({
               </span>
             </div>
             <p className="text-xs text-[#44403C] mt-0.5">
-              Switch KPI series or time window to inspect agency audit throughput
+              {t.chartSubtitle || 'Switch KPI series or time window to inspect agency audit throughput'}
             </p>
           </div>
 
@@ -392,10 +392,10 @@ export function DashboardOverview({
               onChange={(e) => setSelectedMetric(e.target.value as MetricKey)}
               className="glass-input rounded-xl px-3 py-1.5 text-xs font-bold text-[#1C1917]"
             >
-              <option value="INSPECTIONS">Field Inspections</option>
-              <option value="COMPLIANCE">Compliance Rate (%)</option>
-              <option value="REPAIRS">Open Repair Backlog</option>
-              <option value="ASSETS_COVERED">Active Assets Covered</option>
+              <option value="INSPECTIONS">{t.chartSeriesInspections || 'Field Inspections'}</option>
+              <option value="COMPLIANCE">{t.chartSeriesCompliance || 'Compliance Rate (%)'}</option>
+              <option value="REPAIRS">{t.chartSeriesRepairs || 'Open Repair Backlog'}</option>
+              <option value="ASSETS_COVERED">{t.chartSeriesAssets || 'Active Assets Covered'}</option>
             </select>
 
             {/* Range Picker Buttons */}
@@ -416,7 +416,7 @@ export function DashboardOverview({
                       : 'text-[#44403C] hover:text-[#1C1917] hover:bg-[#FFF0E6]'
                   }`}
                 >
-                  {rk}
+                  {rk === '7D' ? t.range7D || '7D' : rk === '30D' ? t.range30D || '30D' : rk === '90D' ? t.range90D || '90D' : t.range12M || '12M'}
                 </button>
               ))}
             </div>
@@ -536,7 +536,7 @@ export function DashboardOverview({
               <div className="text-base font-bold text-[#1C1917] tabular-nums">
                 <NumberTicker value={kpis.totalEquipments ?? 0} />
               </div>
-              <div className="text-[11px] text-[#44403C]">Registered fire equipment</div>
+              <div className="text-[11px] text-[#44403C]">{t.kpiTotalEquipment || 'Registered fire equipment'}</div>
             </div>
           </div>
           <ArrowRight className="w-4 h-4 text-[#44403C] group-hover:text-[#C2410C] group-hover:translate-x-0.5 transition-all" />
@@ -554,7 +554,7 @@ export function DashboardOverview({
               <div className="text-base font-bold text-[#1C1917] tabular-nums">
                 <NumberTicker value={kpis.totalBuildings ?? buildings.length} />
               </div>
-              <div className="text-[11px] text-[#44403C]">Facilities &amp; towers</div>
+              <div className="text-[11px] text-[#44403C]">{t.kpiTotalBuildings || 'Facilities & towers'}</div>
             </div>
           </div>
           <ArrowRight className="w-4 h-4 text-[#44403C] group-hover:text-[#C2410C] group-hover:translate-x-0.5 transition-all" />
@@ -572,7 +572,7 @@ export function DashboardOverview({
               <div className="text-base font-bold text-[#1C1917] tabular-nums">
                 <NumberTicker value={kpis.totalClients ?? 0} />
               </div>
-              <div className="text-[11px] text-[#44403C]">Client accounts &amp; RWAs</div>
+              <div className="text-[11px] text-[#44403C]">{t.kpiTotalClients || 'Client accounts & RWAs'}</div>
             </div>
           </div>
           <ArrowRight className="w-4 h-4 text-[#44403C] group-hover:text-[#C2410C] group-hover:translate-x-0.5 transition-all" />
@@ -679,10 +679,10 @@ export function DashboardOverview({
           <div>
             <h3 className="text-base font-bold text-[#1C1917] flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-[#D97706]" />
-              <span>Needs attention</span>
+              <span>{t.digestTitle || 'Needs attention'}</span>
             </h3>
             <p className="text-xs text-[#44403C]">
-              Next 10 fire equipment units due for service or overdue.
+              {t.digestSubtitle || 'Next 10 fire equipment units due for service or overdue.'}
             </p>
           </div>
 
@@ -690,7 +690,7 @@ export function DashboardOverview({
             onClick={() => onNavigateTab('FIRE_EQUIPMENT')}
             className="text-xs font-semibold text-[#C2410C] hover:underline flex items-center gap-1"
           >
-            <span>View all equipment</span>
+            <span>{t.navEquipment ? `${t.navEquipment} →` : 'View all equipment'}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -698,9 +698,9 @@ export function DashboardOverview({
         {needsAttentionList.length === 0 ? (
           <div className="py-12 text-center space-y-3 border border-dashed border-[#FED7AA] rounded-xl bg-[#FFF8F2]/70">
             <CheckCircle2 className="w-8 h-8 text-[#059669] mx-auto" />
-            <h4 className="text-sm font-bold text-[#1C1917]">All equipment is up to date</h4>
+            <h4 className="text-sm font-bold text-[#1C1917]">{t.digestAllClear || 'All equipment is up to date'}</h4>
             <p className="text-xs text-[#44403C] max-w-sm mx-auto">
-              No units are overdue or due within the next 30 days. When an inspection deadline approaches, it will appear here.
+              {t.digestAllClearDesc || 'No units are overdue or due within the next 30 days. When an inspection deadline approaches, it will appear here.'}
             </p>
             {hasEquipment ? null : (
               <button

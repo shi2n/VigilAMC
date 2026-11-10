@@ -18,6 +18,7 @@ import {
   PanelLeftOpen,
 } from 'lucide-react';
 import Link from 'next/link';
+import { AdminDictionary } from '@/lib/i18n/admin';
 
 export type AdminNavTab =
   | 'OVERVIEW'
@@ -51,6 +52,7 @@ interface AdminSidebarProps {
   openRepairsCount?: number;
   isDarkMode?: boolean;
   onToggleDarkMode?: () => void;
+  t?: AdminDictionary;
 }
 
 export function AdminSidebar({
@@ -64,6 +66,7 @@ export function AdminSidebar({
   userProfile,
   onLogout,
   openRepairsCount = 0,
+  t,
 }: AdminSidebarProps) {
   const prefersReducedMotion = useReducedMotion();
   const isMobile = isMobileOpen ?? isOpenMobile ?? false;
@@ -117,22 +120,22 @@ export function AdminSidebar({
     badge?: string | number;
     badgeColor?: string;
   }[] = [
-    { id: 'OVERVIEW', label: 'Home', icon: LayoutDashboard },
-    { id: 'CLIENTS_SITES', label: 'Buildings', icon: Building2 },
-    { id: 'FIRE_EQUIPMENT', label: 'Equipment', icon: Flame },
+    { id: 'OVERVIEW', label: t?.navOverview || 'Home', icon: LayoutDashboard },
+    { id: 'CLIENTS_SITES', label: t?.navClients || 'Buildings', icon: Building2 },
+    { id: 'FIRE_EQUIPMENT', label: t?.navEquipment || 'Equipment', icon: Flame },
     {
       id: 'INSPECTIONS_WORK',
-      label: 'Inspections & Repairs',
+      label: t?.navInspections || 'Inspections & Repairs',
       icon: CheckCircle2,
       badge: openRepairsCount > 0 ? openRepairsCount : undefined,
       badgeColor: 'bg-[#DC2626] text-white',
     },
-    { id: 'FIELD_TEAM', label: 'Technicians', icon: Users },
-    { id: 'REPORTS', label: 'Reports', icon: FileText },
-    { id: 'CLIENT_PORTAL', label: 'Client Login', icon: ShieldCheck },
+    { id: 'FIELD_TEAM', label: t?.navFieldTeam || 'Technicians', icon: Users },
+    { id: 'REPORTS', label: t?.navReports || 'Reports', icon: FileText },
+    { id: 'CLIENT_PORTAL', label: t?.portalNavTab || 'Client Login', icon: ShieldCheck },
     {
       id: 'SETTINGS',
-      label: 'Settings',
+      label: t?.navSettings || 'Settings',
       icon: Settings,
     },
   ];

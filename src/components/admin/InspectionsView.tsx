@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { compressImageToDataUrl, uploadCompressedPhoto } from '@/lib/compressImage';
+import { AdminDictionary } from '@/lib/i18n/admin';
 
 interface InspectionsViewProps {
   showToast: (msg: string) => void;
@@ -23,6 +24,7 @@ interface InspectionsViewProps {
   buildings?: any[];
   equipments?: any[];
   onRefreshDashboard?: () => Promise<void> | void;
+  t?: AdminDictionary;
 }
 
 export function InspectionsView({
@@ -33,6 +35,7 @@ export function InspectionsView({
   buildings = [],
   equipments = [],
   onRefreshDashboard,
+  t,
 }: InspectionsViewProps) {
   const [inspections, setInspections] = useState<any[]>(initialInspections || []);
   const [technicians, setTechnicians] = useState<any[]>(initialTechnicians || []);
@@ -212,9 +215,9 @@ export function InspectionsView({
       {/* Plain Language Subtitle & Help (§8.0) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#FED7AA]">
         <div>
-          <h2 className="text-lg sm:text-xl font-bold text-[#1C1917]">Field Inspections</h2>
+          <h2 className="text-lg sm:text-xl font-bold text-[#1C1917]">{t?.navInspections || 'Field Inspections'}</h2>
           <p className="text-xs text-[#44403C]">
-            Every inspection your technicians completed on-site — results, photos, and proof of visit.
+            {t?.inspectionsSubtitle || 'Every inspection your technicians completed on-site — results, photos, and proof of visit.'}
           </p>
         </div>
         <button
@@ -250,7 +253,7 @@ export function InspectionsView({
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              All ({inspections.length})
+              {t?.filterAll || 'All'} ({inspections.length})
             </button>
             <button
               onClick={() => setStatusFilter('PASSED')}
@@ -260,7 +263,7 @@ export function InspectionsView({
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Passed ({inspections.filter((i) => i.status === 'PASSED').length})
+              {t?.filterPassed || 'Passed'} ({inspections.filter((i) => i.status === 'PASSED').length})
             </button>
             <button
               onClick={() => setStatusFilter('SERVICE_REQUIRED')}
@@ -270,7 +273,7 @@ export function InspectionsView({
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Action Needed ({inspections.filter((i) => i.status === 'SERVICE_REQUIRED' || i.status === 'FAILED').length})
+              {t?.filterActionNeeded || 'Action Needed'} ({inspections.filter((i) => i.status === 'SERVICE_REQUIRED' || i.status === 'FAILED').length})
             </button>
           </div>
         </div>
