@@ -17,8 +17,8 @@ import {
   LogOut,
   Menu,
   FileSpreadsheet,
-  Sun,
-  Moon,
+  Bell,
+  Sparkles,
   MessageSquare,
   Camera,
   Users,
@@ -228,15 +228,11 @@ export default function AdminDashboardPage() {
   const [isRevalidating, setIsRevalidating] = useState(false);
   const [expandedBuildingId, setExpandedBuildingId] = useState<string | null>(null);
 
-  // Theme Mode: Light theme by default, persistent in localStorage
-  const [theme] = useState<'light' | 'dark'>('light');
+  // Theme Mode: Strictly light theme per brand guidelines
   useEffect(() => {
     document.documentElement.classList.remove('dark');
     localStorage.setItem('vigil_dashboard_theme', 'light');
   }, []);
-  const toggleTheme = () => {
-    document.documentElement.classList.remove('dark');
-  };
 
   // Authenticated Admin Navigation Tab (6 Core Groups)
   const [activeTab, setActiveTab] = useState<AdminNavTab>('OVERVIEW');
@@ -251,6 +247,8 @@ export default function AdminDashboardPage() {
   const [prefillFinding, setPrefillFinding] = useState<any | null>(null);
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   const [guideModalOpen, setGuideModalOpen] = useState(false);
+  const [helpMenuOpen, setHelpMenuOpen] = useState(false);
+  const [showCorrectiveBoard, setShowCorrectiveBoard] = useState(false);
   const [welcomeModalOpen, setWelcomeModalOpen] = useState(false);
   const welcomeDismissedInSessionRef = React.useRef(false);
   const [isSubmittingBuilding, setIsSubmittingBuilding] = useState(false);
@@ -513,6 +511,11 @@ export default function AdminDashboardPage() {
   );
 
   const handleDismissWelcome = useCallback((seenAtIso: string) => {
+    try {
+      localStorage.setItem('vigilamc_welcome_seen', 'true');
+    } catch {
+      // ignore
+    }
     welcomeDismissedInSessionRef.current = true;
     setWelcomeModalOpen(false);
     setData((prev: any) => {
@@ -575,14 +578,16 @@ export default function AdminDashboardPage() {
 
         applyBootstrapPayload(json);
 
+        const hasSeenLocal = typeof window !== 'undefined' && localStorage.getItem('vigilamc_welcome_seen') === 'true';
         if (
+          !hasSeenLocal &&
           !welcomeDismissedInSessionRef.current &&
           json.profile &&
           json.profile.role !== 'TECHNICIAN' &&
           json.profile.welcomeSeenAt === null
         ) {
           setWelcomeModalOpen(true);
-        } else if (json.profile?.welcomeSeenAt) {
+        } else if (json.profile?.welcomeSeenAt || hasSeenLocal) {
           setWelcomeModalOpen(false);
         }
 
@@ -723,7 +728,7 @@ export default function AdminDashboardPage() {
       } else {
         setEditEquipmentModal((prev: any) => (prev ? { ...prev, photoUrl: uploaded.url } : prev));
       }
-      showToast(`Photo compressed (${Math.round(uploaded.sizeBytes / 1024)} KB WebP) & uploaded to R2 CDN!`);
+      showToast('Equipment photo uploaded successfully!');
     } catch (err: any) {
       console.error('Photo upload failed:', err);
       showToast(err?.message || 'Could not upload photo, please try another image.');
@@ -1047,6 +1052,8 @@ export default function AdminDashboardPage() {
     }
     return kpis.openWorkOrders || 0;
   }, [workOrdersList, kpis.openWorkOrders]);
+
+  const liveAttentionDigest: any[] = data?.attentionDigest || [];
 
   const liveInspectionsThisWeek = useMemo(() => {
     if (!inspectionsList || inspectionsList.length === 0) {
@@ -1595,8 +1602,6 @@ export default function AdminDashboardPage() {
         userProfile={data?.profile}
         onLogout={handleLogout}
         openRepairsCount={liveOpenRepairsCount}
-        isDarkMode={theme === 'dark'}
-        onToggleDarkMode={toggleTheme}
       />
 
       {/* Main Content Area */}
@@ -1640,49 +1645,114 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-          {/* Quick Actions, Theme Switcher & Feedback */}
+          {/* Top Bar Controls: Sync, Notifications, Help Menu, Logout */}
           <div className="flex items-center gap-2.5 flex-wrap self-end md:self-auto">
+            {/* Sync chip */}
             <button
+              type="button"
+              data-testid="topbar-sync-btn"
               onClick={() => refreshDashboard({ silent: true })}
-              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-all shadow-xs"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-all shadow-xs text-xs font-semibold cursor-pointer"
               title="Sync latest records"
               aria-label="Sync latest records"
             >
-              <RefreshCw className={`w-4 h-4 ${isRevalidating ? 'animate-spin text-[#C2410C]' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${isRevalidating ? 'animate-spin text-[#C2410C]' : 'text-slate-500'}`} />
+              <span className="hidden sm:inline">Sync</span>
             </button>
 
+            {/* Notifications Bell */}
             <button
               type="button"
-              onClick={() => setGuideModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-slate-700 hover:text-[#C2410C] border border-[#FED7AA] text-xs font-bold transition-all shadow-xs"
-              title="Getting Started & Section Guide"
-              aria-label="Getting Started & Section Guide"
+              data-testid="topbar-notifications-btn"
+              onClick={() => {
+                setActiveTab('OVERVIEW');
+                const alertEl = document.getElementById('attention-digest-panel');
+                if (alertEl) alertEl.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="relative p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-all shadow-xs cursor-pointer"
+              title={`${liveAttentionDigest.length} items requiring attention`}
+              aria-label="Notifications"
             >
-              <HelpCircle className="w-4 h-4 text-[#C2410C]" />
-              <span className="hidden sm:inline">Guide</span>
+              <Bell className="w-4 h-4 text-slate-600" />
+              {liveAttentionDigest.length > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-[#EA580C] text-[10px] font-bold text-white ring-2 ring-white">
+                  {liveAttentionDigest.length}
+                </span>
+              )}
             </button>
 
-            <button
-              onClick={() => setFeedbackModalOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FFF0E6] hover:bg-[#FED7AA]/60 text-[#C2410C] border border-[#C2410C]/20 text-xs font-bold transition-all shadow-xs"
-              title="Give product feedback"
-            >
-              <MessageSquare className="w-4 h-4 text-[#C2410C]" />
-              <span>Give Feedback</span>
-            </button>
+            {/* "?" Help Menu dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                data-testid="topbar-help-menu-btn"
+                onClick={() => setHelpMenuOpen(!helpMenuOpen)}
+                className="p-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-slate-700 hover:text-[#C2410C] border border-[#FED7AA] transition-all shadow-xs flex items-center justify-center cursor-pointer"
+                title="Help &amp; Resources"
+                aria-label="Help &amp; Resources"
+              >
+                <HelpCircle className="w-4 h-4 text-[#C2410C]" />
+              </button>
+              {helpMenuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-30"
+                    onClick={() => setHelpMenuOpen(false)}
+                  />
+                  <div className="absolute right-0 mt-1 w-56 bg-white border border-[#FED7AA] rounded-2xl shadow-xl z-40 py-1.5 text-xs text-slate-700">
+                    <button
+                      type="button"
+                      data-testid="help-menu-guide"
+                      onClick={() => {
+                        setHelpMenuOpen(false);
+                        setGuideModalOpen(true);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2.5 hover:bg-[#FFF0E6] hover:text-[#C2410C] font-semibold text-left transition-colors cursor-pointer"
+                    >
+                      <HelpCircle className="w-4 h-4 text-[#EA580C]" />
+                      <div>
+                        <div className="font-bold text-slate-900">Getting Started Guide</div>
+                        <div className="text-[10px] text-slate-500 font-normal">Step-by-step checklist &amp; tours</div>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      data-testid="help-menu-welcome"
+                      onClick={() => {
+                        setHelpMenuOpen(false);
+                        setWelcomeModalOpen(true);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2.5 hover:bg-[#FFF0E6] hover:text-[#C2410C] font-semibold text-left transition-colors cursor-pointer"
+                    >
+                      <Sparkles className="w-4 h-4 text-[#EA580C]" />
+                      <div>
+                        <div className="font-bold text-slate-900">Product Tour &amp; Welcome</div>
+                        <div className="text-[10px] text-slate-500 font-normal">Interactive feature walkthrough</div>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      data-testid="help-menu-feedback"
+                      onClick={() => {
+                        setHelpMenuOpen(false);
+                        setFeedbackModalOpen(true);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2.5 hover:bg-[#FFF0E6] hover:text-[#C2410C] font-semibold text-left transition-colors cursor-pointer"
+                    >
+                      <MessageSquare className="w-4 h-4 text-[#EA580C]" />
+                      <div>
+                        <div className="font-bold text-slate-900">Give Feedback</div>
+                        <div className="text-[10px] text-slate-500 font-normal">Report bug or request feature</div>
+                      </div>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
 
             <button
-              type="button"
-              data-testid="topbar-build-report-btn"
-              onClick={() => handleOpenTab('REPORTS')}
-              className="btn-flame flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-white text-xs font-bold shadow-xs"
-              title="Open Build Report Designer"
-            >
-              <span>Build Report</span>
-            </button>
-
-            <button
-              onClick={handleLogout} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#FFF0E6] hover:bg-[#FED7AA]/70 text-[#C2410C] border border-[#FED7AA] text-xs font-bold transition-all shadow-xs"
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#FFF0E6] hover:bg-[#FED7AA]/70 text-[#C2410C] border border-[#FED7AA] text-xs font-bold transition-all shadow-xs cursor-pointer"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4 text-[#C2410C]" />
@@ -1782,6 +1852,11 @@ export default function AdminDashboardPage() {
                 onOpenImport={() => handleOpenImport('FIRE_ASSETS')}
                 onOpenRegisterModal={() => setAddBuildingModalOpen(true)}
                 onOpenGuide={() => setGuideModalOpen(true)}
+                onOpenRadar={() => {
+                  handleOpenTab('INSPECTIONS_WORK');
+                  setInspectionsMainTab('INSPECTIONS');
+                  setInspectionsWorkSubTab('RADAR');
+                }}
               />
             )}
 
@@ -2172,14 +2247,77 @@ export default function AdminDashboardPage() {
                 )}
 
                 {inspectionsWorkSubTab === 'REPAIRS' && (
-                  <WorkOrdersView
-                    showToast={showToast}
-                    onOpenImport={() => handleOpenImport('WORK_ORDERS')}
-                    initialWorkOrders={workOrdersList}
-                    initialTechnicians={techniciansList}
-                    initialBuildings={buildings}
-                    onRefreshDashboard={() => refreshDashboard({ silent: true })}
-                  />
+                  <div className="space-y-6">
+                    {/* Folded Top Section: Needs Repair */}
+                    {(() => {
+                      const openActions = correctiveActionsList.filter((c) => c.status !== 'CLOSED');
+                      const critCount = openActions.filter((c) => c.priority === 'CRITICAL' || c.severity === 'CRITICAL').length;
+                      const hiCount = openActions.filter((c) => c.priority === 'HIGH' || c.severity === 'HIGH').length;
+                      const medCount = openActions.filter((c) => c.priority === 'MEDIUM' || c.severity === 'MEDIUM').length;
+                      const loCount = openActions.filter((c) => c.priority === 'LOW' || c.severity === 'LOW').length;
+
+                      return (
+                        <div className="glass-panel-dense rounded-2xl p-4 sm:p-5 border border-[#FED7AA] bg-white shadow-xs space-y-3">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="flex items-center gap-2.5">
+                              <div className="p-2 rounded-xl bg-rose-50 text-[#DC2626] border border-rose-200">
+                                <AlertTriangle className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-bold text-[#1C1917] text-sm sm:text-base">Needs Repair</h3>
+                                  <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-[#DC2626] border border-rose-200">
+                                    {openActions.length} Pending
+                                  </span>
+                                </div>
+                                <div className="text-xs text-[#44403C] mt-0.5 flex items-center gap-2 flex-wrap">
+                                  {critCount > 0 && <span className="text-[#DC2626] font-bold">• {critCount} Critical</span>}
+                                  {hiCount > 0 && <span className="text-[#EA580C] font-semibold">• {hiCount} High</span>}
+                                  {medCount > 0 && <span className="text-amber-600 font-semibold">• {medCount} Medium</span>}
+                                  {loCount > 0 && <span className="text-slate-500">• {loCount} Low</span>}
+                                  {openActions.length === 0 && <span className="text-emerald-600 font-medium">All inspection findings resolved ✓</span>}
+                                </div>
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => setShowCorrectiveBoard(!showCorrectiveBoard)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FFF0E6] hover:bg-[#FED7AA] text-[#C2410C] border border-[#FED7AA] text-xs font-bold transition-all shadow-xs cursor-pointer self-start sm:self-auto"
+                            >
+                              <Wrench className="w-3.5 h-3.5" />
+                              <span>{showCorrectiveBoard ? 'Hide Action Board' : 'View Corrective Actions'}</span>
+                            </button>
+                          </div>
+
+                          {showCorrectiveBoard && (
+                            <div className="pt-3 border-t border-[#FED7AA]/60">
+                              <CorrectiveActionsBoard
+                                initialActions={correctiveActionsList}
+                                buildings={buildings}
+                                equipments={equipmentsList}
+                                technicians={techniciansList}
+                                showToast={showToast}
+                                onRefreshDashboard={() => refreshDashboard({ silent: true })}
+                                prefillFinding={prefillFinding}
+                                onClearPrefill={() => setPrefillFinding(null)}
+                                t={getAdminDictionary(data?.profile?.preferredLanguage || 'en')}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    <WorkOrdersView
+                      showToast={showToast}
+                      onOpenImport={() => handleOpenImport('WORK_ORDERS')}
+                      initialWorkOrders={workOrdersList}
+                      initialTechnicians={techniciansList}
+                      initialBuildings={buildings}
+                      onRefreshDashboard={() => refreshDashboard({ silent: true })}
+                    />
+                  </div>
                 )}
               </div>
             )}
@@ -2957,7 +3095,7 @@ export default function AdminDashboardPage() {
 
                     <div>
                       <label className="block text-slate-700 font-bold mb-1">
-                        Equipment Photo (Auto-compressed WebP &rarr; Cloudflare R2)
+                        Equipment Photo
                       </label>
                       <div className="flex items-center gap-3">
                         <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer border border-slate-200 transition-colors">
@@ -2979,7 +3117,7 @@ export default function AdminDashboardPage() {
                               className="w-9 h-9 rounded-lg object-cover border border-slate-300 shadow-xs"
                             />
                             <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-                              <CheckCircle2 className="w-3.5 h-3.5" /> {compressingPhoto ? 'Uploading...' : 'R2 CDN Ready'}
+                              <CheckCircle2 className="w-3.5 h-3.5" /> {compressingPhoto ? 'Uploading...' : 'Photo Uploaded'}
                             </span>
                           </div>
                         )}
@@ -3451,23 +3589,6 @@ export default function AdminDashboardPage() {
                             className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
                           />
                         </div>
-                        <div className="sm:col-span-2">
-                          <label className="block text-slate-700 font-bold mb-1">
-                            Next Hydro-Test Due Date
-                          </label>
-                          <input
-                            type="date"
-                            data-testid="equipment-modal-hydro-due"
-                            value={editEquipmentModal.hydroDueDate || ''}
-                            onChange={(e) =>
-                              setEditEquipmentModal({
-                                ...editEquipmentModal,
-                                hydroDueDate: e.target.value,
-                              })
-                            }
-                            className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none"
-                          />
-                        </div>
 
                         {/* Quick Presets Row */}
                         {(() => {
@@ -3556,7 +3677,7 @@ export default function AdminDashboardPage() {
                       {/* Equipment Photo Block */}
                       <div>
                         <label className="block text-slate-700 font-bold mb-1">
-                          Equipment Photo (Auto-compressed WebP &rarr; Cloudflare R2)
+                          Equipment Photo
                         </label>
                         <div className="flex items-center gap-3">
                           <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer border border-slate-200 transition-colors">
@@ -3584,6 +3705,33 @@ export default function AdminDashboardPage() {
                           )}
                         </div>
                       </div>
+
+                      {/* Collapsible More Options: Next Hydro-Test Due Date */}
+                      <details className="sm:col-span-2 group pt-2 border-t border-[#FED7AA]/60">
+                        <summary className="cursor-pointer text-xs font-bold text-[#C2410C] hover:text-[#9A3412] flex items-center justify-between py-1.5 select-none">
+                          <span>More options (Hydro-Test Due Date)</span>
+                          <span className="text-[10px] text-slate-500 font-normal">Optional</span>
+                        </summary>
+                        <div className="pt-2 pb-1 space-y-2">
+                          <div>
+                            <label className="block text-slate-700 font-bold mb-1 text-xs">
+                              Next Hydro-Test Due Date
+                            </label>
+                            <input
+                              type="date"
+                              data-testid="equipment-modal-hydro-due"
+                              value={editEquipmentModal.hydroDueDate || ''}
+                              onChange={(e) =>
+                                setEditEquipmentModal({
+                                  ...editEquipmentModal,
+                                  hydroDueDate: e.target.value,
+                                })
+                              }
+                              className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none text-xs"
+                            />
+                          </div>
+                        </div>
+                      </details>
                     </div>
                   </div>
 
@@ -3602,7 +3750,7 @@ export default function AdminDashboardPage() {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-[#C2410C]">
                               <ClipboardList className="w-4 h-4" />
-                              <h4 className="font-bold text-sm text-[#1C1917]">Assign Task to Technician</h4>
+                              <h4 className="font-bold text-sm text-[#1C1917]">Create Repair Task</h4>
                             </div>
                             <span className="text-[10px] text-slate-500 font-medium">Status created as OPEN</span>
                           </div>
@@ -3698,7 +3846,7 @@ export default function AdminDashboardPage() {
                                   className="px-4 py-2 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] disabled:opacity-50 text-white font-bold shadow-xs transition-all text-xs flex items-center gap-1.5"
                                 >
                                   <UserCheck className="w-3.5 h-3.5" />
-                                  <span>{assigningTask ? 'Assigning...' : 'Assign Task'}</span>
+                                  <span>{assigningTask ? 'Creating...' : 'Create Task'}</span>
                                 </button>
                               </div>
                             </div>
@@ -3762,7 +3910,7 @@ export default function AdminDashboardPage() {
                         }`}
                       >
                         <Users className="w-3.5 h-3.5 text-[#EA580C]" />
-                        <span>{assignTaskOpen ? 'Hide Assignment' : 'Assign Task to Technician'}</span>
+                        <span>{assignTaskOpen ? 'Hide Task' : 'Create Repair Task'}</span>
                       </button>
 
                       <button

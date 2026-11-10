@@ -20,7 +20,7 @@ import {
 
 export default function PublicVerifyAssetPage() {
   const params = useParams();
-  const rawTag = (params?.qrCode as string) || '';
+  const rawTag = (params?.assetTag as string) || (params?.qrCode as string) || '';
   const queryRef = decodeURIComponent(rawTag);
 
   const [data, setData] = useState<any>(null);

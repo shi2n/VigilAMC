@@ -51,112 +51,11 @@ interface DashboardOverviewProps {
   onOpenImport?: () => void;
   onOpenRegisterModal?: () => void;
   onOpenGuide?: () => void;
+  onOpenRadar?: () => void;
 }
 
 type RangeKey = '7D' | '30D' | '90D' | '12M';
 type MetricKey = 'INSPECTIONS' | 'COMPLIANCE' | 'REPAIRS' | 'ASSETS_COVERED';
-
-const CHART_SERIES: Record<
-  MetricKey,
-  Record<RangeKey, { labels: string[]; values: number[]; unit: string; delta: string; up: boolean }>
-> = {
-  INSPECTIONS: {
-    '7D': {
-      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-      values: [14, 19, 17, 24, 28, 22, 31],
-      unit: 'checks',
-      delta: '+18.4% vs prior 7d',
-      up: true,
-    },
-    '30D': {
-      labels: ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4'],
-      values: [68, 84, 92, 118],
-      unit: 'checks',
-      delta: '+24.1% vs prior 30d',
-      up: true,
-    },
-    '90D': {
-      labels: ['Month 1', 'Month 2', 'Month 3'],
-      values: [240, 295, 348],
-      unit: 'checks',
-      delta: '+31.0% quarter-on-quarter',
-      up: true,
-    },
-    '12M': {
-      labels: ['Q1', 'Q2', 'Q3', 'Q4'],
-      values: [780, 910, 1080, 1290],
-      unit: 'checks',
-      delta: '+42.6% year-on-year',
-      up: true,
-    },
-  },
-  COMPLIANCE: {
-    '7D': {
-      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-      values: [94, 95, 95, 96, 97, 98, 98.4],
-      unit: '% verified',
-      delta: '+2.4% SLA adherence',
-      up: true,
-    },
-    '30D': {
-      labels: ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4'],
-      values: [91, 94, 96, 98.4],
-      unit: '% verified',
-      delta: '+4.8% vs last month',
-      up: true,
-    },
-    '90D': {
-      labels: ['Month 1', 'Month 2', 'Month 3'],
-      values: [88, 93, 98.4],
-      unit: '% verified',
-      delta: '+10.4% audit readiness',
-      up: true,
-    },
-    '12M': {
-      labels: ['Q1', 'Q2', 'Q3', 'Q4'],
-      values: [84, 89, 95, 98.4],
-      unit: '% verified',
-      delta: '+14.4% annual lift',
-      up: true,
-    },
-  },
-  ASSETS_COVERED: {
-    '7D': { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], values: [0, 0, 0, 0, 0, 0, 0], unit: 'assets', delta: '0% vs prior 7d', up: true },
-    '30D': { labels: ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4'], values: [0, 0, 0, 0], unit: 'assets', delta: '0% vs prior 30d', up: true },
-    '90D': { labels: ['Month 1', 'Month 2', 'Month 3'], values: [0, 0, 0], unit: 'assets', delta: '0% vs prior 90d', up: true },
-    '12M': { labels: ['Q1', 'Q2', 'Q3', 'Q4'], values: [0, 0, 0, 0], unit: 'assets', delta: '0% vs prior 12m', up: true },
-  },
-  REPAIRS: {
-    '7D': {
-      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-      values: [9, 8, 7, 6, 5, 4, 3],
-      unit: 'open jobs',
-      delta: '-66% backlog cleared',
-      up: true,
-    },
-    '30D': {
-      labels: ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4'],
-      values: [18, 14, 9, 4],
-      unit: 'open jobs',
-      delta: '-77% faster closure',
-      up: true,
-    },
-    '90D': {
-      labels: ['Month 1', 'Month 2', 'Month 3'],
-      values: [29, 16, 5],
-      unit: 'open jobs',
-      delta: 'Mean TAT 18 hrs',
-      up: true,
-    },
-    '12M': {
-      labels: ['Q1', 'Q2', 'Q3', 'Q4'],
-      values: [42, 28, 14, 5],
-      unit: 'open jobs',
-      delta: '99.1% SLA met',
-      up: true,
-    },
-  },
-};
 
 export function DashboardOverview({
   kpis,
@@ -172,6 +71,7 @@ export function DashboardOverview({
   onOpenImport,
   onOpenRegisterModal,
   onOpenGuide,
+  onOpenRadar,
 }: DashboardOverviewProps) {
   const [dismissedDigestIds, setDismissedDigestIds] = useState<string[]>([]);
   const prefersReducedMotion = useReducedMotion();
@@ -344,7 +244,26 @@ export function DashboardOverview({
       {/* =========================================================================
           OPERATIONAL SUMMARY METRIC CARDS (Glass Panels + Ember Glow Behind)
           ========================================================================= */}
-      <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+      <div className="relative z-10 space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-bold text-[#1C1917]">Operational Status</h2>
+            <span className="text-xs text-[#44403C]">Real-time equipment readiness &amp; filings</span>
+          </div>
+          {onOpenRadar && (
+            <button
+              type="button"
+              data-testid="home-open-radar-btn"
+              onClick={onOpenRadar}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[#C2410C] bg-[#FFF0E6] hover:bg-[#FED7AA] border border-[#FED7AA] transition-all shadow-xs cursor-pointer active:scale-95"
+              title="Open Expiry Radar across 30, 60, and 90-day horizons"
+            >
+              <Clock className="w-3.5 h-3.5 text-[#C2410C]" />
+              <span>Expiry Radar &rarr;</span>
+            </button>
+          )}
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         {/* 1. Overdue Equipment */}
         <div
           onClick={() => onNavigateTab('FIRE_EQUIPMENT')}
@@ -439,6 +358,7 @@ export function DashboardOverview({
           </p>
         </div>
       </div>
+    </div>
 
       {/* =========================================================================
           C3: INTERACTIVE KPI ANALYTICS & RANGE PICKER (Series 1 #EA580C -> #FF8C42)

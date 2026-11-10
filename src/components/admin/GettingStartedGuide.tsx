@@ -283,7 +283,7 @@ export function GuideModal({ isOpen, onClose, onNavigateTab, t }: GuideModalProp
       whatFor: 'Every on-site verification logged by technicians with GPS coordinates and photo proof of visit.',
       howTo: [
         'Filter by Passed vs Action Needed to spot equipment requiring maintenance.',
-        'View inspection photographs stored on Cloudflare R2 CDN with tamper-evident stamps.',
+        'View inspection photographs with date and tamper-evident stamps.',
       ],
     },
     {

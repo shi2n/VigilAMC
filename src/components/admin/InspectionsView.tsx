@@ -129,7 +129,7 @@ export function InspectionsView({
         mimeType: 'image/webp',
       });
       setInspectionForm((prev) => ({ ...prev, photoUrl: uploaded.url }));
-      showToast(`Inspection photo uploaded to R2 CDN (${Math.round(uploaded.sizeBytes / 1024)} KB WebP)!`);
+      showToast('Inspection photo uploaded successfully!');
     } catch (err: any) {
       console.error(err);
       showToast(err?.message || 'Failed to upload inspection photo');
@@ -508,7 +508,7 @@ export function InspectionsView({
 
               <div>
                 <label className="block font-bold mb-1 text-slate-700">
-                  Photo Evidence (Auto-compressed WebP &rarr; Cloudflare R2)
+                  Photo Evidence
                 </label>
                 <div className="flex items-center gap-3">
                   <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer border border-slate-200">
@@ -530,7 +530,7 @@ export function InspectionsView({
                         className="w-9 h-9 rounded-lg object-cover border border-slate-300 shadow-xs"
                       />
                       <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> {uploadingPhoto ? 'Uploading...' : 'R2 CDN Ready'}
+                        <CheckCircle2 className="w-3.5 h-3.5" /> {uploadingPhoto ? 'Uploading...' : 'Photo Uploaded'}
                       </span>
                     </div>
                   )}

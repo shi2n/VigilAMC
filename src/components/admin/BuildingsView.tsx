@@ -15,6 +15,7 @@ import {
   FileSpreadsheet,
   Layers,
   Mail,
+  MoreHorizontal,
 } from 'lucide-react';
 import { EmailOverdueModal } from './EmailOverdueModal';
 
@@ -65,6 +66,7 @@ export function BuildingsView({
     clientEmail?: string | null;
     clientName?: string | null;
   } | null>(null);
+  const [openMoreMenuId, setOpenMoreMenuId] = React.useState<string | null>(null);
 
   return (
     <div className="space-y-6">
@@ -304,37 +306,12 @@ export function BuildingsView({
                     <div className="flex items-center gap-2 self-end md:self-auto flex-wrap">
                       <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-medium">
                         <span className="text-slate-900 font-bold">{b.totalEquipments} Units:</span>
-                        <span className="text-emerald-600 font-semibold">{b.verifiedCount ?? b.compliantCount ?? 0} Fit</span>
+                        <span className="text-emerald-600 font-semibold">{b.verifiedCount ?? b.compliantCount ?? 0} OK</span>
                         {b.dueCount > 0 && <span className="text-amber-600 font-semibold">• {b.dueCount} Due</span>}
                         {b.overdueCount > 0 && <span className="text-rose-600 font-bold">• {b.overdueCount} Overdue</span>}
                       </div>
 
-                      <button
-                        onClick={() => onBulkAdd(b)}
-                        className="px-3 py-1.5 rounded-xl bg-white hover:bg-[#FFF0E6] text-slate-700 border border-slate-200 hover:border-[#C2410C]/30 text-xs font-bold transition-all shadow-sm"
-                      >
-                        + Bulk Add
-                      </button>
-
-                      <button
-                        onClick={() => onSingleAdd(b)}
-                        className="px-3 py-1.5 rounded-xl bg-white hover:bg-[#FFF0E6] text-slate-700 border border-slate-200 hover:border-[#C2410C]/30 text-xs font-bold transition-all shadow-sm"
-                      >
-                        + Single Item
-                      </button>
-
-                      {onOpenFloorPlans && (
-                        <button
-                          type="button"
-                          data-testid={`open-floor-plans-${b.id}`}
-                          onClick={() => onOpenFloorPlans(b)}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] border border-[#FED7AA] hover:border-[#C2410C]/40 text-xs font-bold transition-all shadow-sm"
-                        >
-                          <MapPin className="w-3.5 h-3.5 text-[#EA580C]" />
-                          <span>Floor Plans</span>
-                        </button>
-                      )}
-
+                      {/* Primary Button 1: Form B Report */}
                       <Link
                         href={`/report/${b.id}`}
                         target="_blank"
@@ -345,38 +322,109 @@ export function BuildingsView({
                         <span>Form B Report</span>
                       </Link>
 
+                      {/* Primary Button 2: + Add Equipment */}
                       <button
-                        type="button"
-                        onClick={() => {
-                          setOverdueModalBuilding({
-                            id: b.id,
-                            name: b.name,
-                            clientEmail: b.client?.email || null,
-                            clientName: b.client?.name || b.name,
-                          });
-                        }}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-[#DC2626] border border-rose-200 text-xs font-bold transition-all shadow-sm"
-                        title={`Email due date & overdue alert for ${b.name}`}
+                        onClick={() => onSingleAdd(b)}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white hover:bg-[#FFF0E6] text-slate-700 border border-slate-200 hover:border-[#C2410C]/30 text-xs font-bold transition-all shadow-sm"
                       >
-                        <Mail className="w-3.5 h-3.5" />
-                        <span>Due Date Alert</span>
+                        <Plus className="w-3.5 h-3.5 text-[#C2410C]" />
+                        <span>+ Add Equipment</span>
                       </button>
 
-                      <button
-                        onClick={() => onEditBuilding(b)}
-                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors"
-                        title="Edit Building Details"
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                      </button>
+                      {/* Dropdown ⋯ More */}
+                      <div className="relative">
+                        <button
+                          type="button"
+                          data-testid={`more-actions-btn-${b.id}`}
+                          onClick={() => setOpenMoreMenuId(openMoreMenuId === b.id ? null : b.id)}
+                          className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-colors shadow-xs"
+                          title="More Actions"
+                          aria-label="More Actions"
+                        >
+                          <MoreHorizontal className="w-4 h-4" />
+                        </button>
 
-                      <button
-                        onClick={() => onDeleteBuilding(b.id, b.name)}
-                        className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors"
-                        title="Delete Building"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                        {openMoreMenuId === b.id && (
+                          <>
+                            <div
+                              className="fixed inset-0 z-20"
+                              onClick={() => setOpenMoreMenuId(null)}
+                            />
+                            <div className="absolute right-0 mt-1 w-48 bg-white border border-[#FED7AA] rounded-2xl shadow-xl z-30 py-1.5 text-xs text-slate-700">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOpenMoreMenuId(null);
+                                  onBulkAdd(b);
+                                }}
+                                className="w-full flex items-center gap-2 px-3.5 py-2 hover:bg-[#FFF0E6] hover:text-[#C2410C] font-semibold text-left transition-colors"
+                              >
+                                <FileSpreadsheet className="w-4 h-4 text-[#EA580C]" />
+                                <span>Import from Excel</span>
+                              </button>
+
+                              {onOpenFloorPlans && (
+                                <button
+                                  type="button"
+                                  data-testid={`open-floor-plans-${b.id}`}
+                                  onClick={() => {
+                                    setOpenMoreMenuId(null);
+                                    onOpenFloorPlans(b);
+                                  }}
+                                  className="w-full flex items-center gap-2 px-3.5 py-2 hover:bg-[#FFF0E6] hover:text-[#C2410C] font-semibold text-left transition-colors"
+                                >
+                                  <MapPin className="w-4 h-4 text-[#EA580C]" />
+                                  <span>Floor Plans</span>
+                                </button>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOpenMoreMenuId(null);
+                                  setOverdueModalBuilding({
+                                    id: b.id,
+                                    name: b.name,
+                                    clientEmail: b.client?.email || null,
+                                    clientName: b.client?.name || b.name,
+                                  });
+                                }}
+                                className="w-full flex items-center gap-2 px-3.5 py-2 hover:bg-rose-50 text-rose-600 font-semibold text-left transition-colors"
+                                title={`Email due date & overdue alert for ${b.name}`}
+                              >
+                                <Mail className="w-4 h-4 text-rose-500" />
+                                <span>Due Date Alert</span>
+                              </button>
+
+                              <div className="my-1 border-t border-slate-100" />
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOpenMoreMenuId(null);
+                                  onEditBuilding(b);
+                                }}
+                                className="w-full flex items-center gap-2 px-3.5 py-2 hover:bg-slate-50 text-slate-700 font-semibold text-left transition-colors"
+                              >
+                                <Edit className="w-4 h-4 text-slate-500" />
+                                <span>Edit Building</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOpenMoreMenuId(null);
+                                  onDeleteBuilding(b.id, b.name);
+                                }}
+                                className="w-full flex items-center gap-2 px-3.5 py-2 hover:bg-rose-50 text-rose-600 font-semibold text-left transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4 text-rose-500" />
+                                <span>Delete Building</span>
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
 

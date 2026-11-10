@@ -55,6 +55,7 @@ export function WelcomeTestingModal({
   onDismissed,
 }: WelcomeTestingModalProps) {
   const [mounted, setMounted] = useState(false);
+  const [dontShowAgain, setDontShowAgain] = useState(true);
   const prefersReducedMotion = useReducedMotion();
   const dialogRef = useRef<HTMLDivElement>(null);
   const primaryBtnRef = useRef<HTMLButtonElement>(null);
@@ -78,6 +79,11 @@ export function WelcomeTestingModal({
 
   const handleDismiss = useCallback(
     async (source: 'cta' | 'close' | 'esc' | 'backdrop') => {
+      try {
+        localStorage.setItem('vigilamc_welcome_seen', 'true');
+      } catch {
+        // ignore
+      }
       const optimisticIso = new Date().toISOString();
       onDismissed(optimisticIso);
 
@@ -233,7 +239,7 @@ export function WelcomeTestingModal({
                 : { opacity: 0, y: 8, scale: 0.98 }
             }
             transition={{ duration: prefersReducedMotion ? 0 : 0.2, ease: 'easeOut' }}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
             className="relative w-full max-w-[480px] rounded-2xl bg-[#FFFFFF] border border-[#FED7AA] p-6 sm:p-7 text-[#1C1917] shadow-[0_24px_60px_-24px_rgba(28,25,23,0.28),0_0_60px_rgba(232,89,12,0.12)]"
           >
             {/* Top row: Eyebrow chip + Close button */}
@@ -294,8 +300,19 @@ export function WelcomeTestingModal({
               })}
             </ul>
 
+            {/* Don't show again checkbox */}
+            <label className="mt-4 flex items-center justify-center gap-2 cursor-pointer text-xs text-[#44403C]">
+              <input
+                type="checkbox"
+                checked={dontShowAgain}
+                onChange={(e) => setDontShowAgain(e.target.checked)}
+                className="rounded border-slate-300 text-[#EA580C] focus:ring-[#EA580C]"
+              />
+              <span>Don&apos;t show this tour automatically</span>
+            </label>
+
             {/* Primary CTA Button */}
-            <div className="mt-6">
+            <div className="mt-4">
               <button
                 ref={primaryBtnRef}
                 type="button"
