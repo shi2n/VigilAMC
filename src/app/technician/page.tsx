@@ -1727,6 +1727,32 @@ export default function TechnicianPWA() {
         />
 
         <div className="relative z-10 max-w-md w-full mx-auto space-y-6">
+          {/* Wrong-Origin Warning Banner on Login */}
+          {isWrongOrigin && (
+            <div data-testid="wrong-origin-banner" className="p-3.5 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-950 text-xs shadow-xs space-y-2">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <p className="font-bold">{t.wrongOriginNotice || 'Please reopen from the app icon or use the app link'}</p>
+                  <p className="text-[11px] text-amber-800 mt-0.5">
+                    {wrongOriginPreserving
+                      ? (t.wrongOriginFlushing || 'Preserving saved records...')
+                      : `Opened on ${typeof window !== 'undefined' ? window.location.origin : ''}. Field data and session belong to the installed app.`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 pt-1">
+                <a
+                  href="https://vigilamc.vercel.app/technician"
+                  className="px-3 py-1.5 rounded-xl bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold text-xs shadow-xs inline-flex items-center gap-1.5 active:scale-95 transition-all"
+                >
+                  <span>{t.wrongOriginOpenApp || 'Open Field App'}</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            </div>
+          )}
+
           {/* Language Selector Pill on Login */}
           <div className="flex justify-end">
             <button
