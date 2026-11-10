@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getAuthenticatedActor } from '@/lib/techSession';
+import {
+  calendarDayDiff,
+  todayCalendarDate,
+  todayCalendarDateString,
+  addCalendarDays,
+  toDateInputString,
+} from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -133,9 +140,8 @@ export async function GET(request: Request) {
       });
     }
 
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const thirtyDaysAgo = now.getTime() - 30 * 24 * 60 * 60 * 1000;
+    const todayDateStr = todayCalendarDateString();
+    const thirtyDaysAgoStr = addCalendarDays(todayCalendarDate(), -30);
 
     // Map buildings with live asset counts, floors, and due status
     const evaluatedBuildings = assignedBuildings.map((b: any) => {
@@ -145,18 +151,17 @@ export async function GET(request: Request) {
       let checkedRecently = 0;
 
       const enrichedEquipments = (b.equipments || []).map((eq: any) => {
-        const diffDays = Math.ceil(
-          (new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-        );
+        const diffDays = calendarDayDiff(eq.nextDueDate);
         const latestInsp = eq.inspections?.[0] || null;
-        const lastCheckTs = latestInsp?.date
-          ? new Date(latestInsp.date).getTime()
-          : eq.lastServiceDate
-          ? new Date(eq.lastServiceDate).getTime()
-          : 0;
+        const lastCheckDateStr = toDateInputString(latestInsp?.date || eq.lastServiceDate);
 
-        const isCheckedToday = lastCheckTs >= todayStart;
-        const isCheckedCycle = lastCheckTs >= thirtyDaysAgo && eq.status !== 'DEFECTIVE' && diffDays > 0;
+        const isCheckedToday = Boolean(lastCheckDateStr && lastCheckDateStr === todayDateStr);
+        const isCheckedCycle = Boolean(
+          lastCheckDateStr &&
+          lastCheckDateStr >= thirtyDaysAgoStr &&
+          eq.status !== 'DEFECTIVE' &&
+          diffDays > 0
+        );
 
         if (isCheckedToday || isCheckedCycle) {
           checkedRecently++;

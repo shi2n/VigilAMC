@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { calendarDayDiff } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -83,9 +84,7 @@ export async function GET(request: Request) {
     let overdueCount = 0;
 
     equipments.forEach((eq: any) => {
-      const diffDays = Math.ceil(
-        (new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-      );
+      const diffDays = calendarDayDiff(eq.nextDueDate);
       if (diffDays < 0) {
         overdueCount++;
       } else if (diffDays <= 30) {

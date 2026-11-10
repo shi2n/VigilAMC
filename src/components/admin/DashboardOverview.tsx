@@ -17,6 +17,7 @@ import {
   Package,
 } from 'lucide-react';
 import { formatStandardDate } from '@/lib/constants/india';
+import { calendarDayDiff, dueState, formatDisplay } from '@/lib/dates';
 
 interface DashboardOverviewProps {
   kpis: {
@@ -119,13 +120,10 @@ export function DashboardOverview({
     });
   });
 
-  const now = new Date();
   const needsAttentionList = allEquipments
     .map((eq) => {
-      const diffDays = eq.nextDueDate
-        ? Math.ceil((new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-        : 0;
-      return { ...eq, diffDays };
+      const state = dueState(eq.nextDueDate);
+      return { ...eq, state, diffDays: state.daysDiff ?? 0 };
     })
     .filter((eq) => eq.diffDays <= 30) // Overdue or due within 30 days
     .sort((a, b) => a.diffDays - b.diffDays)
@@ -477,12 +475,10 @@ export function DashboardOverview({
                             : 'text-amber-600 dark:text-amber-400'
                         }`}
                       >
-                        {isOverdue
-                          ? `Overdue by ${Math.abs(item.diffDays)} days`
-                          : `Due in ${item.diffDays} days`}
+                        {item.state?.label || (isOverdue ? `${Math.abs(item.diffDays)}d overdue` : `${item.diffDays}d left`)}
                       </div>
                       <div className="text-[10px] text-slate-400">
-                        Due: {formatStandardDate(item.nextDueDate)}
+                        Due: {formatDisplay(item.nextDueDate)}
                       </div>
                     </div>
 

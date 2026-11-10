@@ -19,16 +19,10 @@ import {
   Clock,
   MapPin,
 } from 'lucide-react';
+import { formatDisplay, todayCalendarDate } from '@/lib/dates';
 
 function formatSafeDate(dateVal: any): string {
-  if (!dateVal) return '—';
-  const parsed = new Date(dateVal);
-  if (isNaN(parsed.getTime())) return '—';
-  return parsed.toLocaleDateString('en-IN', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
+  return formatDisplay(dateVal);
 }
 
 function normalizeWhatsAppPhone(rawPhone: string): string {
@@ -81,7 +75,7 @@ export default function ComplianceReportPage() {
       setClientEmail(json.building?.client?.email || '');
 
       if (typeof document !== 'undefined' && json.building?.name) {
-        const refNum = json.report?.reportNumber || `FORM-B-${new Date().getFullYear()}`;
+        const refNum = json.report?.reportNumber || `FORM-B-${todayCalendarDate().year}`;
         document.title = `${json.building.name} - Form-B Certificate (${refNum})`;
       }
     } catch (e: any) {
@@ -112,7 +106,7 @@ export default function ComplianceReportPage() {
 
   const handlePrint = () => {
     if (typeof document !== 'undefined' && data?.building?.name) {
-      const refNum = data?.report?.reportNumber || `FORM-B-${new Date().getFullYear()}`;
+      const refNum = data?.report?.reportNumber || `FORM-B-${todayCalendarDate().year}`;
       document.title = `${data.building.name} - Form-B Certificate (${refNum})`;
     }
     window.print();
@@ -428,16 +422,12 @@ export default function ComplianceReportPage() {
 
             <div className="text-left sm:text-right">
               <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded border border-slate-200 block sm:inline-block">
-                Ref: {report?.reportNumber || `FORM-B/${new Date().getFullYear()}`}
+                Ref: {report?.reportNumber || `FORM-B/${todayCalendarDate().year}`}
               </span>
               <div className="text-[11px] text-slate-500 mt-1">
                 Date:{' '}
                 <strong>
-                  {new Date().toLocaleDateString('en-IN', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  })}
+                  {formatDisplay(report?.generatedAt || todayCalendarDate())}
                 </strong>
               </div>
               <div className="text-[11px] text-slate-500">
@@ -671,7 +661,7 @@ export default function ComplianceReportPage() {
                 <span>
                   Timestamp:{' '}
                   <strong className="text-slate-700">
-                    {formatSafeDate(data?.latestGpsInspection?.date || report?.generatedAt || new Date())}
+                    {formatSafeDate(data?.latestGpsInspection?.date || report?.generatedAt || todayCalendarDate())}
                   </strong>
                 </span>
               </div>

@@ -31,32 +31,16 @@ import { FireAssetsView } from '@/components/admin/FireAssetsView';
 import { SettingsView } from '@/components/admin/SettingsView';
 import { TechnicianManagement } from '@/components/admin/TechnicianManagement';
 import { compressImageToDataUrl, uploadCompressedPhoto } from '@/lib/compressImage';
+import {
+  toDateInputString,
+  todayCalendarDate,
+  todayCalendarDateString,
+  addCalendarMonths,
+  addCalendarDays,
+  calendarDayDiff,
+} from '@/lib/dates';
 
 const LAST_ORG_CACHE_KEY = 'vigilamc_dash_last_org';
-
-function toDateInputString(d?: Date | string | null): string {
-  const dt = d ? new Date(d) : new Date();
-  if (isNaN(dt.getTime())) {
-    return new Date().toISOString().split('T')[0];
-  }
-  const yyyy = dt.getFullYear();
-  const mm = String(dt.getMonth() + 1).padStart(2, '0');
-  const dd = String(dt.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-function addMonthsToDateString(dateStr: string, months: number): string {
-  const base = dateStr ? new Date(dateStr) : new Date();
-  const dt = isNaN(base.getTime()) ? new Date() : new Date(base.getTime());
-  dt.setMonth(dt.getMonth() + (Number(months) || 12));
-  return toDateInputString(dt);
-}
-
-function addDaysToTodayString(days: number): string {
-  const dt = new Date();
-  dt.setDate(dt.getDate() + days);
-  return toDateInputString(dt);
-}
 
 export default function AdminDashboardPage() {
   const [data, setData] = useState<any>(null);
@@ -171,8 +155,8 @@ export default function AdminDashboardPage() {
     count: 10,
     locationBase: 'Floor Landing Corridor',
     serviceIntervalMonths: 12,
-    lastServiceDate: toDateInputString(new Date()),
-    nextDueDate: addMonthsToDateString(toDateInputString(new Date()), 12),
+    lastServiceDate: todayCalendarDateString(),
+    nextDueDate: addCalendarMonths(todayCalendarDateString(), 12),
   });
 
   // Single add equipment form state
@@ -182,8 +166,8 @@ export default function AdminDashboardPage() {
     capacity: 'ABC Dry Powder 6kg',
     location: '',
     serviceIntervalMonths: 12,
-    lastServiceDate: toDateInputString(new Date()),
-    nextDueDate: addMonthsToDateString(toDateInputString(new Date()), 12),
+    lastServiceDate: todayCalendarDateString(),
+    nextDueDate: addCalendarMonths(todayCalendarDateString(), 12),
     photoUrl: '',
   });
 
@@ -511,8 +495,8 @@ export default function AdminDashboardPage() {
           capacity: 'ABC Dry Powder 6kg',
           location: '',
           serviceIntervalMonths: 12,
-          lastServiceDate: toDateInputString(new Date()),
-          nextDueDate: addMonthsToDateString(toDateInputString(new Date()), 12),
+          lastServiceDate: todayCalendarDateString(),
+          nextDueDate: addCalendarMonths(todayCalendarDateString(), 12),
           photoUrl: '',
         });
         await refreshDashboard({ silent: true });
@@ -650,9 +634,7 @@ export default function AdminDashboardPage() {
     let overdue = 0;
     let dueSoon = 0;
     for (const eq of equipmentsList) {
-      const diffDays = eq.nextDueDate
-        ? Math.ceil((new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-        : 0;
+      const diffDays = eq.nextDueDate ? calendarDayDiff(eq.nextDueDate) : 0;
       if (diffDays < 0 || eq.status === 'OVERDUE' || eq.liveStatus === 'OVERDUE') overdue++;
       else if (diffDays <= 30 || eq.status === 'DUE_SOON' || eq.liveStatus === 'DUE_SOON') dueSoon++;
     }
@@ -667,8 +649,11 @@ export default function AdminDashboardPage() {
   }, [workOrdersList, kpis.openWorkOrders]);
 
   const liveInspectionsThisWeek = useMemo(() => {
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const count = inspectionsList.filter((ins) => new Date(ins.date || ins.createdAt) >= sevenDaysAgo).length;
+    const sevenDaysAgoStr = addCalendarDays(todayCalendarDate(), -7);
+    const count = inspectionsList.filter((ins) => {
+      const insDate = toDateInputString(ins.date || ins.createdAt);
+      return insDate && insDate >= sevenDaysAgoStr;
+    }).length;
     return count > 0 ? count : (kpis as any).inspectionsThisWeek ?? inspectionsList.length ?? 0;
   }, [inspectionsList, kpis]);
 
@@ -1386,7 +1371,7 @@ export default function AdminDashboardPage() {
                     setEquipmentForm({
                       ...equipmentForm,
                       serviceIntervalMonths: mos,
-                      nextDueDate: addMonthsToDateString(equipmentForm.lastServiceDate, mos),
+                      nextDueDate: addCalendarMonths(equipmentForm.lastServiceDate, mos),
                     });
                   }}
                   className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white dark:focus:border-[#60A5FA]"
@@ -1410,7 +1395,7 @@ export default function AdminDashboardPage() {
                       setEquipmentForm({
                         ...equipmentForm,
                         lastServiceDate: val,
-                        nextDueDate: addMonthsToDateString(val, equipmentForm.serviceIntervalMonths),
+                        nextDueDate: addCalendarMonths(val, equipmentForm.serviceIntervalMonths),
                       });
                     }}
                     className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white"
@@ -1435,7 +1420,7 @@ export default function AdminDashboardPage() {
                     onClick={() =>
                       setEquipmentForm({
                         ...equipmentForm,
-                        nextDueDate: addMonthsToDateString(equipmentForm.lastServiceDate, 12),
+                        nextDueDate: addCalendarMonths(equipmentForm.lastServiceDate, 12),
                       })
                     }
                     className="px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
@@ -1447,7 +1432,19 @@ export default function AdminDashboardPage() {
                     onClick={() =>
                       setEquipmentForm({
                         ...equipmentForm,
-                        nextDueDate: addDaysToTodayString(15),
+                        nextDueDate: addCalendarMonths(equipmentForm.lastServiceDate, 6),
+                      })
+                    }
+                    className="px-2 py-0.5 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-bold transition-colors dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800"
+                  >
+                    +6 Months
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEquipmentForm({
+                        ...equipmentForm,
+                        nextDueDate: addCalendarDays(todayCalendarDate(), 15),
                       })
                     }
                     className="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
@@ -1459,7 +1456,7 @@ export default function AdminDashboardPage() {
                     onClick={() =>
                       setEquipmentForm({
                         ...equipmentForm,
-                        nextDueDate: addDaysToTodayString(-5),
+                        nextDueDate: addCalendarDays(todayCalendarDate(), -5),
                       })
                     }
                     className="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
@@ -1567,7 +1564,7 @@ export default function AdminDashboardPage() {
                       setSingleEquipForm({
                         ...singleEquipForm,
                         lastServiceDate: val,
-                        nextDueDate: addMonthsToDateString(val, singleEquipForm.serviceIntervalMonths),
+                        nextDueDate: addCalendarMonths(val, singleEquipForm.serviceIntervalMonths),
                       });
                     }}
                     className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2 text-slate-900 focus:border-[#2563EB] focus:outline-none dark:bg-[#111827] dark:border-[#293548] dark:text-white"
@@ -1592,7 +1589,7 @@ export default function AdminDashboardPage() {
                     onClick={() =>
                       setSingleEquipForm({
                         ...singleEquipForm,
-                        nextDueDate: addMonthsToDateString(singleEquipForm.lastServiceDate, 12),
+                        nextDueDate: addCalendarMonths(singleEquipForm.lastServiceDate, 12),
                       })
                     }
                     className="px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
@@ -1604,7 +1601,19 @@ export default function AdminDashboardPage() {
                     onClick={() =>
                       setSingleEquipForm({
                         ...singleEquipForm,
-                        nextDueDate: addDaysToTodayString(15),
+                        nextDueDate: addCalendarMonths(singleEquipForm.lastServiceDate, 6),
+                      })
+                    }
+                    className="px-2 py-0.5 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-bold transition-colors dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800"
+                  >
+                    +6 Months
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSingleEquipForm({
+                        ...singleEquipForm,
+                        nextDueDate: addCalendarDays(todayCalendarDate(), 15),
                       })
                     }
                     className="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
@@ -1616,7 +1625,7 @@ export default function AdminDashboardPage() {
                     onClick={() =>
                       setSingleEquipForm({
                         ...singleEquipForm,
-                        nextDueDate: addDaysToTodayString(-5),
+                        nextDueDate: addCalendarDays(todayCalendarDate(), -5),
                       })
                     }
                     className="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
@@ -1888,13 +1897,11 @@ export default function AdminDashboardPage() {
                   value={editEquipmentModal.serviceIntervalMonths}
                   onChange={(e) => {
                     const mos = Number(e.target.value);
+                    const baseLastService = editEquipmentModal.lastServiceDate || todayCalendarDateString();
                     setEditEquipmentModal({
                       ...editEquipmentModal,
                       serviceIntervalMonths: mos,
-                      nextDueDate: addMonthsToDateString(
-                        editEquipmentModal.lastServiceDate || toDateInputString(new Date()),
-                        mos
-                      ),
+                      nextDueDate: addCalendarMonths(baseLastService, mos),
                     });
                   }}
                   className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2.5 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
@@ -1908,13 +1915,13 @@ export default function AdminDashboardPage() {
                   </label>
                   <input
                     type="date"
-                    value={editEquipmentModal.lastServiceDate || toDateInputString(new Date())}
+                    value={editEquipmentModal.lastServiceDate || todayCalendarDateString()}
                     onChange={(e) => {
                       const val = e.target.value;
                       setEditEquipmentModal({
                         ...editEquipmentModal,
                         lastServiceDate: val,
-                        nextDueDate: addMonthsToDateString(val, editEquipmentModal.serviceIntervalMonths || 12),
+                        nextDueDate: addCalendarMonths(val, editEquipmentModal.serviceIntervalMonths || 12),
                       });
                     }}
                     className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
@@ -1927,9 +1934,22 @@ export default function AdminDashboardPage() {
                   <input
                     type="date"
                     required
-                    value={editEquipmentModal.nextDueDate || toDateInputString(new Date())}
+                    value={editEquipmentModal.nextDueDate || todayCalendarDateString()}
                     onChange={(e) =>
                       setEditEquipmentModal({ ...editEquipmentModal, nextDueDate: e.target.value })
+                    }
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1 dark:text-slate-300">
+                    Next Hydro-Test Due Date
+                  </label>
+                  <input
+                    type="date"
+                    value={editEquipmentModal.hydroDueDate ? toDateInputString(editEquipmentModal.hydroDueDate) : ''}
+                    onChange={(e) =>
+                      setEditEquipmentModal({ ...editEquipmentModal, hydroDueDate: e.target.value })
                     }
                     className="w-full bg-white border border-[#E2E8F0] rounded-lg p-2 text-slate-900 dark:bg-[#111827] dark:border-[#293548] dark:text-white"
                   />
@@ -1941,8 +1961,8 @@ export default function AdminDashboardPage() {
                     onClick={() =>
                       setEditEquipmentModal({
                         ...editEquipmentModal,
-                        nextDueDate: addMonthsToDateString(
-                          editEquipmentModal.lastServiceDate || toDateInputString(new Date()),
+                        nextDueDate: addCalendarMonths(
+                          editEquipmentModal.lastServiceDate || todayCalendarDateString(),
                           12
                         ),
                       })
@@ -1956,7 +1976,22 @@ export default function AdminDashboardPage() {
                     onClick={() =>
                       setEditEquipmentModal({
                         ...editEquipmentModal,
-                        nextDueDate: addDaysToTodayString(15),
+                        nextDueDate: addCalendarMonths(
+                          editEquipmentModal.lastServiceDate || todayCalendarDateString(),
+                          6
+                        ),
+                      })
+                    }
+                    className="px-2 py-0.5 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-bold transition-colors dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800"
+                  >
+                    +6 Months
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditEquipmentModal({
+                        ...editEquipmentModal,
+                        nextDueDate: addCalendarDays(todayCalendarDate(), 15),
                       })
                     }
                     className="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
@@ -1968,7 +2003,7 @@ export default function AdminDashboardPage() {
                     onClick={() =>
                       setEditEquipmentModal({
                         ...editEquipmentModal,
-                        nextDueDate: addDaysToTodayString(-5),
+                        nextDueDate: addCalendarDays(todayCalendarDate(), -5),
                       })
                     }
                     className="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"

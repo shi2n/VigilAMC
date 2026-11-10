@@ -1,3 +1,5 @@
+import { formatDisplay } from '../dates';
+
 export const INDIAN_STATES_AND_UTS = [
   'Andaman and Nicobar Islands',
   'Andhra Pradesh',
@@ -46,15 +48,5 @@ export const REPORTING_CYCLES = [
 
 export function formatStandardDate(dateInput: string | Date | null | undefined): string {
   if (!dateInput) return '—';
-  try {
-    const d = new Date(dateInput);
-    if (isNaN(d.getTime())) return String(dateInput);
-    return d.toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    }); // e.g. "9 Mar 2026" or "15 Oct 2026"
-  } catch {
-    return String(dateInput);
-  }
+  return formatDisplay(dateInput);
 }

@@ -2,12 +2,12 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import { ensureR2PhotoUrl, deleteFromR2 } from '@/lib/r2';
+import { calendarDayDiff, toDbDate } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
-function deriveEquipmentDbStatus(nextDueDate: Date): string {
-  const now = new Date();
-  const diffDays = Math.ceil((nextDueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+function deriveEquipmentDbStatus(nextDueDate: any): string {
+  const diffDays = calendarDayDiff(nextDueDate);
   if (diffDays < 0) return 'OVERDUE';
   if (diffDays <= 30) return 'DUE_SOON';
   return 'COMPLIANT';
@@ -93,9 +93,9 @@ export async function PUT(
       }
     }
 
-    const finalLastServiceDate = lastServiceDate ? new Date(lastServiceDate) : existing.lastServiceDate;
-    const finalNextDueDate = nextDueDate ? new Date(nextDueDate) : existing.nextDueDate;
-    const derivedStatus = deriveEquipmentDbStatus(new Date(finalNextDueDate));
+    const finalLastServiceDate = lastServiceDate ? toDbDate(lastServiceDate) : existing.lastServiceDate;
+    const finalNextDueDate = nextDueDate ? toDbDate(nextDueDate) : existing.nextDueDate;
+    const derivedStatus = deriveEquipmentDbStatus(finalNextDueDate);
 
     const updated = await (db as any).equipment.update({
       where: { id: params.id },
@@ -106,6 +106,7 @@ export async function PUT(
         location: location !== undefined ? location : existing.location,
         lastServiceDate: finalLastServiceDate,
         nextDueDate: finalNextDueDate,
+        hydroDueDate: body.hydroDueDate !== undefined ? (toDbDate(body.hydroDueDate) || null) : existing.hydroDueDate,
         serviceIntervalMonths:
           serviceIntervalMonths !== undefined ? Number(serviceIntervalMonths) : existing.serviceIntervalMonths,
         status: nextDueDate ? derivedStatus : status !== undefined ? status : derivedStatus,

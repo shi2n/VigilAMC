@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { calendarDayDiff, addCalendarMonths, todayCalendarDate, toDbDate } from '@/lib/dates';
 import { getCurrentUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
@@ -33,7 +34,7 @@ export async function GET() {
       let overdueCount = 0;
 
       b.equipments.forEach((eq: any) => {
-        const diffDays = Math.ceil((new Date(eq.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        const diffDays = calendarDayDiff(eq.nextDueDate);
         if (diffDays < 0) overdueCount++;
         else if (diffDays <= 30) dueCount++;
         else compliantCount++;
@@ -102,7 +103,7 @@ export async function POST(request: Request) {
         address: (address || city || 'Facility Address').trim(),
         city: (city || '').trim(),
         complianceCycle: occupancyType || 'Delhi NCR Statutory Form-B (Half-Yearly)',
-        nextFilingDueDate: nocExpiryDate ? new Date(nocExpiryDate) : new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
+        nextFilingDueDate: nocExpiryDate ? toDbDate(nocExpiryDate) : toDbDate(addCalendarMonths(todayCalendarDate(), 6)),
       },
       include: {
         client: true,

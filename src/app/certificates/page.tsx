@@ -15,6 +15,7 @@ import {
   ExternalLink,
   RefreshCw
 } from 'lucide-react';
+import { formatDisplay } from '@/lib/dates';
 
 export default function CertificatesPage() {
   const [certificates, setCertificates] = useState<any[]>([]);
@@ -156,7 +157,7 @@ export default function CertificatesPage() {
                 </div>
 
                 <div className="mt-3 flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800/80">
-                  <span>Valid Until: {new Date(cert.validUntil).toLocaleDateString()}</span>
+                  <span>Valid Until: {formatDisplay(cert.validUntil)}</span>
                   <span className="font-semibold text-emerald-400">✓ {cert.overallResult}</span>
                 </div>
               </div>

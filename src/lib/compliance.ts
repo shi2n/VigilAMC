@@ -1,3 +1,5 @@
+import { calendarDayDiff, dueState, parseCalendarDate, toDbDate } from './dates';
+
 export type ComplianceStatus = 'NOT_INSPECTED' | 'DUE_SOON' | 'OVERDUE' | 'VERIFIED';
 
 export interface EquipmentStatusResult {
@@ -12,9 +14,8 @@ export interface EquipmentStatusResult {
   isImported: boolean;
 }
 
-export function evaluateEquipmentStatus(eq: any, now: Date = new Date()): EquipmentStatusResult {
-  const nextDue = eq.nextDueDate ? new Date(eq.nextDueDate) : null;
-  const diffDays = nextDue ? Math.ceil((nextDue.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+export function evaluateEquipmentStatus(eq: any, now?: Date | string): EquipmentStatusResult {
+  const diffDays = eq.nextDueDate ? calendarDayDiff(eq.nextDueDate, now) : 0;
 
   const latestInspection = eq.inspections?.[0] || eq.serviceLogs?.[0] || null;
   const hasInspection = Boolean(latestInspection || eq.lastServiceDate || eq.status);
@@ -26,9 +27,9 @@ export function evaluateEquipmentStatus(eq: any, now: Date = new Date()): Equipm
     (latestInspection?.inspectionPhotos && latestInspection.inspectionPhotos.length > 0)
   );
   const verifiedDate = latestInspection
-    ? new Date(latestInspection.date || latestInspection.servicedAt)
+    ? (toDbDate(latestInspection.date || latestInspection.servicedAt) || null)
     : eq.lastServiceDate
-    ? new Date(eq.lastServiceDate)
+    ? (toDbDate(eq.lastServiceDate) || null)
     : null;
 
   // 1. Overdue (red) - always takes priority when nextDueDate has passed
@@ -170,18 +171,23 @@ export interface NocStatus {
 }
 
 export function getNocStatus(expiryDate: Date | string): NocStatus {
-  const expiry = new Date(expiryDate);
-  const now = new Date();
-  const diffTime = expiry.getTime() - now.getTime();
-  const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const daysRemaining = calendarDayDiff(expiryDate);
 
-  if (daysRemaining <= 0) {
+  if (daysRemaining < 0) {
     return {
       daysRemaining,
       status: 'EXPIRED',
       label: `Lapsed (${Math.abs(daysRemaining)} days ago)`,
       badgeClass: 'bg-red-950 text-red-400 border border-red-800',
       textClass: 'text-red-500 font-bold',
+    };
+  } else if (daysRemaining === 0) {
+    return {
+      daysRemaining,
+      status: 'CRITICAL',
+      label: 'Due today (Urgent Renewal)',
+      badgeClass: 'bg-red-500/20 text-red-300 border border-red-500/50 animate-pulse',
+      textClass: 'text-red-400 font-semibold',
     };
   } else if (daysRemaining <= 30) {
     return {
@@ -211,28 +217,27 @@ export function getNocStatus(expiryDate: Date | string): NocStatus {
 }
 
 export function getAssetRefillStatus(nextRefillDate: Date | string) {
-  const due = new Date(nextRefillDate);
-  const now = new Date();
-  const diffDays = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  const state = dueState(nextRefillDate);
+  const diffDays = state.daysDiff ?? 0;
 
-  if (diffDays < 0) {
+  if (state.state === 'EXPIRED') {
     return {
       status: 'OVERDUE',
-      label: `Overdue by ${Math.abs(diffDays)}d`,
+      label: state.label,
       color: 'bg-red-500 text-white',
       badgeClass: 'bg-red-950/80 text-red-300 border border-red-800'
     };
-  } else if (diffDays <= 30) {
+  } else if (state.state === 'DUE_SOON') {
     return {
       status: 'DUE_SOON',
-      label: `Due in ${diffDays}d`,
+      label: state.label,
       color: 'bg-amber-500 text-black',
       badgeClass: 'bg-amber-950/80 text-amber-300 border border-amber-800'
     };
   } else {
     return {
       status: 'OK',
-      label: `Valid (${Math.round(diffDays / 30)} mos)`,
+      label: state.chipLabel,
       color: 'bg-emerald-600 text-white',
       badgeClass: 'bg-emerald-950/80 text-emerald-300 border border-emerald-800'
     };

@@ -14,6 +14,7 @@ import {
   FileSpreadsheet,
   Layers,
 } from 'lucide-react';
+import { formatDisplay, dueState } from '@/lib/dates';
 
 interface BuildingsViewProps {
   buildings: any[];
@@ -233,20 +234,23 @@ export function BuildingsView({
                           <span>•</span>
                           <span>
                             Filing Due:{' '}
-                            <strong
-                              className={
-                                b.filingDaysRemaining <= 30
-                                  ? 'text-amber-600 dark:text-amber-400 font-bold'
-                                  : 'text-slate-800 dark:text-slate-200'
-                              }
-                            >
-                              {new Date(b.nextFilingDueDate).toLocaleDateString('en-IN', {
-                                day: 'numeric',
-                                month: 'short',
-                                year: 'numeric',
-                              })}{' '}
-                              ({b.filingDaysRemaining > 0 ? `${b.filingDaysRemaining}d left` : `${Math.abs(b.filingDaysRemaining)}d overdue`})
-                            </strong>
+                            {(() => {
+                              const filingState = dueState(b.nextFilingDueDate);
+                              return (
+                                <strong
+                                  className={
+                                    filingState.state === 'EXPIRED'
+                                      ? 'text-rose-600 dark:text-red-400 font-bold'
+                                      : filingState.state === 'DUE_SOON'
+                                      ? 'text-amber-600 dark:text-amber-400 font-bold'
+                                      : 'text-slate-800 dark:text-slate-200'
+                                  }
+                                >
+                                  {formatDisplay(b.nextFilingDueDate)}{' '}
+                                  ({filingState.label})
+                                </strong>
+                              );
+                            })()}
                           </span>
                         </div>
                       </div>
@@ -339,13 +343,11 @@ export function BuildingsView({
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                               {(b.equipments ?? []).map((eq: any) => {
-                                const diffDays = Math.ceil(
-                                  (new Date(eq.nextDueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-                                );
+                                const eqState = dueState(eq.nextDueDate);
                                 const status =
-                                  diffDays < 0
+                                  eqState.state === 'EXPIRED'
                                     ? 'OVERDUE'
-                                    : diffDays <= 30
+                                    : eqState.state === 'DUE_SOON'
                                     ? 'DUE_SOON'
                                     : eq.complianceStatus || eq.status || 'VERIFIED';
 
@@ -366,32 +368,20 @@ export function BuildingsView({
                                     </td>
                                     <td className="py-3 px-4 text-slate-600 dark:text-slate-300">{eq.location}</td>
                                     <td className="py-3 px-4 text-slate-500 dark:text-slate-400">
-                                      {new Date(eq.lastServiceDate).toLocaleDateString('en-IN', {
-                                        day: 'numeric',
-                                        month: 'short',
-                                        year: 'numeric',
-                                      })}
+                                      {formatDisplay(eq.lastServiceDate)}
                                     </td>
                                     <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">
-                                      {new Date(eq.nextDueDate).toLocaleDateString('en-IN', {
-                                        day: 'numeric',
-                                        month: 'short',
-                                        year: 'numeric',
-                                      })}
+                                      {formatDisplay(eq.nextDueDate)}
                                       <span
                                         className={`block text-[10px] font-normal ${
-                                          diffDays < 0
+                                          eqState.state === 'EXPIRED'
                                             ? 'text-rose-600 dark:text-red-400 font-bold'
-                                            : diffDays <= 30
+                                            : eqState.state === 'DUE_SOON'
                                             ? 'text-amber-600 dark:text-amber-400 font-bold'
                                             : 'text-slate-500 dark:text-slate-400'
                                         }`}
                                       >
-                                        {diffDays < 0
-                                          ? `${Math.abs(diffDays)}d overdue`
-                                          : diffDays <= 30
-                                          ? `Due in ${diffDays}d`
-                                          : `${Math.round(diffDays / 30)} mos left`}
+                                        {eqState.chipLabel}
                                       </span>
                                     </td>
                                     <td className="py-3 px-4">

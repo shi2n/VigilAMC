@@ -16,6 +16,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { EQUIPMENT_TYPES, getAssetRefillStatus } from '@/lib/compliance';
+import { formatDisplay } from '@/lib/dates';
 
 export default function AssetsPage() {
   const [assets, setAssets] = useState<any[]>([]);
@@ -179,11 +180,11 @@ export default function AssetsPage() {
                         <div className="text-[11px] text-slate-400">{asset.brand} (S/N: {asset.serialNumber})</div>
                       </td>
                       <td className="py-3 px-4 text-slate-400">
-                        <div>{new Date(asset.lastRefillDate).toLocaleDateString()}</div>
-                        <div className="text-[10px] text-slate-500">Hydro: {new Date(asset.lastHydroTestDate).toLocaleDateString()}</div>
+                        <div>{formatDisplay(asset.lastRefillDate)}</div>
+                        <div className="text-[10px] text-slate-500">Hydro: {formatDisplay(asset.lastHydroTestDate)}</div>
                       </td>
                       <td className="py-3 px-4">
-                        <div className="font-medium text-slate-300">{new Date(asset.nextRefillDueDate).toLocaleDateString()}</div>
+                        <div className="font-medium text-slate-300">{formatDisplay(asset.nextRefillDueDate)}</div>
                         <span className={`text-[10px] font-semibold ${
                           refill.status === 'OVERDUE' ? 'text-red-400' :
                           refill.status === 'DUE_SOON' ? 'text-amber-400' : 'text-emerald-400'

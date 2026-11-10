@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { addCalendarMonths, todayCalendarDate } from '@/lib/dates';
 import {
   Building2,
   Plus,
@@ -39,7 +40,7 @@ export default function BuildingsPage() {
     contactEmail: '',
     fireNocNumber: '',
     nocAuthority: 'Delhi Fire Service (DFS)',
-    nocExpiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    nocExpiryDate: addCalendarMonths(todayCalendarDate(), 12),
   });
 
   const fetchBuildings = async () => {

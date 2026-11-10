@@ -33,6 +33,7 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react';
+import { formatDisplay, dueState } from '@/lib/dates';
 import { createClient } from '@/lib/supabase/client';
 
 interface GPSCoordinates {
@@ -1145,6 +1146,14 @@ export default function TechnicianPWA() {
                           </span>
                         </div>
                         <p className="text-xs text-slate-500">{asset.location || 'Location not specified'}</p>
+                        {asset.nextDueDate && (
+                          <p className="text-[11px] font-semibold text-slate-600">
+                            Due: <span className="text-slate-900">{formatDisplay(asset.nextDueDate)}</span>{' '}
+                            <span className={dueState(asset.nextDueDate).state === 'EXPIRED' ? 'text-rose-600 font-bold' : 'text-amber-600 font-bold'}>
+                              ({dueState(asset.nextDueDate).label})
+                            </span>
+                          </p>
+                        )}
                       </div>
 
                       {isChecked ? (

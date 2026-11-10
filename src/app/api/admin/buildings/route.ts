@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { calendarDayDiff, addCalendarMonths, todayCalendarDate, toDbDate } from '@/lib/dates';
 import { getCurrentUser, logAuditActivity, isPlatformOwner } from '@/lib/auth';
 import { checkPlanLimit } from '@/lib/plans';
 
@@ -89,7 +90,7 @@ export async function GET(request: Request) {
       }
 
       const filingDaysRemaining = b.nextFilingDueDate
-        ? Math.ceil((new Date(b.nextFilingDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+        ? calendarDayDiff(b.nextFilingDueDate)
         : null;
 
       return {
@@ -202,7 +203,7 @@ export async function POST(request: Request) {
       Yearly: 12,
     };
     const interval = Number(cycleIntervalMos) || intervalMap[repCycle] || 6;
-    const nextFiling = new Date(Date.now() + interval * 30 * 24 * 60 * 60 * 1000);
+    const nextFiling = toDbDate(addCalendarMonths(todayCalendarDate(), interval));
 
     // 2. Create Building associated with user's organization
     const building = await (db as any).building.create({

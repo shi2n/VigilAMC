@@ -12,7 +12,11 @@ import {
   AlertCircle,
   Info,
 } from 'lucide-react';
-import { formatStandardDate } from '@/lib/constants/india';
+import {
+  addCalendarDays,
+  todayCalendarDateString,
+  formatDisplay,
+} from '@/lib/dates';
 
 interface AlertsSettingsViewProps {
   company?: any;
@@ -34,14 +38,14 @@ export function AlertsSettingsView({ company, showToast }: AlertsSettingsViewPro
   const [emailLogs, setEmailLogs] = useState([
     {
       id: '1',
-      date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
+      date: addCalendarDays(todayCalendarDateString(), -2),
       recipient: company?.email || 'service@agency.in',
       subject: 'Upcoming Inspection Reminder (30 Days) - Horizon Tower',
       status: 'DELIVERED',
     },
     {
       id: '2',
-      date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(),
+      date: addCalendarDays(todayCalendarDateString(), -7),
       recipient: company?.email || 'service@agency.in',
       subject: 'Critical Expiry Notice (7 Days) - Emerald Heights Block A',
       status: 'DELIVERED',
@@ -57,7 +61,7 @@ export function AlertsSettingsView({ company, showToast }: AlertsSettingsViewPro
       setTestSentSuccess(true);
       const newEntry = {
         id: String(Date.now()),
-        date: new Date().toISOString(),
+        date: todayCalendarDateString(),
         recipient: recipientEmails.split(',')[0].trim(),
         subject: 'Test Notification: Upcoming Fire Equipment Expiry Alert',
         status: 'DELIVERED',
@@ -250,7 +254,7 @@ export function AlertsSettingsView({ company, showToast }: AlertsSettingsViewPro
                   {log.subject}
                 </div>
                 <div className="text-[11px] text-slate-400 truncate">
-                  Sent to {log.recipient} &bull; {formatStandardDate(log.date)}
+                  Sent to {log.recipient} &bull; {formatDisplay(log.date)}
                 </div>
               </div>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 shrink-0">

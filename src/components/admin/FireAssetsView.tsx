@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Layers, Search, Edit, Trash2, MapPin, FileSpreadsheet } from 'lucide-react';
+import { formatDisplay, dueState } from '@/lib/dates';
 
 interface FireAssetsViewProps {
   equipmentsList: any[];
@@ -126,11 +127,9 @@ export function FireAssetsView({
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
               {equipmentsList.map((eq) => {
-                const diffDays = eq.nextDueDate
-                  ? Math.ceil((new Date(eq.nextDueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-                  : 0;
-                const isOverdue = diffDays < 0 || eq.status === 'OVERDUE' || eq.liveStatus === 'OVERDUE';
-                const isDueSoon = !isOverdue && (diffDays <= 30 || eq.status === 'DUE_SOON' || eq.liveStatus === 'DUE_SOON');
+                const eqState = dueState(eq.nextDueDate);
+                const isOverdue = eqState.state === 'EXPIRED' || eq.status === 'OVERDUE' || eq.liveStatus === 'OVERDUE';
+                const isDueSoon = !isOverdue && (eqState.state === 'DUE_SOON' || eq.status === 'DUE_SOON' || eq.liveStatus === 'DUE_SOON');
                 const isVerified =
                   !isOverdue &&
                   !isDueSoon &&
@@ -154,22 +153,10 @@ export function FireAssetsView({
                     </td>
                     <td className="py-3 px-4 text-slate-500 dark:text-slate-400">{eq.location}</td>
                     <td className="py-3 px-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                      {eq.lastServiceDate
-                        ? new Date(eq.lastServiceDate).toLocaleDateString('en-IN', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                          })
-                        : '—'}
+                      {formatDisplay(eq.lastServiceDate)}
                     </td>
                     <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                      {eq.nextDueDate
-                        ? new Date(eq.nextDueDate).toLocaleDateString('en-IN', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                          })
-                        : '—'}
+                      {formatDisplay(eq.nextDueDate)}
                       <span
                         className={`block text-[10px] font-normal ${
                           isOverdue
@@ -179,11 +166,7 @@ export function FireAssetsView({
                             : 'text-slate-500 dark:text-slate-400'
                         }`}
                       >
-                        {isOverdue
-                          ? `Overdue by ${Math.abs(diffDays)}d`
-                          : isDueSoon
-                          ? `Due in ${diffDays}d`
-                          : `${Math.max(1, Math.round(diffDays / 30))} mos left`}
+                        {eqState.chipLabel}
                       </span>
                     </td>
                     <td className="py-3 px-4 text-center whitespace-nowrap">

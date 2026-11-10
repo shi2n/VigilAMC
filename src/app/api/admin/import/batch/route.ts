@@ -2,6 +2,12 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser, logAuditActivity } from '@/lib/auth';
 import { ImportType, DuplicateStrategy } from '@/lib/excelImport';
+import {
+  toDbDate,
+  addCalendarMonths,
+  todayCalendarDateString,
+  toDateInputString,
+} from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -221,8 +227,8 @@ export async function POST(request: Request) {
               skippedCount++;
               continue;
             } else if (duplicateStrategy === 'UPDATE') {
-              const lastServ = parsedData.lastServiceDate ? new Date(parsedData.lastServiceDate) : existing.lastServiceDate;
-              const nextDue = parsedData.nextDueDate ? new Date(parsedData.nextDueDate) : existing.nextDueDate;
+              const lastServ = parsedData.lastServiceDate ? toDbDate(parsedData.lastServiceDate) : existing.lastServiceDate;
+              const nextDue = parsedData.nextDueDate ? toDbDate(parsedData.nextDueDate) : existing.nextDueDate;
 
               await (db as any).equipment.update({
                 where: { id: existing.id },
@@ -241,10 +247,12 @@ export async function POST(request: Request) {
           }
 
           const building = await getOrCreateBuilding(parsedData.buildingName || 'Main Facility');
-          const lastServ = parsedData.lastServiceDate ? new Date(parsedData.lastServiceDate) : new Date();
-          const nextDue = parsedData.nextDueDate
-            ? new Date(parsedData.nextDueDate)
-            : new Date(lastServ.getTime() + 365 * 24 * 60 * 60 * 1000);
+          const lastServStr = parsedData.lastServiceDate ? toDateInputString(parsedData.lastServiceDate) : todayCalendarDateString();
+          const nextDueStr = parsedData.nextDueDate
+            ? toDateInputString(parsedData.nextDueDate)
+            : addCalendarMonths(lastServStr, 12);
+          const lastServ = toDbDate(lastServStr);
+          const nextDue = toDbDate(nextDueStr);
 
           await (db as any).equipment.create({
             data: {
@@ -334,8 +342,8 @@ export async function POST(request: Request) {
                 type: 'Fire Extinguisher',
                 capacity: 'ABC Dry Powder 6kg',
                 location: 'Inspection Location',
-                lastServiceDate: parsedData.date ? new Date(parsedData.date) : new Date(),
-                nextDueDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+                lastServiceDate: toDbDate(parsedData.date ? toDateInputString(parsedData.date) : todayCalendarDateString()),
+                nextDueDate: toDbDate(addCalendarMonths(parsedData.date ? toDateInputString(parsedData.date) : todayCalendarDateString(), 12)),
                 currentStatus: parsedData.status === 'PASSED' ? 'COMPLIANT' : 'OVERDUE',
               },
             });
@@ -349,7 +357,7 @@ export async function POST(request: Request) {
               equipmentId,
               technicianName: parsedData.technicianName || 'Field Technician',
               status: parsedData.status || 'PASSED',
-              date: parsedData.date ? new Date(parsedData.date) : new Date(),
+              date: toDbDate(parsedData.date ? toDateInputString(parsedData.date) : todayCalendarDateString()),
               pressureGauge: parsedData.pressureGauge || 'NORMAL',
               overallCondition: parsedData.overallCondition || 'GOOD',
               remarks: parsedData.remarks || 'Spreadsheet batch audit record.',

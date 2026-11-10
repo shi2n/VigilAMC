@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { toDbDate } from '@/lib/dates';
 import { getCurrentUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
@@ -85,7 +86,7 @@ export async function PUT(
         complianceRuleName: complianceRuleName !== undefined ? (complianceRuleName ? complianceRuleName.trim() : null) : existing.complianceRuleName,
         complianceCycle: complianceCycle !== undefined ? complianceCycle : (repCycle || existing.complianceCycle),
         cycleIntervalMos: computedInterval || 6,
-        nextFilingDueDate: nextFilingDueDate ? new Date(nextFilingDueDate) : existing.nextFilingDueDate,
+        nextFilingDueDate: nextFilingDueDate ? toDbDate(nextFilingDueDate) : existing.nextFilingDueDate,
         clientId: clientId !== undefined ? clientId : existing.clientId,
       },
       include: { client: true },

@@ -31,6 +31,7 @@ import {
   matchColumnsToFields,
   generateErrorReportWorkbook,
 } from '@/lib/excelImport';
+import { todayCalendarDateString } from '@/lib/dates';
 
 interface ImportModalProps {
   isOpen: boolean;
@@ -317,7 +318,7 @@ export function ImportModal({
   const handleDownloadErrorReport = () => {
     if (collectedErrors.length === 0) return;
     const wb = generateErrorReportWorkbook(selectedType, collectedErrors);
-    XLSX.writeFile(wb, `Import_Errors_${selectedType}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    XLSX.writeFile(wb, `Import_Errors_${selectedType}_${todayCalendarDateString()}.xlsx`);
   };
 
   // Reset Modal

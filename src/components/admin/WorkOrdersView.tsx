@@ -11,6 +11,7 @@ import {
   User,
   X
 } from 'lucide-react';
+import { dueState, formatDisplay } from '@/lib/dates';
 
 interface WorkOrdersViewProps {
   showToast: (msg: string) => void;
@@ -279,7 +280,8 @@ export function WorkOrdersView({
         ) : (
           <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
             {filteredOrders.map((wo) => {
-              const isOverdue = wo.status !== 'COMPLETED' && wo.dueDate && new Date(wo.dueDate) < new Date();
+              const { state: dueStatus, chipLabel } = wo.dueDate ? dueState(wo.dueDate) : { state: 'OK', chipLabel: '' };
+              const isOverdue = wo.status !== 'COMPLETED' && wo.dueDate && dueStatus === 'EXPIRED';
               const isUnassigned = !wo.assignedToId && !wo.assignedTo;
 
               return (
@@ -327,7 +329,7 @@ export function WorkOrdersView({
                           <span>&bull;</span>
                           <span className={`flex items-center gap-1 ${isOverdue ? 'text-rose-600 dark:text-red-400 font-bold' : 'text-slate-600 dark:text-slate-400'}`}>
                             <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                            Due: {new Date(wo.dueDate).toLocaleDateString('en-IN')}
+                            Due: {formatDisplay(wo.dueDate)} {chipLabel ? `(${chipLabel})` : ''}
                           </span>
                         </>
                       )}

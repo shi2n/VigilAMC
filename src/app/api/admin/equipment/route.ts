@@ -3,12 +3,17 @@ import { db } from '@/lib/db';
 import { getCurrentUser, logAuditActivity } from '@/lib/auth';
 import { checkPlanLimit } from '@/lib/plans';
 import { ensureR2PhotoUrl } from '@/lib/r2';
+import {
+  calendarDayDiff,
+  toDbDate,
+  addCalendarMonths,
+  todayCalendarDate,
+} from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
-function deriveEquipmentDbStatus(nextDueDate: Date): string {
-  const now = new Date();
-  const diffDays = Math.ceil((nextDueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+function deriveEquipmentDbStatus(nextDueDate: any): string {
+  const diffDays = calendarDayDiff(nextDueDate);
   if (diffDays < 0) return 'OVERDUE';
   if (diffDays <= 30) return 'DUE_SOON';
   return 'COMPLIANT';
@@ -136,10 +141,10 @@ export async function POST(request: Request) {
     }
 
     const intervalMos = Number(serviceIntervalMonths) || 12;
-    const serviceDateObj = lastServiceDate ? new Date(lastServiceDate) : new Date();
+    const serviceDateObj = toDbDate(lastServiceDate) || toDbDate(todayCalendarDate());
     const nextDueObj = nextDueDate
-      ? new Date(nextDueDate)
-      : new Date(serviceDateObj.getTime() + intervalMos * 30 * 24 * 60 * 60 * 1000);
+      ? toDbDate(nextDueDate)
+      : toDbDate(addCalendarMonths(serviceDateObj, intervalMos));
     const derivedStatus = deriveEquipmentDbStatus(nextDueObj);
 
     // Single Equipment Creation

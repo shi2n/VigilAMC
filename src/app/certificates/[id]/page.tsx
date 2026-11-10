@@ -18,6 +18,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { EQUIPMENT_TYPES } from '@/lib/compliance';
+import { formatDisplay } from '@/lib/dates';
 
 export default function CertificateDetailPage() {
   const params = useParams();
@@ -148,7 +149,7 @@ export default function CertificateDetailPage() {
             </div>
             <div>
               <span className="text-[10px] font-bold text-slate-500 uppercase block">Validity Period:</span>
-              <span className="font-bold text-emerald-700">{cert.period} (Valid till {new Date(cert.validUntil).toLocaleDateString()})</span>
+              <span className="font-bold text-emerald-700">{cert.period} (Valid till {formatDisplay(cert.validUntil)})</span>
             </div>
           </div>
         </div>
@@ -214,8 +215,8 @@ export default function CertificateDetailPage() {
                         {a.capacity} {eqInfo?.name || a.type}
                       </td>
                       <td className="py-1.5 px-2 text-slate-600 border-r border-slate-200">{a.isStandard}</td>
-                      <td className="py-1.5 px-2 border-r border-slate-200">{new Date(a.lastRefillDate).toLocaleDateString()}</td>
-                      <td className="py-1.5 px-2 font-bold border-r border-slate-200">{new Date(a.nextRefillDueDate).toLocaleDateString()}</td>
+                      <td className="py-1.5 px-2 border-r border-slate-200">{formatDisplay(a.lastRefillDate)}</td>
+                      <td className="py-1.5 px-2 font-bold border-r border-slate-200">{formatDisplay(a.nextRefillDueDate)}</td>
                       <td className="py-1.5 px-2 text-right font-bold text-emerald-700">PASS</td>
                     </tr>
                   );

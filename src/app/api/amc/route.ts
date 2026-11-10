@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import {
+  toDbDate,
+  addCalendarMonths,
+  todayCalendarDateString,
+  toDateInputString,
+} from '@/lib/dates';
 
 export async function GET() {
   try {
@@ -58,13 +64,16 @@ export async function POST(request: Request) {
       scopeSummary,
     } = body;
 
+    const startStr = startDate ? toDateInputString(startDate) : todayCalendarDateString();
+    const endStr = endDate ? toDateInputString(endDate) : addCalendarMonths(startStr, 12);
+
     const amc = (db as any).amcContract ? await (db as any).amcContract.create({
       data: {
         buildingId,
-        contractNumber: contractNumber || `AMC/${new Date().getFullYear()}/${Math.floor(100 + Math.random() * 900)}`,
+        contractNumber: contractNumber || `AMC/${startStr.slice(0, 4)}/${Math.floor(100 + Math.random() * 900)}`,
         annualValue: parseFloat(annualValue) || 60000,
-        startDate: new Date(startDate || new Date()),
-        endDate: new Date(endDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)),
+        startDate: toDbDate(startStr),
+        endDate: toDbDate(endStr),
         totalVisitsPerYear: Number(totalVisitsPerYear) || 4,
         paymentStatus: paymentStatus || 'PAID',
         status: status || 'ACTIVE',

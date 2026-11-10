@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { toDbDate, toDateInputString, addCalendarMonths } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +32,7 @@ export async function GET() {
       formType: 'FORM_B',
       period: r.cyclePeriod,
       issueDate: r.generatedAt,
-      validUntil: new Date(new Date(r.generatedAt).getTime() + 180 * 24 * 60 * 60 * 1000),
+      validUntil: toDbDate(addCalendarMonths(toDateInputString(r.generatedAt), 6)),
       licensedAgencyNumber: auth.organization.licenseNumber || 'DL/FIRE/LIC/PENDING',
       overallResult: r.status,
       building: r.building,

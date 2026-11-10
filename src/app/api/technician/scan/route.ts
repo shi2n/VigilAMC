@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser, logAuditActivity } from '@/lib/auth';
+import {
+  calendarDayDiff,
+  toDbDate,
+  addCalendarMonths,
+  todayCalendarDate,
+  formatDisplay,
+} from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,8 +64,7 @@ export async function GET(request: Request) {
     }
 
     // Evaluate live status
-    const now = new Date();
-    const diffDays = Math.ceil((new Date(equipment.nextDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    const diffDays = calendarDayDiff(equipment.nextDueDate);
     let currentStatus = 'COMPLIANT';
     if (diffDays < 0) currentStatus = 'OVERDUE';
     else if (diffDays <= 30) currentStatus = 'DUE_SOON';
@@ -104,19 +110,19 @@ export async function POST(request: Request) {
     // Resolve technician name from authenticated profile or body fallback
     const resolvedTechnicianName = auth?.profile?.fullName || body.technicianName || 'Field Technician';
 
-    const now = new Date();
     const months = Number(intervalMonths) || 12;
-    const nextDueDate = new Date(now.getTime() + months * 30.5 * 24 * 60 * 60 * 1000);
+    const serviceDate = toDbDate(todayCalendarDate());
+    const nextDueDate = toDbDate(addCalendarMonths(todayCalendarDate(), months));
 
     // 1. Create Service Log
     const log = await (db as any).serviceLog.create({
       data: {
         equipmentId: eq.id,
         technicianName: resolvedTechnicianName,
-        servicedAt: now,
+        servicedAt: serviceDate,
         nextDueDate,
         actionType: months === 12 ? 'Annual Refill & IS 2190 Pressure Overhaul' : 'Half-Yearly Maintenance Check',
-        notes: notes || `Service verified by ${resolvedTechnicianName}. Next due set to ${nextDueDate.toLocaleDateString('en-IN')}`,
+        notes: notes || `Service verified by ${resolvedTechnicianName}. Next due set to ${formatDisplay(nextDueDate)}`,
       },
     });
 
@@ -124,7 +130,7 @@ export async function POST(request: Request) {
     const updatedEquipment = await (db as any).equipment.update({
       where: { id: eq.id },
       data: {
-        lastServiceDate: now,
+        lastServiceDate: serviceDate,
         nextDueDate,
         status: 'COMPLIANT',
         serviceIntervalMonths: months,
@@ -155,7 +161,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `Service logged successfully! Next service due on ${nextDueDate.toLocaleDateString('en-IN')}.`,
+      message: `Service logged successfully! Next service due on ${formatDisplay(nextDueDate)}.`,
       equipment: updatedEquipment,
       log,
     });

@@ -2,6 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import {
+  todayCalendarDate,
+  todayCalendarDateString,
+  addCalendarMonths,
+  formatDisplay,
+} from '@/lib/dates';
 import { useParams } from 'next/navigation';
 import {
   Building2,
@@ -76,11 +82,11 @@ export default function BuildingDetailPage() {
         locationFloor: `Floor ${targetFloor}`,
         locationWing: num % 2 === 0 ? 'Wing A' : 'Wing B',
         locationSpecific: `Near Lift Corridor Floor ${targetFloor}`,
-        mfgYear: new Date().getFullYear(),
-        lastRefillDate: new Date(),
-        nextRefillDueDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-        lastHydroTestDate: new Date(),
-        nextHydroTestDueDate: new Date(Date.now() + 1095 * 24 * 60 * 60 * 1000),
+        mfgYear: todayCalendarDate().year,
+        lastRefillDate: todayCalendarDateString(),
+        nextRefillDueDate: addCalendarMonths(todayCalendarDate(), 12),
+        lastHydroTestDate: todayCalendarDateString(),
+        nextHydroTestDueDate: addCalendarMonths(todayCalendarDate(), 36),
         status: 'OPERATIONAL',
         weightKg: batchCapacity.includes('6') ? 9.8 : batchCapacity.includes('4.5') ? 12.8 : 7.0,
       });
@@ -193,7 +199,7 @@ export default function BuildingDetailPage() {
               {noc.label}
             </span>
             <span className="text-[11px] text-slate-400">
-              Exp: {new Date(building.nocExpiryDate).toLocaleDateString()}
+              Exp: {formatDisplay(building.nocExpiryDate)}
             </span>
           </div>
         </div>
@@ -303,7 +309,7 @@ export default function BuildingDetailPage() {
                       <div className="font-mono text-[10px] text-slate-500">{asset.serialNumber}</div>
                     </td>
                     <td className="py-2.5 px-3">
-                      <div className="font-medium text-slate-300">{new Date(asset.nextRefillDueDate).toLocaleDateString()}</div>
+                      <div className="font-medium text-slate-300">{formatDisplay(asset.nextRefillDueDate)}</div>
                       <span className={`text-[10px] font-semibold ${
                         refillStatus.status === 'OVERDUE' ? 'text-red-400' :
                         refillStatus.status === 'DUE_SOON' ? 'text-amber-400' : 'text-emerald-400'

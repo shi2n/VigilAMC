@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Sparkles
 } from 'lucide-react';
+import { formatDisplay } from '@/lib/dates';
 
 function PrintQrContent() {
   const searchParams = useSearchParams();
@@ -196,14 +197,8 @@ function PrintQrContent() {
           >
             {equipments.map((eq) => {
               const qrSrc = qrImages[eq.qrCode];
-              const dueFormatted = new Date(eq.nextDueDate).toLocaleDateString('en-IN', {
-                month: 'short',
-                year: 'numeric',
-              });
-              const serviceFormatted = new Date(eq.lastServiceDate).toLocaleDateString('en-IN', {
-                month: 'short',
-                year: 'numeric',
-              });
+              const dueFormatted = formatDisplay(eq.nextDueDate);
+              const serviceFormatted = formatDisplay(eq.lastServiceDate);
 
               return (
                 <div

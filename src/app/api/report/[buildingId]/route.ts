@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { evaluateEquipmentStatus } from '@/lib/compliance';
+import {
+  todayCalendarDate,
+  addCalendarMonths,
+  formatDisplay,
+  parseCalendarDate,
+} from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -221,12 +227,11 @@ export async function GET(
     const overallReportStatus = isFullyCompliant ? 'COMPLIANT' : 'ACTION_NEEDED';
 
     // Create or update ComplianceReport record
-    const reportNumber = `FORM-B/${now.getFullYear()}/${building.id.slice(-4).toUpperCase()}`;
-    const cyclePeriod = `${now.toLocaleString('en-IN', { month: 'short' })} ${now.getFullYear()} - ${new Date(
-      now.getTime() + 180 * 24 * 60 * 60 * 1000
-    ).toLocaleString('en-IN', { month: 'short' })} ${new Date(
-      now.getTime() + 180 * 24 * 60 * 60 * 1000
-    ).getFullYear()}`;
+    const todayCd = todayCalendarDate();
+    const futureDateStr = addCalendarMonths(todayCd, 6);
+    const futureCd = parseCalendarDate(futureDateStr);
+    const reportNumber = `FORM-B/${todayCd.year}/${building.id.slice(-4).toUpperCase()}`;
+    const cyclePeriod = `${formatDisplay(todayCd, { includeYear: false })} ${todayCd.year} - ${formatDisplay(futureDateStr, { includeYear: false })} ${futureCd?.year || todayCd.year}`;
 
     const report =
       (await (db as any).complianceReport

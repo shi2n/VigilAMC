@@ -3,6 +3,12 @@ import { db } from '@/lib/db';
 import { getCurrentUser, isPlatformOwner } from '@/lib/auth';
 import { evaluateEquipmentStatus } from '@/lib/compliance';
 import { getPlanConfig, PLAN_CONFIGS } from '@/lib/plans';
+import {
+  calendarDayDiff,
+  addCalendarDays,
+  todayCalendarDate,
+  toDateInputString,
+} from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -312,9 +318,7 @@ export async function GET(request: Request) {
       }
 
       const filingDaysRemaining = b.nextFilingDueDate
-        ? Math.ceil(
-            (new Date(b.nextFilingDueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-          )
+        ? calendarDayDiff(b.nextFilingDueDate)
         : null;
 
       return {
@@ -488,10 +492,11 @@ export async function GET(request: Request) {
         ? Math.round((kpiCompliantCount / evaluatedEquipments.length) * 100)
         : 100;
 
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const inspectionsThisWeek = inspectionsRaw.filter(
-      (ins: any) => new Date(ins.date || ins.createdAt) >= sevenDaysAgo
-    ).length;
+    const sevenDaysAgoStr = addCalendarDays(todayCalendarDate(), -7);
+    const inspectionsThisWeek = inspectionsRaw.filter((ins: any) => {
+      const insDate = toDateInputString(ins.date || ins.createdAt);
+      return insDate && insDate >= sevenDaysAgoStr;
+    }).length;
 
     const kpis = {
       totalClients: clients.length,

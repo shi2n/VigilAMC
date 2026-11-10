@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { toDbDate } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -62,7 +63,7 @@ export async function POST(request: Request) {
         description: (description || '').trim(),
         priority: priority || 'MEDIUM',
         status: 'OPEN',
-        dueDate: dueDate ? new Date(dueDate) : null,
+        dueDate: dueDate ? toDbDate(dueDate) : null,
       },
     });
 
@@ -76,6 +77,38 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, workOrder });
   } catch (error: any) {
     console.error('Error creating work order:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const auth = await getCurrentUser();
+    if (!auth || !auth.organization) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { id, status, assignedToId, priority, dueDate } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: 'Work order ID required' }, { status: 400 });
+    }
+
+    const data: any = {};
+    if (status) data.status = status;
+    if (assignedToId !== undefined) data.assignedToId = assignedToId || null;
+    if (priority) data.priority = priority;
+    if (dueDate !== undefined) data.dueDate = dueDate ? toDbDate(dueDate) : null;
+
+    const workOrder = await (db as any).workOrder.update({
+      where: { id },
+      data,
+    });
+
+    return NextResponse.json({ success: true, workOrder });
+  } catch (error: any) {
+    console.error('Error updating work order:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { toDbDate, toDateInputString, addCalendarMonths } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +31,7 @@ export async function GET(
       formType: 'FORM_B',
       period: report.cyclePeriod,
       issueDate: report.generatedAt,
-      validUntil: new Date(new Date(report.generatedAt).getTime() + 180 * 24 * 60 * 60 * 1000),
+      validUntil: toDbDate(addCalendarMonths(toDateInputString(report.generatedAt), 6)),
       licensedAgencyNumber: 'DL/FIRE/LIC/2026/042',
       signatoryName: 'National Fire Safety & AMC Services',
       overallResult: report.status,

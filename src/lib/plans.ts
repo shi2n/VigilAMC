@@ -1,4 +1,9 @@
 import { db } from '@/lib/db';
+import {
+  toDbDate,
+  addCalendarMonths,
+  todayCalendarDateString,
+} from '@/lib/dates';
 
 export interface PlanConfig {
   id: 'BASIC' | 'PRO' | 'ENTERPRISE';
@@ -85,8 +90,8 @@ export async function getOrCreateAgencySubscription(organizationId: string) {
   });
 
   if (!subscription) {
-    const startedAt = new Date();
-    const renewalDate = new Date(startedAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const todayStr = todayCalendarDateString();
+    const renewalStr = addCalendarMonths(todayStr, 1);
 
     subscription = await (db as any).subscription.create({
       data: {
@@ -94,8 +99,8 @@ export async function getOrCreateAgencySubscription(organizationId: string) {
         plan: 'BASIC',
         status: 'ACTIVE',
         billingCycle: 'MONTHLY',
-        startedAt,
-        renewalDate,
+        startedAt: toDbDate(todayStr),
+        renewalDate: toDbDate(renewalStr),
         amount: 3999,
         currency: 'INR',
       },
