@@ -105,7 +105,7 @@ export async function sendFcmMessage(
         android: {
           priority: 'HIGH',
           ttl: '86400s',
-          collapse_key: payload.data?.taskId || 'vigilamc_tasks',
+          collapse_key: payload.data?.taskId ? `task-${payload.data.taskId}` : 'vigilamc_tasks',
           notification: {
             channel_id: 'vigilamc-tasks',
             color: '#EA580C',
@@ -114,6 +114,8 @@ export async function sendFcmMessage(
             default_sound: true,
             default_vibrate_timings: true,
             notification_priority: 'PRIORITY_MAX',
+            visibility: 'PUBLIC',
+            notification_count: 1,
           },
         },
       },
@@ -180,18 +182,20 @@ export async function notifyOnAssignment(params: NotifyAssignmentParams): Promis
   try {
     const { technicianId, organizationId, link, taskId, dueDate } = params;
 
-    // 1. Resolve technician preferred language (en/hi/mr/gu/ta/te/kn/ml/bn/pa)
+    // 1. Resolve technician details: preferred language and technician name
     let lang: SupportedLanguage = 'en';
+    let technicianName = 'Technician';
     try {
       const techUser = await (db as any).userProfile.findUnique({
         where: { id: technicianId },
-        select: { preferredLanguage: true },
+        select: { fullName: true, employeeId: true, preferredLanguage: true },
       });
       if (techUser?.preferredLanguage && TRANSLATIONS[techUser.preferredLanguage as SupportedLanguage]) {
         lang = techUser.preferredLanguage as SupportedLanguage;
       }
+      technicianName = techUser?.fullName?.trim() || techUser?.employeeId?.trim() || 'Technician';
     } catch (langErr) {
-      console.warn('[notify] Could not determine technician preferred language, defaulting to en:', langErr);
+      console.warn('[notify] Could not determine technician details, defaulting to en:', langErr);
     }
 
     const dict = TRANSLATIONS[lang] || TRANSLATIONS.en;
@@ -213,18 +217,24 @@ export async function notifyOnAssignment(params: NotifyAssignmentParams): Promis
     }
 
     if (params.type === 'WORK_ORDER') {
-      resolvedTitle = dict.pushTaskAssignedTitle || TRANSLATIONS.en.pushTaskAssignedTitle || 'New Task Assigned';
+      const titleTemplate =
+        dict.pushAssignedTitle ||
+        dict.pushTaskAssignedTitle ||
+        TRANSLATIONS.en.pushTaskAssignedTitle ||
+        'New Task Assigned';
+      resolvedTitle = `${technicianName}: ${titleTemplate}`;
       const taskName = params.taskTitle || params.title || 'Work Order';
       const bldgPart = resolvedBuildingName ? ` · ${resolvedBuildingName}` : '';
       const dueStr = dueDate
-        ? ` · due ${new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short' }).format(dueDate)}`
+        ? ` · Due ${new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short' }).format(dueDate)}`
         : '';
       resolvedMessage = `${taskName}${bldgPart}${dueStr}`;
     } else if (params.type === 'BUILDING') {
-      resolvedTitle =
+      const titleTemplate =
         dict.pushBuildingAssignedTitle ||
         TRANSLATIONS.en.pushBuildingAssignedTitle ||
         'New Building Assignment';
+      resolvedTitle = `${technicianName}: ${titleTemplate}`;
       const count = params.buildingCount || 1;
       const template =
         dict.pushBuildingAssignedBody ||
@@ -275,6 +285,7 @@ export async function notifyOnAssignment(params: NotifyAssignmentParams): Promis
       link: link || (taskId ? `/technician?taskId=${taskId}` : '/technician'),
       ...(dueDate ? { dueDate: dueDate.toISOString() } : {}),
       ...(resolvedBuildingName ? { building: resolvedBuildingName } : {}),
+      technicianName,
     };
 
     for (const dt of deviceTokens) {

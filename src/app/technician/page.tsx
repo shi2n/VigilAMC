@@ -57,6 +57,8 @@ import {
   ChevronUp,
   Trash2,
   Copy,
+  BellRing,
+  Settings,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import {
@@ -4041,6 +4043,66 @@ export default function TechnicianPWA() {
                 <span className="font-bold text-emerald-700">
                   {isNativePlatform() ? 'Native FCM Active (channel: vigilamc-tasks)' : 'Web / PWA Mode (ready)'}
                 </span>
+              </div>
+            </div>
+
+            {/* OEM Background Battery & Notifications Checklist (Section 3) */}
+            <div data-testid="oem-battery-checklist-card" className="p-3.5 rounded-2xl bg-[#FFF8F2] border border-[#FED7AA] space-y-2.5 text-xs shrink-0">
+              <div className="flex items-start gap-2">
+                <BellRing className="w-4 h-4 text-[#EA580C] shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <h4 className="font-bold text-[#1C1917] text-xs">
+                    {t.oemCardTitle || 'Notifications not arriving when phone is locked?'}
+                  </h4>
+                  <p className="text-[11px] text-[#78350F] mt-0.5">
+                    {t.oemCardSubtitle || 'Indian phone brands (Xiaomi, Vivo, Oppo, Samsung) aggressively sleep background apps.'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-1.5 pl-6 text-[11px] text-slate-700">
+                <div className="flex items-start gap-1.5">
+                  <span className="font-bold text-[#C2410C] shrink-0">•</span>
+                  <span>{t.oemAllDevices || "All phones: Set Battery to 'Unrestricted' and allow notification sound."}</span>
+                </div>
+                <div className="flex items-start gap-1.5">
+                  <span className="font-bold text-[#C2410C] shrink-0">•</span>
+                  <span>{t.oemXiaomi || "Xiaomi / MIUI / Redmi: Turn on Autostart and set Battery Saver to 'No restrictions'."}</span>
+                </div>
+                <div className="flex items-start gap-1.5">
+                  <span className="font-bold text-[#C2410C] shrink-0">•</span>
+                  <span>{t.oemOppoVivo || "Oppo / Realme / Vivo / OnePlus: Allow background activity and auto-launch in App Info."}</span>
+                </div>
+                <div className="flex items-start gap-1.5">
+                  <span className="font-bold text-[#C2410C] shrink-0">•</span>
+                  <span>{t.oemSamsung || "Samsung: Remove VigilAMC from 'Sleeping apps' and add to 'Never sleeping apps'."}</span>
+                </div>
+              </div>
+
+              <div className="pt-1 flex items-center justify-end">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (typeof window !== 'undefined' && 'Notification' in window) {
+                      try {
+                        const perm = await Notification.requestPermission();
+                        if (perm === 'granted') {
+                          triggerToast('🔔 Notification permission active');
+                        } else {
+                          triggerToast('⚠️ Please allow notifications in phone settings');
+                        }
+                      } catch {
+                        triggerToast('Settings: Android Settings → Apps → VigilAMC → Notifications');
+                      }
+                    } else {
+                      triggerToast('Settings: Android Settings → Apps → VigilAMC → Notifications');
+                    }
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-white border border-[#FED7AA] hover:border-[#EA580C] text-[#C2410C] font-bold text-[11px] shadow-2xs flex items-center gap-1.5 active:scale-95 transition-all"
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                  <span>{t.openSettingsBtn || 'Open Notification Settings'}</span>
+                </button>
               </div>
             </div>
 
