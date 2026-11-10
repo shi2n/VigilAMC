@@ -13,21 +13,30 @@ import {
   FileSignature,
   CheckCircle2,
   Trash2,
+  CreditCard,
+  TrendingUp,
+  Settings as SettingsIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AlertsSettingsView } from './AlertsSettingsView';
-import { TechnicianManagement } from './TechnicianManagement';
 import { AdminUsersView } from './AdminUsersView';
+import { SubscriptionManager } from './SubscriptionManager';
+import { InvestorLeadsView } from './InvestorLeadsView';
 import { ALL_INDIAN_LANGUAGES } from '@/lib/i18n/admin';
 import { compressImageToDataUrl, uploadCompressedPhoto } from '@/lib/compressImage';
 
 export type SettingsSubTab =
+  | 'PROFILE'
+  | 'TEAM'
+  | 'ALERTS'
+  | 'SUBSCRIPTION'
+  | 'LEADS'
+  | 'PREFERENCES'
+  // Backward compatibility aliases
   | 'AGENCY'
   | 'CYCLES'
   | 'BRANDING'
-  | 'TEAM'
   | 'ADMINS'
-  | 'ALERTS'
   | 'IMPORT_EXPORT';
 
 interface SettingsViewProps {
@@ -69,7 +78,7 @@ export function SettingsView({
   onRefreshDashboard,
   onNavigateTab,
 }: SettingsViewProps) {
-  const [internalSubTab, setInternalSubTab] = useState<SettingsSubTab>('AGENCY');
+  const [internalSubTab, setInternalSubTab] = useState<SettingsSubTab>('PROFILE');
   const [whiteLabelEnabled, setWhiteLabelEnabled] = useState<boolean>(true);
   const [quarterlyAmcFee, setQuarterlyAmcFee] = useState<string>('12500');
   const [refillServiceFee, setRefillServiceFee] = useState<string>('650');
@@ -97,21 +106,29 @@ export function SettingsView({
     }
   };
 
-  const activeSubTab = externalSubTab || internalSubTab;
+  const rawSubTab = externalSubTab || internalSubTab;
+  const activeSubTab: SettingsSubTab =
+    rawSubTab === 'AGENCY' || rawSubTab === 'BRANDING'
+      ? 'PROFILE'
+      : rawSubTab === 'ADMINS'
+      ? 'TEAM'
+      : rawSubTab === 'CYCLES' || rawSubTab === 'IMPORT_EXPORT'
+      ? 'PREFERENCES'
+      : rawSubTab;
+
   const setActiveSubTab = (tab: SettingsSubTab) => {
     if (externalSetSubTab) externalSetSubTab(tab);
     setInternalSubTab(tab);
   };
 
-  // Standard B2B Agency settings tabs ONLY
+  // 6 Owner-Approved Settings Tabs: Profile · Team · Alerts · Subscription · Website Leads · Preferences
   const agencyTabs = [
-    { id: 'AGENCY', label: 'Agency Profile & License', icon: Building2 },
-    { id: 'CYCLES', label: 'Compliance Cycles', icon: CalendarClock },
-    { id: 'BRANDING', label: 'Report Branding', icon: FileSignature },
-    { id: 'TEAM', label: 'Technician Workforce', icon: Users },
-    { id: 'ADMINS', label: 'Admin Users & Roles', icon: ShieldCheck },
-    { id: 'ALERTS', label: 'Alerts & Notifications', icon: Bell },
-    { id: 'IMPORT_EXPORT', label: 'Import & Export Data', icon: FileSpreadsheet },
+    { id: 'PROFILE' as SettingsSubTab, label: 'Profile', icon: Building2 },
+    { id: 'TEAM' as SettingsSubTab, label: 'Team', icon: Users },
+    { id: 'ALERTS' as SettingsSubTab, label: 'Alerts', icon: Bell },
+    { id: 'SUBSCRIPTION' as SettingsSubTab, label: 'Subscription', icon: CreditCard },
+    { id: 'LEADS' as SettingsSubTab, label: 'Website Leads', icon: TrendingUp },
+    { id: 'PREFERENCES' as SettingsSubTab, label: 'Preferences', icon: SettingsIcon },
   ];
 
   // Module C: Compliance Cycles state
@@ -267,9 +284,9 @@ export function SettingsView({
       </div>
 
       {/* =========================================================================
-          TAB: AGENCY PROFILE & LICENSE
+          TAB: AGENCY PROFILE & WHITE-LABEL REPORT BRANDING
       ========================================================================= */}
-      {activeSubTab === 'AGENCY' && (
+      {activeSubTab === 'PROFILE' && (
         <div className="space-y-4 max-w-2xl">
           <div>
             <h3 className="text-base font-bold text-[#1C1917]">Agency Organization Profile</h3>
@@ -514,417 +531,207 @@ export function SettingsView({
               </button>
             </div>
           </form>
-        </div>
-      )}
 
-      {/* =========================================================================
-          TAB: COMPLIANCE CYCLES & AUTO WORK ORDERS (MODULE C)
-      ========================================================================= */}
-      {activeSubTab === 'CYCLES' && (
-        <form
-          onSubmit={handleSaveCycles}
-          data-testid="settings-cycles-panel"
-          className="space-y-5"
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#FED7AA]">
+          {/* White-Label Report Branding (Inside Profile) */}
+          <div data-testid="settings-branding-panel" className="space-y-4 max-w-2xl pt-6 border-t border-[#1C1917]/10">
             <div>
               <h3 className="text-base font-bold text-[#1C1917]">
-                Compliance Cycles &amp; Lead-Time Auto-Scheduler
+                White-Label Report Branding
               </h3>
               <p className="text-xs text-[#44403C]">
-                Configure inspection frequency per building, optional asset-type overrides, and lead-time window for automatic OPEN work orders.
+                Customize your agency logo (top-left of page 1), authorized signatory block (bottom-right), and statutory footer line on printed `/report/[buildingId]` certificates. Statutory Form-B / IS 2190 clauses remain 100% intact.
               </p>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                data-testid="settings-run-scheduling-now-btn"
-                onClick={handleRunSchedulerNow}
-                disabled={runningNow}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] border border-[#FED7AA] text-xs font-bold shadow-xs transition-all disabled:opacity-50"
-              >
-                <CalendarClock className="w-3.5 h-3.5 text-[#EA580C]" />
-                <span>{runningNow ? 'Running...' : 'Run scheduling now'}</span>
-              </button>
-              <button
-                type="submit"
-                data-testid="save-compliance-cycles-btn"
-                disabled={savingCycles}
-                className="btn-flame inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-white text-xs font-bold shadow-xs disabled:opacity-50"
-              >
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>{savingCycles ? 'Saving...' : 'Save Cycles'}</span>
-              </button>
-            </div>
-          </div>
 
-          {/* Org-level Auto-scheduling toggle */}
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-[#FFF0E6]/70 border border-[#FED7AA]">
-            <div className="space-y-0.5">
-              <div className="text-xs font-bold text-[#1C1917]">
-                Automatic Lead-Time Work Order Generation
-              </div>
-              <p className="text-[11px] text-[#44403C]">
-                Automatically create OPEN work orders when an asset&apos;s next service or hydro-test due date enters its building&apos;s lead-time window (never sets status to ASSIGNED automatically).
-              </p>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              data-testid="toggle-auto-scheduling"
-              aria-checked={autoSchedulingEnabled}
-              onClick={() => setAutoSchedulingEnabled((v) => !v)}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ${
-                autoSchedulingEnabled ? 'bg-[#EA580C]' : 'bg-[#44403C]/30'
-              }`}
+            <form
+              onSubmit={handleSaveCompany}
+              className="p-5 rounded-2xl bg-white/80 border border-[#FED7AA] space-y-4 text-xs"
             >
-              <span
-                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition duration-200 ${
-                  autoSchedulingEnabled ? 'translate-x-5' : 'translate-x-0'
-                }`}
-              />
-            </button>
-          </div>
-
-          {/* Per-building cycle table */}
-          <div className="bg-white rounded-2xl border border-[#FED7AA] overflow-x-auto shadow-xs">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-[#FFF8F2] text-[#1C1917] uppercase text-[10px] font-bold tracking-wider border-b border-[#FED7AA]">
-                <tr>
-                  <th className="py-3 px-4">Building / Facility</th>
-                  <th className="py-3 px-4">Default Inspection Cycle</th>
-                  <th className="py-3 px-4">Lead-Time Window (Days)</th>
-                  <th className="py-3 px-4">Extinguisher Override</th>
-                  <th className="py-3 px-4">Hydrant / Riser Override</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#FED7AA]/60">
-                {cycleBuildings.map((b, idx) => (
-                  <tr key={b.id} className="hover:bg-[#FFF0E6]/35">
-                    <td className="py-3 px-4">
-                      <div className="font-bold text-[#1C1917]">{b.name}</div>
-                      <div className="text-[11px] text-[#44403C]">{b.address}</div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <select
-                        data-testid={`building-cycle-select-${b.id}`}
-                        value={b.complianceCycle || 'QUARTERLY'}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setCycleBuildings((prev) =>
-                            prev.map((row, i) =>
-                              i === idx ? { ...row, complianceCycle: val } : row
-                            )
-                          );
-                        }}
-                        className="px-3 py-1.5 rounded-xl bg-white border border-[#FED7AA] text-xs font-bold text-[#1C1917]"
-                      >
-                        <option value="MONTHLY">MONTHLY (30d)</option>
-                        <option value="QUARTERLY">QUARTERLY (90d)</option>
-                        <option value="HALF_YEARLY">HALF_YEARLY (180d)</option>
-                        <option value="YEARLY">YEARLY (365d)</option>
-                      </select>
-                    </td>
-                    <td className="py-3 px-4">
-                      <input
-                        type="number"
-                        min={1}
-                        max={90}
-                        data-testid={`building-leadtime-input-${b.id}`}
-                        value={b.leadTimeDays ?? 7}
-                        onChange={(e) => {
-                          const val = Math.max(1, Math.min(90, Number(e.target.value) || 7));
-                          setCycleBuildings((prev) =>
-                            prev.map((row, i) =>
-                              i === idx ? { ...row, leadTimeDays: val } : row
-                            )
-                          );
-                        }}
-                        className="w-20 px-2.5 py-1.5 rounded-xl bg-white border border-[#FED7AA] text-xs font-bold text-[#1C1917] tabular-nums"
+              {/* Agency Logo upload */}
+              <div className="space-y-2">
+                <label className="block text-[#1C1917] font-bold">
+                  Agency Logo (PNG/JPEG ≤ 1 MB — Printed Top-Left of Page 1)
+                </label>
+                <div className="flex items-center gap-4 flex-wrap">
+                  {companyForm.brandLogoUrl ? (
+                    <div className="relative flex items-center gap-3 p-2.5 rounded-xl bg-[#FFF8F2] border border-[#FED7AA]">
+                      <img
+                        src={companyForm.brandLogoUrl}
+                        alt="Agency Brand Logo"
+                        className="h-12 w-auto max-w-[160px] object-contain rounded"
                       />
-                    </td>
-                    <td className="py-3 px-4">
-                      <select
-                        value={b.cycleOverrides?.EXTINGUISHER || ''}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setCycleBuildings((prev) =>
-                            prev.map((row, i) =>
-                              i === idx
-                                ? {
-                                    ...row,
-                                    cycleOverrides: {
-                                      ...(row.cycleOverrides || {}),
-                                      EXTINGUISHER: val || undefined,
-                                    },
-                                  }
-                                : row
-                            )
-                          );
-                        }}
-                        className="px-2.5 py-1.5 rounded-xl bg-white border border-[#FED7AA] text-xs text-[#1C1917]"
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setCompanyForm((prev: any) => ({ ...prev, brandLogoUrl: '' }))
+                        }
+                        className="p-1.5 rounded-lg bg-rose-50 text-[#DC2626] hover:bg-rose-100 border border-rose-200"
+                        title="Remove Logo"
                       >
-                        <option value="">Use Building Default</option>
-                        <option value="MONTHLY">MONTHLY</option>
-                        <option value="QUARTERLY">QUARTERLY</option>
-                        <option value="HALF_YEARLY">HALF_YEARLY</option>
-                        <option value="YEARLY">YEARLY</option>
-                      </select>
-                    </td>
-                    <td className="py-3 px-4">
-                      <select
-                        value={b.cycleOverrides?.HYDRANT || ''}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setCycleBuildings((prev) =>
-                            prev.map((row, i) =>
-                              i === idx
-                                ? {
-                                    ...row,
-                                    cycleOverrides: {
-                                      ...(row.cycleOverrides || {}),
-                                      HYDRANT: val || undefined,
-                                    },
-                                  }
-                                : row
-                            )
-                          );
-                        }}
-                        className="px-2.5 py-1.5 rounded-xl bg-white border border-[#FED7AA] text-xs text-[#1C1917]"
-                      >
-                        <option value="">Use Building Default</option>
-                        <option value="MONTHLY">MONTHLY</option>
-                        <option value="QUARTERLY">QUARTERLY</option>
-                        <option value="HALF_YEARLY">HALF_YEARLY</option>
-                        <option value="YEARLY">YEARLY</option>
-                      </select>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </form>
-      )}
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="px-4 py-3 rounded-xl bg-[#FFF8F2] border border-dashed border-[#FED7AA] text-[#44403C]">
+                      No custom logo uploaded (using default statutory header)
+                    </div>
+                  )}
 
-      {/* =========================================================================
-          TAB: WHITE-LABEL REPORT BRANDING (MODULE G)
-      ========================================================================= */}
-      {activeSubTab === 'BRANDING' && (
-        <div data-testid="settings-branding-panel" className="space-y-4 max-w-2xl">
-          <div>
-            <h3 className="text-base font-bold text-[#1C1917]">
-              White-Label Report Branding
-            </h3>
-            <p className="text-xs text-[#44403C]">
-              Customize your agency logo (top-left of page 1), authorized signatory block (bottom-right), and statutory footer line on printed `/report/[buildingId]` certificates. Statutory Form-B / IS 2190 clauses remain 100% intact.
-            </p>
-          </div>
-
-          <form
-            onSubmit={handleSaveCompany}
-            className="p-5 rounded-2xl bg-white/80 border border-[#FED7AA] space-y-4 text-xs"
-          >
-            {/* Agency Logo upload */}
-            <div className="space-y-2">
-              <label className="block text-[#1C1917] font-bold">
-                Agency Logo (PNG/JPEG ≤ 1 MB — Printed Top-Left of Page 1)
-              </label>
-              <div className="flex items-center gap-4 flex-wrap">
-                {companyForm.brandLogoUrl ? (
-                  <div className="relative flex items-center gap-3 p-2.5 rounded-xl bg-[#FFF8F2] border border-[#FED7AA]">
-                    <img
-                      src={companyForm.brandLogoUrl}
-                      alt="Agency Brand Logo"
-                      className="h-12 w-auto max-w-[160px] object-contain rounded"
+                  <label className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FFF0E6] hover:bg-[#FED7AA] text-[#C2410C] border border-[#FED7AA] font-bold cursor-pointer transition-colors">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>{uploadingLogo ? 'Uploading...' : 'Upload Logo (PNG/JPEG)'}</span>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) handleUploadBrandAsset(f, 'brandLogoUrl');
+                      }}
                     />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setCompanyForm((prev: any) => ({ ...prev, brandLogoUrl: '' }))
-                      }
-                      className="p-1.5 rounded-lg bg-rose-50 text-[#DC2626] hover:bg-rose-100 border border-rose-200"
-                      title="Remove Logo"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="px-4 py-3 rounded-xl bg-[#FFF8F2] border border-dashed border-[#FED7AA] text-[#44403C]">
-                    No custom logo uploaded (using default statutory header)
-                  </div>
-                )}
-
-                <label className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FFF0E6] hover:bg-[#FED7AA] text-[#C2410C] border border-[#FED7AA] font-bold cursor-pointer transition-colors">
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>{uploadingLogo ? 'Uploading...' : 'Upload Logo (PNG/JPEG)'}</span>
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/jpg"
-                    className="hidden"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) handleUploadBrandAsset(f, 'brandLogoUrl');
-                    }}
-                  />
-                </label>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[#1C1917] font-bold mb-1">
-                  Authorized Signatory Name
-                </label>
-                <input
-                  type="text"
-                  data-testid="branding-signatory-name"
-                  value={companyForm.signatoryName || ''}
-                  onChange={(e) =>
-                    setCompanyForm({ ...companyForm, signatoryName: e.target.value })
-                  }
-                  placeholder="e.g. Rajesh Kulkarni"
-                  className="glass-input w-full rounded-xl p-3 text-[#1C1917] font-medium shadow-xs"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[#1C1917] font-bold mb-1">
-                  Signatory Designation
-                </label>
-                <input
-                  type="text"
-                  data-testid="branding-signatory-designation"
-                  value={companyForm.signatoryDesignation || ''}
-                  onChange={(e) =>
-                    setCompanyForm({
-                      ...companyForm,
-                      signatoryDesignation: e.target.value,
-                    })
-                  }
-                  placeholder="e.g. Agency Representative / Operations Lead"
-                  className="glass-input w-full rounded-xl p-3 text-[#1C1917] font-medium shadow-xs"
-                />
-              </div>
-            </div>
-
-            {/* Optional Signature Image Upload */}
-            <div className="space-y-2">
-              <label className="block text-[#1C1917] font-bold">
-                Authorized Signatory Signature Image (Optional, PNG/JPEG ≤ 1 MB)
-              </label>
-              <div className="flex items-center gap-4 flex-wrap">
-                {companyForm.signatorySignatureUrl ? (
-                  <div className="flex items-center gap-3 p-2.5 rounded-xl bg-[#FFF8F2] border border-[#FED7AA]">
-                    <img
-                      src={companyForm.signatorySignatureUrl}
-                      alt="Signatory Signature"
-                      className="h-10 w-auto max-w-[150px] object-contain"
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setCompanyForm((prev: any) => ({
-                          ...prev,
-                          signatorySignatureUrl: '',
-                        }))
-                      }
-                      className="p-1.5 rounded-lg bg-rose-50 text-[#DC2626] hover:bg-rose-100 border border-rose-200"
-                      title="Remove Signature"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="px-4 py-2.5 rounded-xl bg-[#FFF8F2] border border-dashed border-[#FED7AA] text-[#44403C]">
-                    No signature image uploaded
-                  </div>
-                )}
-
-                <label className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FFF0E6] hover:bg-[#FED7AA] text-[#C2410C] border border-[#FED7AA] font-bold cursor-pointer transition-colors">
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>
-                    {uploadingSig ? 'Uploading...' : 'Upload Signature (PNG/JPEG)'}
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/jpg"
-                    className="hidden"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) handleUploadBrandAsset(f, 'signatorySignatureUrl');
-                    }}
-                  />
-                </label>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-[#1C1917] font-bold mb-1">
-                Custom Certificate Footer Line (Printed on Every Page)
-              </label>
-              <input
-                type="text"
-                data-testid="branding-footer-text"
-                value={companyForm.reportFooterText || ''}
-                onChange={(e) =>
-                  setCompanyForm({ ...companyForm, reportFooterText: e.target.value })
-                }
-                placeholder="e.g. Certified by National Fire Safety & AMC Services · 24×7 Emergency Helpline +91 98200 11223"
-                className="glass-input w-full rounded-xl p-3 text-[#1C1917] font-medium shadow-xs"
-              />
-            </div>
-
-            {/* Live Preview Strip */}
-            <div className="p-4 rounded-xl bg-[#FFF8F2] border border-[#FED7AA] space-y-2">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-[#C2410C]">
-                Signatory Block Preview (Bottom-Right of Certificate)
-              </div>
-              <div className="text-xs font-bold text-[#1C1917]">
-                For {companyForm.name || 'Agency'} &middot;{' '}
-                {companyForm.signatoryName || 'Authorized Signatory'} &middot;{' '}
-                {companyForm.signatoryDesignation || 'Licensed Fire Officer'}
-              </div>
-              {companyForm.reportFooterText && (
-                <div className="text-[11px] text-[#44403C] border-t border-[#FED7AA] pt-1.5">
-                  Footer: {companyForm.reportFooterText}
+                  </label>
                 </div>
-              )}
-            </div>
+              </div>
 
-            <div className="pt-2 flex justify-end">
-              <button
-                type="submit"
-                data-testid="save-report-branding-btn"
-                className="btn-flame px-6 py-3 rounded-xl text-white font-bold text-xs shadow-xs"
-              >
-                Save Report Branding
-              </button>
-            </div>
-          </form>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[#1C1917] font-bold mb-1">
+                    Authorized Signatory Name
+                  </label>
+                  <input
+                    type="text"
+                    data-testid="branding-signatory-name"
+                    value={companyForm.signatoryName || ''}
+                    onChange={(e) =>
+                      setCompanyForm({ ...companyForm, signatoryName: e.target.value })
+                    }
+                    placeholder="e.g. Rajesh Kulkarni"
+                    className="glass-input w-full rounded-xl p-3 text-[#1C1917] font-medium shadow-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[#1C1917] font-bold mb-1">
+                    Signatory Designation
+                  </label>
+                  <input
+                    type="text"
+                    data-testid="branding-signatory-designation"
+                    value={companyForm.signatoryDesignation || ''}
+                    onChange={(e) =>
+                      setCompanyForm({
+                        ...companyForm,
+                        signatoryDesignation: e.target.value,
+                      })
+                    }
+                    placeholder="e.g. Agency Representative / Operations Lead"
+                    className="glass-input w-full rounded-xl p-3 text-[#1C1917] font-medium shadow-xs"
+                  />
+                </div>
+              </div>
+
+              {/* Optional Signature Image Upload */}
+              <div className="space-y-2">
+                <label className="block text-[#1C1917] font-bold">
+                  Authorized Signatory Signature Image (Optional, PNG/JPEG ≤ 1 MB)
+                </label>
+                <div className="flex items-center gap-4 flex-wrap">
+                  {companyForm.signatorySignatureUrl ? (
+                    <div className="flex items-center gap-3 p-2.5 rounded-xl bg-[#FFF8F2] border border-[#FED7AA]">
+                      <img
+                        src={companyForm.signatorySignatureUrl}
+                        alt="Signatory Signature"
+                        className="h-10 w-auto max-w-[150px] object-contain"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setCompanyForm((prev: any) => ({
+                            ...prev,
+                            signatorySignatureUrl: '',
+                          }))
+                        }
+                        className="p-1.5 rounded-lg bg-rose-50 text-[#DC2626] hover:bg-rose-100 border border-rose-200"
+                        title="Remove Signature"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="px-4 py-2.5 rounded-xl bg-[#FFF8F2] border border-dashed border-[#FED7AA] text-[#44403C]">
+                      No signature image uploaded
+                    </div>
+                  )}
+
+                  <label className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FFF0E6] hover:bg-[#FED7AA] text-[#C2410C] border border-[#FED7AA] font-bold cursor-pointer transition-colors">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>
+                      {uploadingSig ? 'Uploading...' : 'Upload Signature (PNG/JPEG)'}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) handleUploadBrandAsset(f, 'signatorySignatureUrl');
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[#1C1917] font-bold mb-1">
+                  Custom Certificate Footer Line (Printed on Every Page)
+                </label>
+                <input
+                  type="text"
+                  data-testid="branding-footer-text"
+                  value={companyForm.reportFooterText || ''}
+                  onChange={(e) =>
+                    setCompanyForm({ ...companyForm, reportFooterText: e.target.value })
+                  }
+                  placeholder="e.g. Certified by National Fire Safety & AMC Services · 24×7 Emergency Helpline +91 98200 11223"
+                  className="glass-input w-full rounded-xl p-3 text-[#1C1917] font-medium shadow-xs"
+                />
+              </div>
+
+              {/* Live Preview Strip */}
+              <div className="p-4 rounded-xl bg-[#FFF8F2] border border-[#FED7AA] space-y-2">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[#C2410C]">
+                  Signatory Block Preview (Bottom-Right of Certificate)
+                </div>
+                <div className="text-xs font-bold text-[#1C1917]">
+                  For {companyForm.name || 'Agency'} &middot;{' '}
+                  {companyForm.signatoryName || 'Authorized Signatory'} &middot;{' '}
+                  {companyForm.signatoryDesignation || 'Licensed Fire Officer'}
+                </div>
+                {companyForm.reportFooterText && (
+                  <div className="text-[11px] text-[#44403C] border-t border-[#FED7AA] pt-1.5">
+                    Footer: {companyForm.reportFooterText}
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="submit"
+                  data-testid="save-report-branding-btn"
+                  className="btn-flame px-6 py-3 rounded-xl text-white font-bold text-xs shadow-xs"
+                >
+                  Save Report Branding
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
       {/* =========================================================================
-          TAB: TEAM & TECHNICIANS
+          TAB: TEAM & SEATS (ADMIN USERS & ROLES)
       ========================================================================= */}
       {activeSubTab === 'TEAM' && (
-        <TechnicianManagement
-          showToast={showToast}
-          onOpenImport={() => onOpenImport?.('TECHNICIANS')}
-          initialTechnicians={initialTechnicians}
-          initialBuildings={initialBuildings}
-          initialSeatUsage={initialSeatUsage}
-          initialPlan={initialPlan}
-          agencyName={company?.name}
-          onRefreshDashboard={onRefreshDashboard}
-        />
-      )}
-
-      {/* =========================================================================
-          TAB: ADMIN USERS & ROLES
-      ========================================================================= */}
-      {activeSubTab === 'ADMINS' && (
         <AdminUsersView currentUser={currentUser} userProfile={userProfile} company={company} />
       )}
 
@@ -934,105 +741,342 @@ export function SettingsView({
       {activeSubTab === 'ALERTS' && <AlertsSettingsView company={company} showToast={showToast} />}
 
       {/* =========================================================================
-          TAB: IMPORT & EXPORT
+          TAB: SUBSCRIPTION & BILLING
       ========================================================================= */}
-      {activeSubTab === 'IMPORT_EXPORT' && (
-        <div className="space-y-6">
-          <div>
-            <h3 className="text-base font-bold text-[#1C1917]">Excel Import &amp; Export Center</h3>
-            <p className="text-xs text-[#44403C]">
-              Bulk upload existing spreadsheets or download operational records in Excel (.xlsx) format.
-            </p>
+      {activeSubTab === 'SUBSCRIPTION' && (
+        <SubscriptionManager
+          showToast={showToast}
+          onPlanChanged={onRefreshDashboard}
+        />
+      )}
+
+      {/* =========================================================================
+          TAB: WEBSITE LEADS / INVESTOR LEADS
+      ========================================================================= */}
+      {activeSubTab === 'LEADS' && <InvestorLeadsView />}
+
+      {/* =========================================================================
+          TAB: PREFERENCES (LANGUAGE, COMPLIANCE CYCLES, IMPORT & EXPORT)
+      ========================================================================= */}
+      {activeSubTab === 'PREFERENCES' && (
+        <div className="space-y-8">
+          {/* Section 1: Language & Regional Preferences */}
+          <div className="space-y-4 max-w-2xl">
+            <div>
+              <h3 className="text-base font-bold text-[#1C1917]">Language &amp; Regional Preferences</h3>
+              <p className="text-xs text-[#44403C]">
+                Select your preferred dashboard language for pan-India operations.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
+              {ALL_INDIAN_LANGUAGES.map((lang) => {
+                const isSelected = selectedLang === lang.code;
+                return (
+                  <button
+                    key={lang.code}
+                    type="button"
+                    onClick={() => handleSelectLanguage(lang.code)}
+                    className={`p-3 rounded-xl border text-left transition-all ${
+                      isSelected
+                        ? 'bg-[#FFF0E6] border-[#EA580C] shadow-xs ring-1 ring-[#EA580C]'
+                        : 'bg-white/80 border-[#FED7AA] hover:bg-[#FFF8F2]'
+                    }`}
+                  >
+                    <div className="font-bold text-xs text-[#1C1917]">{lang.name}</div>
+                    <div className="text-[11px] text-[#C2410C] font-medium">{lang.nativeName}</div>
+                    <div className="text-[10px] text-[#78716C] mt-0.5">{lang.script}</div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Import Card */}
-            <div className="p-5 rounded-2xl bg-white/75 border border-[#FED7AA] space-y-4">
-              <div className="flex items-center gap-2 font-bold text-[#1C1917] text-sm">
-                <Upload className="w-5 h-5 text-[#C2410C]" />
-                <span>Import Spreadsheets (.xlsx)</span>
+          {/* Section 2: Compliance Cycles & Lead-Time Auto-Scheduler */}
+          <div className="pt-6 border-t border-[#1C1917]/10">
+            <form
+              onSubmit={handleSaveCycles}
+              data-testid="settings-cycles-panel"
+              className="space-y-5"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#FED7AA]">
+                <div>
+                  <h3 className="text-base font-bold text-[#1C1917]">
+                    Compliance Cycles &amp; Lead-Time Auto-Scheduler
+                  </h3>
+                  <p className="text-xs text-[#44403C]">
+                    Configure inspection frequency per building, optional asset-type overrides, and lead-time window for automatic OPEN work orders.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    data-testid="settings-run-scheduling-now-btn"
+                    onClick={handleRunSchedulerNow}
+                    disabled={runningNow}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] border border-[#FED7AA] text-xs font-bold shadow-xs transition-all disabled:opacity-50"
+                  >
+                    <CalendarClock className="w-3.5 h-3.5 text-[#EA580C]" />
+                    <span>{runningNow ? 'Running...' : 'Run scheduling now'}</span>
+                  </button>
+                  <button
+                    type="submit"
+                    data-testid="save-compliance-cycles-btn"
+                    disabled={savingCycles}
+                    className="btn-flame inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-white text-xs font-bold shadow-xs disabled:opacity-50"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>{savingCycles ? 'Saving...' : 'Save Cycles'}</span>
+                  </button>
+                </div>
               </div>
+
+              {/* Org-level Auto-scheduling toggle */}
+              <div className="flex items-center justify-between p-4 rounded-2xl bg-[#FFF0E6]/70 border border-[#FED7AA]">
+                <div className="space-y-0.5">
+                  <div className="text-xs font-bold text-[#1C1917]">
+                    Automatic Lead-Time Work Order Generation
+                  </div>
+                  <p className="text-[11px] text-[#44403C]">
+                    Automatically create OPEN work orders when an asset&apos;s next service or hydro-test due date enters its building&apos;s lead-time window (never sets status to ASSIGNED automatically).
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  data-testid="toggle-auto-scheduling"
+                  aria-checked={autoSchedulingEnabled}
+                  onClick={() => setAutoSchedulingEnabled((v) => !v)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ${
+                    autoSchedulingEnabled ? 'bg-[#EA580C]' : 'bg-[#44403C]/30'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition duration-200 ${
+                      autoSchedulingEnabled ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Per-building cycle table */}
+              <div className="bg-white rounded-2xl border border-[#FED7AA] overflow-x-auto shadow-xs">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[#FFF8F2] text-[#1C1917] uppercase text-[10px] font-bold tracking-wider border-b border-[#FED7AA]">
+                    <tr>
+                      <th className="py-3 px-4">Building / Facility</th>
+                      <th className="py-3 px-4">Default Inspection Cycle</th>
+                      <th className="py-3 px-4">Lead-Time Window (Days)</th>
+                      <th className="py-3 px-4">Extinguisher Override</th>
+                      <th className="py-3 px-4">Hydrant / Riser Override</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#FED7AA]/60">
+                    {cycleBuildings.map((b, idx) => (
+                      <tr key={b.id} className="hover:bg-[#FFF0E6]/35">
+                        <td className="py-3 px-4">
+                          <div className="font-bold text-[#1C1917]">{b.name}</div>
+                          <div className="text-[11px] text-[#44403C]">{b.address}</div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <select
+                            data-testid={`building-cycle-select-${b.id}`}
+                            value={b.complianceCycle || 'QUARTERLY'}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setCycleBuildings((prev) =>
+                                prev.map((row, i) =>
+                                  i === idx ? { ...row, complianceCycle: val } : row
+                                )
+                              );
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-white border border-[#FED7AA] text-xs font-bold text-[#1C1917]"
+                          >
+                            <option value="MONTHLY">MONTHLY (30d)</option>
+                            <option value="QUARTERLY">QUARTERLY (90d)</option>
+                            <option value="HALF_YEARLY">HALF_YEARLY (180d)</option>
+                            <option value="YEARLY">YEARLY (365d)</option>
+                          </select>
+                        </td>
+                        <td className="py-3 px-4">
+                          <input
+                            type="number"
+                            min={1}
+                            max={90}
+                            data-testid={`building-leadtime-input-${b.id}`}
+                            value={b.leadTimeDays ?? 7}
+                            onChange={(e) => {
+                              const val = Math.max(1, Math.min(90, Number(e.target.value) || 7));
+                              setCycleBuildings((prev) =>
+                                prev.map((row, i) =>
+                                  i === idx ? { ...row, leadTimeDays: val } : row
+                                )
+                              );
+                            }}
+                            className="w-20 px-2.5 py-1.5 rounded-xl bg-white border border-[#FED7AA] text-xs font-bold text-[#1C1917] tabular-nums"
+                          />
+                        </td>
+                        <td className="py-3 px-4">
+                          <select
+                            value={b.cycleOverrides?.EXTINGUISHER || ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setCycleBuildings((prev) =>
+                                prev.map((row, i) =>
+                                  i === idx
+                                    ? {
+                                        ...row,
+                                        cycleOverrides: {
+                                          ...(row.cycleOverrides || {}),
+                                          EXTINGUISHER: val || undefined,
+                                        },
+                                      }
+                                    : row
+                                )
+                              );
+                            }}
+                            className="px-2.5 py-1.5 rounded-xl bg-white border border-[#FED7AA] text-xs text-[#1C1917]"
+                          >
+                            <option value="">Use Building Default</option>
+                            <option value="MONTHLY">MONTHLY</option>
+                            <option value="QUARTERLY">QUARTERLY</option>
+                            <option value="HALF_YEARLY">HALF_YEARLY</option>
+                            <option value="YEARLY">YEARLY</option>
+                          </select>
+                        </td>
+                        <td className="py-3 px-4">
+                          <select
+                            value={b.cycleOverrides?.HYDRANT || ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setCycleBuildings((prev) =>
+                                prev.map((row, i) =>
+                                  i === idx
+                                    ? {
+                                        ...row,
+                                        cycleOverrides: {
+                                          ...(row.cycleOverrides || {}),
+                                          HYDRANT: val || undefined,
+                                        },
+                                      }
+                                    : row
+                                )
+                              );
+                            }}
+                            className="px-2.5 py-1.5 rounded-xl bg-white border border-[#FED7AA] text-xs text-[#1C1917]"
+                          >
+                            <option value="">Use Building Default</option>
+                            <option value="MONTHLY">MONTHLY</option>
+                            <option value="QUARTERLY">QUARTERLY</option>
+                            <option value="HALF_YEARLY">HALF_YEARLY</option>
+                            <option value="YEARLY">YEARLY</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </form>
+          </div>
+
+          {/* Section 3: Excel Import & Export Center */}
+          <div className="pt-6 border-t border-[#1C1917]/10 space-y-4">
+            <div>
+              <h3 className="text-base font-bold text-[#1C1917]">Excel Import &amp; Export Center</h3>
               <p className="text-xs text-[#44403C]">
-                Upload existing client lists, building rosters, equipment schedules, or technician records.
+                Bulk upload existing spreadsheets or download operational records in Excel (.xlsx) format.
               </p>
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => onOpenImport?.('CLIENTS')}
-                  className="px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] text-xs font-bold transition-all border border-[#FED7AA] shadow-xs flex items-center justify-center gap-1.5"
-                >
-                  <Upload className="w-3.5 h-3.5 text-[#C2410C]" />
-                  <span>Clients</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onOpenImport?.('BUILDINGS')}
-                  className="px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] text-xs font-bold transition-all border border-[#FED7AA] shadow-xs flex items-center justify-center gap-1.5"
-                >
-                  <Upload className="w-3.5 h-3.5 text-[#C2410C]" />
-                  <span>Buildings</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onOpenImport?.('FIRE_ASSETS')}
-                  className="px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] text-xs font-bold transition-all border border-[#FED7AA] shadow-xs flex items-center justify-center gap-1.5"
-                >
-                  <Upload className="w-3.5 h-3.5 text-[#C2410C]" />
-                  <span>Equipment</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onOpenImport?.('TECHNICIANS')}
-                  className="px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] text-xs font-bold transition-all border border-[#FED7AA] shadow-xs flex items-center justify-center gap-1.5"
-                >
-                  <Upload className="w-3.5 h-3.5 text-[#C2410C]" />
-                  <span>Technicians</span>
-                </button>
-              </div>
             </div>
 
-            {/* Export Card */}
-            <div className="p-5 rounded-2xl bg-white/75 border border-[#FED7AA] space-y-4">
-              <div className="flex items-center gap-2 font-bold text-[#1C1917] text-sm">
-                <Download className="w-5 h-5 text-[#059669]" />
-                <span>Export Operations Data (.xlsx)</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Import Card */}
+              <div className="p-5 rounded-2xl bg-white/75 border border-[#FED7AA] space-y-4">
+                <div className="flex items-center gap-2 font-bold text-[#1C1917] text-sm">
+                  <Upload className="w-5 h-5 text-[#C2410C]" />
+                  <span>Import Spreadsheets (.xlsx)</span>
+                </div>
+                <p className="text-xs text-[#44403C]">
+                  Upload existing client lists, building rosters, equipment schedules, or technician records.
+                </p>
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => onOpenImport?.('CLIENTS')}
+                    className="px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] text-xs font-bold transition-all border border-[#FED7AA] shadow-xs flex items-center justify-center gap-1.5"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-[#C2410C]" />
+                    <span>Clients</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onOpenImport?.('BUILDINGS')}
+                    className="px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] text-xs font-bold transition-all border border-[#FED7AA] shadow-xs flex items-center justify-center gap-1.5"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-[#C2410C]" />
+                    <span>Buildings</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onOpenImport?.('FIRE_ASSETS')}
+                    className="px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] text-xs font-bold transition-all border border-[#FED7AA] shadow-xs flex items-center justify-center gap-1.5"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-[#C2410C]" />
+                    <span>Equipment</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onOpenImport?.('TECHNICIANS')}
+                    className="px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] text-xs font-bold transition-all border border-[#FED7AA] shadow-xs flex items-center justify-center gap-1.5"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-[#C2410C]" />
+                    <span>Technicians</span>
+                  </button>
+                </div>
               </div>
-              <p className="text-xs text-[#44403C]">
-                Download verified records for statutory audits, client handover reports, or external accounting.
-              </p>
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => onOpenExport?.('CLIENTS')}
-                  className="px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] text-xs font-bold transition-all border border-[#FED7AA] shadow-xs flex items-center justify-center gap-1.5"
-                >
-                  <Download className="w-3.5 h-3.5 text-[#059669]" />
-                  <span>Clients</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onOpenExport?.('BUILDINGS')}
-                  className="px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] text-xs font-bold transition-all border border-[#FED7AA] shadow-xs flex items-center justify-center gap-1.5"
-                >
-                  <Download className="w-3.5 h-3.5 text-[#059669]" />
-                  <span>Buildings</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onOpenExport?.('FIRE_ASSETS')}
-                  className="px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] text-xs font-bold transition-all border border-[#FED7AA] shadow-xs flex items-center justify-center gap-1.5"
-                >
-                  <Download className="w-3.5 h-3.5 text-[#059669]" />
-                  <span>Equipment</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onOpenExport?.('INSPECTIONS')}
-                  className="px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] text-xs font-bold transition-all border border-[#FED7AA] shadow-xs flex items-center justify-center gap-1.5"
-                >
-                  <Download className="w-3.5 h-3.5 text-[#059669]" />
-                  <span>Inspections</span>
-                </button>
+
+              {/* Export Card */}
+              <div className="p-5 rounded-2xl bg-white/75 border border-[#FED7AA] space-y-4">
+                <div className="flex items-center gap-2 font-bold text-[#1C1917] text-sm">
+                  <Download className="w-5 h-5 text-[#059669]" />
+                  <span>Export Operations Data (.xlsx)</span>
+                </div>
+                <p className="text-xs text-[#44403C]">
+                  Download verified records for statutory audits, client handover reports, or external accounting.
+                </p>
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => onOpenExport?.('CLIENTS')}
+                    className="px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] text-xs font-bold transition-all border border-[#FED7AA] shadow-xs flex items-center justify-center gap-1.5"
+                  >
+                    <Download className="w-3.5 h-3.5 text-[#059669]" />
+                    <span>Clients</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onOpenExport?.('BUILDINGS')}
+                    className="px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] text-xs font-bold transition-all border border-[#FED7AA] shadow-xs flex items-center justify-center gap-1.5"
+                  >
+                    <Download className="w-3.5 h-3.5 text-[#059669]" />
+                    <span>Buildings</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onOpenExport?.('FIRE_ASSETS')}
+                    className="px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] text-xs font-bold transition-all border border-[#FED7AA] shadow-xs flex items-center justify-center gap-1.5"
+                  >
+                    <Download className="w-3.5 h-3.5 text-[#059669]" />
+                    <span>Equipment</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onOpenExport?.('INSPECTIONS')}
+                    className="px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] text-xs font-bold transition-all border border-[#FED7AA] shadow-xs flex items-center justify-center gap-1.5"
+                  >
+                    <Download className="w-3.5 h-3.5 text-[#059669]" />
+                    <span>Inspections</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>

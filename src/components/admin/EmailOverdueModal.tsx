@@ -377,7 +377,7 @@ export function EmailOverdueModal({
               {sending ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Sending Overdue Digest...</span>
+                  <span>Sending Due Date Alert...</span>
                 </>
               ) : sentTime ? (
                 <>
@@ -387,7 +387,7 @@ export function EmailOverdueModal({
               ) : (
                 <>
                   <Mail className="w-3.5 h-3.5" />
-                  <span>Send Overdue Update</span>
+                  <span>Send Due Date Alert</span>
                 </>
               )}
             </button>

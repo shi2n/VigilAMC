@@ -342,7 +342,7 @@ export function BuildingsView({
                         className="flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-[#FFF0E6] hover:bg-[#FED7AA] text-[#C2410C] border border-[#C2410C]/30 text-xs font-bold transition-all hover:scale-[1.02] shadow-sm"
                       >
                         <FileText className="w-3.5 h-3.5" />
-                        <span>Form-B</span>
+                        <span>Form B Report</span>
                       </Link>
 
                       <button
@@ -356,10 +356,10 @@ export function BuildingsView({
                           });
                         }}
                         className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-[#DC2626] border border-rose-200 text-xs font-bold transition-all shadow-sm"
-                        title={`Email overdue & due-soon update for ${b.name}`}
+                        title={`Email due date & overdue alert for ${b.name}`}
                       >
                         <Mail className="w-3.5 h-3.5" />
-                        <span>Overdue Update</span>
+                        <span>Due Date Alert</span>
                       </button>
 
                       <button

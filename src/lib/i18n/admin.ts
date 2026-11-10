@@ -264,13 +264,13 @@ export interface AdminDictionary {
 }
 
 const DICTIONARY_EN: AdminDictionary = {
-  navOverview: 'Overview',
-  navClients: 'Clients and sites',
-  navEquipment: 'Fire equipment',
-  navInspections: 'Inspections and work',
-  navFieldTeam: 'Field team',
-  navReports: 'Compliance reports',
-  navSettings: 'Agency settings',
+  navOverview: 'Home',
+  navClients: 'Buildings',
+  navEquipment: 'Equipment',
+  navInspections: 'Inspections & Repairs',
+  navFieldTeam: 'Technicians',
+  navReports: 'Reports',
+  navSettings: 'Settings',
   navGuide: 'Setup guide',
 
   digestTitle: 'Needs attention',
@@ -464,7 +464,7 @@ const DICTIONARY_EN: AdminDictionary = {
   floorPlansUploadBtn: 'Upload floor plan',
   floorPlansClickHint: 'Click anywhere on the floor plan to place an asset pin, or drag existing pins to reposition.',
   // Client Portal & Public Verification
-  portalNavTab: 'Client portal',
+  portalNavTab: 'Client Login',
   portalInviteTitle: 'Invite client contact',
   portalInviteSubtitle: 'Grant read-only compliance portal access to building owners, societies, and facility managers.',
   portalInviteBtn: 'Send portal invite',

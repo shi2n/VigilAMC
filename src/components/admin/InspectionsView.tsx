@@ -389,7 +389,7 @@ export function InspectionsView({
                             href={`/report/${ins.building.id}`} target="_blank" rel="noopener noreferrer"
                             className="text-[#C2410C] hover:underline font-bold inline-flex items-center gap-1"
                           >
-                            <span>Form-B</span>
+                            <span>Form B Report</span>
                             <ChevronRight className="w-3.5 h-3.5" />
                           </Link>
                         )}

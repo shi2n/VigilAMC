@@ -25,14 +25,18 @@ export type AdminNavTab =
   | 'FIRE_EQUIPMENT'
   | 'INSPECTIONS_WORK'
   | 'FIELD_TEAM'
-  | 'CLIENT_PORTAL'
   | 'REPORTS'
+  | 'CLIENT_PORTAL'
   | 'SETTINGS'
   // Backward compatibility aliases
   | 'HOME'
   | 'SITES'
+  | 'BUILDINGS'
+  | 'EQUIPMENT'
   | 'INSPECTIONS'
-  | 'REPAIRS';
+  | 'REPAIRS'
+  | 'TECHNICIANS'
+  | 'CLIENT_LOGIN';
 
 interface AdminSidebarProps {
   activeTab: AdminNavTab;
@@ -90,12 +94,20 @@ export function AdminSidebar({
 
   // Normalize legacy tab names
   const normalizedActiveTab: AdminNavTab =
-    activeTab === 'HOME'
+    activeTab === 'HOME' || activeTab === 'OVERVIEW'
       ? 'OVERVIEW'
-      : activeTab === 'SITES'
+      : activeTab === 'SITES' || activeTab === 'BUILDINGS' || activeTab === 'CLIENTS_SITES'
       ? 'CLIENTS_SITES'
-      : activeTab === 'INSPECTIONS' || activeTab === 'REPAIRS'
+      : activeTab === 'EQUIPMENT' || activeTab === 'FIRE_EQUIPMENT'
+      ? 'FIRE_EQUIPMENT'
+      : activeTab === 'INSPECTIONS' || activeTab === 'REPAIRS' || activeTab === 'INSPECTIONS_WORK'
       ? 'INSPECTIONS_WORK'
+      : activeTab === 'TECHNICIANS' || activeTab === 'FIELD_TEAM'
+      ? 'FIELD_TEAM'
+      : activeTab === 'REPORTS'
+      ? 'REPORTS'
+      : activeTab === 'CLIENT_LOGIN' || activeTab === 'CLIENT_PORTAL'
+      ? 'CLIENT_PORTAL'
       : activeTab;
 
   const navItems: {
@@ -105,19 +117,19 @@ export function AdminSidebar({
     badge?: string | number;
     badgeColor?: string;
   }[] = [
-    { id: 'OVERVIEW', label: 'Overview', icon: LayoutDashboard },
-    { id: 'CLIENTS_SITES', label: 'Clients & Sites', icon: Building2 },
-    { id: 'FIRE_EQUIPMENT', label: 'Fire Equipment', icon: Flame },
+    { id: 'OVERVIEW', label: 'Home', icon: LayoutDashboard },
+    { id: 'CLIENTS_SITES', label: 'Buildings', icon: Building2 },
+    { id: 'FIRE_EQUIPMENT', label: 'Equipment', icon: Flame },
     {
       id: 'INSPECTIONS_WORK',
-      label: 'Inspections & Work',
+      label: 'Inspections & Repairs',
       icon: CheckCircle2,
       badge: openRepairsCount > 0 ? openRepairsCount : undefined,
       badgeColor: 'bg-[#DC2626] text-white',
     },
-    { id: 'FIELD_TEAM', label: 'Field Team', icon: Users },
-    { id: 'CLIENT_PORTAL', label: 'Client Portal', icon: ShieldCheck },
+    { id: 'FIELD_TEAM', label: 'Technicians', icon: Users },
     { id: 'REPORTS', label: 'Reports', icon: FileText },
+    { id: 'CLIENT_PORTAL', label: 'Client Login', icon: ShieldCheck },
     {
       id: 'SETTINGS',
       label: 'Settings',

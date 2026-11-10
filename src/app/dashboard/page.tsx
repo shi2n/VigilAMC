@@ -139,6 +139,16 @@ const TechnicianManagement = dynamic(
   { loading: () => <div className="h-96 bg-slate-100 rounded-2xl animate-pulse" />, ssr: false }
 );
 
+const TechnicianAssignments = dynamic(
+  () => import('@/components/admin/TechnicianAssignments').then((m) => m.TechnicianAssignments),
+  { loading: () => <div className="h-96 bg-slate-100 rounded-2xl animate-pulse" />, ssr: false }
+);
+
+const TechnicianActivityLog = dynamic(
+  () => import('@/components/admin/TechnicianActivityLog').then((m) => m.TechnicianActivityLog),
+  { loading: () => <div className="h-96 bg-slate-100 rounded-2xl animate-pulse" />, ssr: false }
+);
+
 const ExportModal = dynamic(
   () => import('@/components/admin/ExportModal').then((m) => m.ExportModal),
   { ssr: false }
@@ -234,6 +244,8 @@ export default function AdminDashboardPage() {
   const [inspectionsWorkSubTab, setInspectionsWorkSubTab] = useState<
     'INSPECTIONS' | 'APPROVALS' | 'FINDINGS' | 'RADAR' | 'REPAIRS'
   >('INSPECTIONS');
+  const [inspectionsMainTab, setInspectionsMainTab] = useState<'INSPECTIONS' | 'REPAIRS'>('INSPECTIONS');
+  const [techniciansSubTab, setTechniciansSubTab] = useState<'TEAM' | 'ASSIGNMENTS' | 'ACTIVITY'>('TEAM');
   const [clientFilter, setClientFilter] = useState<{ id: string; name: string } | null>(null);
   const [floorPlansBuilding, setFloorPlansBuilding] = useState<any | null>(null);
   const [prefillFinding, setPrefillFinding] = useState<any | null>(null);
@@ -1118,23 +1130,27 @@ export default function AdminDashboardPage() {
   // Tab definitions & metadata
   const TAB_CONFIG: Record<string, { label: string; icon: any; badge?: number | string }> = useMemo(
     () => ({
-      OVERVIEW: { label: 'Overview', icon: LayoutDashboard },
-      CLIENTS_SITES: { label: 'Clients & Sites', icon: Building2 },
-      FIRE_EQUIPMENT: { label: 'Fire Equipment', icon: Flame },
+      OVERVIEW: { label: 'Home', icon: LayoutDashboard },
+      CLIENTS_SITES: { label: 'Buildings', icon: Building2 },
+      FIRE_EQUIPMENT: { label: 'Equipment', icon: Flame },
       INSPECTIONS_WORK: {
-        label: 'Inspections & Work',
+        label: 'Inspections & Repairs',
         icon: CheckCircle2,
         badge: liveOpenRepairsCount > 0 ? liveOpenRepairsCount : undefined,
       },
-      FIELD_TEAM: { label: 'Field Team', icon: Users },
-      CLIENT_PORTAL: { label: 'Client Portal', icon: ShieldCheck },
+      FIELD_TEAM: { label: 'Technicians', icon: Users },
+      CLIENT_PORTAL: { label: 'Client Login', icon: ShieldCheck },
       REPORTS: { label: 'Reports', icon: FileText },
       SETTINGS: { label: 'Settings', icon: SettingsIcon },
       // Legacy alias mappings
-      HOME: { label: 'Overview', icon: LayoutDashboard },
-      SITES: { label: 'Clients & Sites', icon: Building2 },
-      INSPECTIONS: { label: 'Inspections', icon: CheckCircle2 },
-      REPAIRS: { label: 'Repairs', icon: CheckCircle2 },
+      HOME: { label: 'Home', icon: LayoutDashboard },
+      SITES: { label: 'Buildings', icon: Building2 },
+      BUILDINGS: { label: 'Buildings', icon: Building2 },
+      EQUIPMENT: { label: 'Equipment', icon: Flame },
+      INSPECTIONS: { label: 'Inspections & Repairs', icon: CheckCircle2 },
+      REPAIRS: { label: 'Inspections & Repairs', icon: CheckCircle2 },
+      TECHNICIANS: { label: 'Technicians', icon: Users },
+      CLIENT_LOGIN: { label: 'Client Login', icon: ShieldCheck },
     }),
     [liveOpenRepairsCount]
   );
@@ -1145,15 +1161,23 @@ export default function AdminDashboardPage() {
       const normalized: AdminNavTab =
         rawTab === 'HOME'
           ? 'OVERVIEW'
-          : rawTab === 'SITES'
+          : rawTab === 'SITES' || rawTab === 'BUILDINGS'
           ? 'CLIENTS_SITES'
+          : rawTab === 'EQUIPMENT'
+          ? 'FIRE_EQUIPMENT'
+          : rawTab === 'TECHNICIANS'
+          ? 'FIELD_TEAM'
+          : rawTab === 'CLIENT_LOGIN'
+          ? 'CLIENT_PORTAL'
           : rawTab === 'INSPECTIONS' || rawTab === 'REPAIRS'
           ? 'INSPECTIONS_WORK'
           : (rawTab as AdminNavTab);
 
       if (rawTab === 'REPAIRS') {
+        setInspectionsMainTab('REPAIRS');
         setInspectionsWorkSubTab('REPAIRS');
       } else if (rawTab === 'INSPECTIONS') {
+        setInspectionsMainTab('INSPECTIONS');
         setInspectionsWorkSubTab('INSPECTIONS');
       }
 
@@ -1594,14 +1618,14 @@ export default function AdminDashboardPage() {
                 <span className="text-xs font-semibold text-[#C2410C]">VigilAMC</span>
                 <span className="text-slate-400">/</span>
                 <h1 className="text-lg sm:text-xl font-black text-[#1C1917] tracking-tight">
-                  {(activeTab === 'OVERVIEW' || activeTab === 'HOME') && 'Overview'}
-                  {(activeTab === 'CLIENTS_SITES' || activeTab === 'SITES') && 'Clients & Sites'}
-                  {activeTab === 'FIRE_EQUIPMENT' && 'Fire Equipment'}
-                  {(activeTab === 'INSPECTIONS_WORK' || activeTab === 'INSPECTIONS' || activeTab === 'REPAIRS') && 'Inspections & Work'}
-                  {activeTab === 'FIELD_TEAM' && 'Field Team & Technicians'}
-                  {activeTab === 'CLIENT_PORTAL' && 'Client Portal & Receipts'}
-                  {activeTab === 'REPORTS' && 'Compliance Reports'}
-                  {activeTab === 'SETTINGS' && 'Agency Settings'}
+                  {(activeTab === 'OVERVIEW' || activeTab === 'HOME') && 'Home'}
+                  {(activeTab === 'CLIENTS_SITES' || activeTab === 'SITES' || activeTab === 'BUILDINGS') && 'Buildings'}
+                  {(activeTab === 'FIRE_EQUIPMENT' || activeTab === 'EQUIPMENT') && 'Equipment'}
+                  {(activeTab === 'INSPECTIONS_WORK' || activeTab === 'INSPECTIONS' || activeTab === 'REPAIRS') && 'Inspections & Repairs'}
+                  {(activeTab === 'FIELD_TEAM' || activeTab === 'TECHNICIANS') && 'Technicians'}
+                  {activeTab === 'REPORTS' && 'Reports'}
+                  {(activeTab === 'CLIENT_PORTAL' || activeTab === 'CLIENT_LOGIN') && 'Client Login'}
+                  {activeTab === 'SETTINGS' && 'Settings'}
                 </h1>
                 {isRevalidating && (
                   <span title="Syncing latest data..." className="inline-flex items-center ml-1">
@@ -1776,7 +1800,7 @@ export default function AdminDashboardPage() {
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
-                      Buildings &amp; Towers ({buildings.length})
+                      Buildings ({buildings.length})
                     </button>
                     <button
                       onClick={() => setClientsSitesSubTab('CLIENTS')}
@@ -1786,7 +1810,7 @@ export default function AdminDashboardPage() {
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
-                      Client Societies ({clientsList.length})
+                      Clients ({clientsList.length})
                     </button>
                   </div>
 
@@ -1956,96 +1980,144 @@ export default function AdminDashboardPage() {
             ========================================================================= */}
             {tab.id === 'INSPECTIONS_WORK' && (
               <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#FED7AA] shadow-xs">
-                  <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs flex-wrap">
-                    <button
-                      data-testid="subtab-inspections"
-                      onClick={() => setInspectionsWorkSubTab('INSPECTIONS')}
-                      className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
-                        inspectionsWorkSubTab === 'INSPECTIONS'
-                          ? 'bg-[#C2410C] text-white shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      Field Inspections ({inspectionsList.length})
-                    </button>
-                    <button
-                      data-testid="subtab-approvals"
-                      onClick={() => setInspectionsWorkSubTab('APPROVALS')}
-                      className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
-                        inspectionsWorkSubTab === 'APPROVALS'
-                          ? 'bg-[#C2410C] text-white shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      <span>Approvals</span>
-                      {inspectionsList.filter((i) => i.approvalStatus === 'PENDING').length > 0 && (
-                        <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-[#EA580C] text-white font-bold">
-                          {inspectionsList.filter((i) => i.approvalStatus === 'PENDING').length}
-                        </span>
-                      )}
-                    </button>
-                    <button
-                      data-testid="subtab-findings"
-                      onClick={() => setInspectionsWorkSubTab('FINDINGS')}
-                      className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
-                        inspectionsWorkSubTab === 'FINDINGS'
-                          ? 'bg-[#C2410C] text-white shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      <span>Corrective Actions</span>
-                      {correctiveActionsList.filter((c) => c.status !== 'CLOSED').length > 0 && (
-                        <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-[#D97706] text-white font-bold">
-                          {correctiveActionsList.filter((c) => c.status !== 'CLOSED').length}
-                        </span>
-                      )}
-                    </button>
-                    <button
-                      data-testid="subtab-radar"
-                      onClick={() => setInspectionsWorkSubTab('RADAR')}
-                      className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
-                        inspectionsWorkSubTab === 'RADAR'
-                          ? 'bg-[#C2410C] text-white shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      Expiry Radar
-                    </button>
-                    <button
-                      data-testid="subtab-repairs"
-                      onClick={() => setInspectionsWorkSubTab('REPAIRS')}
-                      className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
-                        inspectionsWorkSubTab === 'REPAIRS'
-                          ? 'bg-[#C2410C] text-white shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      <span>Repairs &amp; Work Orders</span>
-                      {liveOpenRepairsCount > 0 && (
-                        <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-rose-500 text-white font-bold">
-                          {liveOpenRepairsCount}
-                        </span>
-                      )}
-                    </button>
+                <div className="flex flex-col gap-3 bg-white p-4 rounded-2xl border border-[#FED7AA] shadow-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    {/* Primary Sub-Tabs: Inspections | Repairs */}
+                    <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs">
+                      <button
+                        onClick={() => {
+                          setInspectionsMainTab('INSPECTIONS');
+                          if (inspectionsWorkSubTab === 'REPAIRS' || inspectionsWorkSubTab === 'FINDINGS') {
+                            setInspectionsWorkSubTab('INSPECTIONS');
+                          }
+                        }}
+                        className={`px-3.5 py-1.5 rounded-lg font-bold transition-all ${
+                          inspectionsMainTab === 'INSPECTIONS'
+                            ? 'bg-[#C2410C] text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        Inspections
+                      </button>
+                      <button
+                        onClick={() => {
+                          setInspectionsMainTab('REPAIRS');
+                          if (inspectionsWorkSubTab !== 'REPAIRS' && inspectionsWorkSubTab !== 'FINDINGS') {
+                            setInspectionsWorkSubTab('REPAIRS');
+                          }
+                        }}
+                        className={`px-3.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
+                          inspectionsMainTab === 'REPAIRS'
+                            ? 'bg-[#C2410C] text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        <span>Repairs</span>
+                        {liveOpenRepairsCount > 0 && (
+                          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-rose-500 text-white font-bold">
+                            {liveOpenRepairsCount}
+                          </span>
+                        )}
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() =>
+                          handleOpenExport(
+                            inspectionsMainTab === 'INSPECTIONS'
+                              ? 'INSPECTIONS'
+                              : 'WORK_ORDERS'
+                          )
+                        }
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-xs"
+                        title="Export to Excel (.xlsx)"
+                      >
+                        <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                        <span>Export Excel</span>
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() =>
-                        handleOpenExport(
-                          inspectionsWorkSubTab === 'INSPECTIONS' ||
+                  {/* Secondary Navigation Pills */}
+                  <div className="flex items-center gap-1.5 pt-2 border-t border-slate-100 text-xs flex-wrap">
+                    {inspectionsMainTab === 'INSPECTIONS' ? (
+                      <>
+                        <button
+                          data-testid="subtab-inspections"
+                          onClick={() => setInspectionsWorkSubTab('INSPECTIONS')}
+                          className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                            inspectionsWorkSubTab === 'INSPECTIONS'
+                              ? 'bg-[#FFF0E6] text-[#C2410C] border border-[#EA580C]/30 font-bold'
+                              : 'text-slate-600 hover:text-slate-900 bg-slate-50'
+                          }`}
+                        >
+                          Field Inspections ({inspectionsList.length})
+                        </button>
+                        <button
+                          data-testid="subtab-approvals"
+                          onClick={() => setInspectionsWorkSubTab('APPROVALS')}
+                          className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
                             inspectionsWorkSubTab === 'APPROVALS'
-                            ? 'INSPECTIONS'
-                            : 'WORK_ORDERS'
-                        )
-                      }
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-xs"
-                      title="Export to Excel (.xlsx)"
-                    >
-                      <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                      <span>Export Excel</span>
-                    </button>
+                              ? 'bg-[#FFF0E6] text-[#C2410C] border border-[#EA580C]/30 font-bold'
+                              : 'text-slate-600 hover:text-slate-900 bg-slate-50'
+                          }`}
+                        >
+                          <span>Approvals</span>
+                          {inspectionsList.filter((i) => i.approvalStatus === 'PENDING').length > 0 && (
+                            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-[#EA580C] text-white font-bold">
+                              {inspectionsList.filter((i) => i.approvalStatus === 'PENDING').length}
+                            </span>
+                          )}
+                        </button>
+                        <button
+                          data-testid="subtab-radar"
+                          onClick={() => setInspectionsWorkSubTab('RADAR')}
+                          className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                            inspectionsWorkSubTab === 'RADAR'
+                              ? 'bg-[#FFF0E6] text-[#C2410C] border border-[#EA580C]/30 font-bold'
+                              : 'text-slate-600 hover:text-slate-900 bg-slate-50'
+                          }`}
+                        >
+                          Expiry Radar
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          data-testid="subtab-repairs"
+                          onClick={() => setInspectionsWorkSubTab('REPAIRS')}
+                          className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                            inspectionsWorkSubTab === 'REPAIRS'
+                              ? 'bg-[#FFF0E6] text-[#C2410C] border border-[#EA580C]/30 font-bold'
+                              : 'text-slate-600 hover:text-slate-900 bg-slate-50'
+                          }`}
+                        >
+                          <span>Repairs &amp; Work Orders</span>
+                          {liveOpenRepairsCount > 0 && (
+                            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-rose-500 text-white font-bold">
+                              {liveOpenRepairsCount}
+                            </span>
+                          )}
+                        </button>
+                        <button
+                          data-testid="subtab-findings"
+                          onClick={() => setInspectionsWorkSubTab('FINDINGS')}
+                          className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                            inspectionsWorkSubTab === 'FINDINGS'
+                              ? 'bg-[#FFF0E6] text-[#C2410C] border border-[#EA580C]/30 font-bold'
+                              : 'text-slate-600 hover:text-slate-900 bg-slate-50'
+                          }`}
+                        >
+                          <span>Corrective Actions</span>
+                          {correctiveActionsList.filter((c) => c.status !== 'CLOSED').length > 0 && (
+                            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-[#D97706] text-white font-bold">
+                              {correctiveActionsList.filter((c) => c.status !== 'CLOSED').length}
+                            </span>
+                          )}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -2116,17 +2188,67 @@ export default function AdminDashboardPage() {
                 GROUP 4B: FIELD TEAM & TECHNICIAN MANAGEMENT
             ========================================================================= */}
             {tab.id === 'FIELD_TEAM' && (
-              <TechnicianManagement
-                showToast={showToast}
-                onOpenImport={() => handleOpenImport('TECHNICIANS')}
-                initialTechnicians={techniciansList}
-                initialBuildings={buildings}
-                initialSeatUsage={subscriptionData?.usage?.technicians}
-                initialPlan={subscriptionData?.plan}
-                agencyName={company?.name}
-                onRefreshDashboard={() => refreshDashboard({ silent: true })}
-                t={getAdminDictionary(data?.profile?.preferredLanguage || 'en')}
-              />
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#FED7AA] shadow-xs">
+                  <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs">
+                    <button
+                      data-testid="subtab-technicians-team"
+                      onClick={() => setTechniciansSubTab('TEAM')}
+                      className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                        techniciansSubTab === 'TEAM'
+                          ? 'bg-[#C2410C] text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Team ({techniciansList.length})
+                    </button>
+                    <button
+                      data-testid="subtab-technicians-assignments"
+                      onClick={() => setTechniciansSubTab('ASSIGNMENTS')}
+                      className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                        techniciansSubTab === 'ASSIGNMENTS'
+                          ? 'bg-[#C2410C] text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Assignments
+                    </button>
+                    <button
+                      data-testid="subtab-technicians-activity"
+                      onClick={() => setTechniciansSubTab('ACTIVITY')}
+                      className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                        techniciansSubTab === 'ACTIVITY'
+                          ? 'bg-[#C2410C] text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Activity
+                    </button>
+                  </div>
+                </div>
+
+                {techniciansSubTab === 'TEAM' && (
+                  <TechnicianManagement
+                    showToast={showToast}
+                    onOpenImport={() => handleOpenImport('TECHNICIANS')}
+                    initialTechnicians={techniciansList}
+                    initialBuildings={buildings}
+                    initialSeatUsage={subscriptionData?.usage?.technicians}
+                    initialPlan={subscriptionData?.plan}
+                    agencyName={company?.name}
+                    onRefreshDashboard={() => refreshDashboard({ silent: true })}
+                    t={getAdminDictionary(data?.profile?.preferredLanguage || 'en')}
+                  />
+                )}
+
+                {techniciansSubTab === 'ASSIGNMENTS' && (
+                  <TechnicianAssignments showToast={showToast} />
+                )}
+
+                {techniciansSubTab === 'ACTIVITY' && (
+                  <TechnicianActivityLog />
+                )}
+              </div>
             )}
 
             {/* =========================================================================
@@ -3487,7 +3609,7 @@ export default function AdminDashboardPage() {
 
                           {techniciansList.length === 0 ? (
                             <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-xs flex items-center justify-between">
-                              <span>No technicians yet — add one in Field Team</span>
+                              <span>No technicians yet — add one in Technicians</span>
                               <button
                                 type="button"
                                 onClick={() => {
@@ -3497,7 +3619,7 @@ export default function AdminDashboardPage() {
                                 }}
                                 className="text-[#C2410C] font-bold underline hover:text-[#9A3412]"
                               >
-                                Go to Field Team &rarr;
+                                Go to Technicians &rarr;
                               </button>
                             </div>
                           ) : (
