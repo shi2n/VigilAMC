@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" fill="none">
+  <defs>
+    <linearGradient id="vFlameGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#C2410C" />
+      <stop offset="50%" stop-color="#EA580C" />
+      <stop offset="100%" stop-color="#FF8C42" />
+    </linearGradient>
+    <linearGradient id="vGlowGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFF4EC" />
+      <stop offset="100%" stop-color="#FED7AA" />
+    </linearGradient>
+  </defs>
+
+  {/* Soft ambient badge background */}
+  <rect width="48" height="48" rx="12" fill="url(#vGlowGrad)" stroke="#FED7AA" stroke-width="1.5" />
+
+  {/* Dynamic Vigil Flame / V-Shape Icon */}
+  <g transform="translate(6, 6)">
+    {/* Outer Safety Shield Crest Silhouette */}
+    <path d="M18 3 C25 3, 32 6.5, 32 13 C32 25, 24 31, 18 34 C12 31, 4 25, 4 13 C4 6.5, 11 3, 18 3 Z"
+          fill="url(#vFlameGrad)" />
+    
+    {/* Inner V-cutout highlight in warm white */}
+    <path d="M18 8 C20 12, 24 15, 24 19 C24 23, 21.5 25.5, 18 25.5 C14.5 25.5, 12 23, 12 19 C12 16, 15 13, 16 11 C16.5 13, 18 14.5, 18 14.5 C18 14.5, 18.5 11.5, 18 8 Z"
+          fill="#FFF8F2" opacity="0.95" />
+
+    {/* Dynamic Verification Spark */}
+    <circle cx="18" cy="19" r="2.2" fill="#EA580C" />
+  </g>
+</svg>

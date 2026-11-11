@@ -168,15 +168,15 @@ export function StartupDirectoryBadges({ variant = 'glass' }: StartupDirectoryBa
     return (
       <div
         data-testid="footer-startup-badges"
-        className="pt-5 mt-5 border-t border-[#FAFAF9]/10 flex flex-col gap-3 overflow-hidden"
+        className="pt-6 mt-6 border-t border-[#FED7AA]/40 flex flex-col gap-3 overflow-hidden"
       >
         <style dangerouslySetInnerHTML={{ __html: MARQUEE_CSS }} />
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#FF8C42]">
-            <ShieldCheck className="w-3.5 h-3.5 text-[#FF8C42]" />
+          <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#C2410C]">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#EA580C]" />
             <span>Verified &amp; Featured Startup On</span>
           </div>
-          <span className="text-[11px] text-[#A8A29E]">
+          <span className="text-[11px] text-[#57534E] font-medium">
             Official launch directory recognition
           </span>
         </div>
@@ -185,11 +185,11 @@ export function StartupDirectoryBadges({ variant = 'glass' }: StartupDirectoryBa
           {/* Left & Right Subtle Edge Fade Masks */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute left-0 top-0 bottom-0 w-10 z-10 bg-gradient-to-r from-[#1C1917] to-transparent"
+            className="pointer-events-none absolute left-0 top-0 bottom-0 w-10 z-10 bg-gradient-to-r from-[#FFF8F2] to-transparent"
           />
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute right-0 top-0 bottom-0 w-10 z-10 bg-gradient-to-l from-[#1C1917] to-transparent"
+            className="pointer-events-none absolute right-0 top-0 bottom-0 w-10 z-10 bg-gradient-to-l from-[#FFF8F2] to-transparent"
           />
 
           <div className="vigil-startup-marquee-track items-center gap-3">
@@ -205,7 +205,7 @@ export function StartupDirectoryBadges({ variant = 'glass' }: StartupDirectoryBa
                   target="_blank"
                   rel="noopener noreferrer"
                   tabIndex={loopIdx === 1 ? -1 : undefined}
-                  className="inline-flex items-center rounded-xl bg-white px-2.5 py-1.5 shadow-sm hover:-translate-y-0.5 transition-transform shrink-0"
+                  className="inline-flex items-center rounded-xl bg-white px-2.5 py-1.5 shadow-sm border border-[#FED7AA]/60 hover:-translate-y-0.5 transition-transform shrink-0"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -223,14 +223,14 @@ export function StartupDirectoryBadges({ variant = 'glass' }: StartupDirectoryBa
                     target="_blank"
                     rel="noopener noreferrer"
                     tabIndex={loopIdx === 1 ? -1 : undefined}
-                    className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.15] border border-white/15 transition-all hover:-translate-y-0.5 shrink-0"
+                    className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-white hover:bg-[#FFF4EC] border border-[#FED7AA]/60 shadow-sm transition-all hover:-translate-y-0.5 shrink-0"
                   >
                     {dir.renderLogo('w-6 h-6')}
                     <span className="flex flex-col leading-none">
-                      <span className="text-[9px] uppercase tracking-wider text-[#FF8C42] font-semibold">
+                      <span className="text-[9px] uppercase tracking-wider text-[#C2410C] font-bold">
                         {dir.label}
                       </span>
-                      <span className="text-xs font-bold text-[#FAFAF9] mt-0.5">{dir.name}</span>
+                      <span className="text-xs font-bold text-[#1C1917] mt-0.5">{dir.name}</span>
                     </span>
                   </a>
                 ))}

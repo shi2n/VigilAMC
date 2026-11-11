@@ -1025,3 +1025,13 @@ model EmailLog {
   @@map("EmailLog")
 }
 
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  source    String   @default("footer")
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("NewsletterSubscriber")
+}
+
