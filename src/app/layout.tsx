@@ -14,8 +14,6 @@ export const viewport: Viewport = {
   themeColor: "#C2410C",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: "cover",
 };
 
@@ -26,6 +24,9 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "VigilAMC",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
   },
   title: "VigilAMC - Fire Safety AMC & Compliance Software | India",
   description:

@@ -379,6 +379,10 @@ export function InspectionsView({
                               src={thumb}
                               alt="Inspection evidence"
                               className="w-7 h-7 rounded object-cover border border-slate-200"
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = '/brand/logo-tile-192.png';
+                              }}
                             />
                             <span className="text-[10px]">R2 Proof</span>
                           </a>
