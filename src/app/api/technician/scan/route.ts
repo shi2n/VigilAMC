@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser, logAuditActivity } from '@/lib/auth';
 import { calendarDayDiff, addCalendarMonths, fromDbDate, toDbDate, todayCalendarDateString, formatDisplay } from '@/lib/dates';
+import { logEquipmentHistory } from '@/lib/equipmentHistory';
 
 export const dynamic = 'force-dynamic';
 
@@ -143,6 +144,19 @@ export async function POST(request: Request) {
         },
       },
     });
+
+    // Log EquipmentHistory
+    await logEquipmentHistory({
+      equipmentId: eq.id,
+      actorName: resolvedTechnicianName,
+      actorRole: 'TECHNICIAN',
+      action: 'SERVICE_UPDATE',
+      changes: [
+        { field: 'Live Status', old: eq.status, new: 'COMPLIANT' },
+        { field: 'Last Serviced', old: eq.lastServiceDate ? fromDbDate(eq.lastServiceDate) : 'None', new: todayStrPost },
+        { field: 'Next Service Due', old: eq.nextDueDate ? fromDbDate(eq.nextDueDate) : 'None', new: nextDueStr },
+      ],
+    }).catch(() => null);
 
     // 3. Log audit activity
     if (eq.organizationId) {

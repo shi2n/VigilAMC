@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser, logAuditActivity } from '@/lib/auth';
 import { ImportType, DuplicateStrategy } from '@/lib/excelImport';
+import { logEquipmentHistory } from '@/lib/equipmentHistory';
 import { addCalendarMonths, toDbDate, fromDbDate, todayCalendarDateString } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
@@ -207,7 +208,30 @@ export async function POST(request: Request) {
         } else if (type === 'FIRE_ASSETS') {
           const qrCode = (parsedData.qrCode || '').trim().toUpperCase();
           if (!qrCode) {
-            throw new Error('Asset Tag / QR Code is required');
+            throw new Error('Asset Tag is required');
+          }
+
+          const buildingName = (parsedData.buildingName || '').trim();
+          if (!buildingName) {
+            throw new Error('Building Name is required');
+          }
+
+          const bldLower = buildingName.toLowerCase();
+          let targetBuilding = buildingMapByName.get(bldLower);
+          if (!targetBuilding) {
+            targetBuilding = await (db as any).building.findFirst({
+              where: {
+                organizationId,
+                name: { equals: buildingName, mode: 'insensitive' },
+              },
+            });
+            if (targetBuilding) {
+              buildingMapByName.set(bldLower, targetBuilding);
+            }
+          }
+
+          if (!targetBuilding) {
+            throw new Error(`Unknown Building Name "${buildingName}". Please register the building first.`);
           }
 
           const existing = await (db as any).equipment.findFirst({
@@ -222,44 +246,77 @@ export async function POST(request: Request) {
               skippedCount++;
               continue;
             } else if (duplicateStrategy === 'UPDATE') {
-              const lastServ = parsedData.lastServiceDate ? new Date(parsedData.lastServiceDate) : existing.lastServiceDate;
-              const nextDue = parsedData.nextDueDate ? new Date(parsedData.nextDueDate) : existing.nextDueDate;
+              const lastServ = parsedData.lastServiceDate ? toDbDate(fromDbDate(parsedData.lastServiceDate)) : existing.lastServiceDate;
+              const intervalMonths = Number(parsedData.serviceIntervalMonths) || existing.serviceIntervalMonths || 12;
+              const nextDue = parsedData.nextDueDate
+                ? toDbDate(fromDbDate(parsedData.nextDueDate))
+                : toDbDate(addCalendarMonths(fromDbDate(lastServ), intervalMonths));
+
+              const locCombined = [parsedData.unitFloorZone, parsedData.location].filter(Boolean).join(' - ') || existing.location;
 
               await (db as any).equipment.update({
                 where: { id: existing.id },
                 data: {
+                  buildingId: targetBuilding.id,
                   type: parsedData.type || existing.type,
                   capacity: parsedData.capacity || existing.capacity,
-                  location: parsedData.location || existing.location,
+                  location: locCombined,
+                  serviceIntervalMonths: intervalMonths,
                   lastServiceDate: lastServ,
                   nextDueDate: nextDue,
-                  currentStatus: parsedData.currentStatus || existing.currentStatus,
                 },
               });
+
+              await logEquipmentHistory({
+                equipmentId: existing.id,
+                actorName: auth.profile?.fullName || 'Admin',
+                actorRole: 'ADMIN',
+                action: 'EDIT',
+                changes: [
+                  { field: 'Excel Update', old: null, new: 'Imported from Excel' },
+                ],
+              }).catch(() => null);
+
               updatedCount++;
               continue;
             }
           }
 
-          const building = await getOrCreateBuilding(parsedData.buildingName || 'Main Facility');
+          const intervalMonths = Number(parsedData.serviceIntervalMonths) || 12;
           const lastServ = parsedData.lastServiceDate ? toDbDate(fromDbDate(parsedData.lastServiceDate)) : toDbDate(todayCalendarDateString());
           const nextDue = parsedData.nextDueDate
             ? toDbDate(fromDbDate(parsedData.nextDueDate))
-            : toDbDate(addCalendarMonths(fromDbDate(lastServ), 12));
+            : toDbDate(addCalendarMonths(fromDbDate(lastServ), intervalMonths));
 
-          await (db as any).equipment.create({
+          const locCombined = [parsedData.unitFloorZone, parsedData.location].filter(Boolean).join(' - ') || 'Building Floor';
+
+          const created = await (db as any).equipment.create({
             data: {
               organizationId,
-              buildingId: building.id,
+              buildingId: targetBuilding.id,
               qrCode,
               type: parsedData.type || 'Fire Extinguisher',
               capacity: parsedData.capacity || 'ABC Dry Powder 6kg',
-              location: parsedData.location || 'Building Floor',
+              location: locCombined,
+              serviceIntervalMonths: intervalMonths,
               lastServiceDate: lastServ,
               nextDueDate: nextDue,
-              currentStatus: parsedData.currentStatus || 'COMPLIANT',
+              currentStatus: 'COMPLIANT',
             },
           });
+
+          await logEquipmentHistory({
+            equipmentId: created.id,
+            actorName: auth.profile?.fullName || 'Admin',
+            actorRole: 'ADMIN',
+            action: 'CREATE',
+            changes: [
+              { field: 'Asset Created', old: null, new: `Tag: ${qrCode} (${created.type})` },
+              { field: 'Building', old: null, new: targetBuilding.name },
+              { field: 'Service Cycle', old: null, new: `${intervalMonths}-month service` },
+            ],
+          }).catch(() => null);
+
           importedCount++;
         } else if (type === 'TECHNICIANS') {
           const email = (parsedData.email || '').trim().toLowerCase();

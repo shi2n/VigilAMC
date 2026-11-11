@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { formatCalendarDate, getCalendarDayDiff } from '@/lib/dateUtils';
+import { toDateInputString, todayCalendarDateString } from '@/lib/dates';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { toast } from 'sonner';
 import { CreateWorkOrderModal } from './CreateWorkOrderModal';
@@ -26,8 +27,8 @@ interface WorkOrdersViewProps {
   initialWorkOrders?: any[];
   initialTechnicians?: any[];
   initialBuildings?: any[];
-  statusFilter?: 'ALL' | 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
-  onStatusFilterChange?: (status: 'ALL' | 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED') => void;
+  statusFilter?: 'ALL' | 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'RESCHEDULED';
+  onStatusFilterChange?: (status: 'ALL' | 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'RESCHEDULED') => void;
   onRefreshDashboard?: () => Promise<void> | void;
 }
 
@@ -62,7 +63,7 @@ export function WorkOrdersView({
   const [buildings, setBuildings] = useState<any[]>(initialBuildings || []);
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilterState] = useState<
-    'ALL' | 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
+    'ALL' | 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'RESCHEDULED'
   >(controlledStatusFilter || 'ALL');
 
   useEffect(() => {
@@ -71,12 +72,85 @@ export function WorkOrdersView({
     }
   }, [controlledStatusFilter]);
 
-  const setStatusFilter = (newStatus: 'ALL' | 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED') => {
+  const setStatusFilter = (newStatus: 'ALL' | 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'RESCHEDULED') => {
     setStatusFilterState(newStatus);
     if (onStatusFilterChange) onStatusFilterChange(newStatus);
   };
   const [search, setSearch] = useState('');
   const [rippleRowId, setRippleRowId] = useState<string | null>(null);
+  const [rescheduleModalWO, setRescheduleModalWO] = useState<any | null>(null);
+  const [newDueDateInput, setNewDueDateInput] = useState('');
+  const [rescheduling, setRescheduling] = useState(false);
+
+  const handleOpenReschedule = (wo: any) => {
+    setRescheduleModalWO(wo);
+    const existingDate = wo.dueDate ? toDateInputString(wo.dueDate) : '';
+    const today = todayCalendarDateString();
+    setNewDueDateInput(existingDate && existingDate >= today ? existingDate : today);
+  };
+
+  const handleConfirmReschedule = async () => {
+    if (!rescheduleModalWO || !newDueDateInput) return;
+    const today = todayCalendarDateString();
+    if (newDueDateInput < today) {
+      toast.error('New due date must be today or in the future');
+      return;
+    }
+
+    setRescheduling(true);
+    const previousOrders = workOrders;
+    const targetId = rescheduleModalWO.id;
+    const nextStatus = rescheduleModalWO.assignedToId ? 'ASSIGNED' : 'OPEN';
+
+    // Optimistic update
+    setWorkOrders((prev) =>
+      prev.map((wo) =>
+        wo.id === targetId
+          ? {
+              ...wo,
+              dueDate: newDueDateInput,
+              status: nextStatus,
+              rescheduledCount: (wo.rescheduledCount || 0) + 1,
+            }
+          : wo
+      )
+    );
+
+    try {
+      const res = await fetch('/api/work-orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: targetId,
+          dueDate: newDueDateInput,
+          isReschedule: true,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setWorkOrders(previousOrders);
+        const errMsg = data?.error || 'Failed to re-schedule work order';
+        toast.error(errMsg, { duration: 5500 });
+        showToast(errMsg);
+        return;
+      }
+      setRippleRowId(targetId);
+      window.setTimeout(() => setRippleRowId(null), 650);
+      toast.success('Task re-scheduled and returned to queue');
+      showToast('Task re-scheduled and returned to queue');
+      setRescheduleModalWO(null);
+      await fetchWorkOrders();
+      if (onRefreshDashboard) await onRefreshDashboard();
+    } catch (e: any) {
+      console.error(e);
+      setWorkOrders(previousOrders);
+      const errMsg = e?.message || 'Failed to re-schedule work order';
+      toast.error(errMsg, { duration: 5500 });
+      showToast(errMsg);
+    } finally {
+      setRescheduling(false);
+    }
+  };
 
   // Add work order modal
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -272,7 +346,7 @@ export function WorkOrdersView({
       (wo.description || '').toLowerCase().includes(search.toLowerCase()) ||
       (wo.building?.name && wo.building.name.toLowerCase().includes(search.toLowerCase()));
 
-    const matchesStatus = statusFilter === 'ALL' || wo.status === statusFilter;
+    const matchesStatus = statusFilter === 'ALL' || (statusFilter === 'RESCHEDULED' ? (wo.rescheduledCount || 0) > 0 : wo.status === statusFilter);
     return matchesSearch && matchesStatus;
   });
 
@@ -362,14 +436,14 @@ export function WorkOrdersView({
               Completed ({workOrders.filter((w) => w.status === 'COMPLETED').length})
             </button>
             <button
-              onClick={() => setStatusFilter('CANCELLED')}
+              onClick={() => setStatusFilter('RESCHEDULED')}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                statusFilter === 'CANCELLED'
-                  ? 'bg-slate-700 text-white shadow-xs'
+                statusFilter === 'RESCHEDULED'
+                  ? 'bg-amber-600 text-white shadow-xs'
                   : 'text-slate-600 hover:text-[#1C1917]'
               }`}
             >
-              Cancelled ({workOrders.filter((w) => w.status === 'CANCELLED').length})
+              Re-scheduled ({workOrders.filter((w) => (w.rescheduledCount || 0) > 0).length})
             </button>
           </div>
         </div>
@@ -498,6 +572,11 @@ export function WorkOrdersView({
                       >
                         {wo.status || 'OPEN'}
                       </motion.span>
+                      {(wo.rescheduledCount || 0) > 0 && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300">
+                          Re-scheduled ({wo.rescheduledCount}×)
+                        </span>
+                      )}
                       {wo.isAutoScheduled && (
                         <span
                           data-testid={`auto-scheduled-badge-${wo.id}`}

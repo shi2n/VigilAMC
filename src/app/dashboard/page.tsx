@@ -95,11 +95,6 @@ const CorrectiveActionsBoard = dynamic(
   { loading: () => <div className="h-96 bg-slate-100 rounded-2xl animate-pulse" />, ssr: false }
 );
 
-const ExpiryRadarView = dynamic(
-  () => import('@/components/admin/ExpiryRadarView').then((m) => m.ExpiryRadarView),
-  { loading: () => <div className="h-96 bg-slate-100 rounded-2xl animate-pulse" />, ssr: false }
-);
-
 const FloorPlansModal = dynamic(
   () => import('@/components/admin/FloorPlansModal').then((m) => m.FloorPlansModal),
   { ssr: false }
@@ -272,7 +267,7 @@ export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<AdminNavTab>('OVERVIEW');
   const [clientsSitesSubTab, setClientsSitesSubTab] = useState<'BUILDINGS' | 'CLIENTS'>('BUILDINGS');
   const [inspectionsWorkSubTab, setInspectionsWorkSubTab] = useState<
-    'INSPECTIONS' | 'APPROVALS' | 'FINDINGS' | 'RADAR' | 'REPAIRS'
+    'INSPECTIONS' | 'APPROVALS' | 'FINDINGS' | 'REPAIRS'
   >('INSPECTIONS');
   const [inspectionsMainTab, setInspectionsMainTab] = useState<'INSPECTIONS' | 'REPAIRS'>('INSPECTIONS');
   const [techniciansSubTab, setTechniciansSubTab] = useState<'TEAM' | 'ASSIGNMENTS' | 'ACTIVITY'>('TEAM');
@@ -326,7 +321,7 @@ export default function AdminDashboardPage() {
   const [equipFilterBuilding, setEquipFilterBuilding] = useState('ALL');
   const [equipStatusFilter, setEquipStatusFilter] = useState<'ALL' | 'OVERDUE' | 'DUE_SOON' | 'VERIFIED'>('ALL');
   const [repairsStatusFilter, setRepairsStatusFilter] = useState<
-    'ALL' | 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
+    'ALL' | 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'RESCHEDULED'
   >('ALL');
   const [createWorkOrderModalOpen, setCreateWorkOrderModalOpen] = useState(false);
   const [createWorkOrderInitialData, setCreateWorkOrderInitialData] = useState<any | null>(null);
@@ -2025,11 +2020,6 @@ export default function AdminDashboardPage() {
                 onOpenImport={() => handleOpenImport('FIRE_ASSETS')}
                 onOpenRegisterModal={() => setAddBuildingModalOpen(true)}
                 onOpenGuide={() => setGuideModalOpen(true)}
-                onOpenRadar={() => {
-                  handleOpenTab('INSPECTIONS_WORK');
-                  setInspectionsMainTab('INSPECTIONS');
-                  setInspectionsWorkSubTab('RADAR');
-                }}
               />
             )}
 
@@ -2295,17 +2285,6 @@ export default function AdminDashboardPage() {
                             </span>
                           )}
                         </button>
-                        <button
-                          data-testid="subtab-radar"
-                          onClick={() => setInspectionsWorkSubTab('RADAR')}
-                          className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                            inspectionsWorkSubTab === 'RADAR'
-                              ? 'bg-[#FFF0E6] text-[#C2410C] border border-[#EA580C]/30 font-bold'
-                              : 'text-slate-600 hover:text-slate-900 bg-slate-50'
-                          }`}
-                        >
-                          Expiry Radar
-                        </button>
                       </>
                     ) : (
                       <>
@@ -2382,17 +2361,6 @@ export default function AdminDashboardPage() {
                     onRefreshDashboard={() => refreshDashboard({ silent: true })}
                     prefillFinding={prefillFinding}
                     onClearPrefill={() => setPrefillFinding(null)}
-                    t={t}
-                  />
-                )}
-
-                {inspectionsWorkSubTab === 'RADAR' && (
-                  <ExpiryRadarView
-                    equipments={equipmentsList}
-                    workOrders={workOrdersList}
-                    showToast={showToast}
-                    onRefreshDashboard={() => refreshDashboard({ silent: true })}
-                    onNavigateToWorkOrders={() => setInspectionsWorkSubTab('REPAIRS')}
                     t={t}
                   />
                 )}
@@ -3862,32 +3830,7 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
 
-                      {/* Collapsible More Options: Next Hydro-Test Due Date */}
-                      <details className="sm:col-span-2 group pt-2 border-t border-[#FED7AA]/60">
-                        <summary className="cursor-pointer text-xs font-bold text-[#C2410C] hover:text-[#9A3412] flex items-center justify-between py-1.5 select-none">
-                          <span>More options (Hydro-Test Due Date)</span>
-                          <span className="text-[10px] text-slate-500 font-normal">Optional</span>
-                        </summary>
-                        <div className="pt-2 pb-1 space-y-2">
-                          <div>
-                            <label className="block text-slate-700 font-bold mb-1 text-xs">
-                              Next Hydro-Test Due Date
-                            </label>
-                            <input
-                              type="date"
-                              data-testid="equipment-modal-hydro-due"
-                              value={editEquipmentModal.hydroDueDate || ''}
-                              onChange={(e) =>
-                                setEditEquipmentModal({
-                                  ...editEquipmentModal,
-                                  hydroDueDate: e.target.value,
-                                })
-                              }
-                              className="w-full bg-white border border-[#FED7AA] rounded-lg p-2 text-slate-900 focus:border-[#C2410C] focus:outline-none text-xs"
-                            />
-                          </div>
-                        </div>
-                      </details>
+                      
                     </div>
                   </div>
 

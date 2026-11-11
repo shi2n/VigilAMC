@@ -1,5 +1,12 @@
 import { calendarDayDiff } from './dates';
 
+export function getServiceCycleLabel(months?: number | null): string {
+  const m = Number(months) || 12;
+  if (m === 6) return '6-month service';
+  if (m === 12) return '1-year service';
+  return `${m}-month service`;
+}
+
 export type ComplianceStatus = 'NOT_INSPECTED' | 'DUE_SOON' | 'OVERDUE' | 'VERIFIED';
 
 export interface EquipmentStatusResult {

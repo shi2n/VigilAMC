@@ -256,6 +256,7 @@ model Equipment {
   inspectionParts       InspectionPart[]
   correctiveActions     CorrectiveAction[]
   floorPlanPins         FloorPlanPin[]
+  history               EquipmentHistory[]
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
 
@@ -266,6 +267,20 @@ model Equipment {
   @@index([organizationId, buildingId])
   @@index([organizationId, nextDueDate])
   @@index([organizationId, status])
+}
+
+model EquipmentHistory {
+  id          String    @id @default(cuid())
+  equipmentId String
+  equipment   Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  actorName   String
+  actorRole   String    // TECHNICIAN, ADMIN, SYSTEM
+  action      String    // SERVICE_UPDATE, EDIT, PHOTO_UPDATE, RE_SCHEDULE, TASK_ASSIGN, CREATE
+  changes     Json?     // [{field: string, old: any, new: any}]
+  createdAt   DateTime  @default(now())
+
+  @@index([equipmentId])
+  @@index([createdAt])
 }
 
 model Job {
@@ -477,6 +492,8 @@ model WorkOrder {
   completedAt     DateTime?
   notes           String?
   isAutoScheduled Boolean       @default(false)
+  rescheduledCount Int          @default(0)
+  lastRescheduledAt DateTime?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 

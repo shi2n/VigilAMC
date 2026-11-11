@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { formatCalendarDate, getCalendarDayDiff, getCalendarMonthDiff } from '@/lib/dateUtils';
+import { getServiceCycleLabel } from '@/lib/compliance';
 import Link from 'next/link';
 import {
   Building2,
@@ -461,7 +462,7 @@ export function BuildingsView({
                                 <th className="py-3 px-4">Location</th>
                                 <th className="py-3 px-4">Last Service</th>
                                 <th className="py-3 px-4">Next Service Due</th>
-                                <th className="py-3 px-4">Next Hydro Due</th>
+                                <th className="py-3 px-4">Service Cycle</th>
                                 <th className="py-3 px-4">Status</th>
                                 <th className="py-3 px-4 text-right">Action</th>
                               </tr>
@@ -489,7 +490,15 @@ export function BuildingsView({
                                       </button>
                                     </td>
                                     <td className="py-3 px-4 font-semibold text-slate-900">
-                                      {eq.capacity} ({eq.type})
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span>{eq.capacity} ({eq.type})</span>
+                                        <span
+                                          data-testid={`cycle-chip-${eq.id || eq.qrCode}`}
+                                          className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold text-[#44403C] bg-[#FFF8F2] border border-[#FED7AA]"
+                                        >
+                                          {getServiceCycleLabel(eq.serviceIntervalMonths)}
+                                        </span>
+                                      </div>
                                     </td>
                                     <td className="py-3 px-4 text-slate-600">{eq.location}</td>
                                     <td className="py-3 px-4 text-slate-500">
@@ -520,7 +529,9 @@ export function BuildingsView({
                                       </span>
                                     </td>
                                     <td className="py-3 px-4 text-[#1C1917] font-semibold">
-                                      {formatCalendarDate(eq.hydroDueDate)}
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold text-[#44403C] bg-[#FFF8F2] border border-[#FED7AA]">
+                                        {getServiceCycleLabel(eq.serviceIntervalMonths)}
+                                      </span>
                                     </td>
                                     <td className="py-3 px-4">
                                       <span

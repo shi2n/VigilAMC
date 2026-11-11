@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { formatCalendarDate, getCalendarDayDiff, getCalendarMonthDiff } from '@/lib/dateUtils';
+import { getServiceCycleLabel } from '@/lib/compliance';
 import { motion, useReducedMotion } from 'motion/react';
 import { Layers, Search, Edit, Trash2, MapPin, FileSpreadsheet, Plus } from 'lucide-react';
 import { AdminDictionary } from '@/lib/i18n/admin';
@@ -244,7 +245,7 @@ export function FireAssetsView({
                 <th className="py-3 px-4 whitespace-nowrap">Location</th>
                 <th className="py-3 px-4 whitespace-nowrap">Last Serviced</th>
                 <th className="py-3 px-4 whitespace-nowrap">Next Service Due</th>
-                <th className="py-3 px-4 whitespace-nowrap">Next Hydro Due</th>
+                <th className="py-3 px-4 whitespace-nowrap">Service Cycle</th>
                 <th className="py-3 px-4 text-center whitespace-nowrap">Live Status</th>
                 <th className="py-3 px-4 text-right whitespace-nowrap sticky right-0 bg-[#FFF8F2] z-20 shadow-[-6px_0_12px_-4px_rgba(28,25,23,0.08)] border-b border-[#FED7AA] min-w-[160px]">
                   Actions
@@ -303,7 +304,15 @@ export function FireAssetsView({
                     </td>
                     <td className="py-3 px-4 font-medium text-slate-600">{eq.building?.name || '—'}</td>
                     <td className="py-3 px-4 text-[#1C1917] font-semibold">
-                      {eq.capacity} ({eq.type})
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span>{eq.capacity} ({eq.type})</span>
+                        <span
+                          data-testid={`cycle-chip-assets-${eq.id || eq.qrCode}`}
+                          className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold text-[#44403C] bg-[#FFF8F2] border border-[#FED7AA]"
+                        >
+                          {getServiceCycleLabel(eq.serviceIntervalMonths)}
+                        </span>
+                      </div>
                     </td>
                     <td className="py-3 px-4 text-slate-500">{eq.location}</td>
                     <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
@@ -332,37 +341,9 @@ export function FireAssetsView({
                       </span>
                     </td>
                     <td className="py-3 px-4 font-semibold text-[#1C1917] whitespace-nowrap">
-                      {eq.hydroDueDate && !isNaN(new Date(eq.hydroDueDate).getTime()) ? (
-                        (() => {
-                          const hydroDiff = getCalendarDayDiff(eq.hydroDueDate);
-                          return (
-                            <>
-                              {formatCalendarDate(eq.hydroDueDate)}
-                              <span
-                                className={`block text-[10px] font-bold ${
-                                  hydroDiff !== null && hydroDiff < 0
-                                    ? 'text-[#DC2626]'
-                                    : hydroDiff !== null && hydroDiff <= 30
-                                    ? 'text-[#D97706]'
-                                    : 'text-[#059669]'
-                                }`}
-                              >
-                                {hydroDiff === null
-                                  ? 'No due date set'
-                                  : hydroDiff === 0
-                                  ? 'Hydro due today'
-                                  : hydroDiff < 0
-                                  ? `Hydro overdue (${Math.abs(hydroDiff)}d)`
-                                  : hydroDiff <= 30
-                                  ? `Hydro due (${hydroDiff}d)`
-                                  : 'Hydro OK'}
-                              </span>
-                            </>
-                          );
-                        })()
-                      ) : (
-                        <span className="text-[#44403C]">—</span>
-                      )}
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold text-[#44403C] bg-[#FFF8F2] border border-[#FED7AA]">
+                        {getServiceCycleLabel(eq.serviceIntervalMonths)}
+                      </span>
                     </td>
                     <td className="py-3 px-4 text-center whitespace-nowrap">
                       <motion.span

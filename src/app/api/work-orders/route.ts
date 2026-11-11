@@ -3,6 +3,8 @@ import { db } from '@/lib/db';
 import { getAuthenticatedActor } from '@/lib/techSession';
 import { getCurrentUser } from '@/lib/auth';
 import { notifyOnAssignment } from '@/lib/notify';
+import { toDateInputString } from '@/lib/dates';
+import { logEquipmentHistory } from '@/lib/equipmentHistory';
 
 export const dynamic = 'force-dynamic';
 
@@ -177,7 +179,7 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const { id, status, assignedToId } = body;
+    const { id, status, assignedToId, dueDate, isReschedule } = body;
 
     if (!id || typeof id !== 'string') {
       return NextResponse.json({ error: 'Work order not found' }, { status: 404 });
@@ -196,9 +198,12 @@ export async function PATCH(request: Request) {
         id: true,
         title: true,
         defectId: true,
+        equipmentId: true,
         assignedToId: true,
         dueDate: true,
         status: true,
+        rescheduledCount: true,
+        equipment: { select: { qrCode: true } },
       },
     });
 
@@ -207,7 +212,33 @@ export async function PATCH(request: Request) {
     }
 
     const updateData: any = {};
-    if (status) {
+    let isReschedulingAction = false;
+    let oldDueDateStr = existing.dueDate ? toDateInputString(existing.dueDate) : 'None';
+    let newDueDateStr = '';
+
+    if (isReschedule && dueDate) {
+      const dt = new Date(dueDate);
+      if (!isNaN(dt.getTime())) {
+        isReschedulingAction = true;
+        updateData.dueDate = dt;
+        newDueDateStr = toDateInputString(dt);
+        // Returns to the queue: ASSIGNED if has technician, else OPEN
+        updateData.status = existing.assignedToId ? 'ASSIGNED' : 'OPEN';
+        updateData.rescheduledCount = (existing.rescheduledCount || 0) + 1;
+        updateData.lastRescheduledAt = new Date();
+      }
+    } else if (dueDate !== undefined) {
+      if (dueDate && String(dueDate).trim() !== '') {
+        const dt = new Date(dueDate);
+        if (!isNaN(dt.getTime())) {
+          updateData.dueDate = dt;
+        }
+      } else {
+        updateData.dueDate = null;
+      }
+    }
+
+    if (status && !isReschedulingAction) {
       updateData.status = status;
       updateData.completedAt = status === 'COMPLETED' ? new Date() : null;
     }
@@ -247,6 +278,33 @@ export async function PATCH(request: Request) {
           },
         })
         .catch(() => null);
+    }
+
+    if (isReschedulingAction) {
+      if (existing.equipmentId) {
+        await logEquipmentHistory({
+          equipmentId: existing.equipmentId,
+          actorName: (auth as any).fullName || (auth as any).name || (auth as any).profile?.fullName || 'Admin',
+          actorRole: 'ADMIN',
+          action: 'RE_SCHEDULE',
+          changes: [
+            { field: 'Due Date', old: oldDueDateStr, new: newDueDateStr },
+            { field: 'Task Status', old: existing.status, new: updateData.status },
+          ],
+        }).catch(() => null);
+      }
+      if (workOrder.assignedToId) {
+        await notifyOnAssignment({
+          type: 'WORK_ORDER',
+          actionType: 'RESCHEDULE',
+          assetTag: existing.equipment?.qrCode || workOrder.title,
+          technicianId: workOrder.assignedToId,
+          organizationId: auth.organization.id,
+          taskTitle: workOrder.title,
+          taskId: workOrder.id,
+          dueDate: updateData.dueDate,
+        }).catch(() => null);
+      }
     }
 
     // Trigger notifyOnAssignment when newly assigned or status changed to ASSIGNED

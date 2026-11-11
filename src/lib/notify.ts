@@ -223,6 +223,8 @@ export async function sendFcmMessage(
 interface NotifyAssignmentParams {
   type: 'WORK_ORDER' | 'BUILDING';
   technicianId: string;
+  actionType?: 'ASSIGN' | 'RESCHEDULE';
+  assetTag?: string;
   organizationId?: string | null;
   title?: string;
   message?: string;
@@ -282,18 +284,37 @@ export async function notifyOnAssignment(params: NotifyAssignmentParams): Promis
     }
 
     if (params.type === 'WORK_ORDER') {
-      const titleTemplate =
-        dict.pushAssignedTitle ||
-        dict.pushTaskAssignedTitle ||
-        TRANSLATIONS.en.pushTaskAssignedTitle ||
-        'New Task Assigned';
-      resolvedTitle = `${technicianName}: ${titleTemplate}`;
-      const taskName = params.taskTitle || params.title || 'Work Order';
-      const bldgPart = resolvedBuildingName ? ` · ${resolvedBuildingName}` : '';
-      const dueStr = dueDate
-        ? ` · Due ${new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short' }).format(dueDate)}`
-        : '';
-      resolvedMessage = `${taskName}${bldgPart}${dueStr}`;
+      if (params.actionType === 'RESCHEDULE') {
+        const titleTemplate =
+          dict.pushTaskRescheduledTitle ||
+          TRANSLATIONS.en.pushTaskRescheduledTitle ||
+          'Task re-scheduled';
+        resolvedTitle = `${technicianName}: ${titleTemplate}`;
+        const dueFormatted = dueDate
+          ? new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }).format(dueDate)
+          : 'soon';
+        const tagFormatted = params.assetTag || params.taskTitle || 'Asset';
+        const bodyTemplate =
+          dict.pushTaskRescheduledBody ||
+          TRANSLATIONS.en.pushTaskRescheduledBody ||
+          'Due date changed to {dueDate} for {assetTag}';
+        resolvedMessage = bodyTemplate
+          .replace('{dueDate}', dueFormatted)
+          .replace('{assetTag}', tagFormatted);
+      } else {
+        const titleTemplate =
+          dict.pushAssignedTitle ||
+          dict.pushTaskAssignedTitle ||
+          TRANSLATIONS.en.pushTaskAssignedTitle ||
+          'New Task Assigned';
+        resolvedTitle = `${technicianName}: ${titleTemplate}`;
+        const taskName = params.taskTitle || params.title || 'Work Order';
+        const bldgPart = resolvedBuildingName ? ` · ${resolvedBuildingName}` : '';
+        const dueStr = dueDate
+          ? ` · Due ${new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short' }).format(dueDate)}`
+          : '';
+        resolvedMessage = `${taskName}${bldgPart}${dueStr}`;
+      }
     } else if (params.type === 'BUILDING') {
       const titleTemplate =
         dict.pushBuildingAssignedTitle ||

@@ -35,6 +35,16 @@ export async function POST(request: Request) {
     const config = IMPORT_CONFIGS[type];
 
     // Fetch existing records for duplicate detection under this organization
+    let existingBuildingNames = new Set<string>();
+    if (type === 'FIRE_ASSETS') {
+      const bldgs = await (db as any).building.findMany({
+        where: { organizationId },
+        select: { name: true },
+      });
+      bldgs.forEach((b: any) => {
+        if (b.name) existingBuildingNames.add(b.name.trim().toLowerCase());
+      });
+    }
     let existingIdentifiers = new Set<string>();
 
     if (type === 'CLIENTS') {
@@ -111,12 +121,42 @@ export async function POST(request: Request) {
       if (uniqueVal) {
         if (existingIdentifiers.has(uniqueVal)) {
           isDuplicate = true;
-          warnings.push(`Existing record already found in database with key "${uniqueVal}"`);
+          if (type === 'FIRE_ASSETS') {
+            validation.isValid = false;
+            validation.errors.push(`Duplicate Asset Tag "${uniqueVal}" already exists in database`);
+          } else {
+            warnings.push(`Existing record already found in database with key "${uniqueVal}"`);
+          }
         } else if (seenInBatch.has(uniqueVal)) {
           isDuplicate = true;
-          warnings.push(`Duplicate key "${uniqueVal}" repeated within this file`);
+          if (type === 'FIRE_ASSETS') {
+            validation.isValid = false;
+            validation.errors.push(`Duplicate Asset Tag "${uniqueVal}" repeated in this file`);
+          } else {
+            warnings.push(`Duplicate key "${uniqueVal}" repeated within this file`);
+          }
         } else {
           seenInBatch.add(uniqueVal);
+        }
+      }
+
+      if (type === 'FIRE_ASSETS') {
+        const bldName = (validation.parsedData.buildingName || '').trim();
+        if (!bldName) {
+          validation.isValid = false;
+          validation.errors.push('Building Name is required');
+        } else if (!existingBuildingNames.has(bldName.toLowerCase())) {
+          validation.isValid = false;
+          validation.errors.push(`Unknown Building Name "${bldName}". Please select or register this building first.`);
+        }
+
+        const interval = validation.parsedData.serviceIntervalMonths;
+        if (interval !== undefined && interval !== null && interval !== '') {
+          const num = Number(interval);
+          if (isNaN(num) || num <= 0) {
+            validation.isValid = false;
+            validation.errors.push('Service Interval must be a positive number of months (e.g. 6 or 12)');
+          }
         }
       }
 

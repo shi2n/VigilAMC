@@ -172,6 +172,8 @@ export interface TranslationDictionary {
   pushTaskAssignedBody?: string;
   pushBuildingAssignedTitle?: string;
   pushBuildingAssignedBody?: string;
+  pushTaskRescheduledTitle?: string;
+  pushTaskRescheduledBody?: string;
   // Left side primary navigation
   navMenu?: string;
   navClose?: string;
@@ -358,6 +360,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     pushTaskAssignedBody: "Work Order: \"{title}\" assigned to you{due}",
     pushBuildingAssignedTitle: "New Building Assignment",
     pushBuildingAssignedBody: "You have been assigned to {count} building premises.",
+    pushTaskRescheduledTitle: "Task re-scheduled",
+    pushTaskRescheduledBody: "Due date changed to {dueDate} for {assetTag}",
     navMenu: "Menu",
     navClose: "Close",
     navHome: "Home",
@@ -525,6 +529,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     pushTaskAssignedBody: "कार्य आदेश: \"{title}\" आपको सौंपा गया है{due}",
     pushBuildingAssignedTitle: "नया भवन आवंटन",
     pushBuildingAssignedBody: "आपको {count} भवन परिसरों में नियुक्त किया गया है।",
+    pushTaskRescheduledTitle: "कार्य पुनर्निर्धारित किया गया",
+    pushTaskRescheduledBody: "{assetTag} के लिए नई अंतिम तिथि {dueDate} है",
     navMenu: "मेन्यू",
     navClose: "बंद करें",
     navHome: "होम",
@@ -692,6 +698,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     pushTaskAssignedBody: "कामाचा आदेश: \"{title}\" तुम्हाला सोपवला आहे{due}",
     pushBuildingAssignedTitle: "नवीन इमारत वाटप",
     pushBuildingAssignedBody: "तुम्हाला {count} इमारतींच्या परिसराचे काम सोपवले आहे.",
+    pushTaskRescheduledTitle: "कार्य पुनर्निर्धारित केले",
+    pushTaskRescheduledBody: "{assetTag} साठी नवीन देय तारीख {dueDate} आहे",
     navMenu: "मेनू",
     navClose: "बंद करा",
     navHome: "मुख्यपृष्ठ",
@@ -859,6 +867,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     pushTaskAssignedBody: "કાર્ય ઓર્ડર: \"{title}\" તમને સોંપવામાં આવ્યો છે{due}",
     pushBuildingAssignedTitle: "નવી ઇમારત સોંપણી",
     pushBuildingAssignedBody: "તમને {count} ઇમારત પરિસરમાં સોંપવામાં આવ્યા છે.",
+    pushTaskRescheduledTitle: "કાર્ય પુનઃનિર્ધારિત કરવામાં આવ્યું",
+    pushTaskRescheduledBody: "{assetTag} માટે નવી નિયત તારીખ {dueDate} છે",
     navMenu: "મેનુ",
     navClose: "બંધ કરો",
     navHome: "હોમ",
@@ -1026,6 +1036,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     pushTaskAssignedBody: "பணி ஆணை: \"{title}\" உங்களுக்கு ஒதுக்கப்பட்டுள்ளது{due}",
     pushBuildingAssignedTitle: "புதிய கட்டிட ஒதுக்கீடு",
     pushBuildingAssignedBody: "{count} கட்டட வளாகங்களுக்கு நீங்கள் ஒதுக்கப்பட்டுள்ளீர்கள்.",
+    pushTaskRescheduledTitle: "பணி மறுதிட்டமிடப்பட்டது",
+    pushTaskRescheduledBody: "{assetTag} க்கான புதிய முடிவு தேதி {dueDate}",
     navMenu: "பட்டியல்",
     navClose: "மூடு",
     navHome: "முகப்பு",
@@ -1193,6 +1205,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     pushTaskAssignedBody: "వర్క్ ఆర్డర్: \"{title}\" మీకు కేటాయించబడింది{due}",
     pushBuildingAssignedTitle: "కొత్త భవనం కేటాయింపు",
     pushBuildingAssignedBody: "మీరు {count} భవన ప్రాంగణాలకు కేటాయించబడ్డారు.",
+    pushTaskRescheduledTitle: "టాస్క్ రీషెడ్యూల్ చేయబడింది",
+    pushTaskRescheduledBody: "{assetTag} కొరకు కొత్త గడువు తేదీ {dueDate}",
     navMenu: "మెనూ",
     navClose: "మూసివేయి",
     navHome: "హోమ్",
@@ -1360,6 +1374,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     pushTaskAssignedBody: "ಕೆಲಸದ ಆದೇಶ: \"{title}\" ನಿಮಗೆ ನಿಯೋಜಿಸಲಾಗಿದೆ{due}",
     pushBuildingAssignedTitle: "ಹೊಸ ಕಟ್ಟಡ ನಿಯೋಜನೆ",
     pushBuildingAssignedBody: "ನಿಮಗೆ {count} ಕಟ್ಟಡ ಆವರಣಗಳನ್ನು ನಿಯೋಜಿಸಲಾಗಿದೆ.",
+    pushTaskRescheduledTitle: "ಕಾರ್ಯ ಮರುನಿಗದಿಪಡಿಸಲಾಗಿದೆ",
+    pushTaskRescheduledBody: "{assetTag} ಗಾಗಿ ಹೊಸ ಅಂತಿಮ ದಿನಾಂಕ {dueDate}",
     navMenu: "ಮೆನು",
     navClose: "ಮುಚ್ಚು",
     navHome: "ಮುಖಪುಟ",
@@ -1527,6 +1543,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     pushTaskAssignedBody: "വർക്ക് ഓർഡർ: \"{title}\" നിങ്ങൾക്ക് നിയോഗിച്ചിരിക്കുന്നു{due}",
     pushBuildingAssignedTitle: "പുതിയ കെട്ടിട അസൈൻമെന്റ്",
     pushBuildingAssignedBody: "നിങ്ങളെ {count} കെട്ടിട പരിസരങ്ങളിലേക്ക് നിയോഗിച്ചിരിക്കുന്നു.",
+    pushTaskRescheduledTitle: "ചുമതല പുനഃക്രമീകരിച്ചു",
+    pushTaskRescheduledBody: "{assetTag}-നുള്ള പുതിയ തീയതി {dueDate}",
     navMenu: "മെനു",
     navClose: "അടയ്ക്കുക",
     navHome: "ഹോം",
@@ -1694,6 +1712,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     pushTaskAssignedBody: "কাজের আদেশ: \"{title}\" আপনাকে বরাদ্দ করা হয়েছে{due}",
     pushBuildingAssignedTitle: "নতুন ভবন বরাদ্দ",
     pushBuildingAssignedBody: "আপনাকে {count}টি ভবন প্রাঙ্গনে বরাদ্দ করা হয়েছে।",
+    pushTaskRescheduledTitle: "কাজটি পুনঃনির্ধারণ করা হয়েছে",
+    pushTaskRescheduledBody: "{assetTag} এর জন্য নতুন শেষ তারিখ {dueDate}",
     navMenu: "মেনু",
     navClose: "বন্ধ করুন",
     navHome: "হোম",
@@ -1861,6 +1881,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     pushTaskAssignedBody: "ਕੰਮ ਦਾ ਆਦੇਸ਼: \"{title}\" ਤੁਹਾਨੂੰ ਸੌਂਪਿਆ ਗਿਆ ਹੈ{due}",
     pushBuildingAssignedTitle: "ਨਵੀਂ ਇਮਾਰਤ ਦੀ ਜ਼ਿੰਮੇਵਾਰੀ",
     pushBuildingAssignedBody: "ਤੁਹਾਨੂੰ {count} ਇਮਾਰਤਾਂ ਦੇ ਅਹਾਤੇ ਸੌਂਪੇ ਗਏ ਹਨ।",
+    pushTaskRescheduledTitle: "ਕੰਮ ਮੁੜ-ਨਿਰਧਾਰਿਤ ਕੀਤਾ ਗਿਆ",
+    pushTaskRescheduledBody: "{assetTag} ਲਈ ਨਵੀਂ ਮਿਤੀ {dueDate} ਹੈ",
     navMenu: "ਮੀਨੂ",
     navClose: "ਬੰਦ ਕਰੋ",
     navHome: "ਹੋਮ",
