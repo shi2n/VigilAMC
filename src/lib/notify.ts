@@ -16,6 +16,64 @@ function base64url(input: string | Buffer): string {
 }
 
 /**
+ * Robust parser for FIREBASE_SERVICE_ACCOUNT_JSON across all hosting environments:
+ * - Direct JSON object strings
+ * - Vercel env variables wrapped in outer quotes: "{"type":"service_account",...}"
+ * - Double-escaped JSON strings: {\"type\":\"service_account\",...}
+ * - Base64 encoded JSON
+ */
+export function parseServiceAccount(rawInput?: string): ServiceAccountKey | null {
+  if (!rawInput || typeof rawInput !== 'string') return null;
+  let raw = rawInput.trim();
+  if (!raw) return null;
+
+  // 1. Outer quotes wrapping raw JSON: "{"type":"service_account",...}"
+  if (raw.startsWith('"') && raw.endsWith('"')) {
+    const unquoted = raw.slice(1, -1).trim();
+    if (unquoted.startsWith('{') && unquoted.endsWith('}')) {
+      try {
+        const parsed = JSON.parse(unquoted);
+        if (parsed?.project_id && parsed?.client_email && parsed?.private_key) {
+          return parsed;
+        }
+      } catch {}
+    }
+  }
+
+  // 2. Direct JSON.parse
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed?.project_id && parsed?.client_email && parsed?.private_key) {
+      return parsed;
+    }
+  } catch {}
+
+  // 3. Double-escaped JSON: \"type\":\"service_account\"
+  try {
+    if (raw.includes('\\"')) {
+      const unescaped = raw.replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+      const parsed = JSON.parse(unescaped);
+      if (parsed?.project_id && parsed?.client_email && parsed?.private_key) {
+        return parsed;
+      }
+    }
+  } catch {}
+
+  // 4. Base64 encoded JSON
+  try {
+    const decoded = Buffer.from(raw, 'base64').toString('utf8');
+    if (decoded.trim().startsWith('{')) {
+      const parsed = JSON.parse(decoded);
+      if (parsed?.project_id && parsed?.client_email && parsed?.private_key) {
+        return parsed;
+      }
+    }
+  } catch {}
+
+  return null;
+}
+
+/**
  * Mint Google OAuth2 access token for FCM v1 REST API
  */
 async function getFcmAccessToken(serviceAccount: ServiceAccountKey): Promise<string> {
@@ -38,9 +96,15 @@ async function getFcmAccessToken(serviceAccount: ServiceAccountKey): Promise<str
   const encodedClaims = base64url(JSON.stringify(claims));
   const signatureInput = `${encodedHeader}.${encodedClaims}`;
 
+  // Ensure escaped \n characters in private key are converted to actual newlines
+  let privateKey = serviceAccount.private_key;
+  if (privateKey && privateKey.includes('\\n')) {
+    privateKey = privateKey.replace(/\\n/g, '\n');
+  }
+
   const signer = crypto.createSign('RSA-SHA256');
   signer.update(signatureInput);
-  const signature = base64url(signer.sign(serviceAccount.private_key));
+  const signature = base64url(signer.sign(privateKey));
   const assertion = `${signatureInput}.${signature}`;
 
   const res = await fetch('https://oauth2.googleapis.com/token', {
@@ -84,12 +148,13 @@ export async function sendFcmMessage(
     return false;
   }
 
+  const serviceAccount = parseServiceAccount(rawServiceAccount);
+  if (!serviceAccount || !serviceAccount.project_id || !serviceAccount.client_email || !serviceAccount.private_key) {
+    console.warn('[notify] Incomplete or unparseable FIREBASE_SERVICE_ACCOUNT_JSON structure');
+    return false;
+  }
+
   try {
-    const serviceAccount: ServiceAccountKey = JSON.parse(rawServiceAccount);
-    if (!serviceAccount.project_id || !serviceAccount.client_email || !serviceAccount.private_key) {
-      console.warn('[notify] Incomplete FIREBASE_SERVICE_ACCOUNT_JSON structure');
-      return false;
-    }
 
     const accessToken = await getFcmAccessToken(serviceAccount);
     const url = `https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`;
