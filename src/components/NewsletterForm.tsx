@@ -9,10 +9,14 @@ export function NewsletterForm() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const trimmed = email.trim();
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    const formEmail = (formData.get('email') as string) || email;
+    const formHp = (formData.get('website') as string) || honeypot;
+    const trimmed = formEmail.trim();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!trimmed || !emailRegex.test(trimmed)) {
       setStatus('error');
@@ -31,7 +35,7 @@ export function NewsletterForm() {
         },
         body: JSON.stringify({
           email: trimmed,
-          website: honeypot, // Honeypot field
+          website: formHp, // Honeypot field
         }),
       });
 

@@ -173,7 +173,7 @@ export function CorporateFooter() {
                 </li>
                 <li>
                   <Link
-                    href="/agency-onboarding"
+                    href="/contact"
                     className="inline-flex items-center min-h-[44px] text-sm text-[#44403C] hover:text-[#EA580C] hover:translate-x-0.5 transition-all font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#EA580C] rounded"
                   >
                     Agency Onboarding
