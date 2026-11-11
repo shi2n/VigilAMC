@@ -125,6 +125,9 @@ export interface AdminDictionary {
   actionSaving: string;
   actionExport: string;
   actionImport: string;
+  tabHistory: string;
+  historyTitle: string;
+  historyEmpty: string;
 
   // Guide
   guideTitle: string;
@@ -342,6 +345,9 @@ const DICTIONARY_EN: AdminDictionary = {
   actionSaving: 'Saving...',
   actionExport: 'Export Excel',
   actionImport: 'Import Excel',
+  tabHistory: 'History',
+  historyTitle: 'Audit & Service History',
+  historyEmpty: 'History starts from the first change after this update.',
 
   guideTitle: 'Platform guide',
   guideSubtitle: 'Setup instructions for managing fire AMC compliance',
@@ -558,6 +564,9 @@ const DICTIONARY_HI: Partial<AdminDictionary> = {
   actionSaving: 'सहेजा जा रहा है...',
   actionExport: 'एक्सेल निर्यात',
   actionImport: 'एक्सेल आयात',
+  tabHistory: 'इतिहास',
+  historyTitle: 'ऑडिट और सेवा इतिहास',
+  historyEmpty: 'इस अपडेट के बाद पहले बदलाव से इतिहास शुरू होता है।',
 
   guideTitle: 'VigilAMC प्लेटफ़ॉर्म मार्गदर्शिका',
   guideSubtitle: 'अग्नि सुरक्षा एएमसी का सुचारू प्रबंधन करने के लिए हर अनुभाग की जानकारी',

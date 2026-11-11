@@ -32,6 +32,7 @@ import {
   AlertTriangle,
   HelpCircle,
   ShieldCheck,
+  Clock,
 } from 'lucide-react';
 import { AdminSidebar, AdminNavTab } from '@/components/admin/AdminSidebar';
 import { WorkspaceTabs, WorkspaceTabItem } from '@/components/admin/WorkspaceTabs';
@@ -54,6 +55,7 @@ import {
   fromDbDate,
 } from '@/lib/dates';
 import { getAdminDictionary } from '@/lib/i18n/admin';
+import { getServiceCycleLabel } from '@/lib/compliance';
 import { WelcomeTestingModal } from '@/components/admin/WelcomeTestingModal';
 import { CreateWorkOrderModal } from '@/components/admin/CreateWorkOrderModal';
 
@@ -333,6 +335,44 @@ export default function AdminDashboardPage() {
   const [editClientModal, setEditClientModal] = useState<any>(null);
   const [editBuildingModal, setEditBuildingModal] = useState<any>(null);
   const [editEquipmentModal, setEditEquipmentModal] = useState<any>(null);
+  const [equipmentModalTab, setEquipmentModalTab] = useState<'DETAILS' | 'HISTORY'>('DETAILS');
+  const [equipmentHistoryList, setEquipmentHistoryList] = useState<any[]>([]);
+  const [loadingEquipmentHistory, setLoadingEquipmentHistory] = useState(false);
+  const [equipmentHistoryError, setEquipmentHistoryError] = useState<string | null>(null);
+
+  const fetchEquipmentHistory = async (eqId: string) => {
+    if (!eqId) return;
+    setLoadingEquipmentHistory(true);
+    setEquipmentHistoryError(null);
+    try {
+      const res = await fetch(`/api/admin/equipment/${eqId}/history`);
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && Array.isArray(data.history)) {
+        setEquipmentHistoryList(data.history);
+      } else {
+        setEquipmentHistoryError(data.error || 'Failed to load asset history');
+        setEquipmentHistoryList([]);
+      }
+    } catch (err: any) {
+      setEquipmentHistoryError(err?.message || 'Network error loading asset history');
+      setEquipmentHistoryList([]);
+    } finally {
+      setLoadingEquipmentHistory(false);
+    }
+  };
+
+  useEffect(() => {
+    if (editEquipmentModal?.id) {
+      setEquipmentModalTab('DETAILS');
+      setEquipmentHistoryList([]);
+      setEquipmentHistoryError(null);
+      fetchEquipmentHistory(editEquipmentModal.id);
+    } else {
+      setEquipmentModalTab('DETAILS');
+      setEquipmentHistoryList([]);
+      setEquipmentHistoryError(null);
+    }
+  }, [editEquipmentModal?.id]);
   const [editEquipDueDateMode, setEditEquipDueDateMode] = useState<'auto' | 'manual'>('auto');
   const [compressingPhoto, setCompressingPhoto] = useState(false);
 
@@ -3556,6 +3596,54 @@ export default function AdminDashboardPage() {
                     <span className="font-mono font-bold text-xs px-2.5 py-0.5 rounded-md bg-white border border-[#FED7AA] text-[#1C1917]">
                       {editEquipmentModal.qrCode || 'NO-ID'}
                     </span>
+
+                    {/* Service Cycle Chip */}
+                    <span
+                      data-testid="equipment-modal-cycle-badge"
+                      className="px-2.5 py-0.5 rounded-full text-[10px] font-bold text-[#44403C] bg-[#FFF8F2] border border-[#FED7AA]"
+                      title="Asset service cycle based on refill interval"
+                    >
+                      {getServiceCycleLabel(editEquipmentModal.serviceIntervalMonths)}
+                    </span>
+
+                    {/* Modal Tab Switcher: Details vs History */}
+                    <div className="flex items-center gap-1 p-0.5 bg-[#FFF8F2] border border-[#FED7AA] rounded-lg text-xs ml-2">
+                      <button
+                        type="button"
+                        data-testid="equipment-modal-tab-details"
+                        onClick={() => setEquipmentModalTab('DETAILS')}
+                        className={`px-3 py-1 rounded-md font-bold transition-all ${
+                          equipmentModalTab === 'DETAILS'
+                            ? 'bg-[#C2410C] text-white shadow-xs'
+                            : 'text-slate-600 hover:text-[#1C1917]'
+                        }`}
+                      >
+                        Details
+                      </button>
+                      <button
+                        type="button"
+                        data-testid="equipment-modal-tab-history"
+                        onClick={() => {
+                          setEquipmentModalTab('HISTORY');
+                          if (editEquipmentModal?.id) fetchEquipmentHistory(editEquipmentModal.id);
+                        }}
+                        className={`px-3 py-1 rounded-md font-bold transition-all flex items-center gap-1.5 ${
+                          equipmentModalTab === 'HISTORY'
+                            ? 'bg-[#C2410C] text-white shadow-xs'
+                            : 'text-slate-600 hover:text-[#1C1917]'
+                        }`}
+                      >
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>{t.tabHistory || 'History'}</span>
+                        {equipmentHistoryList.length > 0 && (
+                          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                            equipmentModalTab === 'HISTORY' ? 'bg-white text-[#C2410C]' : 'bg-[#FFF0E6] text-[#C2410C]'
+                          }`}>
+                            {equipmentHistoryList.length}
+                          </span>
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-1">
@@ -3580,7 +3668,132 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                {/* FORM BODY: Wide 2-Zone Horizontal Grid */}
+                {/* TAB CONTENT: HISTORY or DETAILS FORM */}
+                {equipmentModalTab === 'HISTORY' ? (
+                  <div className="flex-1 overflow-y-auto pt-3.5 pr-1 space-y-3">
+                    <div className="flex items-center justify-between pb-2 border-b border-[#FED7AA]">
+                      <div>
+                        <h4 className="text-sm font-bold text-[#1C1917]">{t.historyTitle || 'Audit & Service History'}</h4>
+                        <p className="text-xs text-[#44403C]">Chronological log of inspections, edits, task assignments, and re-schedules.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => fetchEquipmentHistory(editEquipmentModal.id)}
+                        className="px-2.5 py-1 rounded-lg bg-[#FFF8F2] border border-[#FED7AA] text-xs font-bold text-[#C2410C] hover:bg-[#FFF0E6] flex items-center gap-1"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${loadingEquipmentHistory ? 'animate-spin' : ''}`} />
+                        <span>Refresh</span>
+                      </button>
+                    </div>
+
+                    {loadingEquipmentHistory && equipmentHistoryList.length === 0 ? (
+                      <div className="p-12 text-center text-xs text-slate-500">
+                        <RefreshCw className="w-5 h-5 animate-spin mx-auto text-[#C2410C] mb-2" />
+                        Loading asset timeline...
+                      </div>
+                    ) : equipmentHistoryError ? (
+                      <div className="p-6 text-center bg-rose-50 border border-rose-200 rounded-2xl text-rose-800 text-xs space-y-2">
+                        <p className="font-bold">{equipmentHistoryError}</p>
+                        <button
+                          type="button"
+                          onClick={() => fetchEquipmentHistory(editEquipmentModal.id)}
+                          className="px-3 py-1.5 rounded-lg bg-white border border-rose-300 text-rose-700 font-bold hover:bg-rose-100 text-xs"
+                        >
+                          Retry
+                        </button>
+                      </div>
+                    ) : equipmentHistoryList.length === 0 ? (
+                      <div className="p-12 text-center bg-[#FFF8F2]/60 border border-[#FED7AA] rounded-2xl space-y-2">
+                        <Clock className="w-8 h-8 text-[#C2410C]/60 mx-auto" />
+                        <h5 className="font-bold text-sm text-[#1C1917]">No Prior Log Recorded</h5>
+                        <p className="text-xs text-slate-600 max-w-sm mx-auto">
+                          {t.historyEmpty || 'History starts from the first change after this update.'}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="relative pl-6 space-y-4 before:content-[''] before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#FED7AA]">
+                        {equipmentHistoryList.map((entry) => {
+                          const dateObj = new Date(entry.createdAt);
+                          const dateStr = new Intl.DateTimeFormat('en-IN', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          }).format(dateObj);
+
+                          let badgeColor = 'bg-[#FFF0E6] text-[#C2410C] border-[#FED7AA]';
+                          let labelText = entry.action ? entry.action.replace('_', ' ') : 'EVENT';
+                          if (entry.action === 'SERVICE_UPDATE') {
+                            badgeColor = 'bg-emerald-50 text-emerald-800 border-emerald-300';
+                            labelText = 'Service / Inspection';
+                          } else if (entry.action === 'RE_SCHEDULE') {
+                            badgeColor = 'bg-amber-50 text-amber-800 border-amber-300';
+                            labelText = 'Re-schedule';
+                          } else if (entry.action === 'TASK_ASSIGN') {
+                            badgeColor = 'bg-blue-50 text-blue-800 border-blue-300';
+                            labelText = 'Task Assigned';
+                          } else if (entry.action === 'CREATE') {
+                            badgeColor = 'bg-purple-50 text-purple-800 border-purple-300';
+                            labelText = 'Created';
+                          } else if (entry.action === 'PHOTO_UPDATE') {
+                            badgeColor = 'bg-sky-50 text-sky-800 border-sky-300';
+                            labelText = 'Photo Updated';
+                          }
+
+                          return (
+                            <div key={entry.id} className="relative group">
+                              <span className="absolute -left-6 top-1.5 w-3.5 h-3.5 rounded-full border-2 border-white bg-[#EA580C] shadow-xs" />
+                              <div className="p-3.5 rounded-xl bg-white border border-[#FED7AA] hover:border-[#EA580C]/40 transition-all shadow-xs space-y-2">
+                                <div className="flex items-center justify-between flex-wrap gap-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full border ${badgeColor}`}>
+                                      {labelText}
+                                    </span>
+                                    <span className="text-xs font-bold text-[#1C1917]">
+                                      {entry.actorName || 'System'}
+                                    </span>
+                                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 font-semibold uppercase">
+                                      {entry.actorRole || 'ADMIN'}
+                                    </span>
+                                  </div>
+                                  <span className="text-[11px] text-slate-500 font-mono">
+                                    {dateStr}
+                                  </span>
+                                </div>
+
+                                {Array.isArray(entry.changes) && entry.changes.length > 0 && (
+                                  <div className="pt-1.5 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                                    {entry.changes.map((c: any, cIdx: number) => (
+                                      <div key={cIdx} className="p-2 rounded-lg bg-[#FFF8F2]/60 border border-[#FED7AA]/50 space-y-0.5">
+                                        <div className="font-bold text-[#1C1917]">{c.field}</div>
+                                        <div className="text-slate-600 flex items-center gap-1.5 truncate">
+                                          <span className="line-through text-slate-400 truncate max-w-[120px]">{String(c.old ?? 'None')}</span>
+                                          <span className="text-[#C2410C] font-bold">&rarr;</span>
+                                          <span className="font-semibold text-slate-900 truncate max-w-[140px]">{String(c.new ?? 'None')}</span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    <div className="pt-3 border-t border-[#FED7AA] flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setEquipmentModalTab('DETAILS')}
+                        className="px-4 py-2 rounded-xl bg-[#C2410C] text-white font-bold text-xs hover:bg-[#9A3412] shadow-xs"
+                      >
+                        Back to Edit Details
+                      </button>
+                    </div>
+                  </div>
+                ) : (
                 <form onSubmit={handleUpdateEquipment} className="space-y-4 pt-3.5 flex-1 flex flex-col overflow-y-auto pr-1">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
                     {/* LEFT ZONE: Asset ID, Capacity, Location, Refill Interval */}
@@ -3714,85 +3927,61 @@ export default function AdminDashboardPage() {
                           />
                         </div>
 
-                        {/* Quick Presets Row */}
+                        {/* Quick Presets Row: anchored strictly to Last Service date */}
                         {(() => {
-                          const baseServiceDate = editEquipmentModal.lastServiceDate || toDateInputString(new Date());
-                          const preset1Year = addCalendarMonths(baseServiceDate, 12);
-                          const preset6Mos = addCalendarMonths(baseServiceDate, 6);
-                          const preset15Days = addCalendarDays(todayCalendarDateString(), 15);
-                          const presetOverdue5 = addCalendarDays(todayCalendarDateString(), -5);
+                          const hasLastService = !!(editEquipmentModal.lastServiceDate && String(editEquipmentModal.lastServiceDate).trim() !== '');
+                          const preset1Year = hasLastService ? addCalendarMonths(editEquipmentModal.lastServiceDate, 12) : null;
+                          const preset6Mos = hasLastService ? addCalendarMonths(editEquipmentModal.lastServiceDate, 6) : null;
+
+                          const applyPreset = (months: number, computed: string | null) => {
+                            if (!hasLastService || !computed) {
+                              toast.info('Set the Last Service date first');
+                              showToast('Set the Last Service date first');
+                              return;
+                            }
+                            setEditEquipDueDateMode('manual');
+                            setEditEquipmentModal({
+                              ...editEquipmentModal,
+                              nextDueDate: computed,
+                            });
+                          };
 
                           return (
                             <div className="sm:col-span-2 flex flex-wrap items-center gap-1.5 pt-1">
                               <span className="text-[10px] font-bold uppercase text-slate-400 mr-1">Quick Presets:</span>
                               <button
                                 type="button"
-                                title={`Set Next Service Due Date to ${preset1Year} (Last Service + 12 calendar months)`}
-                                onClick={() => {
-                                  setEditEquipDueDateMode('manual');
-                                  setEditEquipmentModal({
-                                    ...editEquipmentModal,
-                                    nextDueDate: preset1Year,
-                                  });
-                                }}
-                                className="group px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-colors inline-flex items-center gap-1 cursor-pointer active:scale-95"
+                                data-testid="preset-1-year-btn"
+                                title={hasLastService ? `Set Next Service Due Date to ${preset1Year} (Last Service + 12 calendar months)` : 'Set the Last Service date first'}
+                                onClick={() => applyPreset(12, preset1Year)}
+                                className="group px-2.5 py-1 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-[11px] font-bold transition-colors inline-flex items-center gap-1 cursor-pointer active:scale-95"
                               >
                                 <span>+1 Year (Standard)</span>
-                                <span className="font-mono text-[9px] text-emerald-600/80 group-hover:text-emerald-800">
-                                  ({preset1Year})
-                                </span>
+                                {preset1Year && (
+                                  <span className="font-mono text-[10px] text-emerald-700/80 group-hover:text-emerald-900">
+                                    ({preset1Year})
+                                  </span>
+                                )}
                               </button>
                               <button
                                 type="button"
-                                title={`Set Next Service Due Date to ${preset6Mos} (Last Service + 6 calendar months)`}
-                                onClick={() => {
-                                  setEditEquipDueDateMode('manual');
-                                  setEditEquipmentModal({
-                                    ...editEquipmentModal,
-                                    nextDueDate: preset6Mos,
-                                  });
-                                }}
-                                className="group px-2 py-0.5 rounded-md bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 text-[10px] font-bold transition-colors inline-flex items-center gap-1 cursor-pointer active:scale-95"
+                                data-testid="preset-6-months-btn"
+                                title={hasLastService ? `Set Next Service Due Date to ${preset6Mos} (Last Service + 6 calendar months)` : 'Set the Last Service date first'}
+                                onClick={() => applyPreset(6, preset6Mos)}
+                                className="group px-2.5 py-1 rounded-md bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-300 text-[11px] font-bold transition-colors inline-flex items-center gap-1 cursor-pointer active:scale-95"
                               >
                                 <span>+6 Months</span>
-                                <span className="font-mono text-[9px] text-sky-600/80 group-hover:text-sky-800">
-                                  ({preset6Mos})
-                                </span>
+                                {preset6Mos && (
+                                  <span className="font-mono text-[10px] text-sky-700/80 group-hover:text-sky-900">
+                                    ({preset6Mos})
+                                  </span>
+                                )}
                               </button>
-                              <button
-                                type="button"
-                                title={`Set Next Service Due Date to ${preset15Days} (Today + 15 calendar days)`}
-                                onClick={() => {
-                                  setEditEquipDueDateMode('manual');
-                                  setEditEquipmentModal({
-                                    ...editEquipmentModal,
-                                    nextDueDate: preset15Days,
-                                  });
-                                }}
-                                className="group px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-colors inline-flex items-center gap-1 cursor-pointer active:scale-95"
-                              >
-                                <span>Due in 15 Days</span>
-                                <span className="font-mono text-[9px] text-amber-600/80 group-hover:text-amber-800">
-                                  ({preset15Days})
+                              {!hasLastService && (
+                                <span className="text-[10px] text-amber-700 italic ml-1">
+                                  (Select a Last Service date above to enable presets)
                                 </span>
-                              </button>
-                              <button
-                                type="button"
-                                title={`Set Next Service Due Date to ${presetOverdue5} (Today - 5 calendar days)`}
-                                onClick={() => {
-                                  setEditEquipDueDateMode('manual');
-                                  setEditEquipmentModal({
-                                    ...editEquipmentModal,
-                                    nextDueDate: presetOverdue5,
-                                  });
-                                }}
-                                className="group px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition-colors inline-flex items-center gap-1 cursor-pointer active:scale-95"
-                              >
-                                <span>Overdue (-5 Days)</span>
-                                <span className="font-mono text-[9px] text-rose-600/80 group-hover:text-rose-800">
-                                  ({presetOverdue5})
-                                </span>
-                              </button>
+                              )}
                             </div>
                           );
                         })()}
@@ -4022,6 +4211,7 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
                 </form>
+                )}
               </motion.div>
             </motion.div>
           );
