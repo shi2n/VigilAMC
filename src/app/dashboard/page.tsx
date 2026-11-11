@@ -55,6 +55,7 @@ import {
 } from '@/lib/dates';
 import { getAdminDictionary } from '@/lib/i18n/admin';
 import { WelcomeTestingModal } from '@/components/admin/WelcomeTestingModal';
+import { CreateWorkOrderModal } from '@/components/admin/CreateWorkOrderModal';
 
 const DashboardOverview = dynamic(
   () => import('@/components/admin/DashboardOverview').then((m) => m.DashboardOverview),
@@ -323,6 +324,12 @@ export default function AdminDashboardPage() {
   const [equipmentsList, setEquipmentsList] = useState<any[]>([]);
   const [equipSearch, setEquipSearch] = useState('');
   const [equipFilterBuilding, setEquipFilterBuilding] = useState('ALL');
+  const [equipStatusFilter, setEquipStatusFilter] = useState<'ALL' | 'OVERDUE' | 'DUE_SOON' | 'VERIFIED'>('ALL');
+  const [repairsStatusFilter, setRepairsStatusFilter] = useState<
+    'ALL' | 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
+  >('ALL');
+  const [createWorkOrderModalOpen, setCreateWorkOrderModalOpen] = useState(false);
+  const [createWorkOrderInitialData, setCreateWorkOrderInitialData] = useState<any | null>(null);
 
   // Modals
   const [addBuildingModalOpen, setAddBuildingModalOpen] = useState(false);
@@ -691,9 +698,32 @@ export default function AdminDashboardPage() {
           return false;
         }
       }
+      if (equipStatusFilter !== 'ALL') {
+        const diffDays = getCalendarDayDiff(eq.nextDueDate);
+        const isOverdue =
+          (diffDays !== null && diffDays < 0) ||
+          eq.status === 'OVERDUE' ||
+          eq.liveStatus === 'OVERDUE';
+        const isDueSoon =
+          !isOverdue &&
+          ((diffDays !== null && diffDays <= 30) ||
+            eq.status === 'DUE_SOON' ||
+            eq.liveStatus === 'DUE_SOON');
+        const isVerified =
+          !isOverdue &&
+          !isDueSoon &&
+          (eq.status === 'VERIFIED' ||
+            eq.status === 'COMPLIANT' ||
+            eq.liveStatus === 'COMPLIANT' ||
+            eq.liveStatus === 'VERIFIED');
+
+        if (equipStatusFilter === 'OVERDUE' && !isOverdue) return false;
+        if (equipStatusFilter === 'DUE_SOON' && !isDueSoon) return false;
+        if (equipStatusFilter === 'VERIFIED' && !isVerified) return false;
+      }
       return true;
     });
-  }, [equipmentsList, equipFilterBuilding, equipSearch]);
+  }, [equipmentsList, equipFilterBuilding, equipSearch, equipStatusFilter]);
 
   const handleOpenExport = (key?: string) => {
     if (key) {
@@ -1087,6 +1117,60 @@ export default function AdminDashboardPage() {
     return kpis.openWorkOrders || 0;
   }, [workOrdersList, kpis.openWorkOrders]);
 
+  const attentionDigestItems = useMemo(() => {
+    const allEq: any[] = [];
+    buildings.forEach((b: any) => {
+      (b.equipments || []).forEach((eq: any) => {
+        allEq.push({
+          ...eq,
+          buildingName: b.name,
+          buildingId: b.id,
+          clientName: b.client?.name || 'Client',
+        });
+      });
+    });
+    if (allEq.length === 0 && equipmentsList.length > 0) {
+      equipmentsList.forEach((eq: any) => {
+        const b = buildings.find((bld: any) => bld.id === eq.buildingId);
+        allEq.push({
+          ...eq,
+          buildingName: b?.name || eq.buildingName || 'Building',
+          buildingId: eq.buildingId,
+          clientName: b?.client?.name || eq.clientName || 'Client',
+        });
+      });
+    }
+    const todayStr = todayCalendarDateString();
+    return allEq
+      .map((eq) => {
+        const diffDays = eq.nextDueDate
+          ? calendarDayDiff(fromDbDate(eq.nextDueDate), todayStr)
+          : 999999;
+        return { ...eq, diffDays };
+      })
+      .filter((eq) => eq.diffDays <= 30)
+      .sort((a, b) => a.diffDays - b.diffDays)
+      .slice(0, 10);
+  }, [buildings, equipmentsList]);
+
+  const liveAttentionCount = attentionDigestItems.length;
+
+  const handleOpenCreateRepairJob = useCallback((prefill?: any) => {
+    if (prefill) {
+      const isOverdue = prefill.diffDays !== undefined && prefill.diffDays < 0;
+      setCreateWorkOrderInitialData({
+        title: `Overdue Service: ${prefill.type || 'Fire Equipment'} [${prefill.qrCode || ''}]`,
+        description: `${isOverdue ? `Overdue service (${Math.abs(prefill.diffDays)} days overdue)` : `Service due soon (${prefill.diffDays} days remaining)`}. Location: ${prefill.location || 'Location not specified'}. Equipment: ${prefill.type || 'Fire Equipment'} (${prefill.capacity || ''}). Asset Tag ID: ${prefill.qrCode || ''}.`,
+        buildingId: prefill.buildingId || (buildings.length > 0 ? buildings[0].id : ''),
+        priority: isOverdue ? 'HIGH' : 'MEDIUM',
+        dueDate: addCalendarDays(todayCalendarDateString(), isOverdue ? 3 : 7),
+      });
+    } else {
+      setCreateWorkOrderInitialData(null);
+    }
+    setCreateWorkOrderModalOpen(true);
+  }, [buildings]);
+
   const liveAttentionDigest: any[] = data?.attentionDigest || [];
 
   const liveInspectionsThisWeek = useMemo(() => {
@@ -1180,7 +1264,7 @@ export default function AdminDashboardPage() {
         badge: liveOpenRepairsCount > 0 ? liveOpenRepairsCount : undefined,
       },
       FIELD_TEAM: { label: t.navFieldTeam || 'Technicians', icon: Users },
-      CLIENT_PORTAL: { label: t.portalNavTab || 'Client Login', icon: ShieldCheck },
+      CLIENT_PORTAL: { label: t.portalNavTab || 'Client Portal', icon: ShieldCheck },
       REPORTS: { label: t.navReports || 'Reports', icon: FileText },
       SETTINGS: { label: t.navSettings || 'Settings', icon: SettingsIcon },
       // Legacy alias mappings
@@ -1191,14 +1275,22 @@ export default function AdminDashboardPage() {
       INSPECTIONS: { label: t.navInspections || 'Inspections & Repairs', icon: CheckCircle2 },
       REPAIRS: { label: t.navInspections || 'Inspections & Repairs', icon: CheckCircle2 },
       TECHNICIANS: { label: t.navFieldTeam || 'Technicians', icon: Users },
-      CLIENT_LOGIN: { label: t.portalNavTab || 'Client Login', icon: ShieldCheck },
+      CLIENT_LOGIN: { label: t.portalNavTab || 'Client Portal', icon: ShieldCheck },
     }),
     [liveOpenRepairsCount, t]
   );
 
-  // Open or switch to a section tab (A2 & A3: 6-tab cap with LRU eviction)
+  // Open or switch to a section tab (Cap: max 4 tabs open with LRU eviction)
   const handleOpenTab = useCallback(
-    (rawTab: AdminNavTab | string) => {
+    (
+      rawTab: AdminNavTab | string,
+      options?: {
+        status?: string;
+        subTab?: string;
+        search?: string;
+        buildingId?: string;
+      }
+    ) => {
       const normalized: AdminNavTab =
         rawTab === 'HOME'
           ? 'OVERVIEW'
@@ -1222,6 +1314,37 @@ export default function AdminDashboardPage() {
         setInspectionsWorkSubTab('INSPECTIONS');
       }
 
+      if (options?.subTab) {
+        if (options.subTab === 'REPAIRS') {
+          setInspectionsMainTab('REPAIRS');
+          setInspectionsWorkSubTab('REPAIRS');
+        } else if (options.subTab === 'INSPECTIONS') {
+          setInspectionsMainTab('INSPECTIONS');
+          setInspectionsWorkSubTab('INSPECTIONS');
+        }
+      }
+
+      if (options?.status) {
+        if (normalized === 'FIRE_EQUIPMENT') {
+          const s = options.status.toUpperCase();
+          if (s === 'OVERDUE' || s === 'EXPIRED') setEquipStatusFilter('OVERDUE');
+          else if (s === 'DUE_SOON' || s === 'DUESOON') setEquipStatusFilter('DUE_SOON');
+          else if (s === 'VERIFIED' || s === 'OK' || s === 'COMPLIANT') setEquipStatusFilter('VERIFIED');
+          else setEquipStatusFilter('ALL');
+        } else if (normalized === 'INSPECTIONS_WORK') {
+          const s = options.status.toUpperCase() as any;
+          setRepairsStatusFilter(s);
+        }
+      }
+
+      if (typeof options?.search === 'string') {
+        if (normalized === 'FIRE_EQUIPMENT') setEquipSearch(options.search);
+      }
+
+      if (options?.buildingId) {
+        if (normalized === 'FIRE_EQUIPMENT') setEquipFilterBuilding(options.buildingId);
+      }
+
       // Save scroll position for currently active tab
       if (mainRef.current) {
         scrollTopMapRef.current[activeTab] = mainRef.current.scrollTop;
@@ -1230,26 +1353,29 @@ export default function AdminDashboardPage() {
       setOpenTabs((prev) => {
         const existingIdx = prev.findIndex((t) => t.id === normalized);
         if (existingIdx !== -1) {
-          // Unminimize and focus
+          // Switch to existing tab without duplicating: unminimize and update lastAccessed
           return prev.map((t) =>
             t.id === normalized ? { ...t, minimized: false, lastAccessed: Date.now() } : t
           );
         }
 
-        // Cap check: max 6 tabs open at once
+        // Cap check: maximum 4 tabs open at once (LRU auto-close beyond that)
         let nextTabs = [...prev];
-        if (nextTabs.length >= 6) {
+        while (nextTabs.length >= 4) {
           const backgroundTabs = nextTabs.filter((t) => t.id !== activeTab);
-          const lruTab = backgroundTabs.reduce((oldest, current) => {
+          const candidates = backgroundTabs.length > 0 ? backgroundTabs : nextTabs;
+          const lruTab = candidates.reduce((oldest, current) => {
             const oldestTime = oldest.lastAccessed || 0;
             const currentTime = current.lastAccessed || 0;
             return currentTime < oldestTime ? current : oldest;
-          }, backgroundTabs[0]);
+          }, candidates[0]);
 
           if (lruTab) {
             nextTabs = nextTabs.filter((t) => t.id !== lruTab.id);
             const lruLabel = TAB_CONFIG[lruTab.id]?.label || 'tab';
-            toast.info(`Closed ${lruLabel} to free memory`);
+            toast.info(`Closed '${lruLabel}' tab to keep things fast`);
+          } else {
+            break;
           }
         }
 
@@ -1664,7 +1790,7 @@ export default function AdminDashboardPage() {
                   {(activeTab === 'INSPECTIONS_WORK' || activeTab === 'INSPECTIONS' || activeTab === 'REPAIRS') && (t.navInspections || 'Inspections & Repairs')}
                   {(activeTab === 'FIELD_TEAM' || activeTab === 'TECHNICIANS') && (t.navFieldTeam || 'Technicians')}
                   {activeTab === 'REPORTS' && (t.navReports || 'Reports')}
-                  {(activeTab === 'CLIENT_PORTAL' || activeTab === 'CLIENT_LOGIN') && (t.portalNavTab || 'Client Login')}
+                  {(activeTab === 'CLIENT_PORTAL' || activeTab === 'CLIENT_LOGIN') && (t.portalNavTab || 'Client Portal')}
                   {activeTab === 'SETTINGS' && (t.navSettings || 'Settings')}
                 </h1>
                 {isRevalidating && (
@@ -1700,18 +1826,28 @@ export default function AdminDashboardPage() {
               type="button"
               data-testid="topbar-notifications-btn"
               onClick={() => {
-                setActiveTab('OVERVIEW');
-                const alertEl = document.getElementById('attention-digest-panel');
-                if (alertEl) alertEl.scrollIntoView({ behavior: 'smooth' });
+                handleOpenTab('OVERVIEW');
+                setTimeout(() => {
+                  const alertEl = document.getElementById('attention-digest-panel');
+                  if (alertEl) {
+                    const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                    alertEl.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'center' });
+                    alertEl.classList.add('ring-2', 'ring-[#EA580C]', 'ring-offset-2', 'shadow-[0_0_30px_rgba(234,88,12,0.25)]');
+                    alertEl.focus({ preventScroll: true });
+                    setTimeout(() => {
+                      alertEl.classList.remove('ring-2', 'ring-[#EA580C]', 'ring-offset-2', 'shadow-[0_0_30px_rgba(234,88,12,0.25)]');
+                    }, 1800);
+                  }
+                }, 50);
               }}
               className="relative p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-all shadow-xs cursor-pointer"
-              title={`${liveAttentionDigest.length} items requiring attention`}
+              title={`${liveAttentionCount} items requiring attention`}
               aria-label="Notifications"
             >
               <Bell className="w-4 h-4 text-slate-600" />
-              {liveAttentionDigest.length > 0 && (
+              {liveAttentionCount > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-[#EA580C] text-[10px] font-bold text-white ring-2 ring-white">
-                  {liveAttentionDigest.length}
+                  {liveAttentionCount}
                 </span>
               )}
             </button>
@@ -1872,6 +2008,7 @@ export default function AdminDashboardPage() {
                 company={company}
                 buildings={buildings}
                 attentionDigest={data?.attentionDigest || []}
+                needsAttentionItems={attentionDigestItems}
                 analytics={data?.analytics}
                 t={t}
                 onNavigateTab={handleOpenTab}
@@ -1882,7 +2019,8 @@ export default function AdminDashboardPage() {
                     setAddBuildingModalOpen(true);
                   }
                 }}
-                onCreateRepairJob={() => handleOpenTab('REPAIRS')}
+                onCreateRepairJob={() => handleOpenCreateRepairJob()}
+                onCreateRepairJobForAsset={(asset) => handleOpenCreateRepairJob(asset)}
                 onOpenFeedback={() => setFeedbackModalOpen(true)}
                 onOpenImport={() => handleOpenImport('FIRE_ASSETS')}
                 onOpenRegisterModal={() => setAddBuildingModalOpen(true)}
@@ -1921,34 +2059,6 @@ export default function AdminDashboardPage() {
                       }`}
                     >
                       Clients ({clientsList.length})
-                    </button>
-                  </div>
-
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                      onClick={() => handleOpenImport(clientsSitesSubTab === 'BUILDINGS' ? 'BUILDINGS' : 'CLIENTS')}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#FFF0E6] hover:bg-[#FED7AA]/60 text-[#C2410C] border border-[#C2410C]/20 text-xs font-bold transition-all shadow-xs"
-                      title="Import from Excel (.xlsx)"
-                    >
-                      <FileSpreadsheet className="w-4 h-4" />
-                      <span>Import Excel</span>
-                    </button>
-
-                    <button
-                      onClick={() => handleOpenExport(clientsSitesSubTab === 'BUILDINGS' ? 'BUILDINGS' : 'CLIENTS')}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-xs"
-                      title="Export to Excel (.xlsx)"
-                    >
-                      <FileSpreadsheet className="w-4 h-4" />
-                      <span>Export Excel</span>
-                    </button>
-
-                    <button
-                      onClick={() => setAddBuildingModalOpen(true)}
-                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white text-xs font-bold shadow-xs transition-all"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>{clientsSitesSubTab === 'BUILDINGS' ? 'Add Building' : 'Add Client'}</span>
                     </button>
                   </div>
                 </div>
@@ -2048,11 +2158,14 @@ export default function AdminDashboardPage() {
                 </div>
                 <FireAssetsView
                   equipmentsList={filteredEquipmentsList}
+                  allEquipments={equipmentsList}
                   buildings={buildings}
                   equipFilterBuilding={equipFilterBuilding}
                   setEquipFilterBuilding={setEquipFilterBuilding}
                   equipSearch={equipSearch}
                   setEquipSearch={setEquipSearch}
+                  equipStatusFilter={equipStatusFilter}
+                  setEquipStatusFilter={setEquipStatusFilter}
                   onEditEquipment={(eq) => {
                       ensureTechniciansLoaded();
                       setAssignTaskOpen(false);
@@ -2353,6 +2466,8 @@ export default function AdminDashboardPage() {
                       initialWorkOrders={workOrdersList}
                       initialTechnicians={techniciansList}
                       initialBuildings={buildings}
+                      statusFilter={repairsStatusFilter}
+                      onStatusFilterChange={setRepairsStatusFilter}
                       onRefreshDashboard={() => refreshDashboard({ silent: true })}
                     />
                   </div>
@@ -4032,6 +4147,21 @@ export default function AdminDashboardPage() {
         agencyName={data?.company?.name}
         preferredLanguage={data?.profile?.preferredLanguage || 'en'}
         onDismissed={handleDismissWelcome}
+      />
+
+      {/* =========================================================================
+          CREATE WORK ORDER MODAL (Shared Root Affordance)
+      ========================================================================= */}
+      <CreateWorkOrderModal
+        isOpen={createWorkOrderModalOpen}
+        onClose={() => setCreateWorkOrderModalOpen(false)}
+        buildings={buildings}
+        technicians={techniciansList}
+        initialData={createWorkOrderInitialData}
+        onCreated={(newWO) => {
+          setWorkOrdersList((prev) => [newWO, ...prev]);
+        }}
+        showToast={showToast}
       />
     </div>
   );

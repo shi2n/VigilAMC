@@ -12,7 +12,7 @@ const ALLOWED_MIME_TYPES: Record<string, string> = {
   'image/png': 'png',
 };
 
-const ALLOWED_FOLDERS = new Set(['inspections', 'equipment', 'defects']);
+const ALLOWED_FOLDERS = new Set(['inspections', 'equipment', 'defects', 'branding']);
 const MAX_SIZE_BYTES = 4 * 1024 * 1024; // 4 MB
 
 export async function POST(request: Request) {

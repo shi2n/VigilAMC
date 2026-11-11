@@ -125,12 +125,28 @@ export function extractCookie(req?: Request, cookieName: string = TECH_SESSION_C
     // 1. Try from request headers directly
     const cookieHeader = req?.headers?.get('cookie');
     if (cookieHeader) {
-      const match = cookieHeader
-        .split(';')
-        .map((c) => c.trim())
-        .find((c) => c.startsWith(`${cookieName}=`));
+      const parts = cookieHeader.split(';').map((c) => c.trim());
+      const match = parts.find((c) => c.startsWith(`${cookieName}=`));
       if (match) {
         return decodeURIComponent(match.substring(cookieName.length + 1));
+      }
+      // Reassemble chunked cookies from headers: cookieName.0, cookieName.1, ...
+      const prefix = `${cookieName}.`;
+      const chunks: { idx: number; val: string }[] = [];
+      for (const part of parts) {
+        if (part.startsWith(prefix)) {
+          const eqIdx = part.indexOf('=');
+          if (eqIdx !== -1) {
+            const num = parseInt(part.slice(prefix.length, eqIdx), 10);
+            if (!isNaN(num)) {
+              chunks.push({ idx: num, val: decodeURIComponent(part.slice(eqIdx + 1)) });
+            }
+          }
+        }
+      }
+      if (chunks.length > 0) {
+        chunks.sort((a, b) => a.idx - b.idx);
+        return chunks.map((c) => c.val).join('');
       }
     }
 
@@ -139,6 +155,21 @@ export function extractCookie(req?: Request, cookieName: string = TECH_SESSION_C
       const cookieStore = cookies();
       const val = cookieStore.get(cookieName)?.value;
       if (val) return val;
+      const all = cookieStore.getAll();
+      const prefix = `${cookieName}.`;
+      const chunks: { idx: number; val: string }[] = [];
+      for (const c of all) {
+        if (c.name.startsWith(prefix)) {
+          const num = parseInt(c.name.slice(prefix.length), 10);
+          if (!isNaN(num)) {
+            chunks.push({ idx: num, val: c.value });
+          }
+        }
+      }
+      if (chunks.length > 0) {
+        chunks.sort((a, b) => a.idx - b.idx);
+        return chunks.map((c) => c.val).join('');
+      }
     } catch {
       // Ignored outside Next.js request lifecycle
     }

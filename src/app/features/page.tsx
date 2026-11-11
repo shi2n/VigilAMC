@@ -422,7 +422,7 @@ export default function FeaturesPage() {
               </div>
               <h4 className="text-base font-bold text-slate-900">Client Compliance Portal</h4>
               <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                Dedicated client login for facility managers to inspect real-time safety asset status and download past certificates.
+                Dedicated client portal for facility managers to inspect real-time safety asset status and download past certificates.
               </p>
             </div>
           </div>

@@ -464,7 +464,7 @@ const DICTIONARY_EN: AdminDictionary = {
   floorPlansUploadBtn: 'Upload floor plan',
   floorPlansClickHint: 'Click anywhere on the floor plan to place an asset pin, or drag existing pins to reposition.',
   // Client Portal & Public Verification
-  portalNavTab: 'Client Login',
+  portalNavTab: 'Client Portal',
   portalInviteTitle: 'Invite client contact',
   portalInviteSubtitle: 'Grant read-only compliance portal access to building owners, societies, and facility managers.',
   portalInviteBtn: 'Send portal invite',

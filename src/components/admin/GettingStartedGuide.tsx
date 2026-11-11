@@ -324,7 +324,7 @@ export function GuideModal({ isOpen, onClose, onNavigateTab, t }: GuideModalProp
       title: t.navSettings,
       whatFor: 'Agency branding, contact licenses, alert thresholds, and language preferences.',
       howTo: [
-        'Select from all 22 Indian languages under the "Language & Region" section.',
+        'Select from all 22 Indian languages under Settings → Preferences → Language & Regional Preferences.',
         'Set up automated WhatsApp/SMS alerts for society managers.',
       ],
     },

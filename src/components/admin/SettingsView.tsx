@@ -235,11 +235,11 @@ export function SettingsView({
     targetField: 'brandLogoUrl' | 'signatorySignatureUrl'
   ) => {
     if (!['image/png', 'image/jpeg', 'image/jpg', 'image/webp'].includes(file.type)) {
-      toast.error('Please upload a PNG or JPEG image');
+      toast.error('Please upload a valid image (PNG, JPEG, or WebP)');
       return;
     }
-    if (file.size > 1024 * 1024) {
-      toast.error('Image must be 1 MB or smaller');
+    if (file.size > 4 * 1024 * 1024) {
+      toast.error('Image must be 4 MB or smaller');
       return;
     }
     const setBusy = targetField === 'brandLogoUrl' ? setUploadingLogo : setUploadingSig;
@@ -247,11 +247,9 @@ export function SettingsView({
     try {
       const uploaded = await uploadCompressedPhoto(
         file,
-        'equipment',
+        'branding',
         { maxDimension: 600, quality: 0.85 }
-      ).catch(async () => ({
-        url: await compressImageToDataUrl(file, { maxDimension: 600, quality: 0.85 }),
-      }));
+      );
       setCompanyForm((prev: any) => ({ ...prev, [targetField]: uploaded.url }));
       toast.success(
         targetField === 'brandLogoUrl'

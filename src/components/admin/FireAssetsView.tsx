@@ -8,11 +8,14 @@ import { AdminDictionary } from '@/lib/i18n/admin';
 
 interface FireAssetsViewProps {
   equipmentsList: any[];
+  allEquipments?: any[];
   buildings: any[];
   equipFilterBuilding: string;
   setEquipFilterBuilding: (val: string) => void;
   equipSearch: string;
   setEquipSearch: (val: string) => void;
+  equipStatusFilter?: 'ALL' | 'OVERDUE' | 'DUE_SOON' | 'VERIFIED';
+  setEquipStatusFilter?: (val: 'ALL' | 'OVERDUE' | 'DUE_SOON' | 'VERIFIED') => void;
   onEditEquipment: (eq: any) => void;
   onDeleteEquipment: (id: string, qrCode: string) => void;
   onOpenExport: () => void;
@@ -22,11 +25,14 @@ interface FireAssetsViewProps {
 
 export function FireAssetsView({
   equipmentsList,
+  allEquipments,
   buildings,
   equipFilterBuilding,
   setEquipFilterBuilding,
   equipSearch,
   setEquipSearch,
+  equipStatusFilter = 'ALL',
+  setEquipStatusFilter,
   onEditEquipment,
   onDeleteEquipment,
   onOpenExport,
@@ -34,6 +40,47 @@ export function FireAssetsView({
   t,
 }: FireAssetsViewProps) {
   const prefersReducedMotion = useReducedMotion();
+
+  // Dedupe building options by unique building ID (Map by id, first occurrence wins)
+  const uniqueBuildings = React.useMemo(() => {
+    const map = new Map<string, any>();
+    for (const b of buildings || []) {
+      if (b && b.id && !map.has(b.id)) {
+        map.set(b.id, b);
+      }
+    }
+    return Array.from(map.values());
+  }, [buildings]);
+
+  const statusCounts = React.useMemo(() => {
+    const list = allEquipments || equipmentsList || [];
+    let overdue = 0;
+    let dueSoon = 0;
+    let verified = 0;
+    for (const eq of list) {
+      const diffDays = getCalendarDayDiff(eq.nextDueDate);
+      const isOverdue =
+        (diffDays !== null && diffDays < 0) ||
+        eq.status === 'OVERDUE' ||
+        eq.liveStatus === 'OVERDUE';
+      const isDueSoon =
+        !isOverdue &&
+        ((diffDays !== null && diffDays <= 30) ||
+          eq.status === 'DUE_SOON' ||
+          eq.liveStatus === 'DUE_SOON');
+      const isVerified =
+        !isOverdue &&
+        !isDueSoon &&
+        (eq.status === 'VERIFIED' ||
+          eq.status === 'COMPLIANT' ||
+          eq.liveStatus === 'COMPLIANT' ||
+          eq.liveStatus === 'VERIFIED');
+      if (isOverdue) overdue++;
+      else if (isDueSoon) dueSoon++;
+      else if (isVerified) verified++;
+    }
+    return { all: list.length, overdue, dueSoon, verified };
+  }, [allEquipments, equipmentsList]);
 
   return (
     <div className="glass-panel-dense rounded-2xl shadow-xs p-4 sm:p-6 space-y-6 text-slate-800 max-w-full overflow-hidden">
@@ -64,7 +111,7 @@ export function FireAssetsView({
             className="bg-white border border-[#FED7AA] rounded-xl px-3 py-2 text-xs text-[#1C1917] font-medium focus:outline-none focus:border-[#C2410C] shadow-xs w-full sm:w-auto"
           >
             <option value="ALL">{t?.filterAll || 'All'} Buildings</option>
-            {buildings.map((b: any) => (
+            {uniqueBuildings.map((b: any) => (
               <option key={b.id} value={b.id}>
                 {b.name}
               </option>
@@ -105,6 +152,66 @@ export function FireAssetsView({
           </button>
         </div>
       </div>
+
+      {/* Status Filter Chips Row */}
+      {setEquipStatusFilter && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-bold text-[#44403C]">Status Filter:</span>
+          <div className="flex items-center gap-1.5 p-1 bg-white border border-[#FED7AA] rounded-xl text-xs font-bold overflow-x-auto shadow-2xs">
+            <button
+              type="button"
+              data-testid="equip-filter-all"
+              onClick={() => setEquipStatusFilter('ALL')}
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                equipStatusFilter === 'ALL'
+                  ? 'bg-[#1C1917] text-white shadow-xs'
+                  : 'text-[#44403C] hover:text-[#1C1917] hover:bg-[#FFF0E6]'
+              }`}
+            >
+              All ({statusCounts.all})
+            </button>
+            <button
+              type="button"
+              data-testid="equip-filter-overdue"
+              onClick={() => setEquipStatusFilter('OVERDUE')}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                equipStatusFilter === 'OVERDUE'
+                  ? 'bg-[#DC2626] text-white shadow-xs'
+                  : 'text-[#DC2626] hover:bg-rose-50'
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${equipStatusFilter === 'OVERDUE' ? 'bg-white' : 'bg-[#DC2626]'}`} />
+              Overdue ({statusCounts.overdue})
+            </button>
+            <button
+              type="button"
+              data-testid="equip-filter-due-soon"
+              onClick={() => setEquipStatusFilter('DUE_SOON')}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                equipStatusFilter === 'DUE_SOON'
+                  ? 'bg-[#D97706] text-white shadow-xs'
+                  : 'text-[#D97706] hover:bg-amber-50'
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${equipStatusFilter === 'DUE_SOON' ? 'bg-white' : 'bg-[#D97706]'}`} />
+              Due Soon ({statusCounts.dueSoon})
+            </button>
+            <button
+              type="button"
+              data-testid="equip-filter-verified"
+              onClick={() => setEquipStatusFilter('VERIFIED')}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                equipStatusFilter === 'VERIFIED'
+                  ? 'bg-[#059669] text-white shadow-xs'
+                  : 'text-[#059669] hover:bg-emerald-50'
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${equipStatusFilter === 'VERIFIED' ? 'bg-white' : 'bg-[#059669]'}`} />
+              OK / Verified ({statusCounts.verified})
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Equipment Table */}
       {equipmentsList.length === 0 ? (

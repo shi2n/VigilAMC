@@ -42,11 +42,13 @@ interface DashboardOverviewProps {
   company?: any;
   buildings?: any[];
   attentionDigest?: AttentionDigestItem[];
+  needsAttentionItems?: any[];
   analytics?: DashboardAnalytics;
   t?: AdminDictionary;
-  onNavigateTab: (tab: string) => void;
+  onNavigateTab: (tab: string, options?: any) => void;
   onAddEquipment: () => void;
   onCreateRepairJob: () => void;
+  onCreateRepairJobForAsset?: (asset: any) => void;
   onOpenFeedback: () => void;
   onOpenImport?: () => void;
   onOpenRegisterModal?: () => void;
@@ -62,11 +64,13 @@ export function DashboardOverview({
   company,
   buildings = [],
   attentionDigest = [],
+  needsAttentionItems,
   analytics,
   t = adminDictEnglish,
   onNavigateTab,
   onAddEquipment,
   onCreateRepairJob,
+  onCreateRepairJobForAsset,
   onOpenFeedback,
   onOpenImport,
   onOpenRegisterModal,
@@ -168,7 +172,7 @@ export function DashboardOverview({
   });
 
   const todayStr = todayCalendarDateString();
-  const needsAttentionList = allEquipments
+  const computedAttentionList = allEquipments
     .map((eq) => {
       const diffDays = eq.nextDueDate
         ? calendarDayDiff(fromDbDate(eq.nextDueDate), todayStr)
@@ -178,6 +182,8 @@ export function DashboardOverview({
     .filter((eq) => eq.diffDays <= 30)
     .sort((a, b) => a.diffDays - b.diffDays)
     .slice(0, 10);
+
+  const needsAttentionList = needsAttentionItems && needsAttentionItems.length > 0 ? needsAttentionItems : computedAttentionList;
 
   // Build SVG path coordinates for the flame-ember chart
   const maxVal = Math.max(...activeSeries.values, 1);
@@ -265,10 +271,12 @@ export function DashboardOverview({
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         {/* 1. Overdue Equipment */}
-        <div
-          onClick={() => onNavigateTab('FIRE_EQUIPMENT')}
+        <button
+          type="button"
+          onClick={() => onNavigateTab('FIRE_EQUIPMENT', { status: 'OVERDUE' })}
           data-testid="kpi-card-overdue"
-          className={`glass-panel relative p-5 rounded-2xl transition-colors duration-150 cursor-pointer group ${
+          aria-label="Filter equipment by overdue status"
+          className={`glass-panel text-left w-full relative p-5 rounded-2xl transition-all duration-150 cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EA580C] ${
             kpis.overdueCount > 0
               ? 'border-[#DC2626]/60 ring-1 ring-[#DC2626]/20'
               : 'hover:border-[#EA580C]/45'
@@ -296,13 +304,15 @@ export function DashboardOverview({
           <p className="text-[11px] text-[#44403C] mt-1">
             {kpis.overdueCount === 0 ? 'No overdue equipment' : 'Needs immediate inspection'}
           </p>
-        </div>
+        </button>
 
         {/* 2. Due in 30 Days */}
-        <div
-          onClick={() => onNavigateTab('FIRE_EQUIPMENT')}
+        <button
+          type="button"
+          onClick={() => onNavigateTab('FIRE_EQUIPMENT', { status: 'DUE_SOON' })}
           data-testid="kpi-card-due-soon"
-          className="glass-panel p-5 rounded-2xl hover:border-[#EA580C]/45 transition-colors duration-150 cursor-pointer group"
+          aria-label="Filter equipment due in 30 days"
+          className="glass-panel text-left w-full p-5 rounded-2xl hover:border-[#EA580C]/45 transition-all duration-150 cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EA580C]"
         >
           <div className="flex items-center justify-between text-[#44403C] mb-2">
             <span className="text-xs font-semibold">{t.kpiDueSoon || 'Due in 30 days'}</span>
@@ -316,13 +326,15 @@ export function DashboardOverview({
           <p className="text-[11px] text-[#44403C] mt-1">
             Upcoming scheduled services
           </p>
-        </div>
+        </button>
 
         {/* 3. Open Repairs / Work Orders */}
-        <div
-          onClick={() => onNavigateTab('INSPECTIONS_WORK')}
+        <button
+          type="button"
+          onClick={() => onNavigateTab('INSPECTIONS_WORK', { subTab: 'REPAIRS', status: 'OPEN' })}
           data-testid="kpi-card-open-repairs"
-          className="glass-panel p-5 rounded-2xl hover:border-[#EA580C]/45 transition-colors duration-150 cursor-pointer group"
+          aria-label="View open repair work orders"
+          className="glass-panel text-left w-full p-5 rounded-2xl hover:border-[#EA580C]/45 transition-all duration-150 cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EA580C]"
         >
           <div className="flex items-center justify-between text-[#44403C] mb-2">
             <span className="text-xs font-semibold">{t.kpiOpenRepairs || 'Open repairs'}</span>
@@ -336,13 +348,15 @@ export function DashboardOverview({
           <p className="text-[11px] text-[#44403C] mt-1">
             Active repair jobs &amp; tasks
           </p>
-        </div>
+        </button>
 
         {/* 4. Inspections Completed This Week */}
-        <div
-          onClick={() => onNavigateTab('INSPECTIONS_WORK')}
+        <button
+          type="button"
+          onClick={() => onNavigateTab('INSPECTIONS_WORK', { subTab: 'INSPECTIONS' })}
           data-testid="kpi-card-inspections-week"
-          className="glass-panel p-5 rounded-2xl hover:border-[#EA580C]/45 transition-colors duration-150 cursor-pointer group"
+          aria-label="View inspections this week"
+          className="glass-panel text-left w-full p-5 rounded-2xl hover:border-[#EA580C]/45 transition-all duration-150 cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EA580C]"
         >
           <div className="flex items-center justify-between text-[#44403C] mb-2">
             <span className="text-xs font-semibold">{t.chartSeriesInspections || 'Inspections this week'}</span>
@@ -356,7 +370,7 @@ export function DashboardOverview({
           <p className="text-[11px] text-[#44403C] mt-1">
             Completed field audits (7d)
           </p>
-        </div>
+        </button>
       </div>
     </div>
 
@@ -674,7 +688,11 @@ export function DashboardOverview({
       {/* =========================================================================
           NEEDS ATTENTION LIST (Top 10 due or overdue items — Glass Table Wrapper)
           ========================================================================= */}
-      <div className="relative z-10 glass-panel-dense rounded-2xl p-5 sm:p-6 space-y-4">
+      <div
+        id="attention-digest-panel"
+        tabIndex={-1}
+        className="relative z-10 glass-panel-dense rounded-2xl p-5 sm:p-6 space-y-4 focus:outline-none transition-all duration-500"
+      >
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-base font-bold text-[#1C1917] flex items-center gap-2">
@@ -687,8 +705,9 @@ export function DashboardOverview({
           </div>
 
           <button
-            onClick={() => onNavigateTab('FIRE_EQUIPMENT')}
-            className="text-xs font-semibold text-[#C2410C] hover:underline flex items-center gap-1"
+            type="button"
+            onClick={() => onNavigateTab('FIRE_EQUIPMENT', { status: 'OVERDUE' })}
+            className="text-xs font-semibold text-[#C2410C] hover:underline flex items-center gap-1 cursor-pointer"
           >
             <span>{t.navEquipment ? `${t.navEquipment} →` : 'View all equipment'}</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -728,7 +747,18 @@ export function DashboardOverview({
                   }}
                   className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#FFF0E6] px-2.5 rounded-xl transition-colors"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onNavigateTab('FIRE_EQUIPMENT', {
+                        status: isOverdue ? 'OVERDUE' : 'DUE_SOON',
+                        search: item.qrCode,
+                        buildingId: item.buildingId,
+                      })
+                    }
+                    className="flex items-center gap-3 min-w-0 text-left group/item cursor-pointer focus:outline-none"
+                    title={`View ${item.qrCode} in Equipment register`}
+                  >
                     <span
                       className={`w-2.5 h-2.5 rounded-full shrink-0 ${
                         isOverdue ? 'bg-[#DC2626]' : 'bg-[#D97706]'
@@ -736,10 +766,10 @@ export function DashboardOverview({
                     />
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-bold text-[#1C1917]">
+                        <span className="text-xs font-bold text-[#1C1917] group-hover/item:text-[#C2410C] transition-colors">
                           {item.type} ({item.capacity})
                         </span>
-                        <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA]">
+                        <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[#FFF0E6] text-[#C2410C] border border-[#FED7AA] group-hover/item:border-[#C2410C] transition-colors">
                           {item.qrCode}
                         </span>
                       </div>
@@ -747,7 +777,7 @@ export function DashboardOverview({
                         {item.buildingName} &bull; {item.location || 'Location not specified'}
                       </p>
                     </div>
-                  </div>
+                  </button>
 
                   <div className="flex items-center gap-3 shrink-0 self-start sm:self-auto">
                     <div className="text-right">
@@ -766,8 +796,15 @@ export function DashboardOverview({
                     </div>
 
                     <button
-                      onClick={() => onNavigateTab('INSPECTIONS_WORK')}
-                      className="px-3 py-1.5 rounded-lg bg-[#FFF0E6] hover:bg-[#C2410C] hover:text-white text-[#C2410C] border border-[#FED7AA] text-xs font-bold transition-all whitespace-nowrap active:scale-[0.98]"
+                      type="button"
+                      onClick={() => {
+                        if (onCreateRepairJobForAsset) {
+                          onCreateRepairJobForAsset(item);
+                        } else if (onCreateRepairJob) {
+                          onCreateRepairJob();
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-[#FFF0E6] hover:bg-[#C2410C] hover:text-white text-[#C2410C] border border-[#FED7AA] text-xs font-bold transition-all whitespace-nowrap active:scale-[0.98] cursor-pointer"
                     >
                       Create repair job
                     </button>

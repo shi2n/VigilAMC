@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { formatCalendarDate, getCalendarDayDiff } from '@/lib/dateUtils';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { toast } from 'sonner';
+import { CreateWorkOrderModal } from './CreateWorkOrderModal';
 import {
   Wrench,
   Plus,
@@ -25,6 +26,8 @@ interface WorkOrdersViewProps {
   initialWorkOrders?: any[];
   initialTechnicians?: any[];
   initialBuildings?: any[];
+  statusFilter?: 'ALL' | 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  onStatusFilterChange?: (status: 'ALL' | 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED') => void;
   onRefreshDashboard?: () => Promise<void> | void;
 }
 
@@ -49,6 +52,8 @@ export function WorkOrdersView({
   initialWorkOrders,
   initialTechnicians,
   initialBuildings,
+  statusFilter: controlledStatusFilter,
+  onStatusFilterChange,
   onRefreshDashboard,
 }: WorkOrdersViewProps) {
   const prefersReducedMotion = useReducedMotion();
@@ -56,23 +61,25 @@ export function WorkOrdersView({
   const [technicians, setTechnicians] = useState<any[]>(initialTechnicians || []);
   const [buildings, setBuildings] = useState<any[]>(initialBuildings || []);
   const [loading, setLoading] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<
+  const [statusFilter, setStatusFilterState] = useState<
     'ALL' | 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
-  >('ALL');
+  >(controlledStatusFilter || 'ALL');
+
+  useEffect(() => {
+    if (controlledStatusFilter) {
+      setStatusFilterState(controlledStatusFilter);
+    }
+  }, [controlledStatusFilter]);
+
+  const setStatusFilter = (newStatus: 'ALL' | 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED') => {
+    setStatusFilterState(newStatus);
+    if (onStatusFilterChange) onStatusFilterChange(newStatus);
+  };
   const [search, setSearch] = useState('');
   const [rippleRowId, setRippleRowId] = useState<string | null>(null);
 
   // Add work order modal
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [form, setForm] = useState({
-    title: '',
-    description: '',
-    buildingId: '',
-    assignedToId: '',
-    priority: 'MEDIUM',
-    dueDate: '',
-  });
-  const [submitting, setSubmitting] = useState(false);
   const [runningScheduler, setRunningScheduler] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [lastAssignedWO, setLastAssignedWO] = useState<any | null>(null);
@@ -161,76 +168,7 @@ export function WorkOrdersView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleCreateWorkOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.buildingId) {
-      toast.error('Please select a facility for this work order', { duration: 5500 });
-      showToast('Please select a facility for this work order');
-      return;
-    }
-    setSubmitting(true);
 
-    try {
-      const payload = {
-        ...form,
-        assignedToId:
-          form.assignedToId && form.assignedToId.trim() !== ''
-            ? form.assignedToId.trim()
-            : null,
-        dueDate:
-          form.dueDate && form.dueDate.trim() !== '' ? form.dueDate.trim() : null,
-      };
-
-      const res = await fetch('/api/work-orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || 'Failed to create work order');
-
-      if (json.workOrder) {
-        const matchedBuilding = buildings.find((b) => b.id === form.buildingId);
-        const matchedTech = technicians.find((t) => t.id === form.assignedToId);
-        setWorkOrders((prev) => [
-          {
-            ...json.workOrder,
-            building:
-              json.workOrder.building ||
-              (matchedBuilding
-                ? { id: matchedBuilding.id, name: matchedBuilding.name }
-                : undefined),
-            assignedTo:
-              json.workOrder.assignedTo ||
-              (matchedTech
-                ? { id: matchedTech.id, fullName: matchedTech.fullName }
-                : undefined),
-          },
-          ...prev,
-        ]);
-      }
-
-      setCreateModalOpen(false);
-      setForm({
-        title: '',
-        description: '',
-        buildingId: '',
-        assignedToId: '',
-        priority: 'MEDIUM',
-        dueDate: '',
-      });
-      toast.success('Work order created and assigned successfully');
-      showToast('Work order created and assigned successfully');
-      await fetchWorkOrders();
-    } catch (err: any) {
-      const msg = err?.message || 'Error creating work order';
-      toast.error(msg, { duration: 5500 });
-      showToast(msg);
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   const handleAssignTechnician = async (id: string, techId: string) => {
     const previousOrders = workOrders;
@@ -641,142 +579,17 @@ export function WorkOrdersView({
         )}
       </div>
 
-      {/* Create Work Order Modal (Spring scale-in 0.98 -> 1, 200ms) */}
-      <AnimatePresence>
-        {createModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4"
-          >
-            <motion.div
-              initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="bg-white border border-[#FED7AA] rounded-2xl max-w-lg w-full p-6 shadow-[0_16px_48px_rgba(28, 25, 23,0.16)] space-y-4"
-            >
-              <div className="flex items-center justify-between pb-3 border-b border-[#FED7AA]">
-                <div className="flex items-center gap-2">
-                  <Wrench className="w-5 h-5 text-[#C2410C]" />
-                  <h3 className="text-base font-bold text-[#1C1917]">Create Work Order</h3>
-                </div>
-                <button
-                  onClick={() => setCreateModalOpen(false)}
-                  className="text-slate-400 hover:text-[#1C1917] rounded-lg p-1 hover:bg-[#FFF0E6]"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <form onSubmit={handleCreateWorkOrder} className="space-y-3.5 text-xs">
-                <div className="space-y-1">
-                  <label className="text-slate-700 font-bold">Title *</label>
-                  <input
-                    type="text"
-                    required
-                    value={form.title}
-                    onChange={(e) => setForm({ ...form, title: e.target.value })}
-                    placeholder="e.g. Hydro-test pressure check on 3rd floor riser"
-                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#FED7AA] text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#C2410C] shadow-xs"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-slate-700 font-bold">Description / Work Scope</label>
-                  <textarea
-                    rows={2}
-                    value={form.description}
-                    onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    placeholder="Details of defects, corrective maintenance required..."
-                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#FED7AA] text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#C2410C] shadow-xs"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-slate-700 font-bold">Target Facility *</label>
-                    <select
-                      required
-                      value={form.buildingId}
-                      onChange={(e) => setForm({ ...form, buildingId: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-[#FED7AA] text-slate-900 focus:outline-none focus:border-[#C2410C] shadow-xs"
-                    >
-                      <option value="">Select Facility...</option>
-                      {buildings.map((b) => (
-                        <option key={b.id} value={b.id}>
-                          {b.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-slate-700 font-bold">Assign Technician</label>
-                    <select
-                      value={form.assignedToId}
-                      onChange={(e) => setForm({ ...form, assignedToId: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-[#FED7AA] text-slate-900 focus:outline-none focus:border-[#C2410C] shadow-xs"
-                    >
-                      <option value="">Unassigned</option>
-                      {technicians.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.fullName || t.email}{t.employeeId && t.employeeId !== '—' ? ` · ${t.employeeId}` : ''} ({t.status || 'ACTIVE'})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-slate-700 font-bold">Priority</label>
-                    <select
-                      value={form.priority}
-                      onChange={(e) => setForm({ ...form, priority: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-[#FED7AA] text-slate-900 focus:outline-none focus:border-[#C2410C] shadow-xs"
-                    >
-                      <option value="LOW">LOW</option>
-                      <option value="MEDIUM">MEDIUM</option>
-                      <option value="HIGH">HIGH</option>
-                      <option value="URGENT">URGENT</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-slate-700 font-bold">Due Date</label>
-                    <input
-                      type="date"
-                      value={form.dueDate}
-                      onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-[#FED7AA] text-slate-900 focus:outline-none focus:border-[#C2410C] shadow-xs"
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-3 border-t border-[#FED7AA] flex justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setCreateModalOpen(false)}
-                    className="px-4 py-2 rounded-xl text-slate-600 hover:text-[#1C1917] font-bold"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="px-5 py-2 rounded-xl font-bold bg-gradient-to-r from-[#EA580C] to-[#C2410C] hover:from-[#C2410C] hover:to-[#9A3412] text-white disabled:opacity-50 shadow-sm"
-                  >
-                    {submitting ? 'Creating...' : 'Create & Assign'}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Create Work Order Modal */}
+      <CreateWorkOrderModal
+        isOpen={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        buildings={buildings}
+        technicians={technicians}
+        onCreated={(newWO) => {
+          setWorkOrders((prev) => [newWO, ...prev]);
+        }}
+        showToast={showToast}
+      />
     </div>
   );
 }

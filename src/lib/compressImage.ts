@@ -98,7 +98,7 @@ export async function compressImageToFile(
  */
 export async function uploadCompressedPhoto(
   file: File,
-  folder: 'inspections' | 'equipment' | 'defects' = 'equipment',
+  folder: 'inspections' | 'equipment' | 'defects' | 'branding' = 'equipment',
   options?: CompressImageOptions
 ): Promise<{ url: string; key?: string; sizeBytes: number; localPreviewUrl: string }> {
   const localPreviewUrl = await compressImageToDataUrl(file, options);
@@ -115,8 +115,23 @@ export async function uploadCompressedPhoto(
   formData.append('file', compressedFile);
   formData.append('folder', folder);
 
+  const uploadHeaders: Record<string, string> = {};
+  try {
+    const { createClient } = await import('@/lib/supabase/client');
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
+    if (session?.access_token) {
+      uploadHeaders['Authorization'] = `Bearer ${session.access_token}`;
+    }
+  } catch {
+    // Fall back to cookies if supabase client session is not accessible
+  }
+
   const uploadRes = await fetch('/api/upload', {
     method: 'POST',
+    headers: uploadHeaders,
     body: formData,
   });
 

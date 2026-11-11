@@ -132,7 +132,7 @@ export function AdminSidebar({
     },
     { id: 'FIELD_TEAM', label: t?.navFieldTeam || 'Technicians', icon: Users },
     { id: 'REPORTS', label: t?.navReports || 'Reports', icon: FileText },
-    { id: 'CLIENT_PORTAL', label: t?.portalNavTab || 'Client Login', icon: ShieldCheck },
+    { id: 'CLIENT_PORTAL', label: t?.portalNavTab || 'Client Portal', icon: ShieldCheck },
     {
       id: 'SETTINGS',
       label: t?.navSettings || 'Settings',
