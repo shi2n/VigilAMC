@@ -93,7 +93,7 @@ export async function GET(request: Request) {
       referencedBuildingIds.size > 0
         ? (db as any).building.findMany({
             where: { id: { in: Array.from(referencedBuildingIds) } },
-            select: { id: true, name: true, locality: true, address: true },
+            select: { id: true, name: true, city: true, address: true },
           })
         : [],
       referencedEquipmentIds.size > 0
