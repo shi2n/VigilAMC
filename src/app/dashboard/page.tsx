@@ -58,6 +58,7 @@ import {
 } from '@/lib/dates';
 import { getAdminDictionary } from '@/lib/i18n/admin';
 import { getServiceCycleLabel } from '@/lib/compliance';
+import { formatBuildingPickerLabel } from '@/lib/buildingUtils';
 import { WelcomeTestingModal } from '@/components/admin/WelcomeTestingModal';
 import { CreateWorkOrderModal } from '@/components/admin/CreateWorkOrderModal';
 
@@ -292,6 +293,7 @@ export default function AdminDashboardPage() {
   const [importLockedBuilding, setImportLockedBuilding] = useState<{ id: string; name: string } | null>(null);
 
   const handleOpenImport = (type: ImportType = 'FIRE_ASSETS') => {
+    setMinimizedModals((prev) => prev.filter((id) => id !== 'IMPORT'));
     setImportLockedBuilding(null);
     setImportDataType(type);
     setImportModalOpen(true);
@@ -299,6 +301,7 @@ export default function AdminDashboardPage() {
 
   const handleOpenBuildingExcelImport = (building: any) => {
     if (!building) return;
+    setMinimizedModals((prev) => prev.filter((id) => id !== 'IMPORT'));
     setImportLockedBuilding({ id: building.id, name: building.name });
     setImportDataType('FIRE_ASSETS');
     setImportModalOpen(true);
@@ -781,6 +784,7 @@ export default function AdminDashboardPage() {
       };
       setExportConfigKey(tabMap[activeTab] || 'FIRE_ASSETS');
     }
+    setMinimizedModals((prev) => prev.filter((id) => id !== 'EXPORT'));
     setExportModalOpen(true);
   };
 
@@ -1754,6 +1758,15 @@ export default function AdminDashboardPage() {
         icon: Plus,
       });
     }
+    if (minimizedModals.includes('EDIT_CLIENT') && editClientModal) {
+      list.push({
+        id: 'modal-edit-client',
+        type: 'MODAL',
+        modalKey: 'EDIT_CLIENT',
+        label: `Edit ${editClientModal.name || 'Client'}`,
+        icon: Building2,
+      });
+    }
 
     return list;
   }, [
@@ -1767,6 +1780,7 @@ export default function AdminDashboardPage() {
     exportModalOpen,
     addBuildingModalOpen,
     bulkAddModalOpen,
+    editClientModal,
     TAB_CONFIG,
   ]);
 
@@ -3040,6 +3054,26 @@ export default function AdminDashboardPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 flex-1">
                   {/* Left Column: Core Specs */}
                   <div className="space-y-3">
+                    {buildings.length > 0 && (
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Building / Facility *</label>
+                        <select
+                          value={singleAddEquipModalOpen?.id || ''}
+                          onChange={(e) => {
+                            const found = buildings.find((b: any) => b.id === e.target.value);
+                            if (found) setSingleAddEquipModalOpen(found);
+                          }}
+                          className="w-full bg-white border border-[#FED7AA] rounded-lg p-2.5 text-slate-900 focus:border-[#C2410C] focus:outline-none"
+                        >
+                          {buildings.map((b: any) => (
+                            <option key={b.id} value={b.id}>
+                              {formatBuildingPickerLabel(b, buildings)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
                     <div>
                       <label className="block text-slate-700 font-bold mb-1">Asset ID / Serial Number *</label>
                       <input
@@ -4153,6 +4187,7 @@ export default function AdminDashboardPage() {
               hydroDueDate: eq.hydroDueDate ? toDateInputString(eq.hydroDueDate) : '',
             };
             initialEquipmentRef.current = { ...normalizedEq };
+            setMinimizedModals((prev) => prev.filter((id) => id !== 'EDIT_EQUIPMENT'));
             setEditEquipmentModal(normalizedEq);
           }}
           showToast={showToast}

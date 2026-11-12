@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import type { AdminDictionary } from '@/lib/i18n/admin';
 import { calendarDayDiff, fromDbDate, todayCalendarDateString } from '@/lib/dates';
+import { formatBuildingPickerLabel } from '@/lib/buildingUtils';
 
 const STATUS_STEPS = ['OPEN', 'DISPATCHED', 'REPAIRED', 'VERIFIED', 'CLOSED'] as const;
 type CorrectiveStatus = (typeof STATUS_STEPS)[number];
@@ -516,7 +517,7 @@ export function CorrectiveActionsBoard({
                   <option value="">Select Building...</option>
                   {buildings.map((b: any) => (
                     <option key={b.id} value={b.id}>
-                      {b.name}
+                      {formatBuildingPickerLabel(b, buildings)}
                     </option>
                   ))}
                 </select>

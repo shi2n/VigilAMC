@@ -14,23 +14,44 @@ import {
   FileText
 } from 'lucide-react';
 
+function formatHumanStatus(rawStatus: unknown, fallback = 'Passed'): string {
+  if (!rawStatus) return fallback;
+  const s = String(rawStatus).trim().replace(/_/g, ' ').toLowerCase();
+  return s.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export function formatActivitySentence(
   act: any,
   buildingMap?: Record<string, any>,
   equipmentMap?: Record<string, any>
 ): string {
   const rawDetails = act?.details;
-  if (!rawDetails || typeof rawDetails !== 'string') {
-    return 'Event logged successfully.';
+  if (!rawDetails) {
+    return 'Details recorded';
+  }
+  if (typeof rawDetails !== 'string') {
+    try {
+      return formatActivitySentence(
+        { ...act, details: JSON.stringify(rawDetails) },
+        buildingMap,
+        equipmentMap
+      );
+    } catch {
+      return 'Details recorded';
+    }
   }
 
   const trimmed = rawDetails.trim();
-  if (!trimmed.startsWith('{')) {
+  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
     return trimmed;
   }
 
   try {
     const p = JSON.parse(trimmed);
+    if (!p || typeof p !== 'object' || Array.isArray(p)) {
+      console.warn('[ActivityLog] Non-object activity JSON shape:', act?.action);
+      return 'Details recorded';
+    }
     const action = String(act.action || '').toUpperCase();
 
     // Resolve building name
@@ -48,7 +69,7 @@ export function formatActivitySentence(
 
     // 1. Inspection completed / verified
     if (action.includes('INSPECTION') || action === 'INSPECTION_COMPLETED') {
-      const statusText = p.status ? String(p.status).toLowerCase() : 'passed';
+      const statusText = formatHumanStatus(p.status, 'Passed');
       const syncedPart = p.syncedFromField ? ' · synced from field' : '';
 
       if (eqLabel) {
@@ -57,9 +78,22 @@ export function formatActivitySentence(
       return `General Site Inspection — ${statusText} · ${bldgName}${syncedPart}`;
     }
 
-    // 2. Service or work order submitted
-    if (action.includes('SERVICE') || action.includes('WORK_ORDER')) {
-      const statusText = p.status ? String(p.status).toLowerCase() : 'service submitted';
+    // 2. Service, repair, reschedule, assign, or work order submitted
+    if (
+      action.includes('SERVICE') ||
+      action.includes('WORK_ORDER') ||
+      action.includes('RESCHEDULE') ||
+      action.includes('ASSIGN') ||
+      action.includes('SUBMIT')
+    ) {
+      if (action.includes('RESCHEDULE') || p.rescheduledTo || p.newDueDate) {
+        const targetDate = p.rescheduledTo || p.newDueDate || '';
+        return `Work order re-scheduled${targetDate ? ` to ${targetDate}` : ''} · ${bldgName}`;
+      }
+      if (action.includes('ASSIGN') || p.assignedToName) {
+        return `Work order assigned${p.assignedToName ? ` to ${p.assignedToName}` : ''} · ${bldgName}`;
+      }
+      const statusText = formatHumanStatus(p.status, 'Service Submitted');
       if (eqLabel) {
         return `${eqLabel} — ${statusText} · ${bldgName}`;
       }
@@ -68,12 +102,12 @@ export function formatActivitySentence(
 
     // 3. Visit check-in (VISIT_STAMP)
     if (action === 'VISIT_STAMP' || action.includes('VISIT')) {
-      const accuracyPart = p.accuracy ? ` (GPS ±${Math.round(p.accuracy)}m)` : '';
+      const accuracyPart = p.accuracy ? ` (GPS ±${Math.round(Number(p.accuracy))}m)` : '';
       return `On-site visit check-in · ${bldgName}${accuracyPart}`;
     }
 
-    // 4. Equipment created or updated
-    if (action.includes('EQUIPMENT')) {
+    // 4. Equipment created, edited, or updated
+    if (action.includes('EQUIPMENT') || action.includes('EDIT') || action.includes('UPDATE')) {
       if (eqLabel) {
         return `${eqLabel} registered or serviced · ${bldgName}`;
       }
@@ -86,13 +120,15 @@ export function formatActivitySentence(
     }
 
     // 6. Generic payload with notes/description
-    if (p.notes || p.description || p.message) {
-      return `${p.notes || p.description || p.message} · ${bldgName}`;
+    if (p.notes || p.description || p.message || p.remarks) {
+      return `${p.notes || p.description || p.message || p.remarks} · ${bldgName}`;
     }
 
-    // Unknown JSON shape per spec: "Details recorded" (never raw JSON!)
+    // Unknown JSON shape per spec: log to console and return "Details recorded" (never raw JSON!)
+    console.warn('[ActivityLog] Unrecognized activity payload shape for action:', action);
     return 'Details recorded';
-  } catch {
+  } catch (err) {
+    console.warn('[ActivityLog] Failed to parse activity details JSON:', err);
     return 'Details recorded';
   }
 }
@@ -112,7 +148,8 @@ export function TechnicianActivityLog() {
       const query = new URLSearchParams();
       if (selectedTech !== 'ALL') query.set('technicianId', selectedTech);
 
-      const res = await fetch(`/api/admin/technicians/activity?${query.toString()}`);
+      const { fetchWithAuth } = await import('@/lib/clientAuth');
+      const res = await fetchWithAuth(`/api/admin/technicians/activity?${query.toString()}`);
       const json = await res.json();
       if (res.ok) {
         setActivities(json.activities || []);

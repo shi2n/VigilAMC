@@ -123,7 +123,7 @@ export function ClientPortalAdminPanel({ clients = [], buildings = [] }: ClientP
       const ok = await copyToClipboard(link);
       if (ok) {
         setCopiedLink(true);
-        toast.success('Client invite link copied to clipboard');
+        toast.success('Portal link copied');
         setTimeout(() => setCopiedLink(false), 2500);
       } else {
         setShowManualCopyModal(link);

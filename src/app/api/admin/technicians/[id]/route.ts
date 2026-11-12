@@ -50,13 +50,66 @@ export async function GET(
     }
 
     // Fetch technician activity
-    const activity = await (db as any).activityLog.findMany({
+    const rawActivity = await (db as any).activityLog.findMany({
       where: {
         organizationId,
         userId: technician.id,
       },
       take: 20,
       orderBy: { createdAt: 'desc' },
+    });
+
+    const referencedBuildingIds = new Set<string>();
+    const referencedEquipmentIds = new Set<string>();
+    rawActivity.forEach((act: any) => {
+      if (act.entityType === 'Building' && act.entityId) referencedBuildingIds.add(act.entityId);
+      if (act.entityType === 'Equipment' && act.entityId) referencedEquipmentIds.add(act.entityId);
+      if (typeof act.details === 'string' && act.details.trim().startsWith('{')) {
+        try {
+          const p = JSON.parse(act.details);
+          if (p.buildingId && typeof p.buildingId === 'string') referencedBuildingIds.add(p.buildingId);
+          if (p.equipmentId && typeof p.equipmentId === 'string') referencedEquipmentIds.add(p.equipmentId);
+        } catch {}
+      }
+    });
+
+    const [resolvedBuildings, resolvedEquipments] = await Promise.all([
+      referencedBuildingIds.size > 0
+        ? (db as any).building.findMany({
+            where: { id: { in: Array.from(referencedBuildingIds) } },
+            select: { id: true, name: true },
+          })
+        : [],
+      referencedEquipmentIds.size > 0
+        ? (db as any).equipment.findMany({
+            where: { id: { in: Array.from(referencedEquipmentIds) } },
+            select: { id: true, qrCode: true, type: true, capacity: true },
+          })
+        : [],
+    ]);
+
+    const bMap = new Map<string, string>(resolvedBuildings.map((b: any) => [b.id, b.name]));
+    const eqMap = new Map<string, any>(resolvedEquipments.map((eq: any) => [eq.id, eq]));
+
+    const activity = rawActivity.map((act: any) => {
+      let resolvedBuildingName: string | null = null;
+      let resolvedEquipmentLabel: string | null = null;
+      if (typeof act.details === 'string' && act.details.trim().startsWith('{')) {
+        try {
+          const p = JSON.parse(act.details);
+          if (p.buildingName) resolvedBuildingName = p.buildingName;
+          else if (p.buildingId && bMap.has(p.buildingId)) resolvedBuildingName = bMap.get(p.buildingId) || null;
+          if (p.equipmentId && eqMap.has(p.equipmentId)) {
+            const eq = eqMap.get(p.equipmentId);
+            resolvedEquipmentLabel = `${eq.type || 'Equipment'} ${eq.qrCode}${eq.capacity ? ` (${eq.capacity})` : ''}`;
+          }
+        } catch {}
+      }
+      return {
+        ...act,
+        resolvedBuildingName,
+        resolvedEquipmentLabel,
+      };
     });
 
     return NextResponse.json({

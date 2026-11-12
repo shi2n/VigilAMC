@@ -23,6 +23,7 @@ import { toDateInputString, calendarDayDiff, fromDbDate, todayCalendarDateString
 import { ClientPortalAdminPanel } from './ClientPortalAdminPanel';
 import { EmailReportModal } from './EmailReportModal';
 import { SITE_CONFIG } from '@/lib/siteConfig';
+import { formatBuildingPickerLabel } from '@/lib/buildingUtils';
 import {
   REPORT_TYPES,
   ReportTypeCode,
@@ -579,7 +580,7 @@ export function ReportsView({
                   >
                     {buildings.map((b) => (
                       <option key={b.id} value={b.id}>
-                        {b.name} ({b.city || b.state || 'Delhi NCR'})
+                        {formatBuildingPickerLabel(b, buildings)}
                       </option>
                     ))}
                     <option value="sample">Sample Commercial Tower (Demo)</option>

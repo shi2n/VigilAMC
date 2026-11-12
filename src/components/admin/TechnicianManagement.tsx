@@ -29,6 +29,7 @@ import { AdminDictionary, adminDictEnglish } from '@/lib/i18n/admin';
 import { SITE_CONFIG } from '@/lib/siteConfig';
 import { copyToClipboard } from '@/lib/clipboard';
 import { formatBuildingPickerLabel } from '@/lib/buildingUtils';
+import { formatActivitySentence } from './TechnicianActivityLog';
 
 interface TechnicianManagementProps {
   onNavigateToSubscription?: () => void;
@@ -1573,7 +1574,7 @@ export function TechnicianManagement({
                                     ? ` [${Number(parsed.latitude).toFixed(4)}, ${Number(parsed.longitude).toFixed(4)}]`
                                     : ''
                                 }`
-                              : (typeof act.details === 'string' ? act.details : JSON.stringify(act.details))}
+                              : formatActivitySentence(act)}
                           </p>
                         </div>
                         <span className="text-[10px] text-slate-400 shrink-0 font-medium">

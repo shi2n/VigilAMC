@@ -22,6 +22,7 @@ import { AdminUsersView } from './AdminUsersView';
 import { SubscriptionManager } from './SubscriptionManager';
 import { ALL_INDIAN_LANGUAGES, AdminDictionary } from '@/lib/i18n/admin';
 import { compressImageToDataUrl, uploadCompressedPhoto } from '@/lib/compressImage';
+import { formatBuildingPickerLabel } from '@/lib/buildingUtils';
 
 export type SettingsSubTab =
   | 'PROFILE'
@@ -160,6 +161,8 @@ export function SettingsView({
         initialBuildings.map((b) => ({
           id: b.id,
           name: b.name,
+          city: b.city,
+          locality: b.locality,
           address: b.address,
           complianceCycle: b.complianceCycle || 'QUARTERLY',
           leadTimeDays: typeof b.leadTimeDays === 'number' ? b.leadTimeDays : 7,
@@ -892,7 +895,7 @@ export function SettingsView({
                     {cycleBuildings.map((b, idx) => (
                       <tr key={b.id} className="hover:bg-[#FFF0E6]/35">
                         <td className="py-3 px-4">
-                          <div className="font-bold text-[#1C1917]">{b.name}</div>
+                          <div className="font-bold text-[#1C1917]">{formatBuildingPickerLabel(b, cycleBuildings)}</div>
                           <div className="text-[11px] text-[#44403C]">{b.address}</div>
                         </td>
                         <td className="py-3 px-4">

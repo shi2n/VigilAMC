@@ -713,7 +713,7 @@ export function WorkOrdersView({
                   </div>
                   <div>
                     <h3 className="text-sm font-black text-[#1C1917]">
-                      Work Order Status &amp; Lifecycle Guide
+                      Work order statuses
                     </h3>
                     <p className="text-xs text-[#78716C]">
                       Lifecycle stages, filters, and statutory compliance status dots
@@ -731,15 +731,15 @@ export function WorkOrdersView({
               </div>
 
               {/* Status List */}
-              <div className="p-5 space-y-3.5 text-xs">
+              <div className="p-5 space-y-3 text-xs">
                 {/* OPEN */}
                 <div className="p-3 bg-white rounded-xl border border-[#FED7AA] flex items-start gap-3">
                   <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 font-bold text-[11px] shrink-0">
-                    OPEN
+                    ● OPEN
                   </span>
                   <div className="space-y-1">
                     <p className="font-semibold text-slate-900">
-                      Work order generated; pending technician assignment or dispatch.
+                      OPEN — created, not yet assigned
                     </p>
                     <div className="flex items-center gap-3 text-[11px] text-slate-600 flex-wrap">
                       <span className="inline-flex items-center gap-1 font-medium">
@@ -758,45 +758,40 @@ export function WorkOrdersView({
                 {/* ASSIGNED */}
                 <div className="p-3 bg-white rounded-xl border border-[#FED7AA] flex items-start gap-3">
                   <span className="px-2 py-0.5 rounded-md bg-[#FFF0E6] text-[#1C1917] border border-[#1C1917]/25 font-bold text-[11px] shrink-0">
-                    ASSIGNED
+                    ● ASSIGNED
                   </span>
                   <p className="text-slate-800 font-medium pt-0.5">
-                    Field technician assigned to job; scheduled on their mobile field route.
+                    ASSIGNED — given to a technician
                   </p>
                 </div>
 
                 {/* IN_PROGRESS */}
                 <div className="p-3 bg-white rounded-xl border border-[#FED7AA] flex items-start gap-3">
                   <span className="px-2 py-0.5 rounded-md bg-[#FFF0E6] text-[#C2410C] border border-[#C2410C]/30 font-bold text-[11px] shrink-0">
-                    IN_PROGRESS
+                    ● IN_PROGRESS
                   </span>
                   <p className="text-slate-800 font-medium pt-0.5">
-                    Technician checked in on-site; repairs, cylinder refilling, or re-testing underway.
+                    IN_PROGRESS — work started
                   </p>
                 </div>
 
                 {/* COMPLETED */}
                 <div className="p-3 bg-white rounded-xl border border-[#FED7AA] flex items-start gap-3">
-                  <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-[#0E9F6E] border border-[#0E9F6E]/30 font-bold text-[11px] shrink-0">
-                    COMPLETED
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-[#059669] border border-[#059669]/30 font-bold text-[11px] shrink-0">
+                    ● COMPLETED
                   </span>
-                  <div className="space-y-0.5 pt-0.5">
-                    <p className="text-slate-800 font-medium">
-                      Rectification verified and signed off in field audit; asset restored to safe service.
-                    </p>
-                    <span className="inline-flex items-center gap-1 text-[11px] text-[#059669] font-semibold">
-                      <span className="w-2 h-2 rounded-full bg-[#059669]" /> OK (Signed off)
-                    </span>
-                  </div>
+                  <p className="text-slate-800 font-medium pt-0.5">
+                    COMPLETED — work done
+                  </p>
                 </div>
 
                 {/* CANCELLED */}
                 <div className="p-3 bg-white rounded-xl border border-[#FED7AA] flex items-start gap-3">
                   <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-300 font-bold text-[11px] shrink-0">
-                    CANCELLED
+                    ● CANCELLED
                   </span>
                   <p className="text-slate-800 font-medium pt-0.5">
-                    Job cancelled or merged with maintenance cycle; kept permanently for compliance audit trail.
+                    CANCELLED — kept for records (use Re-schedule instead)
                   </p>
                 </div>
 
@@ -806,7 +801,7 @@ export function WorkOrdersView({
                     Re-scheduled
                   </span>
                   <p className="text-slate-800 font-medium pt-0.5">
-                    Filter chip isolating jobs whose service or due date was postponed or moved forward.
+                    Re-scheduled — tasks that got a new due date
                   </p>
                 </div>
               </div>
