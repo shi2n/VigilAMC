@@ -79,6 +79,9 @@ export async function POST(request: Request) {
       signatoryDesignation: org.signatoryDesignation || (profile.role === 'ORG_ADMIN' ? 'Authorized Agency Signatory' : 'Managing Director'),
       isLicenseVerified: Boolean(org.licenseNumber),
       licenseVerificationLabel: org.licenseNumber ? 'Verified Private Agency' : 'Unverified',
+      reportFooterText: org.reportFooterText || null,
+      brandLogoUrl: org.brandLogoUrl || null,
+      signatorySignatureUrl: org.signatorySignatureUrl || null,
     };
 
     const complianceResult = calculateBuildingCompliance({
