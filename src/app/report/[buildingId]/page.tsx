@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import EmberLine from '@/components/home/EmberLine';
+import { copyToClipboard } from '@/lib/clipboard';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import {
   calendarDayDiff,
@@ -265,15 +266,12 @@ export default function ComplianceReportPage() {
   // G2: Clipboard writeText with fallback selectable popover
   const handleCopyClientLink = async () => {
     const url = getReportUrl();
-    try {
-      if (!navigator?.clipboard?.writeText) {
-        throw new Error('Clipboard API unavailable');
-      }
-      await navigator.clipboard.writeText(url);
+    const ok = await copyToClipboard(url);
+    if (ok) {
       setCopiedLink(true);
       showToast('Inspection report link copied to clipboard!');
       setTimeout(() => setCopiedLink(false), 2500);
-    } catch {
+    } else {
       setClipboardFallbackUrl(url);
       showToast('Clipboard access restricted — please copy the selected link in the dialog', 'error');
     }

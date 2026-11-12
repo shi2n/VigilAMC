@@ -1649,6 +1649,26 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleOpenAddBuilding = () => {
+    setAddBuildingModalOpen(true);
+    setMinimizedModals((prev) => prev.filter((m) => m !== 'ADD_BUILDING'));
+  };
+
+  const handleOpenSingleAddEquip = (bldg: any) => {
+    setSingleAddEquipModalOpen(bldg);
+    setMinimizedModals((prev) => prev.filter((m) => m !== 'ADD_SINGLE_EQUIP'));
+  };
+
+  const handleOpenBulkAdd = (bldg: any) => {
+    setBulkAddModalOpen(bldg);
+    setMinimizedModals((prev) => prev.filter((m) => m !== 'BULK_ADD'));
+  };
+
+  const handleOpenEditClient = (client: any) => {
+    setEditClientModal(client);
+    setMinimizedModals((prev) => prev.filter((m) => m !== 'EDIT_CLIENT'));
+  };
+
   // Minimized tray items aggregation
   const minimizedTrayItems: MinimizedItem[] = useMemo(() => {
     const list: MinimizedItem[] = [];
@@ -2030,16 +2050,16 @@ export default function AdminDashboardPage() {
                 onNavigateTab={handleOpenTab}
                 onAddEquipment={() => {
                   if (buildings.length > 0) {
-                    setSingleAddEquipModalOpen(buildings[0]);
+                    handleOpenSingleAddEquip(buildings[0]);
                   } else {
-                    setAddBuildingModalOpen(true);
+                    handleOpenAddBuilding();
                   }
                 }}
                 onCreateRepairJob={() => handleOpenCreateRepairJob()}
                 onCreateRepairJobForAsset={(asset) => handleOpenCreateRepairJob(asset)}
                 onOpenFeedback={() => setFeedbackModalOpen(true)}
                 onOpenImport={() => handleOpenImport('FIRE_ASSETS')}
-                onOpenRegisterModal={() => setAddBuildingModalOpen(true)}
+                onOpenRegisterModal={() => handleOpenAddBuilding()}
                 onOpenGuide={() => setGuideModalOpen(true)}
               />
             )}
@@ -2089,15 +2109,15 @@ export default function AdminDashboardPage() {
                     summary={summary}
                     expandedBuildingId={expandedBuildingId}
                     setExpandedBuildingId={setExpandedBuildingId}
-                    onAddBuilding={() => setAddBuildingModalOpen(true)}
+                    onAddBuilding={() => handleOpenAddBuilding()}
                     onEditBuilding={(b) => {
                       initialBuildingRef.current = { ...b };
                       setEditBuildingModal(b);
                       setMinimizedModals((prev) => prev.filter((m) => m !== 'EDIT_BUILDING'));
                     }}
                     onDeleteBuilding={handleDeleteBuilding}
-                    onBulkAdd={(b) => setBulkAddModalOpen(b)}
-                    onSingleAdd={(b) => setSingleAddEquipModalOpen(b)}
+                    onBulkAdd={(b) => handleOpenBulkAdd(b)}
+                    onSingleAdd={(b) => handleOpenSingleAddEquip(b)}
                     onImportBuildingExcel={handleOpenBuildingExcelImport}
                     onOpenExport={() => handleOpenExport('BUILDINGS')}
                     onOpenImport={() => handleOpenImport('BUILDINGS')}
@@ -2135,8 +2155,8 @@ export default function AdminDashboardPage() {
                 ) : (
                   <ClientsView
                     clientsList={clientsList}
-                    onAddClient={() => setAddBuildingModalOpen(true)}
-                    onEditClient={(c) => setEditClientModal(c)}
+                    onAddClient={() => handleOpenAddBuilding()}
+                    onEditClient={(c) => handleOpenEditClient(c)}
                     onDeleteClient={handleDeleteClient}
                     onOpenExport={() => handleOpenExport('CLIENTS')}
                     onOpenImport={() => handleOpenImport('CLIENTS')}
@@ -2159,8 +2179,8 @@ export default function AdminDashboardPage() {
                 <div className="flex justify-end gap-2">
                   <button
                     onClick={() => {
-                      if (buildings.length > 0) setSingleAddEquipModalOpen(buildings[0]);
-                      else setAddBuildingModalOpen(true);
+                      if (buildings.length > 0) handleOpenSingleAddEquip(buildings[0]);
+                      else handleOpenAddBuilding();
                     }}
                     className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white text-xs font-bold shadow-xs transition-all"
                   >

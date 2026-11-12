@@ -182,15 +182,15 @@ export function extractCookie(req?: Request, cookieName: string = TECH_SESSION_C
 /**
  * Reassembles chunked or non-chunked Supabase auth token cookie values:
  * Matches `sb-*-auth-token` or `sb-*-auth-token.0`, `sb-*-auth-token.1`, ...
+ * Deduplicates cookie keys between raw headers and next/headers cookies() store.
  * Parses JSON session or returns string access token.
  */
 export function extractSupabaseTokenFromCookies(req?: Request): string | null {
   try {
-    const cookieHeader = req?.headers?.get('cookie') || '';
-    const chunkMap: Record<string, { idx: number; val: string }[]> = {};
-    const directTokens: string[] = [];
+    const cookieMap = new Map<string, string>();
 
-    // 1. Check req header cookies
+    // 1. From request header cookies
+    const cookieHeader = req?.headers?.get('cookie') || '';
     if (cookieHeader) {
       const parts = cookieHeader.split(';').map((c) => c.trim());
       for (const part of parts) {
@@ -198,40 +198,42 @@ export function extractSupabaseTokenFromCookies(req?: Request): string | null {
         if (eqIdx === -1) continue;
         const name = part.slice(0, eqIdx).trim();
         const rawVal = decodeURIComponent(part.slice(eqIdx + 1).trim());
-
-        if (/^sb-[a-z0-9_-]+-auth-token$/i.test(name)) {
-          directTokens.push(rawVal);
-        } else {
-          const match = name.match(/^(sb-[a-z0-9_-]+-auth-token)\.(\d+)$/i);
-          if (match) {
-            const base = match[1];
-            const idx = parseInt(match[2], 10);
-            if (!chunkMap[base]) chunkMap[base] = [];
-            chunkMap[base].push({ idx, val: rawVal });
-          }
+        if (name && rawVal) {
+          cookieMap.set(name, rawVal);
         }
       }
     }
 
-    // 2. Check Next.js cookies() store
+    // 2. From Next.js cookies() store (deduplicated by key into cookieMap)
     try {
       const cookieStore = cookies();
       const all = cookieStore.getAll();
       for (const c of all) {
-        if (/^sb-[a-z0-9_-]+-auth-token$/i.test(c.name)) {
-          directTokens.push(c.value);
-        } else {
-          const match = c.name.match(/^(sb-[a-z0-9_-]+-auth-token)\.(\d+)$/i);
-          if (match) {
-            const base = match[1];
-            const idx = parseInt(match[2], 10);
-            if (!chunkMap[base]) chunkMap[base] = [];
-            chunkMap[base].push({ idx, val: c.value });
-          }
+        if (c.name && c.value && !cookieMap.has(c.name)) {
+          cookieMap.set(c.name, c.value);
         }
       }
     } catch {
       // Ignored outside Next.js request lifecycle
+    }
+
+    const chunkMap: Record<string, { idx: number; val: string }[]> = {};
+    const directTokens: string[] = [];
+
+    for (const [name, val] of cookieMap.entries()) {
+      if (/^sb-[a-z0-9_-]+-auth-token$/i.test(name) || name === 'sb-auth-token') {
+        directTokens.push(val);
+      } else {
+        const match = name.match(/^(sb-[a-z0-9_-]+-auth-token)\.(\d+)$/i);
+        if (match) {
+          const base = match[1];
+          const idx = parseInt(match[2], 10);
+          if (!isNaN(idx)) {
+            if (!chunkMap[base]) chunkMap[base] = [];
+            chunkMap[base].push({ idx, val });
+          }
+        }
+      }
     }
 
     const candidates: string[] = [...directTokens];
@@ -243,14 +245,21 @@ export function extractSupabaseTokenFromCookies(req?: Request): string | null {
     for (let raw of candidates) {
       if (!raw) continue;
       if (raw.startsWith('base64-')) {
+        const payload = raw.slice(7);
         try {
-          raw = Buffer.from(raw.slice(7), 'base64').toString('utf8');
-        } catch {}
+          raw = Buffer.from(payload, 'base64url').toString('utf8');
+        } catch {
+          try {
+            raw = Buffer.from(payload, 'base64').toString('utf8');
+          } catch {}
+        }
       }
       try {
         const parsed = JSON.parse(raw);
-        if (parsed?.access_token) return parsed.access_token;
-        if (Array.isArray(parsed) && parsed[0]) return parsed[0];
+        if (typeof parsed?.access_token === 'string') return parsed.access_token;
+        if (Array.isArray(parsed) && typeof parsed[0] === 'string') return parsed[0];
+        if (typeof parsed?.currentSession?.access_token === 'string') return parsed.currentSession.access_token;
+        if (typeof parsed?.token === 'string') return parsed.token;
       } catch {
         if (raw.split('.').length === 3) return raw;
       }
@@ -398,6 +407,26 @@ export async function getAuthenticatedActor(req?: Request): Promise<Authenticate
         },
       },
     });
+
+    // If profile not found by id, check by email (handles cases where Supabase auth ID differs from Prisma ID)
+    if (!profile && authUser.email) {
+      const normalizedEmail = authUser.email.trim().toLowerCase();
+      profile = await (db as any).userProfile.findUnique({
+        where: { email: normalizedEmail },
+        include: {
+          organization: {
+            include: {
+              subscription: true,
+            },
+          },
+          assignedBuildings: {
+            include: {
+              building: true,
+            },
+          },
+        },
+      });
+    }
 
     if (!profile) {
       const explicitRole = authUser.user_metadata?.role === 'TECHNICIAN' ? 'TECHNICIAN' : 'ORG_ADMIN';

@@ -14,9 +14,94 @@ import {
   FileText
 } from 'lucide-react';
 
+export function formatActivitySentence(
+  act: any,
+  buildingMap?: Record<string, any>,
+  equipmentMap?: Record<string, any>
+): string {
+  const rawDetails = act?.details;
+  if (!rawDetails || typeof rawDetails !== 'string') {
+    return 'Event logged successfully.';
+  }
+
+  const trimmed = rawDetails.trim();
+  if (!trimmed.startsWith('{')) {
+    return trimmed;
+  }
+
+  try {
+    const p = JSON.parse(trimmed);
+    const action = String(act.action || '').toUpperCase();
+
+    // Resolve building name
+    const bldgName =
+      act.resolvedBuildingName ||
+      p.buildingName ||
+      (p.buildingId && buildingMap?.[p.buildingId]?.name) ||
+      'Site Premises';
+
+    // Resolve equipment label
+    const eq = (p.equipmentId && equipmentMap?.[p.equipmentId]) || null;
+    const eqLabel =
+      act.resolvedEquipmentLabel ||
+      (eq ? `${eq.type || 'Equipment'} ${eq.qrCode}${eq.capacity ? ` (${eq.capacity})` : ''}` : null);
+
+    // 1. Inspection completed / verified
+    if (action.includes('INSPECTION') || action === 'INSPECTION_COMPLETED') {
+      const statusText = p.status ? String(p.status).toLowerCase() : 'passed';
+      const syncedPart = p.syncedFromField ? ' · synced from field' : '';
+
+      if (eqLabel) {
+        return `${eqLabel} — ${statusText} · ${bldgName}${syncedPart}`;
+      }
+      return `General Site Inspection — ${statusText} · ${bldgName}${syncedPart}`;
+    }
+
+    // 2. Service or work order submitted
+    if (action.includes('SERVICE') || action.includes('WORK_ORDER')) {
+      const statusText = p.status ? String(p.status).toLowerCase() : 'service submitted';
+      if (eqLabel) {
+        return `${eqLabel} — ${statusText} · ${bldgName}`;
+      }
+      return `Maintenance task — ${statusText} · ${bldgName}`;
+    }
+
+    // 3. Visit check-in (VISIT_STAMP)
+    if (action === 'VISIT_STAMP' || action.includes('VISIT')) {
+      const accuracyPart = p.accuracy ? ` (GPS ±${Math.round(p.accuracy)}m)` : '';
+      return `On-site visit check-in · ${bldgName}${accuracyPart}`;
+    }
+
+    // 4. Equipment created or updated
+    if (action.includes('EQUIPMENT')) {
+      if (eqLabel) {
+        return `${eqLabel} registered or serviced · ${bldgName}`;
+      }
+      return `Fire equipment record updated · ${bldgName}`;
+    }
+
+    // 5. Auth / Security events
+    if (action.includes('PASSWORD') || action.includes('AUTH') || action.includes('LOGIN')) {
+      return `Authentication security event recorded for ${act.userEmail || act.technician?.name || 'user'}`;
+    }
+
+    // 6. Generic payload with notes/description
+    if (p.notes || p.description || p.message) {
+      return `${p.notes || p.description || p.message} · ${bldgName}`;
+    }
+
+    // Unknown JSON shape per spec: "Details recorded" (never raw JSON!)
+    return 'Details recorded';
+  } catch {
+    return 'Details recorded';
+  }
+}
+
 export function TechnicianActivityLog() {
   const [activities, setActivities] = useState<any[]>([]);
   const [technicians, setTechnicians] = useState<any[]>([]);
+  const [buildingMap, setBuildingMap] = useState<Record<string, any>>({});
+  const [equipmentMap, setEquipmentMap] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [selectedTech, setSelectedTech] = useState('ALL');
   const [search, setSearch] = useState('');
@@ -32,6 +117,8 @@ export function TechnicianActivityLog() {
       if (res.ok) {
         setActivities(json.activities || []);
         setTechnicians(json.technicians || []);
+        if (json.buildingMap) setBuildingMap(json.buildingMap);
+        if (json.equipmentMap) setEquipmentMap(json.equipmentMap);
       }
     } catch (e) {
       console.error('Error fetching activities:', e);
@@ -47,9 +134,10 @@ export function TechnicianActivityLog() {
   const filteredActivities = activities.filter((act) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
+    const sentence = formatActivitySentence(act, buildingMap, equipmentMap).toLowerCase();
     return (
       act.action.toLowerCase().includes(q) ||
-      (act.details && act.details.toLowerCase().includes(q)) ||
+      sentence.includes(q) ||
       (act.technician?.name && act.technician.name.toLowerCase().includes(q)) ||
       (act.userEmail && act.userEmail.toLowerCase().includes(q))
     );
@@ -172,8 +260,8 @@ export function TechnicianActivityLog() {
                   </span>
                 </div>
 
-                <p className="text-xs text-slate-600 pl-1 leading-relaxed">
-                  {act.details || 'Event logged successfully.'}
+                <p className="text-xs text-slate-700 pl-1 leading-relaxed font-medium">
+                  {formatActivitySentence(act, buildingMap, equipmentMap)}
                 </p>
               </div>
             ))}

@@ -73,14 +73,88 @@ export async function GET(request: Request) {
       techMap.set(t.id, t);
     });
 
+    // Resolve referenced building & equipment IDs to real names
+    const referencedBuildingIds = new Set<string>();
+    const referencedEquipmentIds = new Set<string>();
+
+    activities.forEach((act: any) => {
+      if (act.entityType === 'Building' && act.entityId) referencedBuildingIds.add(act.entityId);
+      if (act.entityType === 'Equipment' && act.entityId) referencedEquipmentIds.add(act.entityId);
+      if (typeof act.details === 'string' && act.details.trim().startsWith('{')) {
+        try {
+          const p = JSON.parse(act.details);
+          if (p.buildingId && typeof p.buildingId === 'string') referencedBuildingIds.add(p.buildingId);
+          if (p.equipmentId && typeof p.equipmentId === 'string') referencedEquipmentIds.add(p.equipmentId);
+        } catch {}
+      }
+    });
+
+    const [resolvedBuildings, resolvedEquipments] = await Promise.all([
+      referencedBuildingIds.size > 0
+        ? (db as any).building.findMany({
+            where: { id: { in: Array.from(referencedBuildingIds) } },
+            select: { id: true, name: true, locality: true, address: true },
+          })
+        : [],
+      referencedEquipmentIds.size > 0
+        ? (db as any).equipment.findMany({
+            where: { id: { in: Array.from(referencedEquipmentIds) } },
+            select: { id: true, qrCode: true, type: true, capacity: true, location: true, buildingId: true },
+          })
+        : [],
+    ]);
+
+    const buildingMap: Record<string, { id: string; name: string }> = {};
+    resolvedBuildings.forEach((b: any) => {
+      buildingMap[b.id] = { id: b.id, name: b.name };
+    });
+
+    const equipmentMap: Record<string, { id: string; qrCode: string; type?: string; capacity?: string; location?: string }> = {};
+    resolvedEquipments.forEach((eq: any) => {
+      equipmentMap[eq.id] = {
+        id: eq.id,
+        qrCode: eq.qrCode,
+        type: eq.type,
+        capacity: eq.capacity,
+        location: eq.location,
+      };
+    });
+
     const enrichedActivities = activities.map((act: any) => {
       const tech = act.userId ? techMap.get(act.userId) : null;
+      let resolvedBuildingName: string | null = null;
+      let resolvedEquipmentLabel: string | null = null;
+
+      if (typeof act.details === 'string' && act.details.trim().startsWith('{')) {
+        try {
+          const p = JSON.parse(act.details);
+          if (p.buildingName) resolvedBuildingName = p.buildingName;
+          if (p.buildingId && buildingMap[p.buildingId]) {
+            resolvedBuildingName = buildingMap[p.buildingId].name;
+          }
+          if (p.equipmentId && equipmentMap[p.equipmentId]) {
+            const eq = equipmentMap[p.equipmentId];
+            resolvedEquipmentLabel = `${eq.type || 'Equipment'} ${eq.qrCode}${eq.capacity ? ` (${eq.capacity})` : ''}`;
+          }
+        } catch {}
+      }
+
+      if (!resolvedBuildingName && act.entityType === 'Building' && buildingMap[act.entityId]) {
+        resolvedBuildingName = buildingMap[act.entityId].name;
+      }
+      if (!resolvedEquipmentLabel && act.entityType === 'Equipment' && equipmentMap[act.entityId]) {
+        const eq = equipmentMap[act.entityId];
+        resolvedEquipmentLabel = `${eq.type || 'Equipment'} ${eq.qrCode}${eq.capacity ? ` (${eq.capacity})` : ''}`;
+      }
+
       return {
         id: act.id,
         action: act.action,
         entityType: act.entityType,
         entityId: act.entityId,
         details: act.details,
+        resolvedBuildingName,
+        resolvedEquipmentLabel,
         createdAt: act.createdAt,
         userEmail: act.userEmail,
         technician: tech
@@ -202,6 +276,8 @@ export async function GET(request: Request) {
       activities: enrichedActivities,
       technicians,
       techMetrics,
+      buildingMap,
+      equipmentMap,
     });
   } catch (error: any) {
     console.error('Error fetching technician activity:', error);

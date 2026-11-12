@@ -60,7 +60,7 @@ export async function fetchWithAuth(
   const reqInit: RequestInit = {
     ...init,
     headers,
-    credentials: init?.credentials || 'same-origin',
+    credentials: init?.credentials || 'include',
   };
 
   let res = await fetch(input, reqInit);
@@ -74,7 +74,7 @@ export async function fetchWithAuth(
       res = await fetch(input, {
         ...init,
         headers: retryHeaders,
-        credentials: init?.credentials || 'same-origin',
+        credentials: init?.credentials || 'include',
       });
     }
   }

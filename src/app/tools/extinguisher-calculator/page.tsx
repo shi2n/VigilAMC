@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { SITE_CONFIG } from '@/lib/siteConfig';
+import { copyToClipboard } from '@/lib/clipboard';
 
 type RiskLevel = 'low' | 'ordinary' | 'high';
 type BuildingType =
@@ -219,11 +220,15 @@ Indicative estimate based on IS 2190 coverage guidance — not statutory advice.
 Calculate live at: ${SITE_CONFIG.SITE_URL}/tools/extinguisher-calculator
 `.trim();
 
-  const handleCopySummary = () => {
-    navigator.clipboard.writeText(shareableSummary);
-    setCopied(true);
-    toast.success('Calculation summary copied to clipboard!');
-    setTimeout(() => setCopied(false), 2500);
+  const handleCopySummary = async () => {
+    const ok = await copyToClipboard(shareableSummary);
+    if (ok) {
+      setCopied(true);
+      toast.success('Calculation summary copied to clipboard!');
+      setTimeout(() => setCopied(false), 2500);
+    } else {
+      toast.error('Could not copy automatically. Please select text manually.');
+    }
   };
 
   return (

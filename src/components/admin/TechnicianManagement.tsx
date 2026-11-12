@@ -27,6 +27,8 @@ import {
 import { SeatCounter, SeatUsage } from './SeatCounter';
 import { AdminDictionary, adminDictEnglish } from '@/lib/i18n/admin';
 import { SITE_CONFIG } from '@/lib/siteConfig';
+import { copyToClipboard } from '@/lib/clipboard';
+import { formatBuildingPickerLabel } from '@/lib/buildingUtils';
 
 interface TechnicianManagementProps {
   onNavigateToSubscription?: () => void;
@@ -322,11 +324,11 @@ export function TechnicianManagement({
 
   const handleCopyCredentials = async (tech: any, customPin?: string) => {
     const text = buildCredentialsText(tech, customPin);
-    try {
-      await navigator.clipboard.writeText(text);
+    const ok = await copyToClipboard(text);
+    if (ok) {
       showToast(`Login credentials copied for ${tech.fullName}!`);
-    } catch {
-      showToast('Could not copy automatically.');
+    } else {
+      showToast('Could not copy automatically. Please copy manually.');
     }
   };
 
@@ -1126,8 +1128,7 @@ export function TechnicianManagement({
                           }}
                           className="w-4 h-4 rounded border-stone-300 text-[#EA580C] focus:ring-[#EA580C] accent-[#EA580C]"
                         />
-                        <span className="font-medium truncate">{b.name}</span>
-                        {b.city && <span className="text-[10px] text-[#57534E]">({b.city})</span>}
+                        <span className="font-medium truncate">{formatBuildingPickerLabel(b, buildings)}</span>
                       </label>
                     ))
                   )}
@@ -1350,8 +1351,7 @@ export function TechnicianManagement({
                         }}
                         className="w-4 h-4 rounded border-stone-300 text-[#EA580C] focus:ring-[#EA580C] accent-[#EA580C]"
                       />
-                      <span className="font-medium truncate">{b.name}</span>
-                      {b.city && <span className="text-[10px] text-[#57534E]">({b.city})</span>}
+                      <span className="font-medium truncate">{formatBuildingPickerLabel(b, buildings)}</span>
                     </label>
                   ))}
                 </div>

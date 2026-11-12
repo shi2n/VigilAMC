@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { copyToClipboard } from '@/lib/clipboard';
 import {
   ShieldCheck,
   Menu,
@@ -4164,8 +4165,9 @@ export default function TechnicianPWA() {
                         } - ${l.message} (${l.clientSyncId})`
                     )
                     .join('\n');
-                  navigator.clipboard.writeText(txt);
-                  triggerToast('📋 Diagnostics copied to clipboard');
+                  copyToClipboard(txt).then((ok) => {
+                    if (ok) triggerToast('📋 Diagnostics copied to clipboard');
+                  });
                 }}
                 className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] flex items-center gap-1"
               >
@@ -4625,9 +4627,9 @@ export default function TechnicianPWA() {
                 </a>
                 <button
                   type="button"
-                  onClick={() => {
-                    if (navigator.clipboard) {
-                      navigator.clipboard.writeText('vigilamc@gmail.com');
+                  onClick={async () => {
+                    const ok = await copyToClipboard('vigilamc@gmail.com');
+                    if (ok) {
                       triggerToast(t.emailCopiedToast || 'Email copied: vigilamc@gmail.com');
                     }
                   }}

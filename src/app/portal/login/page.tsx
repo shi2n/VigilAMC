@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { ShieldCheck, Mail, ArrowRight, CheckCircle2, AlertCircle, Loader2, Copy, Check, ExternalLink } from 'lucide-react';
 import { getPortalDictionary } from '@/lib/i18n/portal';
 
+import { copyToClipboard } from '@/lib/clipboard';
+
 export default function PortalLoginPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -144,10 +146,12 @@ export default function PortalLoginPage() {
                   </a>
                   <button
                     type="button"
-                    onClick={() => {
-                      navigator.clipboard.writeText(directLink);
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 2000);
+                    onClick={async () => {
+                      const ok = await copyToClipboard(directLink);
+                      if (ok) {
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }
                     }}
                     className="w-full text-center py-2 px-4 bg-white hover:bg-orange-50 text-[#C2410C] border border-[#FED7AA] font-bold rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5"
                   >

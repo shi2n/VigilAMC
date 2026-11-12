@@ -15,9 +15,12 @@ import {
   FileCheck2,
   AlertCircle,
   Loader2,
-  Link as LinkIcon
+  Link as LinkIcon,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatClientPickerLabel } from '@/lib/buildingUtils';
+import { copyToClipboard } from '@/lib/clipboard';
 
 interface ClientPortalAdminPanelProps {
   clients?: any[];
@@ -110,12 +113,26 @@ export function ClientPortalAdminPanel({ clients = [], buildings = [] }: ClientP
     }
   };
 
-  const handleCopyLink = () => {
-    if (!generatedInviteLink) return;
-    navigator.clipboard.writeText(generatedInviteLink);
-    setCopiedLink(true);
-    toast.success('Client invite link copied to clipboard');
-    setTimeout(() => setCopiedLink(false), 2500);
+  const [showManualCopyModal, setShowManualCopyModal] = useState<string | null>(null);
+
+  const handleCopyLink = async (linkToCopy?: unknown) => {
+    const link = typeof linkToCopy === 'string' ? linkToCopy : generatedInviteLink;
+    if (!link) return;
+
+    try {
+      const ok = await copyToClipboard(link);
+      if (ok) {
+        setCopiedLink(true);
+        toast.success('Client invite link copied to clipboard');
+        setTimeout(() => setCopiedLink(false), 2500);
+      } else {
+        setShowManualCopyModal(link);
+        toast.info('Clipboard restricted. Select & copy manually.');
+      }
+    } catch {
+      setShowManualCopyModal(link);
+      toast.info('Clipboard restricted. Select & copy manually.');
+    }
   };
 
   const handleToggleRevoke = async (portalUserId: string, isCurrentlyRevoked: boolean) => {
@@ -155,8 +172,7 @@ export function ClientPortalAdminPanel({ clients = [], buildings = [] }: ClientP
       if (!res.ok) throw new Error(data.error || 'Failed to create link');
       if (data.inviteLink) {
         setGeneratedInviteLink(data.inviteLink);
-        navigator.clipboard.writeText(data.inviteLink);
-        toast.success(`Fresh access link for ${user.name} copied to clipboard!`);
+        await handleCopyLink(data.inviteLink);
       } else {
         toast.success(`Invite email sent to ${user.email}`);
       }
@@ -244,7 +260,7 @@ export function ClientPortalAdminPanel({ clients = [], buildings = [] }: ClientP
                   <option value="">Select Client Society...</option>
                   {clients.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.name} {c.contactPerson ? `(${c.contactPerson})` : ''}
+                      {formatClientPickerLabel(c, clients)}
                     </option>
                   ))}
                 </select>
@@ -316,12 +332,59 @@ export function ClientPortalAdminPanel({ clients = [], buildings = [] }: ClientP
                   <button
                     type="button"
                     data-testid="copy-portal-invite-link-btn"
-                    onClick={handleCopyLink}
+                    onClick={() => handleCopyLink()}
                     className="px-3.5 py-2 bg-[#EA580C] hover:bg-[#C2410C] text-white font-semibold text-xs rounded-lg flex items-center gap-1.5 shadow-sm whitespace-nowrap"
                   >
                     {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>{copiedLink ? 'Copied!' : 'Copy invite link'}</span>
                   </button>
+                </div>
+              </div>
+            )}
+
+            {/* Manual Copy Popover Modal when clipboard access is blocked */}
+            {showManualCopyModal && (
+              <div
+                data-testid="manual-copy-modal"
+                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+                onClick={() => setShowManualCopyModal(null)}
+              >
+                <div
+                  className="w-full max-w-md bg-white border-2 border-[#EA580C] rounded-2xl p-5 shadow-2xl space-y-3"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-[#1C1917] flex items-center gap-1.5">
+                      <Copy className="w-4 h-4 text-[#EA580C]" /> Select &amp; copy manually
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowManualCopyModal(null)}
+                      className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-[#44403C]">
+                    Browser clipboard permission unavailable. The invite URL is pre-selected below — press <strong>Ctrl+C</strong> (or <strong>Cmd+C</strong>) to copy.
+                  </p>
+                  <input
+                    type="text"
+                    readOnly
+                    autoFocus
+                    value={showManualCopyModal}
+                    onFocus={(e) => e.target.select()}
+                    className="w-full p-2.5 bg-[#FFF8F2] border border-[#FED7AA] rounded-xl text-xs font-mono text-[#1C1917] select-all focus:outline-none focus:ring-2 focus:ring-[#EA580C]"
+                  />
+                  <div className="flex justify-end pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowManualCopyModal(null)}
+                      className="px-4 py-2 bg-[#EA580C] text-white font-bold text-xs rounded-xl"
+                    >
+                      Done
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -426,6 +489,53 @@ export function ClientPortalAdminPanel({ clients = [], buildings = [] }: ClientP
                     })}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {/* Manual Copy Popover Modal when clipboard access is blocked */}
+            {showManualCopyModal && (
+              <div
+                data-testid="manual-copy-modal"
+                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+                onClick={() => setShowManualCopyModal(null)}
+              >
+                <div
+                  className="w-full max-w-md bg-white border-2 border-[#EA580C] rounded-2xl p-5 shadow-2xl space-y-3"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-[#1C1917] flex items-center gap-1.5">
+                      <Copy className="w-4 h-4 text-[#EA580C]" /> Select &amp; copy manually
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowManualCopyModal(null)}
+                      className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-[#44403C]">
+                    Browser clipboard permission unavailable. The invite URL is pre-selected below — press <strong>Ctrl+C</strong> (or <strong>Cmd+C</strong>) to copy.
+                  </p>
+                  <input
+                    type="text"
+                    readOnly
+                    autoFocus
+                    value={showManualCopyModal}
+                    onFocus={(e) => e.target.select()}
+                    className="w-full p-2.5 bg-[#FFF8F2] border border-[#FED7AA] rounded-xl text-xs font-mono text-[#1C1917] select-all focus:outline-none focus:ring-2 focus:ring-[#EA580C]"
+                  />
+                  <div className="flex justify-end pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowManualCopyModal(null)}
+                      className="px-4 py-2 bg-[#EA580C] text-white font-bold text-xs rounded-xl"
+                    >
+                      Done
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>

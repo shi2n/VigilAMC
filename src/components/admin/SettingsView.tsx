@@ -180,7 +180,8 @@ export function SettingsView({
     e.preventDefault();
     setSavingCycles(true);
     try {
-      const res = await fetch('/api/admin/compliance-cycles', {
+      const { fetchWithAuth } = await import('@/lib/clientAuth');
+      const res = await fetchWithAuth('/api/admin/compliance-cycles', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
