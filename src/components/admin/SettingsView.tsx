@@ -210,16 +210,27 @@ export function SettingsView({
   const handleRunSchedulerNow = async () => {
     setRunningNow(true);
     try {
-      const res = await fetch('/api/admin/compliance-cycles', {
+      const { fetchWithAuth } = await import('@/lib/clientAuth');
+      const res = await fetchWithAuth('/api/admin/compliance-cycles/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || 'Failed to run scheduler');
-      const msg = `${json.createdCount ?? 0} tasks created, ${json.skippedCount ?? 0} already open`;
-      toast.success(msg);
-      showToast(msg);
+      const created = json.createdCount ?? 0;
+      const skipped = json.skippedCount ?? 0;
+      const totalEvaluated = (json.evaluatedAssets ?? (created + skipped)) || 0;
+
+      if (totalEvaluated === 0 && created === 0 && skipped === 0) {
+        const honestMsg = 'No schedule rules yet — set them in Settings → Compliance Cycles';
+        toast.info(honestMsg, { duration: 6000 });
+        showToast(honestMsg);
+      } else {
+        const msg = `Scheduling complete: ${created} tasks created · ${skipped} skipped (already scheduled)`;
+        toast.success(msg, { duration: 6000 });
+        showToast(msg);
+      }
       if (onRefreshDashboard) await onRefreshDashboard();
     } catch (err: any) {
       const msg = err?.message || 'Error running scheduler';

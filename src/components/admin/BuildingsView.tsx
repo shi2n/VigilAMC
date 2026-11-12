@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { formatCalendarDate, getCalendarDayDiff, getCalendarMonthDiff } from '@/lib/dateUtils';
+import { dueChip, tallyDueChips } from '@/lib/dates';
 import { getServiceCycleLabel } from '@/lib/compliance';
 import Link from 'next/link';
 import {
@@ -37,6 +38,7 @@ interface BuildingsViewProps {
   onDeleteBuilding: (id: string, name: string) => void;
   onBulkAdd: (b: any) => void;
   onSingleAdd: (b: any) => void;
+  onImportBuildingExcel?: (b: any) => void;
   onOpenExport: () => void;
   onOpenImport?: () => void;
   onEditEquipment?: (eq: any) => void;
@@ -56,6 +58,7 @@ export function BuildingsView({
   onDeleteBuilding,
   onBulkAdd,
   onSingleAdd,
+  onImportBuildingExcel,
   onOpenExport,
   onOpenImport,
   onEditEquipment,
@@ -275,27 +278,16 @@ export function BuildingsView({
                           <span>
                             Filing Due:{' '}
                             {b.nextFilingDueDate ? (() => {
-                              const diff = b.filingDaysRemaining !== undefined && b.filingDaysRemaining !== null
-                                ? b.filingDaysRemaining
-                                : getCalendarDayDiff(b.nextFilingDueDate);
-                              const notice = diff === null
-                                ? 'No due date set'
-                                : diff === 0
-                                ? 'Due today'
-                                : diff === -1
-                                ? '1d overdue'
-                                : diff < -1
-                                ? `${Math.abs(diff)}d overdue`
-                                : `${diff}d left`;
-                              const colorCls = diff !== null && diff < 0
+                              const chip = dueChip(b.nextFilingDueDate);
+                              const colorCls = chip.state === 'EXPIRED'
                                 ? 'text-rose-600 font-bold'
-                                : diff !== null && diff <= 30
+                                : chip.state === 'DUE_SOON'
                                 ? 'text-amber-600 font-bold'
                                 : 'text-slate-800';
 
                               return (
                                 <strong className={colorCls}>
-                                  {formatCalendarDate(b.nextFilingDueDate)} ({notice})
+                                  {formatCalendarDate(b.nextFilingDueDate)} ({chip.label})
                                 </strong>
                               );
                             })() : (
@@ -308,12 +300,17 @@ export function BuildingsView({
 
                     {/* Actions & Equipment Breakdown Pill */}
                     <div className="flex items-center gap-2 self-end md:self-auto flex-wrap">
-                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-medium">
-                        <span className="text-slate-900 font-bold">{b.totalEquipments} Units:</span>
-                        <span className="text-emerald-600 font-semibold">{b.verifiedCount ?? b.compliantCount ?? 0} OK</span>
-                        {b.dueCount > 0 && <span className="text-amber-600 font-semibold">• {b.dueCount} Due</span>}
-                        {b.overdueCount > 0 && <span className="text-rose-600 font-bold">• {b.overdueCount} Overdue</span>}
-                      </div>
+                      {(() => {
+                        const strip = tallyDueChips(b.equipments || []);
+                        return (
+                          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-medium">
+                            <span className="text-slate-900 font-bold">{b.equipments?.length ?? b.totalEquipments} Units:</span>
+                            <span className="text-emerald-600 font-semibold">{strip.ok} OK</span>
+                            {strip.dueSoon > 0 && <span className="text-amber-600 font-semibold">• {strip.dueSoon} Due</span>}
+                            {strip.expired > 0 && <span className="text-rose-600 font-bold">• {strip.expired} Overdue</span>}
+                          </div>
+                        );
+                      })()}
 
                       {/* Primary Button 1: Form B Report */}
                       <Link
@@ -333,6 +330,17 @@ export function BuildingsView({
                       >
                         <Plus className="w-3.5 h-3.5 text-[#C2410C]" />
                         <span>+ Add Equipment</span>
+                      </button>
+
+                      {/* Primary Button 3: Import Excel (this building) */}
+                      <button
+                        type="button"
+                        onClick={() => onImportBuildingExcel ? onImportBuildingExcel(b) : onBulkAdd(b)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-[#FFF0E6] text-slate-700 border border-slate-200 hover:border-[#C2410C]/30 text-xs font-bold transition-all shadow-sm"
+                        title={`Import Excel for ${b.name}`}
+                      >
+                        <FileSpreadsheet className="w-3.5 h-3.5 text-[#EA580C]" />
+                        <span>Import Excel (this building)</span>
                       </button>
 
                       {/* Dropdown ⋯ More */}
@@ -359,12 +367,13 @@ export function BuildingsView({
                                 type="button"
                                 onClick={() => {
                                   setOpenMoreMenuId(null);
-                                  onBulkAdd(b);
+                                  if (onImportBuildingExcel) onImportBuildingExcel(b);
+                                  else onBulkAdd(b);
                                 }}
                                 className="w-full flex items-center gap-2 px-3.5 py-2 hover:bg-[#FFF0E6] hover:text-[#C2410C] font-semibold text-left transition-colors"
                               >
                                 <FileSpreadsheet className="w-4 h-4 text-[#EA580C]" />
-                                <span>Import from Excel</span>
+                                <span>Import Excel (this building)</span>
                               </button>
 
                               {onOpenFloorPlans && (
@@ -435,22 +444,51 @@ export function BuildingsView({
                   {/* Expanded Equipment Breakdown Table */}
                   {isExpanded && (
                     <div className="bg-slate-50/70 border-t border-[#FED7AA] p-4 sm:p-6 space-y-4">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
                         <h3 className="text-xs font-black uppercase tracking-wider text-[#1C1917] flex items-center gap-2">
                           <Layers className="w-4 h-4 text-[#C2410C]" />
                           <span>Equipment Registry ({b.equipments?.length || 0} Assets)</span>
                         </h3>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => onSingleAdd(b)}
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-[#FFF0E6] text-slate-700 border border-slate-200 text-xs font-semibold shadow-xs"
+                          >
+                            <Plus className="w-3.5 h-3.5 text-[#C2410C]" />
+                            <span>Add Single</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onImportBuildingExcel ? onImportBuildingExcel(b) : onBulkAdd(b)}
+                            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#EA580C] hover:bg-[#C2410C] text-white text-xs font-bold shadow-xs transition-colors"
+                          >
+                            <FileSpreadsheet className="w-3.5 h-3.5 text-white" />
+                            <span>Import Excel (this building)</span>
+                          </button>
+                        </div>
                       </div>
 
                       {!b.equipments || b.equipments.length === 0 ? (
                         <div className="p-8 text-center text-slate-500 bg-white rounded-xl border border-[#FED7AA] space-y-2">
                           <p>No equipment registered for this building yet.</p>
-                          <button
-                            onClick={() => onBulkAdd(b)}
-                            className="px-3.5 py-1.5 rounded-lg bg-[#C2410C] hover:bg-[#1C1917] text-white font-bold text-xs shadow"
-                          >
-                            + Equipment Schedule
-                          </button>
+                          <div className="flex items-center justify-center gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => onSingleAdd(b)}
+                              className="px-3.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-[#FFF0E6] text-slate-700 font-bold text-xs shadow-xs"
+                            >
+                              + Add Equipment
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onImportBuildingExcel ? onImportBuildingExcel(b) : onBulkAdd(b)}
+                              className="flex items-center gap-1 px-3.5 py-1.5 rounded-lg bg-[#C2410C] hover:bg-[#1C1917] text-white font-bold text-xs shadow-xs"
+                            >
+                              <FileSpreadsheet className="w-3.5 h-3.5" />
+                              <span>Import Excel (this building)</span>
+                            </button>
+                          </div>
                         </div>
                       ) : (
                         <div className="bg-white rounded-xl border border-[#FED7AA] overflow-x-auto shadow-sm">
@@ -469,11 +507,11 @@ export function BuildingsView({
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                               {(b.equipments ?? []).map((eq: any) => {
-                                const diffDays = getCalendarDayDiff(eq.nextDueDate);
+                                const chip = dueChip(eq.nextDueDate);
                                 const status =
-                                  diffDays !== null && diffDays < 0
+                                  chip.state === 'EXPIRED'
                                     ? 'OVERDUE'
-                                    : diffDays !== null && diffDays <= 30
+                                    : chip.state === 'DUE_SOON'
                                     ? 'DUE_SOON'
                                     : eq.complianceStatus || eq.status || 'VERIFIED';
 
@@ -508,24 +546,14 @@ export function BuildingsView({
                                       {eq.nextDueDate ? formatCalendarDate(eq.nextDueDate) : '—'}
                                       <span
                                         className={`block text-[10px] font-normal ${
-                                          diffDays !== null && diffDays < 0
+                                          chip.state === 'EXPIRED'
                                             ? 'text-rose-600 font-bold'
-                                            : diffDays !== null && diffDays <= 30
+                                            : chip.state === 'DUE_SOON'
                                             ? 'text-amber-600 font-bold'
                                             : 'text-slate-500'
                                         }`}
                                       >
-                                        {diffDays === null
-                                          ? 'No due date set'
-                                          : diffDays === 0
-                                          ? 'Due today'
-                                          : diffDays === -1
-                                          ? '1d overdue'
-                                          : diffDays < -1
-                                          ? `${Math.abs(diffDays)}d overdue`
-                                          : diffDays <= 30
-                                          ? `Due in ${diffDays}d`
-                                          : `${Math.max(1, getCalendarMonthDiff(eq.nextDueDate) ?? 1)} mos left`}
+                                        {chip.label}
                                       </span>
                                     </td>
                                     <td className="py-3 px-4 text-[#1C1917] font-semibold">

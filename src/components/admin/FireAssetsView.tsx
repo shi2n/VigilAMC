@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { formatCalendarDate, getCalendarDayDiff, getCalendarMonthDiff } from '@/lib/dateUtils';
+import { dueChip, tallyDueChips } from '@/lib/dates';
+import { formatBuildingPickerLabel } from '@/lib/buildingUtils';
 import { getServiceCycleLabel } from '@/lib/compliance';
 import { motion, useReducedMotion } from 'motion/react';
 import { Layers, Search, Edit, Trash2, MapPin, FileSpreadsheet, Plus } from 'lucide-react';
@@ -55,32 +57,8 @@ export function FireAssetsView({
 
   const statusCounts = React.useMemo(() => {
     const list = allEquipments || equipmentsList || [];
-    let overdue = 0;
-    let dueSoon = 0;
-    let verified = 0;
-    for (const eq of list) {
-      const diffDays = getCalendarDayDiff(eq.nextDueDate);
-      const isOverdue =
-        (diffDays !== null && diffDays < 0) ||
-        eq.status === 'OVERDUE' ||
-        eq.liveStatus === 'OVERDUE';
-      const isDueSoon =
-        !isOverdue &&
-        ((diffDays !== null && diffDays <= 30) ||
-          eq.status === 'DUE_SOON' ||
-          eq.liveStatus === 'DUE_SOON');
-      const isVerified =
-        !isOverdue &&
-        !isDueSoon &&
-        (eq.status === 'VERIFIED' ||
-          eq.status === 'COMPLIANT' ||
-          eq.liveStatus === 'COMPLIANT' ||
-          eq.liveStatus === 'VERIFIED');
-      if (isOverdue) overdue++;
-      else if (isDueSoon) dueSoon++;
-      else if (isVerified) verified++;
-    }
-    return { all: list.length, overdue, dueSoon, verified };
+    const tally = tallyDueChips(list);
+    return { all: list.length, overdue: tally.expired, dueSoon: tally.dueSoon, verified: tally.ok };
   }, [allEquipments, equipmentsList]);
 
   return (
@@ -114,7 +92,7 @@ export function FireAssetsView({
             <option value="ALL">{t?.filterAll || 'All'} Buildings</option>
             {uniqueBuildings.map((b: any) => (
               <option key={b.id} value={b.id}>
-                {b.name}
+                {formatBuildingPickerLabel(b, uniqueBuildings)}
               </option>
             ))}
           </select>
@@ -254,23 +232,10 @@ export function FireAssetsView({
             </thead>
             <tbody className="divide-y divide-[#FED7AA]/60">
               {equipmentsList.map((eq, idx) => {
-                const diffDays = getCalendarDayDiff(eq.nextDueDate);
-                const isOverdue =
-                  (diffDays !== null && diffDays < 0) ||
-                  eq.status === 'OVERDUE' ||
-                  eq.liveStatus === 'OVERDUE';
-                const isDueSoon =
-                  !isOverdue &&
-                  ((diffDays !== null && diffDays <= 30) ||
-                    eq.status === 'DUE_SOON' ||
-                    eq.liveStatus === 'DUE_SOON');
-                const isVerified =
-                  !isOverdue &&
-                  !isDueSoon &&
-                  (eq.status === 'VERIFIED' ||
-                    eq.status === 'COMPLIANT' ||
-                    eq.liveStatus === 'COMPLIANT' ||
-                    eq.liveStatus === 'VERIFIED');
+                const chip = dueChip(eq.nextDueDate);
+                const isOverdue = chip.state === 'EXPIRED';
+                const isDueSoon = chip.state === 'DUE_SOON';
+                const isVerified = chip.state === 'OK';
 
                 const statusKey = isOverdue
                   ? 'OVERDUE'
@@ -329,15 +294,7 @@ export function FireAssetsView({
                             : 'text-slate-500'
                         }`}
                       >
-                        {diffDays === null
-                          ? 'No due date set'
-                          : diffDays === 0
-                          ? 'Due today'
-                          : isOverdue
-                          ? (diffDays === -1 ? '1d overdue' : `Overdue by ${Math.abs(diffDays)}d`)
-                          : isDueSoon
-                          ? `Due in ${diffDays}d`
-                          : `${Math.max(1, getCalendarMonthDiff(eq.nextDueDate) ?? 1)} mos left`}
+                        {chip.label}
                       </span>
                     </td>
                     <td className="py-3 px-4 font-semibold text-[#1C1917] whitespace-nowrap">

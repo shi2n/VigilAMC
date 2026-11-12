@@ -18,10 +18,12 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { type, rows, columnMapping } = body as {
+    const { type, rows, columnMapping, lockedBuildingName, lockedBuildingId } = body as {
       type: ImportType;
       rows: Record<string, any>[];
       columnMapping: Record<string, string | null>;
+      lockedBuildingName?: string;
+      lockedBuildingId?: string;
     };
 
     if (!type || !IMPORT_CONFIGS[type]) {
@@ -141,7 +143,19 @@ export async function POST(request: Request) {
       }
 
       if (type === 'FIRE_ASSETS') {
-        const bldName = (validation.parsedData.buildingName || '').trim();
+        let bldName = (validation.parsedData.buildingName || '').trim();
+        if (lockedBuildingName) {
+          if (!bldName) {
+            bldName = lockedBuildingName.trim();
+            validation.parsedData.buildingName = bldName;
+          } else if (bldName.toLowerCase() !== lockedBuildingName.trim().toLowerCase()) {
+            validation.isValid = false;
+            validation.errors.push(
+              `Building "${bldName}" does not match locked target building "${lockedBuildingName}". Single-building import only accepts rows for this building.`
+            );
+          }
+        }
+
         if (!bldName) {
           validation.isValid = false;
           validation.errors.push('Building Name is required');

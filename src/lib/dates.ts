@@ -366,6 +366,73 @@ export function dueState(
 }
 
 /**
+ * dueChip(dueDate, today?) → THE ONE source of truth for every countdown chip,
+ * status chip and status count in the product (dashboard, buildings, equipment,
+ * Form-B report). Computed LIVE at render on date-only boundaries — the label is
+ * DERIVED from the same number, so a chip can never say "Overdue" next to a
+ * "days left" count. Never display a stored/precomputed day-count.
+ *
+ *   due 2026-11-12, today 2026-11-10 → { state: 'DUE_SOON', label: '2d left',    days: 2 }
+ *   due 2026-11-12, today 2026-11-12 → { state: 'DUE_SOON', label: 'Due today',  days: 0 }
+ *   due 2026-11-12, today 2026-11-14 → { state: 'EXPIRED',  label: '2d overdue', days: 2 }
+ *   no due date                       → { state: 'NONE',     label: 'No due date set', days: null }
+ */
+export type DueChipState = 'EXPIRED' | 'DUE_SOON' | 'OK' | 'NONE';
+
+export interface DueChipResult {
+  state: DueChipState;
+  /** 'Due today' | 'Xd left' | 'Xd overdue' | 'No due date set' */
+  label: string;
+  /** |whole calendar days| between due date and today (null when no due date) */
+  days: number | null;
+  /** signed diff: positive = future, 0 = today, negative = past */
+  diff: number | null;
+  /** Upper-case status word for chips: 'EXPIRED' | 'DUE SOON' | 'OK' | 'NO DATE' */
+  statusText: string;
+  /** Hex colour: EXPIRED #DC2626 · DUE SOON #D97706 · OK #059669 · NONE #64748B */
+  color: string;
+}
+
+export const DUE_SOON_WINDOW_DAYS = 30;
+
+export function dueChip(dueDate: CalendarDateInput, todayInput?: CalendarDateInput): DueChipResult {
+  const cd = parseCalendarDate(dueDate);
+  if (!cd) {
+    return { state: 'NONE', label: 'No due date set', days: null, diff: null, statusText: 'NO DATE', color: '#64748B' };
+  }
+  const diff = calendarDayDiff(cd, todayInput || todayCalendarDate());
+  const days = Math.abs(diff);
+  if (diff < 0) {
+    return { state: 'EXPIRED', label: `${days}d overdue`, days, diff, statusText: 'EXPIRED', color: STATUS_COLORS.EXPIRED };
+  }
+  if (diff === 0) {
+    return { state: 'DUE_SOON', label: 'Due today', days: 0, diff, statusText: 'DUE SOON', color: STATUS_COLORS.DUE_SOON };
+  }
+  if (diff <= DUE_SOON_WINDOW_DAYS) {
+    return { state: 'DUE_SOON', label: `${days}d left`, days, diff, statusText: 'DUE SOON', color: STATUS_COLORS.DUE_SOON };
+  }
+  return { state: 'OK', label: `${days}d left`, days, diff, statusText: 'OK', color: STATUS_COLORS.OK };
+}
+
+/**
+ * Tally dueChip states for a list of assets (strip totals == sum of row chips).
+ */
+export function tallyDueChips<T extends { nextDueDate?: CalendarDateInput }>(
+  items: T[],
+  todayInput?: CalendarDateInput
+): { ok: number; dueSoon: number; expired: number; noDate: number; total: number } {
+  const out = { ok: 0, dueSoon: 0, expired: 0, noDate: 0, total: items.length };
+  for (const it of items) {
+    const s = dueChip(it?.nextDueDate, todayInput).state;
+    if (s === 'EXPIRED') out.expired++;
+    else if (s === 'DUE_SOON') out.dueSoon++;
+    else if (s === 'OK') out.ok++;
+    else out.noDate++;
+  }
+  return out;
+}
+
+/**
  * Normalize a calendar date input to a JavaScript Date object suitable for storing
  * in Prisma / PostgreSQL DateTime columns.
  * Normalizes to Noon UTC (12:00:00.000Z) so that any timezone worldwide (UTC-11 to UTC+12)

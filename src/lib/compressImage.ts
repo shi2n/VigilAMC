@@ -117,19 +117,17 @@ export async function uploadCompressedPhoto(
 
   const uploadHeaders: Record<string, string> = {};
   try {
-    const { createClient } = await import('@/lib/supabase/client');
-    const supabase = createClient();
-    const {
-      data: { session },
-    } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
-    if (session?.access_token) {
-      uploadHeaders['Authorization'] = `Bearer ${session.access_token}`;
+    const { getFreshAccessToken } = await import('@/lib/clientAuth');
+    const token = await getFreshAccessToken(false);
+    if (token) {
+      uploadHeaders['Authorization'] = `Bearer ${token}`;
     }
   } catch {
-    // Fall back to cookies if supabase client session is not accessible
+    // Fall back to cookies if token helper fails
   }
 
-  const uploadRes = await fetch('/api/upload', {
+  const { fetchWithAuth } = await import('@/lib/clientAuth');
+  const uploadRes = await fetchWithAuth('/api/upload', {
     method: 'POST',
     headers: uploadHeaders,
     body: formData,

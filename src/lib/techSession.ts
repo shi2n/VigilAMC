@@ -179,6 +179,86 @@ export function extractCookie(req?: Request, cookieName: string = TECH_SESSION_C
   return null;
 }
 
+/**
+ * Reassembles chunked or non-chunked Supabase auth token cookie values:
+ * Matches `sb-*-auth-token` or `sb-*-auth-token.0`, `sb-*-auth-token.1`, ...
+ * Parses JSON session or returns string access token.
+ */
+export function extractSupabaseTokenFromCookies(req?: Request): string | null {
+  try {
+    const cookieHeader = req?.headers?.get('cookie') || '';
+    const chunkMap: Record<string, { idx: number; val: string }[]> = {};
+    const directTokens: string[] = [];
+
+    // 1. Check req header cookies
+    if (cookieHeader) {
+      const parts = cookieHeader.split(';').map((c) => c.trim());
+      for (const part of parts) {
+        const eqIdx = part.indexOf('=');
+        if (eqIdx === -1) continue;
+        const name = part.slice(0, eqIdx).trim();
+        const rawVal = decodeURIComponent(part.slice(eqIdx + 1).trim());
+
+        if (/^sb-[a-z0-9_-]+-auth-token$/i.test(name)) {
+          directTokens.push(rawVal);
+        } else {
+          const match = name.match(/^(sb-[a-z0-9_-]+-auth-token)\.(\d+)$/i);
+          if (match) {
+            const base = match[1];
+            const idx = parseInt(match[2], 10);
+            if (!chunkMap[base]) chunkMap[base] = [];
+            chunkMap[base].push({ idx, val: rawVal });
+          }
+        }
+      }
+    }
+
+    // 2. Check Next.js cookies() store
+    try {
+      const cookieStore = cookies();
+      const all = cookieStore.getAll();
+      for (const c of all) {
+        if (/^sb-[a-z0-9_-]+-auth-token$/i.test(c.name)) {
+          directTokens.push(c.value);
+        } else {
+          const match = c.name.match(/^(sb-[a-z0-9_-]+-auth-token)\.(\d+)$/i);
+          if (match) {
+            const base = match[1];
+            const idx = parseInt(match[2], 10);
+            if (!chunkMap[base]) chunkMap[base] = [];
+            chunkMap[base].push({ idx, val: c.value });
+          }
+        }
+      }
+    } catch {
+      // Ignored outside Next.js request lifecycle
+    }
+
+    const candidates: string[] = [...directTokens];
+    for (const base in chunkMap) {
+      const chunks = chunkMap[base].sort((a, b) => a.idx - b.idx);
+      candidates.push(chunks.map((c) => c.val).join(''));
+    }
+
+    for (let raw of candidates) {
+      if (!raw) continue;
+      if (raw.startsWith('base64-')) {
+        try {
+          raw = Buffer.from(raw.slice(7), 'base64').toString('utf8');
+        } catch {}
+      }
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed?.access_token) return parsed.access_token;
+        if (Array.isArray(parsed) && parsed[0]) return parsed[0];
+      } catch {
+        if (raw.split('.').length === 3) return raw;
+      }
+    }
+  } catch {}
+  return null;
+}
+
 export interface AuthenticatedActor {
   user: {
     id: string;
@@ -197,123 +277,111 @@ export interface AuthenticatedActor {
  */
 export async function getAuthenticatedActor(req?: Request): Promise<AuthenticatedActor | null> {
   try {
-    // --- METHOD 1: Check vigil_tech_session cookie OR Bearer header token ---
-    let sessionToken = extractCookie(req, TECH_SESSION_COOKIE);
-    let payload = sessionToken ? verifyTechSessionToken(sessionToken) : null;
+    let acceptedPath: 'BEARER_JWT' | 'CHUNKED_SB_COOKIE' | 'VTECH_SESSION' | 'SB_SSR_COOKIE' | null = null;
 
+    // --- PRIORITY 1: Bearer Access Token (Supabase auth.getUser(jwt) or Tech session) ---
     let authHeader = req?.headers?.get('authorization') || req?.headers?.get('Authorization');
     if (!authHeader) {
       try {
         const headerStore = headers();
         authHeader = headerStore.get('authorization') || headerStore.get('Authorization');
-      } catch {
-        // ignore
-      }
+      } catch {}
     }
 
-    if (!payload && authHeader?.startsWith('Bearer ')) {
-      const candidate = authHeader.substring(7).trim();
-      if (candidate.includes('.')) {
-        payload = verifyTechSessionToken(candidate);
-        if (payload) {
-          sessionToken = candidate;
+    const supabase = createServerSupabaseClient();
+    let authUser: any = null;
+
+    if (authHeader?.startsWith('Bearer ')) {
+      const bearerToken = authHeader.substring(7).trim();
+      if (bearerToken) {
+        // Try Supabase auth.getUser(jwt)
+        const { data: { user }, error } = await supabase.auth.getUser(bearerToken);
+        if (!error && user) {
+          authUser = user;
+          acceptedPath = 'BEARER_JWT';
+        } else if (bearerToken.includes('.')) {
+          // Check if it's a signed tech session token
+          const techPayload = verifyTechSessionToken(bearerToken);
+          if (techPayload?.userId) {
+            const profile = await (db as any).userProfile.findUnique({
+              where: { id: techPayload.userId },
+              include: {
+                organization: { include: { subscription: true } },
+                assignedBuildings: { include: { building: true } },
+              },
+            });
+            if (profile && profile.status !== 'INACTIVE' && profile.status !== 'SUSPENDED') {
+              console.log('[Auth] Accepted path: VTECH_SESSION (Bearer)');
+              let subscription = profile.organization?.subscription || null;
+              if (!subscription && profile.organizationId) {
+                subscription = await getOrCreateAgencySubscription(profile.organizationId).catch(() => null);
+              }
+              return {
+                user: { id: profile.id, email: profile.email },
+                profile,
+                organization: profile.organization || null,
+                subscription,
+              };
+            }
+          }
         }
       }
     }
 
-    if (payload && payload.userId) {
-      const profile = await (db as any).userProfile.findUnique({
-        where: { id: payload.userId },
+    // --- PRIORITY 2: Chunk-reassembled sb-*-auth-token.{n} cookies ---
+    if (!authUser) {
+      const sbCookieToken = extractSupabaseTokenFromCookies(req);
+      if (sbCookieToken) {
+        const { data: { user }, error } = await supabase.auth.getUser(sbCookieToken);
+        if (!error && user) {
+          authUser = user;
+          acceptedPath = 'CHUNKED_SB_COOKIE';
+        }
+      }
+    }
+
+    // --- PRIORITY 3: Standard Supabase SSR Cookies fallback ---
+    if (!authUser) {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (!error && user) {
+        authUser = user;
+        acceptedPath = 'SB_SSR_COOKIE';
+      }
+    }
+
+    // --- PRIORITY 4: vigil_tech_session / vtech_session cookie ---
+    if (!authUser) {
+      const sessionToken = extractCookie(req, TECH_SESSION_COOKIE) || extractCookie(req, 'vtech_session');
+      const payload = sessionToken ? verifyTechSessionToken(sessionToken) : null;
+      if (payload?.userId) {
+        const profile = await (db as any).userProfile.findUnique({
+          where: { id: payload.userId },
           include: {
-            organization: {
-              include: {
-                subscription: true,
-              },
-            },
-            assignedBuildings: {
-              include: {
-                building: true,
-              },
-            },
+            organization: { include: { subscription: true } },
+            assignedBuildings: { include: { building: true } },
           },
         });
-
-        if (profile) {
-          // Immediately reject deactivated accounts
-          if (profile.status === 'INACTIVE' || profile.status === 'SUSPENDED') {
-            return null;
-          }
-
-          // Update lastLoginAt if older than 10 mins
-          const lastLogin = profile.lastLoginAt ? new Date(profile.lastLoginAt).getTime() : 0;
-          if (Date.now() - lastLogin > 10 * 60 * 1000) {
-            (db as any).userProfile
-              .update({
-                where: { id: profile.id },
-                data: { lastLoginAt: new Date() },
-              })
-              .catch(() => {});
-          }
-
+        if (profile && profile.status !== 'INACTIVE' && profile.status !== 'SUSPENDED') {
+          console.log('[Auth] Accepted path: VTECH_SESSION (Cookie)');
           let subscription = profile.organization?.subscription || null;
           if (!subscription && profile.organizationId) {
             subscription = await getOrCreateAgencySubscription(profile.organizationId).catch(() => null);
           }
-
           return {
-            user: {
-              id: profile.id,
-              email: profile.email,
-            },
+            user: { id: profile.id, email: profile.email },
             profile,
             organization: profile.organization || null,
             subscription,
           };
-      }
-    }
-
-    // --- METHOD 2 & 3: Supabase Bearer Header & Supabase SSR Cookies ---
-    const supabase = createServerSupabaseClient();
-    let authUser: any = null;
-
-    if (!authHeader) {
-      authHeader = req?.headers?.get('authorization') || req?.headers?.get('Authorization');
-      if (!authHeader) {
-        try {
-          const headerStore = headers();
-          authHeader = headerStore.get('authorization') || headerStore.get('Authorization');
-        } catch {
-          // ignore
         }
-      }
-    }
-
-    if (authHeader?.startsWith('Bearer ')) {
-      const token = authHeader.substring(7).trim();
-      if (token) {
-        const {
-          data: { user },
-          error,
-        } = await supabase.auth.getUser(token);
-        if (!error && user) {
-          authUser = user;
-        }
-      }
-    }
-
-    if (!authUser) {
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
-      if (!error && user) {
-        authUser = user;
       }
     }
 
     if (!authUser) {
       return null;
     }
+
+    console.log(`[Auth] Accepted path: ${acceptedPath || 'SUPABASE_AUTH'}`);
 
     let profile = await (db as any).userProfile.findUnique({
       where: { id: authUser.id },

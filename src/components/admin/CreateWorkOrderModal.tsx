@@ -5,6 +5,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Wrench, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
+import { formatBuildingPickerLabel } from '@/lib/buildingUtils';
 
 export interface WorkOrderPrefillData {
   title?: string;
@@ -206,7 +207,7 @@ export function CreateWorkOrderModal({
                   <option value="">Select Facility...</option>
                   {buildings.map((b) => (
                     <option key={b.id} value={b.id}>
-                      {b.name}
+                      {formatBuildingPickerLabel(b, buildings)}
                     </option>
                   ))}
                 </select>

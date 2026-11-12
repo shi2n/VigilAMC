@@ -14,15 +14,13 @@ import {
   FileCheck2,
   FileSpreadsheet,
   Clock,
-  Scale,
   Mail,
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { formatStandardDate } from '@/lib/constants/india';
-import { toDateInputString, calendarDayDiff, fromDbDate, todayCalendarDateString } from '@/lib/dates';
+import { toDateInputString, calendarDayDiff, fromDbDate, todayCalendarDateString, addCalendarDays, addCalendarMonths, dueChip } from '@/lib/dates';
 import { ClientPortalAdminPanel } from './ClientPortalAdminPanel';
-import { ComplianceReportManagementView } from './ComplianceReportManagementView';
 import { EmailReportModal } from './EmailReportModal';
 import { SITE_CONFIG } from '@/lib/siteConfig';
 import {
@@ -52,7 +50,7 @@ export function ReportsView({
   onOpenApprovalsQueue,
 }: ReportsViewProps) {
   const [mainReportTab, setMainReportTab] = useState<
-    'CERTIFICATES' | 'COMPLIANCE_MANAGEMENT' | 'PORTAL'
+    'CERTIFICATES' | 'PORTAL'
   >('CERTIFICATES');
   const [selectedStateFilter, setSelectedStateFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -65,12 +63,18 @@ export function ReportsView({
     clientName?: string | null;
   } | null>(null);
 
+  const [registerMonth, setRegisterMonth] = useState<string>(() => todayCalendarDateString().slice(0, 7));
+
   const handleExportMonthlyRegister = async () => {
     setExportingRegister(true);
     try {
       const XLSX = await import('xlsx');
-      const now = new Date();
-      const yyyyMm = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const yyyyMm = /^\d{4}-\d{2}$/.test(registerMonth) ? registerMonth : todayCalendarDateString().slice(0, 7);
+      const monthStart = `${yyyyMm}-01`;
+      const monthEnd = addCalendarDays(addCalendarMonths(monthStart, 1), -1);
+      const todayStr = todayCalendarDateString();
+      // Status "as of": end of the selected month (past months) or today (current/future month)
+      const asOf = calendarDayDiff(monthEnd, todayStr) >= 0 ? todayStr : monthEnd;
       const baseOrigin =
         typeof window !== 'undefined' ? window.location.origin : SITE_CONFIG.SITE_URL;
 
@@ -282,7 +286,7 @@ export function ReportsView({
         </div>
       </div>
 
-      {/* Reports Section Subtabs: Inspection Reports | Compliance & Report Management | Client Portal */}
+      {/* Reports Section Subtabs: Inspection Reports | Client Portal */}
       <div className="flex flex-wrap items-center gap-2 border-b border-[#F0E4D8] pb-1">
         <button
           type="button"
@@ -296,20 +300,6 @@ export function ReportsView({
         >
           <FileText className="w-3.5 h-3.5" />
           <span>Inspection Reports &amp; Asset Register</span>
-        </button>
-
-        <button
-          type="button"
-          data-testid="reports-tab-compliance-management"
-          onClick={() => setMainReportTab('COMPLIANCE_MANAGEMENT')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-            mainReportTab === 'COMPLIANCE_MANAGEMENT'
-              ? 'bg-[#EA580C] text-white shadow-xs'
-              : 'bg-white text-[#44403C] hover:bg-orange-50/50 border border-[#F0E4D8]'
-          }`}
-        >
-          <Scale className="w-3.5 h-3.5" />
-          <span>COMPLIANCE &amp; REPORT MANAGEMENT</span>
         </button>
 
         <button
@@ -329,8 +319,6 @@ export function ReportsView({
 
       {mainReportTab === 'PORTAL' ? (
         <ClientPortalAdminPanel clients={clients} buildings={buildings} />
-      ) : mainReportTab === 'COMPLIANCE_MANAGEMENT' ? (
-        <ComplianceReportManagementView />
       ) : (
         <>
           {/* Filter Bar */}

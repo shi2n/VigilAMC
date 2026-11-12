@@ -49,6 +49,7 @@ interface ImportModalProps {
   isOpen: boolean;
   isMinimized?: boolean;
   initialType?: ImportType;
+  lockedBuilding?: { id: string; name: string } | null;
   onClose: () => void;
   onMinimize?: () => void;
   onSuccess?: () => void;
@@ -67,6 +68,7 @@ export function ImportModal({
   isOpen,
   isMinimized,
   initialType = 'FIRE_ASSETS',
+  lockedBuilding,
   onClose,
   onMinimize,
   onSuccess,
@@ -77,12 +79,12 @@ export function ImportModal({
 
   const [activeTab, setActiveTab] = useState<'WIZARD' | 'HISTORY'>('WIZARD');
   const [currentStep, setCurrentStep] = useState<WizardStep>('CHOOSE_TYPE');
-  const [selectedType, setSelectedType] = useState<ImportType>(initialType);
+  const [selectedType, setSelectedType] = useState<ImportType>(lockedBuilding ? 'FIRE_ASSETS' : initialType);
   const [duplicateStrategy, setDuplicateStrategy] = useState<DuplicateStrategy>('SKIP');
 
   // B1: Collapsible "❓ How to import" help panel (closed by default; open state persisted in modal)
   const [isGuideOpen, setIsGuideOpen] = useState(false);
-  const [guidePreviewType, setGuidePreviewType] = useState<ImportType>(initialType);
+  const [guidePreviewType, setGuidePreviewType] = useState<ImportType>(lockedBuilding ? 'FIRE_ASSETS' : initialType);
   const [openTooltipHeader, setOpenTooltipHeader] = useState<string | null>(null);
 
   // File & Parsing state
@@ -143,13 +145,13 @@ export function ImportModal({
 
   useEffect(() => {
     if (isOpen) {
-      const startType = initialType || 'BUILDINGS';
+      const startType = lockedBuilding ? 'FIRE_ASSETS' : (initialType || 'BUILDINGS');
       setSelectedType(startType);
       setGuidePreviewType(startType);
-      setCurrentStep('CHOOSE_TYPE');
+      setCurrentStep(lockedBuilding ? 'UPLOAD_FILE' : 'CHOOSE_TYPE');
       setMappingErrorBanner(null);
     }
-  }, [isOpen, initialType]);
+  }, [isOpen, initialType, lockedBuilding]);
 
   useEffect(() => {
     setGuidePreviewType(selectedType);
@@ -186,8 +188,13 @@ export function ImportModal({
   }, [columnMapping]);
 
   const unmappedRequiredFields = useMemo(() => {
-    return currentConfig.fields.filter((f) => f.required && !mappedFieldKeys.has(f.key));
-  }, [currentConfig.fields, mappedFieldKeys]);
+    return currentConfig.fields.filter((f) => {
+      if (lockedBuilding && selectedType === 'FIRE_ASSETS' && f.key === 'buildingName') {
+        return false;
+      }
+      return f.required && !mappedFieldKeys.has(f.key);
+    });
+  }, [currentConfig.fields, mappedFieldKeys, lockedBuilding, selectedType]);
 
   const unmappedOptionalFields = useMemo(() => {
     return currentConfig.fields.filter((f) => !f.required && !mappedFieldKeys.has(f.key));
@@ -199,6 +206,19 @@ export function ImportModal({
   const handleDownloadExcelTemplate = (targetType: ImportType = selectedType) => {
     try {
       const wb = generateSampleWorkbook(targetType);
+      if (lockedBuilding && targetType === 'FIRE_ASSETS') {
+        const sheetName = wb.SheetNames.find((s) => s.toLowerCase() === 'data') || wb.SheetNames[0];
+        const ws = wb.Sheets[sheetName];
+        if (ws) {
+          const rows = XLSX.utils.sheet_to_json<Record<string, any>>(ws);
+          rows.forEach((r) => {
+            if ('Building Name' in r || 'Building' in r) {
+              r['Building Name'] = lockedBuilding.name;
+            }
+          });
+          wb.Sheets[sheetName] = XLSX.utils.json_to_sheet(rows);
+        }
+      }
       const fname = getTemplateFilename(targetType, 'xlsx');
       XLSX.writeFile(wb, fname);
       toast.success(`Downloaded ${fname}`);
@@ -310,6 +330,8 @@ export function ImportModal({
           type: selectedType,
           rows: rawRows,
           columnMapping,
+          lockedBuildingName: lockedBuilding?.name,
+          lockedBuildingId: lockedBuilding?.id,
         }),
       });
 
@@ -375,6 +397,8 @@ export function ImportModal({
             rows: chunkRows,
             filename: fileName,
             isFinalChunk,
+            lockedBuildingName: lockedBuilding?.name,
+            lockedBuildingId: lockedBuilding?.id,
             batchSummary: {
               totalRows: rowsToProcess.length,
               cumulativeImported,
@@ -1048,7 +1072,7 @@ export function ImportModal({
                       <div>
                         <div className="text-xs font-medium text-[#44403C]">Importing Into:</div>
                         <div className="text-sm font-bold text-[#1C1917]">
-                          {currentConfig.title}
+                          {lockedBuilding ? `${lockedBuilding.name} — Equipment Register` : currentConfig.title}
                         </div>
                       </div>
                     </div>
@@ -1076,15 +1100,26 @@ export function ImportModal({
                         <span>{dict.importDownloadCsvTemplate}</span>
                       </button>
 
-                      <button
-                        type="button"
-                        onClick={() => setCurrentStep('CHOOSE_TYPE')}
-                        className="px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] border border-[#FED7AA] text-xs font-bold"
-                      >
-                        Change Type
-                      </button>
+                      {!lockedBuilding && (
+                        <button
+                          type="button"
+                          onClick={() => setCurrentStep('CHOOSE_TYPE')}
+                          className="px-3 py-2 rounded-xl bg-white hover:bg-[#FFF0E6] text-[#1C1917] border border-[#FED7AA] text-xs font-bold"
+                        >
+                          Change Type
+                        </button>
+                      )}
                     </div>
                   </div>
+
+                  {lockedBuilding && (
+                    <div className="p-3.5 rounded-xl bg-[#FFF0E6] border border-[#C2410C]/30 flex items-center gap-2.5 text-xs text-[#9A3412] font-semibold">
+                      <Building2 className="w-4 h-4 text-[#C2410C] shrink-0" />
+                      <span>
+                        Target Building Locked: <strong>{lockedBuilding.name}</strong>. All equipment rows imported here will be assigned to this facility.
+                      </span>
+                    </div>
+                  )}
 
                   {/* Drag & Drop Zone */}
                   <div
@@ -1417,6 +1452,18 @@ export function ImportModal({
               {/* STEP 4: DUPLICATE STRATEGY & VALIDATION PREVIEW */}
               {currentStep === 'PREVIEW_STRATEGY' && validationResult && (
                 <div className="space-y-5">
+                  {lockedBuilding && (
+                    <div className="p-3.5 rounded-xl bg-[#FFF0E6] border border-[#C2410C]/30 flex items-center justify-between text-xs text-[#9A3412] font-semibold">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-[#C2410C] shrink-0" />
+                        <span>
+                          Target Facility: <strong>{lockedBuilding.name}</strong>
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-[#44403C]">Single-Building Equipment Import</span>
+                    </div>
+                  )}
+
                   {/* Summary Metric Badges */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="p-3.5 rounded-xl bg-[#FFF8F2] border border-[#FED7AA]">

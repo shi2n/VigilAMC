@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   try {
     const auth = await getAuthenticatedActor(request);
     if (!auth || !auth.organization) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized: Valid authentication required' }, { status: 401 });
     }
 
     return NextResponse.json({ company: auth.organization, profile: auth.profile });
@@ -22,7 +22,7 @@ export async function PUT(request: Request) {
   try {
     const auth = await getAuthenticatedActor(request);
     if (!auth || !auth.organization) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized: Valid authentication required' }, { status: 401 });
     }
 
     const body = await request.json();

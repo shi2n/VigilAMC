@@ -23,7 +23,7 @@ import { NumberTicker } from '@/components/ui/number-ticker';
 import { AttentionDigestItem, DashboardAnalytics } from '@/lib/dashboardAnalytics';
 import { GettingStartedChecklist } from '@/components/admin/GettingStartedGuide';
 import { AdminDictionary, adminDictEnglish } from '@/lib/i18n/admin';
-import { calendarDayDiff, fromDbDate, todayCalendarDateString } from '@/lib/dates';
+import { calendarDayDiff, fromDbDate, todayCalendarDateString, dueChip } from '@/lib/dates';
 import { SITE_CONFIG } from '@/lib/siteConfig';
 import { X, ExternalLink } from 'lucide-react';
 
@@ -734,7 +734,8 @@ export function DashboardOverview({
         ) : (
           <div className="divide-y divide-[#1C1917]/10">
             {needsAttentionList.map((item, idx) => {
-              const isOverdue = item.diffDays < 0;
+              const chip = dueChip(item.nextDueDate);
+              const isOverdue = chip.state === 'EXPIRED';
               return (
                 <motion.div
                   key={item.id}
@@ -786,9 +787,7 @@ export function DashboardOverview({
                           isOverdue ? 'text-[#DC2626]' : 'text-[#D97706]'
                         }`}
                       >
-                        {isOverdue
-                          ? `Overdue by ${Math.abs(item.diffDays)} days`
-                          : `Due in ${item.diffDays} days`}
+                        {chip.label}
                       </div>
                       <div className="text-[10px] text-[#44403C]">
                         Due: {formatStandardDate(item.nextDueDate)}

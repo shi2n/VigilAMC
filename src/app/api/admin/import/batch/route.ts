@@ -27,6 +27,8 @@ export async function POST(request: Request) {
       filename,
       isFinalChunk = false,
       batchSummary,
+      lockedBuildingId,
+      lockedBuildingName,
     } = body as {
       type: ImportType;
       duplicateStrategy: DuplicateStrategy;
@@ -44,6 +46,8 @@ export async function POST(request: Request) {
         cumulativeSkipped: number;
         cumulativeFailed: number;
       };
+      lockedBuildingId?: string;
+      lockedBuildingName?: string;
     };
 
     if (!type || !Array.isArray(rows)) {
@@ -211,27 +215,48 @@ export async function POST(request: Request) {
             throw new Error('Asset Tag is required');
           }
 
-          const buildingName = (parsedData.buildingName || '').trim();
-          if (!buildingName) {
+          let buildingName = (parsedData.buildingName || '').trim();
+          if (lockedBuildingName) {
+            if (buildingName && buildingName.toLowerCase() !== lockedBuildingName.trim().toLowerCase()) {
+              throw new Error(
+                `Building "${buildingName}" does not match locked building "${lockedBuildingName}"`
+              );
+            }
+            buildingName = lockedBuildingName.trim();
+          }
+
+          if (!buildingName && !lockedBuildingId) {
             throw new Error('Building Name is required');
           }
 
-          const bldLower = buildingName.toLowerCase();
-          let targetBuilding = buildingMapByName.get(bldLower);
-          if (!targetBuilding) {
-            targetBuilding = await (db as any).building.findFirst({
-              where: {
-                organizationId,
-                name: { equals: buildingName, mode: 'insensitive' },
-              },
-            });
-            if (targetBuilding) {
-              buildingMapByName.set(bldLower, targetBuilding);
+          let targetBuilding: any = null;
+          if (lockedBuildingId) {
+            targetBuilding = existingBuildings.find((b: any) => b.id === lockedBuildingId);
+            if (!targetBuilding) {
+              targetBuilding = await (db as any).building.findFirst({
+                where: { id: lockedBuildingId, organizationId },
+              });
+            }
+          }
+
+          if (!targetBuilding && buildingName) {
+            const bldLower = buildingName.toLowerCase();
+            targetBuilding = buildingMapByName.get(bldLower);
+            if (!targetBuilding) {
+              targetBuilding = await (db as any).building.findFirst({
+                where: {
+                  organizationId,
+                  name: { equals: buildingName, mode: 'insensitive' },
+                },
+              });
+              if (targetBuilding) {
+                buildingMapByName.set(bldLower, targetBuilding);
+              }
             }
           }
 
           if (!targetBuilding) {
-            throw new Error(`Unknown Building Name "${buildingName}". Please register the building first.`);
+            throw new Error(`Unknown Building Name "${buildingName || lockedBuildingId}". Please register the building first.`);
           }
 
           const existing = await (db as any).equipment.findFirst({

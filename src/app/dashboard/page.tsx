@@ -53,6 +53,8 @@ import {
   calendarDayDiff,
   todayCalendarDateString,
   fromDbDate,
+  dueChip,
+  tallyDueChips,
 } from '@/lib/dates';
 import { getAdminDictionary } from '@/lib/i18n/admin';
 import { getServiceCycleLabel } from '@/lib/compliance';
@@ -89,11 +91,6 @@ const InspectionsView = dynamic(
 
 const ApprovalsQueueView = dynamic(
   () => import('@/components/admin/ApprovalsQueueView').then((m) => m.ApprovalsQueueView),
-  { loading: () => <div className="h-96 bg-slate-100 rounded-2xl animate-pulse" />, ssr: false }
-);
-
-const CorrectiveActionsBoard = dynamic(
-  () => import('@/components/admin/CorrectiveActionsBoard').then((m) => m.CorrectiveActionsBoard),
   { loading: () => <div className="h-96 bg-slate-100 rounded-2xl animate-pulse" />, ssr: false }
 );
 
@@ -269,17 +266,15 @@ export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<AdminNavTab>('OVERVIEW');
   const [clientsSitesSubTab, setClientsSitesSubTab] = useState<'BUILDINGS' | 'CLIENTS'>('BUILDINGS');
   const [inspectionsWorkSubTab, setInspectionsWorkSubTab] = useState<
-    'INSPECTIONS' | 'APPROVALS' | 'FINDINGS' | 'REPAIRS'
+    'INSPECTIONS' | 'APPROVALS' | 'REPAIRS'
   >('INSPECTIONS');
   const [inspectionsMainTab, setInspectionsMainTab] = useState<'INSPECTIONS' | 'REPAIRS'>('INSPECTIONS');
   const [techniciansSubTab, setTechniciansSubTab] = useState<'TEAM' | 'ASSIGNMENTS' | 'ACTIVITY'>('TEAM');
   const [clientFilter, setClientFilter] = useState<{ id: string; name: string } | null>(null);
   const [floorPlansBuilding, setFloorPlansBuilding] = useState<any | null>(null);
-  const [prefillFinding, setPrefillFinding] = useState<any | null>(null);
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   const [guideModalOpen, setGuideModalOpen] = useState(false);
   const [helpMenuOpen, setHelpMenuOpen] = useState(false);
-  const [showCorrectiveBoard, setShowCorrectiveBoard] = useState(false);
   const [welcomeModalOpen, setWelcomeModalOpen] = useState(false);
   const welcomeDismissedInSessionRef = React.useRef(false);
   const [isSubmittingBuilding, setIsSubmittingBuilding] = useState(false);
@@ -294,9 +289,18 @@ export default function AdminDashboardPage() {
   // Excel Import Modal State
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [importDataType, setImportDataType] = useState<ImportType>('FIRE_ASSETS');
+  const [importLockedBuilding, setImportLockedBuilding] = useState<{ id: string; name: string } | null>(null);
 
   const handleOpenImport = (type: ImportType = 'FIRE_ASSETS') => {
+    setImportLockedBuilding(null);
     setImportDataType(type);
+    setImportModalOpen(true);
+  };
+
+  const handleOpenBuildingExcelImport = (building: any) => {
+    if (!building) return;
+    setImportLockedBuilding({ id: building.id, name: building.name });
+    setImportDataType('FIRE_ASSETS');
     setImportModalOpen(true);
   };
 
@@ -316,7 +320,6 @@ export default function AdminDashboardPage() {
   const [techniciansList, setTechniciansList] = useState<any[]>([]);
   const [workOrdersList, setWorkOrdersList] = useState<any[]>([]);
   const [inspectionsList, setInspectionsList] = useState<any[]>([]);
-  const [correctiveActionsList, setCorrectiveActionsList] = useState<any[]>([]);
   const [clientsList, setClientsList] = useState<any[]>([]);
   const [equipmentsList, setEquipmentsList] = useState<any[]>([]);
   const [equipSearch, setEquipSearch] = useState('');
@@ -545,7 +548,6 @@ export default function AdminDashboardPage() {
       if (Array.isArray(json.clients)) setClientsList(json.clients);
       if (Array.isArray(json.equipments)) setEquipmentsList(json.equipments);
       if (Array.isArray(json.inspections)) setInspectionsList(json.inspections);
-      if (Array.isArray(json.correctiveActions)) setCorrectiveActionsList(json.correctiveActions);
       if (Array.isArray(json.workOrders)) setWorkOrdersList(json.workOrders);
       if (Array.isArray(json.technicians)) setTechniciansList(json.technicians);
       if (json.subscription) setSubscriptionData(json.subscription);
@@ -840,7 +842,8 @@ export default function AdminDashboardPage() {
   const handleSaveCompany = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/admin/company', {
+      const { fetchWithAuth } = await import('@/lib/clientAuth');
+      const res = await fetchWithAuth('/api/admin/company', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(companyForm),
@@ -1134,15 +1137,8 @@ export default function AdminDashboardPage() {
 
   // Live reactive KPI computations so any mutation updates Overview & Sidebar in 0ms
   const liveEquipmentMetrics = useMemo(() => {
-    const now = new Date();
-    let overdue = 0;
-    let dueSoon = 0;
-    for (const eq of equipmentsList) {
-      const diffDays = getCalendarDayDiff(eq.nextDueDate, now);
-      if ((diffDays !== null && diffDays < 0) || eq.status === 'OVERDUE' || eq.liveStatus === 'OVERDUE') overdue++;
-      else if ((diffDays !== null && diffDays <= 30) || eq.status === 'DUE_SOON' || eq.liveStatus === 'DUE_SOON') dueSoon++;
-    }
-    return { overdue, dueSoon, total: equipmentsList.length };
+    const tally = tallyDueChips(equipmentsList);
+    return { overdue: tally.expired, dueSoon: tally.dueSoon, total: tally.total };
   }, [equipmentsList]);
 
   const liveOpenRepairsCount = useMemo(() => {
@@ -1178,10 +1174,9 @@ export default function AdminDashboardPage() {
     const todayStr = todayCalendarDateString();
     return allEq
       .map((eq) => {
-        const diffDays = eq.nextDueDate
-          ? calendarDayDiff(fromDbDate(eq.nextDueDate), todayStr)
-          : 999999;
-        return { ...eq, diffDays };
+        const chip = dueChip(eq.nextDueDate);
+        const diffDays = chip.diff ?? 999999;
+        return { ...eq, diffDays, dueLabel: chip.label, dueState: chip.state };
       })
       .filter((eq) => eq.diffDays <= 30)
       .sort((a, b) => a.diffDays - b.diffDays)
@@ -1406,9 +1401,8 @@ export default function AdminDashboardPage() {
           }, candidates[0]);
 
           if (lruTab) {
+            // Silent LRU eviction (owner request: no popup)
             nextTabs = nextTabs.filter((t) => t.id !== lruTab.id);
-            const lruLabel = TAB_CONFIG[lruTab.id]?.label || 'tab';
-            toast.info(`Closed '${lruLabel}' tab to keep things fast`);
           } else {
             break;
           }
@@ -1841,21 +1835,8 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-          {/* Top Bar Controls: Sync, Notifications, Help Menu, Logout */}
+          {/* Top Bar Controls: Notifications, Help Menu, Logout (dashboard is online-only — no Sync control) */}
           <div className="flex items-center gap-2.5 flex-wrap self-end md:self-auto">
-            {/* Sync chip */}
-            <button
-              type="button"
-              data-testid="topbar-sync-btn"
-              onClick={() => refreshDashboard({ silent: true })}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-all shadow-xs text-xs font-semibold cursor-pointer"
-              title="Sync latest records"
-              aria-label="Sync latest records"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isRevalidating ? 'animate-spin text-[#C2410C]' : 'text-slate-500'}`} />
-              <span className="hidden sm:inline">Sync</span>
-            </button>
-
             {/* Notifications Bell */}
             <button
               type="button"
@@ -2117,6 +2098,7 @@ export default function AdminDashboardPage() {
                     onDeleteBuilding={handleDeleteBuilding}
                     onBulkAdd={(b) => setBulkAddModalOpen(b)}
                     onSingleAdd={(b) => setSingleAddEquipModalOpen(b)}
+                    onImportBuildingExcel={handleOpenBuildingExcelImport}
                     onOpenExport={() => handleOpenExport('BUILDINGS')}
                     onOpenImport={() => handleOpenImport('BUILDINGS')}
                     onOpenFloorPlans={(b) => setFloorPlansBuilding(b)}
@@ -2242,7 +2224,7 @@ export default function AdminDashboardPage() {
                       <button
                         onClick={() => {
                           setInspectionsMainTab('INSPECTIONS');
-                          if (inspectionsWorkSubTab === 'REPAIRS' || inspectionsWorkSubTab === 'FINDINGS') {
+                          if (inspectionsWorkSubTab === 'REPAIRS') {
                             setInspectionsWorkSubTab('INSPECTIONS');
                           }
                         }}
@@ -2257,7 +2239,7 @@ export default function AdminDashboardPage() {
                       <button
                         onClick={() => {
                           setInspectionsMainTab('REPAIRS');
-                          if (inspectionsWorkSubTab !== 'REPAIRS' && inspectionsWorkSubTab !== 'FINDINGS') {
+                          if (inspectionsWorkSubTab !== 'REPAIRS') {
                             setInspectionsWorkSubTab('REPAIRS');
                           }
                         }}
@@ -2344,22 +2326,6 @@ export default function AdminDashboardPage() {
                             </span>
                           )}
                         </button>
-                        <button
-                          data-testid="subtab-findings"
-                          onClick={() => setInspectionsWorkSubTab('FINDINGS')}
-                          className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                            inspectionsWorkSubTab === 'FINDINGS'
-                              ? 'bg-[#FFF0E6] text-[#C2410C] border border-[#EA580C]/30 font-bold'
-                              : 'text-slate-600 hover:text-slate-900 bg-slate-50'
-                          }`}
-                        >
-                          <span>Corrective Actions</span>
-                          {correctiveActionsList.filter((c) => c.status !== 'CLOSED').length > 0 && (
-                            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-[#D97706] text-white font-bold">
-                              {correctiveActionsList.filter((c) => c.status !== 'CLOSED').length}
-                            </span>
-                          )}
-                        </button>
                       </>
                     )}
                   </div>
@@ -2383,91 +2349,12 @@ export default function AdminDashboardPage() {
                     inspections={inspectionsList}
                     onRefreshDashboard={() => refreshDashboard({ silent: true })}
                     showToast={showToast}
-                    onFlagFinding={(prefill) => {
-                      setPrefillFinding(prefill);
-                      setInspectionsWorkSubTab('FINDINGS');
-                    }}
-                    t={t}
-                  />
-                )}
-
-                {inspectionsWorkSubTab === 'FINDINGS' && (
-                  <CorrectiveActionsBoard
-                    initialActions={correctiveActionsList}
-                    buildings={buildings}
-                    equipments={equipmentsList}
-                    technicians={techniciansList}
-                    showToast={showToast}
-                    onRefreshDashboard={() => refreshDashboard({ silent: true })}
-                    prefillFinding={prefillFinding}
-                    onClearPrefill={() => setPrefillFinding(null)}
                     t={t}
                   />
                 )}
 
                 {inspectionsWorkSubTab === 'REPAIRS' && (
                   <div className="space-y-6">
-                    {/* Folded Top Section: Needs Repair */}
-                    {(() => {
-                      const openActions = correctiveActionsList.filter((c) => c.status !== 'CLOSED');
-                      const critCount = openActions.filter((c) => c.priority === 'CRITICAL' || c.severity === 'CRITICAL').length;
-                      const hiCount = openActions.filter((c) => c.priority === 'HIGH' || c.severity === 'HIGH').length;
-                      const medCount = openActions.filter((c) => c.priority === 'MEDIUM' || c.severity === 'MEDIUM').length;
-                      const loCount = openActions.filter((c) => c.priority === 'LOW' || c.severity === 'LOW').length;
-
-                      return (
-                        <div className="glass-panel-dense rounded-2xl p-4 sm:p-5 border border-[#FED7AA] bg-white shadow-xs space-y-3">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div className="flex items-center gap-2.5">
-                              <div className="p-2 rounded-xl bg-rose-50 text-[#DC2626] border border-rose-200">
-                                <AlertTriangle className="w-4 h-4" />
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <h3 className="font-bold text-[#1C1917] text-sm sm:text-base">Needs Repair</h3>
-                                  <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-[#DC2626] border border-rose-200">
-                                    {openActions.length} Pending
-                                  </span>
-                                </div>
-                                <div className="text-xs text-[#44403C] mt-0.5 flex items-center gap-2 flex-wrap">
-                                  {critCount > 0 && <span className="text-[#DC2626] font-bold">• {critCount} Critical</span>}
-                                  {hiCount > 0 && <span className="text-[#EA580C] font-semibold">• {hiCount} High</span>}
-                                  {medCount > 0 && <span className="text-amber-600 font-semibold">• {medCount} Medium</span>}
-                                  {loCount > 0 && <span className="text-slate-500">• {loCount} Low</span>}
-                                  {openActions.length === 0 && <span className="text-emerald-600 font-medium">All inspection findings resolved ✓</span>}
-                                </div>
-                              </div>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() => setShowCorrectiveBoard(!showCorrectiveBoard)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FFF0E6] hover:bg-[#FED7AA] text-[#C2410C] border border-[#FED7AA] text-xs font-bold transition-all shadow-xs cursor-pointer self-start sm:self-auto"
-                            >
-                              <Wrench className="w-3.5 h-3.5" />
-                              <span>{showCorrectiveBoard ? 'Hide Action Board' : 'View Corrective Actions'}</span>
-                            </button>
-                          </div>
-
-                          {showCorrectiveBoard && (
-                            <div className="pt-3 border-t border-[#FED7AA]/60">
-                              <CorrectiveActionsBoard
-                                initialActions={correctiveActionsList}
-                                buildings={buildings}
-                                equipments={equipmentsList}
-                                technicians={techniciansList}
-                                showToast={showToast}
-                                onRefreshDashboard={() => refreshDashboard({ silent: true })}
-                                prefillFinding={prefillFinding}
-                                onClearPrefill={() => setPrefillFinding(null)}
-                                t={t}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })()}
-
                     <WorkOrdersView
                       showToast={showToast}
                       onOpenImport={() => handleOpenImport('WORK_ORDERS')}
@@ -2644,7 +2531,11 @@ export default function AdminDashboardPage() {
         <ImportModal
           isOpen={importModalOpen}
           initialType={importDataType}
-          onClose={() => setImportModalOpen(false)}
+          lockedBuilding={importLockedBuilding}
+          onClose={() => {
+            setImportModalOpen(false);
+            setImportLockedBuilding(null);
+          }}
           onSuccess={() => {
             refreshDashboard({ silent: true });
           }}

@@ -19,7 +19,8 @@ interface ApprovalsQueueViewProps {
   inspections: any[];
   onRefreshDashboard: () => Promise<void> | void;
   showToast: (msg: string) => void;
-  onFlagFinding: (prefill: {
+  /** Optional: Corrective Action flagging (hidden in UI when omitted). */
+  onFlagFinding?: (prefill: {
     buildingId: string;
     equipmentId?: string;
     inspectionId?: string;
@@ -454,6 +455,7 @@ export function ApprovalsQueueView({
                             </button>
                           )}
 
+                          {onFlagFinding && (
                           <button
                             type="button"
                             onClick={() =>
@@ -477,6 +479,7 @@ export function ApprovalsQueueView({
                             <Flag className="w-3.5 h-3.5" />
                             <span>{t.approvalsFlagFindingBtn}</span>
                           </button>
+                          )}
                         </div>
                       </td>
                     </tr>
