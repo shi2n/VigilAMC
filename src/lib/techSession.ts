@@ -491,8 +491,8 @@ export async function getAuthenticatedActor(req?: Request): Promise<Authenticate
 
     return {
       user: {
-        id: authUser.id,
-        email: authUser.email || '',
+        id: profile.id,
+        email: profile.email || authUser.email || '',
       },
       profile,
       organization: profile.organization || null,

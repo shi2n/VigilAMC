@@ -77,9 +77,10 @@ export async function PUT(request: Request) {
     });
 
     let updatedProfile = auth.profile;
-    if (fullName !== undefined && fullName.trim() && auth.user?.id) {
+    const profileId = auth.profile?.id || auth.user?.id;
+    if (fullName !== undefined && fullName.trim() && profileId) {
       updatedProfile = await (db as any).userProfile.update({
-        where: { id: auth.user.id },
+        where: { id: profileId },
         data: { fullName: fullName.trim() },
       });
     }
