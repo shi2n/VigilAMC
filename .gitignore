@@ -17,6 +17,9 @@
 # misc
 .DS_Store
 *.pem
+*.p8
+AuthKey_*.p8
+ios/App/Pods/
 
 # debug
 npm-debug.log*

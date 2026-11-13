@@ -23,6 +23,9 @@ const config: CapacitorConfig = {
     captureInput: true,
     webContentsDebuggingEnabled: false,
   },
+  ios: {
+    limitsNavigationsToAppBoundDomains: true,
+  },
 };
 
 export default config;
