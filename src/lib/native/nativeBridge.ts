@@ -68,7 +68,7 @@ export async function syncNativePushToken(): Promise<string | null> {
     const payload = JSON.stringify({
       fcmToken,
       pushToken: fcmToken,
-      platform: 'android',
+      platform: Capacitor.getPlatform(),
       techToken: techToken || undefined,
     });
 

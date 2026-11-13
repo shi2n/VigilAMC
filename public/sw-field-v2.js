@@ -10,7 +10,7 @@
  * 5. skipWaiting on install, clientsClaim on activate
  */
 
-const CACHE_VERSION = 'v2-20261110-1';
+const CACHE_VERSION = 'v2-20261113-1';
 const SHELL_CACHE = `vigilamc-field-shell-${CACHE_VERSION}`;
 const STATIC_CACHE = `vigilamc-field-static-${CACHE_VERSION}`;
 const CURRENT_CACHES = [SHELL_CACHE, STATIC_CACHE];
@@ -25,13 +25,42 @@ const STATIC_PRECACHE = [
   '/brand/logo-tile-512.png',
 ];
 
+function isHtmlResponse(response) {
+  return (response.headers.get('content-type') || '').includes('text/html');
+}
+
+// The first launch's HTML and JS load before this worker controls the page,
+// so fetch the shell and every chunk it references up front.
+async function precacheTechnicianShell() {
+  try {
+    const response = await fetch('/technician', { credentials: 'include', cache: 'no-store' });
+    if (!response.ok || !isHtmlResponse(response)) return;
+
+    const html = await response.clone().text();
+    const shellCache = await caches.open(SHELL_CACHE);
+    await shellCache.put('/technician', response);
+
+    const assetPaths = new Set();
+    for (const match of html.match(/(?:\/_next\/)?static\/(?:chunks|css|media)\/[^"'\s)\\]+/g) || []) {
+      assetPaths.add(match.startsWith('/_next/') ? match : `/_next/${match}`);
+    }
+    const staticCache = await caches.open(STATIC_CACHE);
+    await Promise.all([...assetPaths].map((path) => staticCache.add(path).catch(() => null)));
+  } catch (err) {
+    console.warn('[sw-field-v2] Shell precache skipped:', err);
+  }
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(SHELL_CACHE).then((cache) => {
-      return cache.addAll(STATIC_PRECACHE).catch((err) => {
-        console.warn('[sw-field-v2] Precache partial error (ignored):', err);
-      });
-    })
+    Promise.all([
+      caches.open(SHELL_CACHE).then((cache) => {
+        return cache.addAll(STATIC_PRECACHE).catch((err) => {
+          console.warn('[sw-field-v2] Precache partial error (ignored):', err);
+        });
+      }),
+      precacheTechnicianShell(),
+    ])
   );
   self.skipWaiting();
 });
@@ -88,23 +117,24 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          if (response && response.status === 200) {
+          // Only real HTML may become the offline shell; RSC payloads on the same path would poison it.
+          if (response && response.status === 200 && isHtmlResponse(response)) {
             const clone = response.clone();
+            const shellCopy = response.clone();
             caches.open(SHELL_CACHE).then((cache) => {
               cache.put(request, clone);
-              cache.put('/technician', response.clone());
+              cache.put('/technician', shellCopy);
             });
           }
           return response;
         })
         .catch(async () => {
           const cached =
-            (await caches.match(request)) ||
-            (await caches.match('/technician')) ||
-            (await caches.match(new Request('/technician')));
+            (await caches.match(request, { ignoreVary: true })) ||
+            (await caches.match('/technician', { ignoreVary: true, ignoreSearch: true }));
           if (cached) return cached;
           return new Response(
-            '<!DOCTYPE html><html><head><meta charset="utf-8"><title>VigilAMC Offline</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font-family:sans-serif;padding:24px;text-align:center;background:#F4F8FB;color:#1C1917;"><h2>VigilAMC Field App</h2><p>You are offline. Please reconnect to load the app shell for the first time.</p></body></html>',
+            '<!DOCTYPE html><html><head><meta charset="utf-8"><title>VigilAMC Offline</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font-family:sans-serif;padding:24px;text-align:center;background:#FFF8F2;color:#1C1917;"><h2>VigilAMC Field App</h2><p>You are offline. Please reconnect to load the app shell for the first time.</p></body></html>',
             { headers: { 'Content-Type': 'text/html' } }
           );
         })

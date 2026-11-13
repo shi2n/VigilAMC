@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { db } from '@/lib/db';
 import { TRANSLATIONS, SupportedLanguage } from '@/lib/i18n/technician';
+import { isApnsDeviceToken, sendApnsMessage } from '@/lib/apns';
 
 interface ServiceAccountKey {
   project_id: string;
@@ -220,6 +221,23 @@ export async function sendFcmMessage(
   }
 }
 
+/**
+ * Route a push to the right provider: iOS devices register raw APNs tokens, Android devices register FCM tokens.
+ */
+export async function sendPushToDevice(
+  device: { fcmToken: string; platform?: string | null },
+  payload: {
+    title: string;
+    body: string;
+    data?: Record<string, string>;
+  }
+): Promise<boolean> {
+  if (device.platform === 'ios' || isApnsDeviceToken(device.fcmToken)) {
+    return sendApnsMessage(device.fcmToken, payload);
+  }
+  return sendFcmMessage(device.fcmToken, payload);
+}
+
 interface NotifyAssignmentParams {
   type: 'WORK_ORDER' | 'BUILDING';
   technicianId: string;
@@ -349,11 +367,11 @@ export async function notifyOnAssignment(params: NotifyAssignmentParams): Promis
     }
 
     // 3. Fetch Device Tokens for technician
-    let deviceTokens: Array<{ fcmToken: string }> = [];
+    let deviceTokens: Array<{ fcmToken: string; platform: string | null }> = [];
     try {
       deviceTokens = await (db as any).deviceToken.findMany({
         where: { technicianId },
-        select: { fcmToken: true },
+        select: { fcmToken: true, platform: true },
       });
     } catch (tokenErr) {
       console.warn('[notify] Could not query device tokens:', tokenErr);
@@ -363,7 +381,7 @@ export async function notifyOnAssignment(params: NotifyAssignmentParams): Promis
       return;
     }
 
-    // 4. Dispatch FCM Push to each device token
+    // 4. Dispatch push (FCM for Android, APNs for iOS) to each device token
     let anyPushSuccess = false;
     const fcmData: Record<string, string> = {
       type: 'task_assigned',
@@ -375,7 +393,7 @@ export async function notifyOnAssignment(params: NotifyAssignmentParams): Promis
     };
 
     for (const dt of deviceTokens) {
-      const ok = await sendFcmMessage(dt.fcmToken, {
+      const ok = await sendPushToDevice(dt, {
         title: resolvedTitle || 'Task Notification',
         body: resolvedMessage || 'A new task was assigned to you.',
         data: fcmData,

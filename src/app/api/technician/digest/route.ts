@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getAuthenticatedActor } from '@/lib/techSession';
-import { sendFcmMessage } from '@/lib/notify';
+import { sendPushToDevice } from '@/lib/notify';
 
 export const dynamic = 'force-dynamic';
 
@@ -95,13 +95,13 @@ export async function GET(request: Request) {
     // Query active tokens
     const tokens = await (db as any).deviceToken.findMany({
       where: { technicianId },
-      select: { fcmToken: true },
+      select: { fcmToken: true, platform: true },
     });
 
     let pushed = false;
     if (tokens && tokens.length > 0) {
       for (const t of tokens) {
-        const ok = await sendFcmMessage(t.fcmToken, {
+        const ok = await sendPushToDevice(t, {
           title,
           body: message,
           data: {
