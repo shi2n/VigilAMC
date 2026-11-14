@@ -403,7 +403,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<EmailResult>
   const fromAddress = from || 'VigilAMC <support@vigilamc.com>';
 
   // 1. Resend API Dispatch (Primary for verified vigilamc.com domain)
-  const resendApiKey = process.env.RESEND_API_KEY;
+  const resendApiKey = (process.env.RESEND_API_KEY || '').trim().replace(/^["']|["']$/g, '');
   if (resendApiKey) {
     try {
       const resendAttachments = attachments.map((att) => ({

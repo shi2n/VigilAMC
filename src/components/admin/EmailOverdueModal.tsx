@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Mail, CheckCircle2, AlertTriangle, Clock, Layers, Loader2, X, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { fetchWithAuth } from '@/lib/clientAuth';
 
 interface EmailOverdueModalProps {
   isOpen: boolean;
@@ -70,7 +71,7 @@ export function EmailOverdueModal({
     if (!qs.toString()) return;
 
     setLoadingData(true);
-    fetch(`/api/clients/overdue-email?${qs.toString()}`)
+    fetchWithAuth(`/api/clients/overdue-email?${qs.toString()}`)
       .then(async (res) => {
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
@@ -128,7 +129,7 @@ export function EmailOverdueModal({
 
     setSending(true);
     try {
-      const res = await fetch('/api/clients/overdue-email', {
+      const res = await fetchWithAuth('/api/clients/overdue-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

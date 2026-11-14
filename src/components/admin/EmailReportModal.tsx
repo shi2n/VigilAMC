@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, CheckCircle2, AlertCircle, Loader2, X, FileText } from 'lucide-react';
 import { toast } from 'sonner';
+import { fetchWithAuth } from '@/lib/clientAuth';
 import { formatCalendarDate, toCalendarDateInput } from '@/lib/dateUtils';
 
 interface EmailReportModalProps {
@@ -56,7 +57,7 @@ export function EmailReportModal({
 
     setSending(true);
     try {
-      const res = await fetch('/api/reports/email', {
+      const res = await fetchWithAuth('/api/reports/email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
