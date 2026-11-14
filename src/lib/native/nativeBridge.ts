@@ -16,13 +16,54 @@ export interface NativeGpsCoords {
   isBasementCached?: boolean;
 }
 
+export interface NativePushStatus {
+  available: boolean;
+  disabledReason: string | null;
+  token: string | null;
+}
+
+let currentPushStatus: NativePushStatus = {
+  available: true,
+  disabledReason: null,
+  token: null,
+};
+
+const pushStatusListeners = new Set<(status: NativePushStatus) => void>();
+
+function updatePushStatus(patch: Partial<NativePushStatus>) {
+  currentPushStatus = { ...currentPushStatus, ...patch };
+  pushStatusListeners.forEach((fn) => {
+    try {
+      fn(currentPushStatus);
+    } catch {}
+  });
+}
+
+export function getNativePushStatus(): NativePushStatus {
+  return currentPushStatus;
+}
+
+export function subscribeNativePushStatus(listener: (status: NativePushStatus) => void): () => void {
+  pushStatusListeners.add(listener);
+  try {
+    listener(currentPushStatus);
+  } catch {}
+  return () => {
+    pushStatusListeners.delete(listener);
+  };
+}
+
 /**
  * Returns true only when running inside the Capacitor Android/iOS native shell.
  * Returns false in desktop browsers, mobile Safari/Chrome, and PWA mode.
  */
 export function isNativePlatform(): boolean {
   if (typeof window === 'undefined') return false;
-  return Capacitor.isNativePlatform();
+  try {
+    return Capacitor.isNativePlatform();
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -32,18 +73,32 @@ export function registerNativeLifecycle(onResume: () => void): () => void {
   if (!isNativePlatform()) return () => {};
 
   let cleanup: (() => void) | null = null;
-  App.addListener('appStateChange', (state) => {
-    if (state.isActive) {
-      onResume();
-    }
-  }).then((handle) => {
-    cleanup = () => handle.remove();
-  }).catch((err) => {
-    console.warn('[NativeBridge] Failed to register appStateChange listener:', err);
-  });
+  try {
+    App.addListener('appStateChange', (state) => {
+      try {
+        if (state.isActive) {
+          onResume();
+        }
+      } catch (cbErr) {
+        console.warn('[NativeBridge] appStateChange callback error:', cbErr);
+      }
+    }).then((handle) => {
+      cleanup = () => {
+        try {
+          handle.remove();
+        } catch {}
+      };
+    }).catch((err) => {
+      console.warn('[NativeBridge] Failed to register appStateChange listener:', err);
+    });
+  } catch (err) {
+    console.warn('[NativeBridge] Exception registering appStateChange listener:', err);
+  }
 
   return () => {
-    if (cleanup) cleanup();
+    try {
+      if (cleanup) cleanup();
+    } catch {}
   };
 }
 
@@ -119,8 +174,8 @@ export async function registerNativePush(options?: {
         lights: true,
         lightColor: '#EA580C',
       });
-    } catch (chErr) {
-      console.warn('[NativeBridge] Channel creation warning:', chErr);
+    } catch (chErr: any) {
+      console.warn('[push] disabled: channel creation warning:', chErr?.message || chErr);
     }
 
     // 2. Request Android 13+ POST_NOTIFICATIONS runtime permission
@@ -130,42 +185,90 @@ export async function registerNativePush(options?: {
     }
 
     if (perm.receive !== 'granted') {
-      console.warn('[NativeBridge] Notification permission not granted:', perm.receive);
+      const reason = `permission not granted (${perm.receive})`;
+      console.warn(`[push] disabled: ${reason}`);
+      updatePushStatus({ available: false, disabledReason: reason, token: null });
       return null;
     }
 
-    // 3. Register FCM listener for received token
-    PushNotifications.addListener('registration', async (token: Token) => {
-      const fcmToken = token.value;
-      try {
-        await Preferences.set({ key: 'vigil_fcm_token', value: fcmToken });
-        await syncNativePushToken();
-        console.info('[NativeBridge] Registered push token with server');
-      } catch (postErr) {
-        console.warn('[NativeBridge] Could not post FCM token to backend:', postErr);
-      }
-    });
+    // 3. Register FCM listeners wrapped in defensive try/catch
+    try {
+      await PushNotifications.addListener('registration', async (token: Token) => {
+        try {
+          const fcmToken = token?.value;
+          if (!fcmToken) return;
+          updatePushStatus({ available: true, disabledReason: null, token: fcmToken });
+          await Preferences.set({ key: 'vigil_fcm_token', value: fcmToken });
+          await syncNativePushToken();
+          console.info('[NativeBridge] Registered push token with server');
+        } catch (postErr) {
+          console.warn('[NativeBridge] Could not post FCM token to backend:', postErr);
+        }
+      });
+    } catch (lErr: any) {
+      console.warn('[push] disabled: failed to bind registration listener:', lErr?.message || lErr);
+    }
 
-    PushNotifications.addListener('registrationError', (error) => {
-      console.warn('[NativeBridge] Push registration error:', error);
-    });
+    try {
+      await PushNotifications.addListener('registrationError', (error: any) => {
+        const reason = error?.error || error?.message || JSON.stringify(error || 'registrationError');
+        console.warn(`[push] disabled: ${reason}`);
+        updatePushStatus({ available: false, disabledReason: String(reason), token: null });
+      });
+    } catch (lErr: any) {
+      console.warn('[push] disabled: failed to bind registrationError listener:', lErr?.message || lErr);
+    }
 
     if (options?.onNotificationReceived) {
-      PushNotifications.addListener('pushNotificationReceived', options.onNotificationReceived);
+      const cb = options.onNotificationReceived;
+      try {
+        await PushNotifications.addListener('pushNotificationReceived', (notif) => {
+          try {
+            cb(notif);
+          } catch (cbErr) {
+            console.warn('[NativeBridge] pushNotificationReceived handler error:', cbErr);
+          }
+        });
+      } catch (lErr: any) {
+        console.warn('[push] disabled: failed to bind pushNotificationReceived listener:', lErr?.message || lErr);
+      }
     }
 
     if (options?.onNotificationTapped) {
-      PushNotifications.addListener('pushNotificationActionPerformed', options.onNotificationTapped);
+      const cb = options.onNotificationTapped;
+      try {
+        await PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+          try {
+            cb(action);
+          } catch (cbErr) {
+            console.warn('[NativeBridge] pushNotificationActionPerformed handler error:', cbErr);
+          }
+        });
+      } catch (lErr: any) {
+        console.warn('[push] disabled: failed to bind pushNotificationActionPerformed listener:', lErr?.message || lErr);
+      }
     }
 
-    // Request native registration
-    await PushNotifications.register();
+    // 4. Request native FCM registration with fail-safe catch
+    try {
+      await PushNotifications.register();
+    } catch (regErr: any) {
+      const reason = regErr?.message || String(regErr || 'Native push registration rejected');
+      console.warn(`[push] disabled: ${reason}`);
+      updatePushStatus({ available: false, disabledReason: reason, token: null });
+      return null;
+    }
 
     // Ensure currently cached token is also synced to backend
     const syncedToken = await syncNativePushToken();
+    if (syncedToken) {
+      updatePushStatus({ available: true, disabledReason: null, token: syncedToken });
+    }
     return syncedToken;
-  } catch (err) {
-    console.warn('[NativeBridge] Push notifications setup error:', err);
+  } catch (err: any) {
+    const reason = err?.message || String(err || 'setup error');
+    console.warn(`[push] disabled: ${reason}`);
+    updatePushStatus({ available: false, disabledReason: reason, token: null });
     return null;
   }
 }

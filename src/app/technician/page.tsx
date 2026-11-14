@@ -74,6 +74,9 @@ import {
   getNativeLocation,
   watchNativeLocation,
   clearNativeWatch,
+  getNativePushStatus,
+  subscribeNativePushStatus,
+  NativePushStatus,
 } from '@/lib/native/nativeBridge';
 import {
   compressPhotoToBudget,
@@ -157,6 +160,7 @@ export default function TechnicianPWA() {
   const [showNavDrawer, setShowNavDrawer] = useState<boolean>(false);
   const [activeFaqIndex, setActiveFaqIndex] = useState<number | null>(null);
   const [pushPermissionDenied, setPushPermissionDenied] = useState<boolean>(false);
+  const [nativePushStatus, setNativePushStatus] = useState<NativePushStatus>(() => getNativePushStatus());
 
   // ----------------------------------------------------------------------------------
   // AUTHENTICATION & PROFILE STATE
@@ -1019,39 +1023,68 @@ export default function TechnicianPWA() {
   useEffect(() => {
     if (!isNativePlatform()) return;
 
-    const unbindLifecycle = registerNativeLifecycle(async () => {
-      syncNativePushToken().catch(() => null);
-      await loadDashboardData();
+    const unbindPushStatus = subscribeNativePushStatus((status) => {
+      setNativePushStatus(status);
+      if (!status.available) {
+        setPushPermissionDenied(true);
+      }
     });
 
-    registerNativePush({
-      onNotificationReceived: (notif) => {
-        triggerToast(`🔔 ${notif.title || 'Task Notification'}`);
-        fetch('/api/technician/notifications')
-          .then((r) => r.json())
-          .then((d) => {
-            if (d.notifications) setNotifications(d.notifications);
-          })
-          .catch(() => null);
-      },
-      onNotificationTapped: (action) => {
-        const taskId = action.notification?.data?.taskId;
-        if (taskId) {
-          setActiveTab('TASKS');
+    let unbindLifecycle = () => {};
+    try {
+      unbindLifecycle = registerNativeLifecycle(async () => {
+        try {
+          syncNativePushToken().catch(() => null);
+          await loadDashboardData();
+        } catch (err) {
+          console.warn('[push] disabled: resume handler warning:', err);
         }
-      },
-    });
+      });
+    } catch (err) {
+      console.warn('[push] disabled: lifecycle init warning:', err);
+    }
+
+    try {
+      registerNativePush({
+        onNotificationReceived: (notif) => {
+          triggerToast(`🔔 ${notif.title || 'Task Notification'}`);
+          fetch('/api/technician/notifications')
+            .then((r) => r.json())
+            .then((d) => {
+              if (d.notifications) setNotifications(d.notifications);
+            })
+            .catch(() => null);
+        },
+        onNotificationTapped: (action) => {
+          const taskId = action.notification?.data?.taskId;
+          if (taskId) {
+            setActiveTab('TASKS');
+          }
+        },
+      }).catch((err) => {
+        console.warn('[push] disabled:', err?.message || err);
+      });
+    } catch (err: any) {
+      console.warn('[push] disabled:', err?.message || err);
+    }
 
     // Check URL parameters for tapped notification deep link (?taskId=...)
     if (typeof window !== 'undefined') {
-      const paramTaskId = new URLSearchParams(window.location.search).get('taskId');
-      if (paramTaskId) {
-        setActiveTab('TASKS');
-      }
+      try {
+        const paramTaskId = new URLSearchParams(window.location.search).get('taskId');
+        if (paramTaskId) {
+          setActiveTab('TASKS');
+        }
+      } catch {}
     }
 
     return () => {
-      unbindLifecycle();
+      try {
+        unbindPushStatus();
+      } catch {}
+      try {
+        unbindLifecycle();
+      } catch {}
     };
   }, [loadDashboardData]);
 
@@ -4053,11 +4086,32 @@ export default function TechnicianPWA() {
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Push Status:</span>
-                <span className="font-bold text-emerald-700">
-                  {isNativePlatform() ? 'Native FCM Active (channel: vigilamc-tasks)' : 'Web / PWA Mode (ready)'}
+                <span className={`font-bold ${isNativePlatform() && !nativePushStatus.available ? 'text-amber-700' : 'text-emerald-700'}`}>
+                  {isNativePlatform()
+                    ? nativePushStatus.available
+                      ? `Native FCM Active${nativePushStatus.token ? ` (${nativePushStatus.token.slice(0, 8)}…)` : ' (channel: vigilamc-tasks)'}`
+                      : (t.pushUnavailableNotice || 'Push notifications unavailable on this device')
+                    : 'Web / PWA Mode (ready)'}
                 </span>
               </div>
             </div>
+
+            {isNativePlatform() && !nativePushStatus.available && (
+              <div
+                data-testid="push-unavailable-notice"
+                className="p-2.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-center gap-2 shrink-0"
+              >
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-bold">{t.pushUnavailableNotice || 'Push notifications unavailable on this device'}</p>
+                  {nativePushStatus.disabledReason && (
+                    <p className="text-[10px] font-mono text-amber-800 truncate">
+                      [push] disabled: {nativePushStatus.disabledReason}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* OEM Background Battery & Notifications Checklist (Section 3) */}
             <div data-testid="oem-battery-checklist-card" className="p-3.5 rounded-2xl bg-[#FFF8F2] border border-[#FED7AA] space-y-2.5 text-xs shrink-0">
@@ -4096,17 +4150,33 @@ export default function TechnicianPWA() {
                 <button
                   type="button"
                   onClick={async () => {
-                    const token = await syncNativePushToken();
-                    if (token) {
-                      triggerToast(`🔔 FCM Token active (${token.slice(0, 10)}...)`);
-                    } else if (isNativePlatform()) {
-                      triggerToast('⏳ Registering token with Firebase...');
-                      registerNativePush().then((t) => {
-                        if (t) triggerToast(`🔔 FCM Token registered: ${t.slice(0, 10)}...`);
-                        else triggerToast('⚠️ Waiting for Google Play Services token');
-                      });
-                    } else {
-                      triggerToast('ℹ️ Push tray notifications require the installed APK');
+                    try {
+                      const token = await syncNativePushToken();
+                      if (token) {
+                        triggerToast(`🔔 FCM Token active (${token.slice(0, 10)}...)`);
+                      } else if (isNativePlatform()) {
+                        triggerToast('⏳ Registering token with Firebase...');
+                        registerNativePush()
+                          .then((tok) => {
+                            if (tok) {
+                              triggerToast(`🔔 FCM Token registered: ${tok.slice(0, 10)}...`);
+                            } else {
+                              const st = getNativePushStatus();
+                              if (!st.available) {
+                                triggerToast(`⚠️ ${t.pushUnavailableNotice || 'Push notifications unavailable on this device'}`);
+                              } else {
+                                triggerToast('⚠️ Waiting for Google Play Services token');
+                              }
+                            }
+                          })
+                          .catch(() => {
+                            triggerToast(`⚠️ ${t.pushUnavailableNotice || 'Push notifications unavailable on this device'}`);
+                          });
+                      } else {
+                        triggerToast('ℹ️ Push tray notifications require the installed APK');
+                      }
+                    } catch {
+                      triggerToast(`⚠️ ${t.pushUnavailableNotice || 'Push notifications unavailable on this device'}`);
                     }
                   }}
                   className="px-3 py-1.5 rounded-xl bg-white border border-[#FED7AA] hover:border-[#EA580C] text-[#C2410C] font-bold text-[11px] shadow-2xs flex items-center gap-1.5 active:scale-95 transition-all"
@@ -4454,7 +4524,7 @@ export default function TechnicianPWA() {
                 <span>{t.signOut || 'Sign Out'}</span>
               </button>
               <div className="text-center text-[10px] text-slate-400 font-mono">
-                VigilAMC Field v1.0.2 (Build 3)
+                VigilAMC Field v1.0.5 (Build 6)
               </div>
             </div>
           </div>
@@ -4850,7 +4920,7 @@ export default function TechnicianPWA() {
 
             <div className="pt-2 border-t border-slate-100 text-center">
               <span className="text-[10px] text-slate-400 font-mono">
-                VigilAMC Field v1.0.2 (Build 3) • Play Release
+                VigilAMC Field v1.0.5 (Build 6) • Play Release
               </span>
             </div>
           </div>

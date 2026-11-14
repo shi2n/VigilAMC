@@ -13,8 +13,8 @@ android {
         applicationId "com.vigilamc"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 5
-        versionName "1.0.4"
+        versionCode 6
+        versionName "1.0.5"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -62,7 +62,8 @@ dependencies {
     implementation project(':capacitor-cordova-android-plugins')
 
     // Firebase BoM, Google Analytics & Cloud Messaging (FCM)
-    implementation platform('com.google.firebase:firebase-bom:35.1.0')
+    // Pinned to 33.7.0 (Kotlin 1.9 compatible with AGP 8.2.1 and @capacitor/push-notifications 6.x)
+    implementation platform('com.google.firebase:firebase-bom:33.7.0')
     implementation 'com.google.firebase:firebase-analytics'
     implementation 'com.google.firebase:firebase-messaging'
 }
@@ -71,9 +72,15 @@ apply from: 'capacitor.build.gradle'
 
 try {
     def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
-        apply plugin: 'com.google.gms.google-services'
+    if (servicesJSON.exists() && servicesJSON.text) {
+        def parsed = new groovy.json.JsonSlurper().parseText(servicesJSON.text)
+        def hasValidClient = parsed?.client?.any { it?.client_info?.android_client_info?.package_name == "com.vigilamc" }
+        if (hasValidClient && parsed?.project_info?.project_id && parsed?.project_info?.project_number) {
+            apply plugin: 'com.google.gms.google-services'
+        } else {
+            logger.warn("[push] disabled: google-services.json missing valid com.vigilamc client or project_info")
+        }
     }
 } catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+    logger.warn("[push] disabled: google-services.json invalid or not found (" + e.getMessage() + "), google-services plugin not applied.")
 }

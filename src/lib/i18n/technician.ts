@@ -224,6 +224,7 @@ export interface TranslationDictionary {
   wrongOriginNotice?: string;
   wrongOriginOpenApp?: string;
   wrongOriginFlushing?: string;
+  pushUnavailableNotice?: string;
 }
 
 export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
@@ -234,6 +235,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     wrongOriginNotice: "Please reopen from the app icon or use the app link",
     wrongOriginOpenApp: "Open Field App",
     wrongOriginFlushing: "Preserving saved records...",
+    pushUnavailableNotice: "Push notifications unavailable on this device",
     welcomeBack: 'Welcome back',
     myTasksTab: 'My Tasks',
     checklistsTab: 'Checklists',
@@ -403,6 +405,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     wrongOriginNotice: "कृपया ऐप आइकन से पुनः खोलें या ऐप लिंक का उपयोग करें",
     wrongOriginOpenApp: "फ़ील्ड ऐप खोलें",
     wrongOriginFlushing: "सहेजे गए रिकॉर्ड सुरक्षित किए जा रहे हैं...",
+    pushUnavailableNotice: "इस डिवाइस पर पुश नोटिफिकेशन उपलब्ध नहीं हैं",
     welcomeBack: 'स्वागत है',
     myTasksTab: 'आज के काम',
     checklistsTab: 'चेकलिस्ट',
@@ -572,6 +575,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     wrongOriginNotice: "कृपया अॅप आयकॉनवरून पुन्हा उघडा किंवा अॅप लिंक वापरा",
     wrongOriginOpenApp: "फील्ड अॅप उघडा",
     wrongOriginFlushing: "जतन केलेल्या नोंदी सुरक्षित करत आहे...",
+    pushUnavailableNotice: "या डिव्हाइसवर पुश सूचना उपलब्ध नाहीत",
     welcomeBack: 'स्वागत आहे',
     myTasksTab: 'आजची कामे',
     checklistsTab: 'चेकलिस्ट',
@@ -741,6 +745,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     wrongOriginNotice: "કૃપા કરીને એપ્લિકેશન આઇકોન પરથી ફરીથી ખોલો અથવા એપ્લિકેશન લિંકનો ઉપયોગ કરો",
     wrongOriginOpenApp: "ફીલ્ડ એપ્લિકેશન ખોલો",
     wrongOriginFlushing: "સાચવેલા રેકોર્ડ્સ સાચવી રહ્યા છીએ...",
+    pushUnavailableNotice: "આ ઉપકરણ પર પુશ નોટિફિકેશન ઉપલબ્ધ નથી",
     welcomeBack: 'સ્વાગત છે',
     myTasksTab: 'આજના કામ',
     checklistsTab: 'ચેકલિસ્ટ',
@@ -910,6 +915,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     wrongOriginNotice: "தயவுசெய்து பயன்பாட்டு ஐகானிலிருந்து மீண்டும் திறக்கவும் அல்லது பயன்பாட்டு இணைப்பைப் பயன்படுத்தவும்",
     wrongOriginOpenApp: "ஃபீல்ட் பயன்பாட்டைத் திறக்கவும்",
     wrongOriginFlushing: "சேமிக்கப்பட்ட பதிவுகள் பாதுகாக்கப்படுகின்றன...",
+    pushUnavailableNotice: "இந்தச் சாதனத்தில் புஷ் அறிவிப்புகள் கிடைக்கவில்லை",
     welcomeBack: 'மீண்டும் வருக',
     myTasksTab: 'இன்றைய பணிகள்',
     checklistsTab: 'சரிபார்ப்புப் பட்டியல்',
@@ -1079,6 +1085,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     wrongOriginNotice: "దయచేసి యాప్ ఐకాన్ నుండి మళ్ళీ తెరవండి లేదా యాప్ లింక్‌ను ఉపయోగించండి",
     wrongOriginOpenApp: "ఫీల్డ్ యాప్‌ను తెరవండి",
     wrongOriginFlushing: "సేవ్ చేసిన రికార్డులను భద్రపరుస్తున్నాము...",
+    pushUnavailableNotice: "ఈ పరికరంలో పుష్ నోటిఫికేషన్‌లు అందుబాటులో లేవు",
     welcomeBack: 'స్వాగతం',
     myTasksTab: 'నేటి పనులు',
     checklistsTab: 'చెక్లిస్ట్',
@@ -1248,6 +1255,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     wrongOriginNotice: "ದಯವಿಟ್ಟು ಅಪ್ಲಿಕೇಶನ್ ಐಕಾನ್‌ನಿಂದ ಪುನಃ ತೆರೆಯಿರಿ ಅಥವಾ ಅಪ್ಲಿಕೇಶನ್ ಲಿಂಕ್ ಬಳಸಿ",
     wrongOriginOpenApp: "ಫೀಲ್ಡ್ ಅಪ್ಲಿಕೇಶನ್ ತೆರೆಯಿರಿ",
     wrongOriginFlushing: "ಉಳಿಸಲಾದ ದಾಖಲೆಗಳನ್ನು ಸಂರಕ್ಷಿಸಲಾಗುತ್ತಿದೆ...",
+    pushUnavailableNotice: "ಈ ಸಾಧನದಲ್ಲಿ ಪುಶ್ ಅಧಿಸೂಚನೆಗಳು ಲಭ್ಯವಿಲ್ಲ",
     welcomeBack: 'ಸ್ವಾಗತ',
     myTasksTab: 'ಇಂದಿನ ಕೆಲಸಗಳು',
     checklistsTab: 'ಪರಿಶೀಲನಾ ಪಟ್ಟಿ',
@@ -1417,6 +1425,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     wrongOriginNotice: "ദയവായി ആപ്പ് ഐക്കണിൽ നിന്ന് വീണ്ടും തുറക്കുക അല്ലെങ്കിൽ ആപ്പ് ലിങ്ക് ഉപയോഗിക്കുക",
     wrongOriginOpenApp: "ഫീൽഡ് ആപ്പ് തുറക്കുക",
     wrongOriginFlushing: "സംരക്ഷിച്ച രേഖകൾ സംരക്ഷിക്കുന്നു...",
+    pushUnavailableNotice: "ഈ ഉപകരണത്തിൽ പുഷ് അറിയിപ്പുകൾ ലഭ്യമല്ല",
     welcomeBack: 'സ്വാഗതം',
     myTasksTab: 'ഇന്നത്തെ ജോലികൾ',
     checklistsTab: 'ചെക്ക്‌ലിസ്റ്റ്',
@@ -1586,6 +1595,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     wrongOriginNotice: "দয়া করে অ্যাপ আইকন থেকে পুনরায় খুলুন বা অ্যাপ লিঙ্কটি ব্যবহার করুন",
     wrongOriginOpenApp: "ফিল্ড অ্যাপ খুলুন",
     wrongOriginFlushing: "সংরক্ষিত রেকর্ড সংরক্ষণ করা হচ্ছে...",
+    pushUnavailableNotice: "এই ডিভাইসে পুশ বিজ্ঞপ্তি উপলব্ধ নয়",
     welcomeBack: 'স্বাগতম',
     myTasksTab: 'আজকের কাজ',
     checklistsTab: 'চেকলিস্ট',
@@ -1755,6 +1765,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationDictionary> = {
     wrongOriginNotice: "ਕਿਰਪਾ ਕਰਕੇ ਐਪ ਆਈਕਨ ਤੋਂ ਦੁਬਾਰਾ ਖੋਲ੍ਹੋ ਜਾਂ ਐਪ ਲਿੰਕ ਦੀ ਵਰਤੋਂ ਕਰੋ",
     wrongOriginOpenApp: "ਫੀਲਡ ਐਪ ਖੋਲ੍ਹੋ",
     wrongOriginFlushing: "ਸੁਰੱਖਿਅਤ ਕੀਤੇ ਰਿਕਾਰਡ ਸੰਭਾਲੇ ਜਾ ਰਹੇ ਹਨ...",
+    pushUnavailableNotice: "ਇਸ ਡਿਵਾਈਸ 'ਤੇ ਪੁਸ਼ ਸੂਚਨਾਵਾਂ ਉਪਲਬਧ ਨਹੀਂ ਹਨ",
     welcomeBack: 'ਜੀ ਆਇਆਂ ਨੂੰ',
     myTasksTab: 'ਅੱਜ ਦੇ ਕੰਮ',
     checklistsTab: 'ਚੈੱਕਲਿਸਟ',
