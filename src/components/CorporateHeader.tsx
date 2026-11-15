@@ -18,9 +18,9 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
   }, [pathname]);
 
   const navLinks: Array<{ name: string; href: string; badge?: string }> = [
-    { name: 'Products', href: '/#products' },
-    { name: 'Features', href: '/#features' },
-    { name: 'How it works', href: '/#how-it-works' },
+    { name: 'Products', href: '/products' },
+    { name: 'Features', href: '/features' },
+    { name: 'How it works', href: '/how-it-works' },
   ];
 
   return (

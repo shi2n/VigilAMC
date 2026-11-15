@@ -510,10 +510,10 @@ export default function HowItWorksPage() {
           </p>
           <div className="pt-4 flex flex-col sm:flex-row justify-center gap-4">
             <Link
-              href="/#pilot-section"
-              className="px-8 py-3.5 bg-[#C2410C] hover:bg-[#1C1917] text-white font-bold text-sm rounded-xl shadow-lg transition-colors"
+              href="/start-trial"
+              className="px-8 py-3.5 bg-[#C2410C] hover:bg-[#9A3412] text-white font-bold text-sm rounded-xl shadow-lg transition-colors"
             >
-              Join the free testing
+              Start Free Trial
             </Link>
             <Link
               href="/sample-report"

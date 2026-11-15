@@ -445,7 +445,7 @@ export default function FeaturesPage() {
             <thead className="bg-[#1C1917] text-white">
               <tr>
                 <th className="py-4 px-6 font-bold text-sm">Platform Capability</th>
-                <th className="py-4 px-6 font-black text-sm text-cyan-200 bg-[#C2410C]">VigilAMC</th>
+                <th className="py-4 px-6 font-black text-sm text-orange-100 bg-[#C2410C]">VigilAMC</th>
                 <th className="py-4 px-6 font-semibold">Manual Excel &amp; Paper</th>
                 <th className="py-4 px-6 font-semibold">Generic Field ERP</th>
               </tr>
@@ -484,23 +484,23 @@ export default function FeaturesPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 px-4 bg-[#1C1917] text-white text-center">
+      <section className="py-16 px-4 bg-[#C2410C] text-white text-center">
         <div className="max-w-3xl mx-auto space-y-4">
           <h2 className="text-3xl font-extrabold">Ready to Join the Free Testing Program?</h2>
-          <p className="text-cyan-100 text-sm max-w-xl mx-auto leading-relaxed">
+          <p className="text-orange-50 text-sm max-w-xl mx-auto leading-relaxed">
             VigilAMC is in its testing phase and is free for every agency that joins. Test asset registration, GPS-verified mobile forms, and Form-B generation with direct founder onboarding.
           </p>
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
-              href="/#pilot-section"
-              className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#C2410C] hover:bg-white hover:text-[#1C1917] font-bold text-sm rounded-xl transition-all shadow-lg"
+              href="/start-trial"
+              className="inline-flex items-center gap-2 px-8 py-3.5 bg-white text-[#9A3412] hover:bg-[#FFF8F2] font-bold text-sm rounded-xl transition-all shadow-lg"
             >
-              <span>Join the free testing</span>
+              <span>Start Free Trial</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               href="/sample-report"
-              className="inline-flex items-center gap-2 px-7 py-3.5 bg-white/10 hover:bg-white/20 text-white font-bold text-sm rounded-xl transition-all border border-white/20"
+              className="inline-flex items-center gap-2 px-7 py-3.5 bg-white/10 hover:bg-white/20 text-white font-bold text-sm rounded-xl transition-all border border-white/30"
             >
               <span>Inspect Sample Report</span>
             </Link>
