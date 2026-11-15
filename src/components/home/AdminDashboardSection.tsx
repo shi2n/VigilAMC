@@ -17,7 +17,7 @@ import {
 import { AppleReveal } from './AppleReveal';
 import { LightBrowserFrame } from './DeviceFrames';
 
-export function AdminDashboardSection() {
+export function AdminDashboardSection({ showDemoCta = false }: { showDemoCta?: boolean }) {
   return (
     <section
       id="admin-dashboard"
@@ -338,6 +338,18 @@ export function AdminDashboardSection() {
             </AppleReveal>
           </div>
         </div>
+
+        {showDemoCta && (
+          <div className="mt-14 text-center">
+            <Link
+              href="/contact"
+              className="btn-flame min-h-[48px] px-7 py-3 rounded-2xl text-white font-bold text-[15px] inline-flex items-center justify-center gap-2 shadow-[0_12px_28px_-8px_rgba(194,65,12,0.45)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C]"
+            >
+              <span>Book a Free Demo</span>
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );

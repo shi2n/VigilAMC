@@ -1,512 +1,400 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import {
-  FileCheck2,
-  BellRing,
-  Smartphone,
-  Building2,
-  Users,
-  ShieldCheck,
-  CheckCircle2,
-  Wrench,
-  Radio,
-  Clock,
-  Sparkles,
   ArrowRight,
+  Award,
+  BellRing,
+  Building2,
+  CalendarSync,
+  CheckCircle2,
   Database,
-  Lock,
   Download,
-  Share2,
+  FileCheck2,
+  FileSpreadsheet,
+  Flame,
+  History,
+  Languages,
   Layers,
+  Lock,
+  MailCheck,
   MapPin,
-  Check,
-  X,
-  AlertTriangle
+  Radar,
+  ShieldCheck,
+  TableProperties,
+  Users,
+  WifiOff,
 } from 'lucide-react';
-import { StatusBadge } from '@/components/StatusBadge';
+import { AppleReveal } from '@/components/home/AppleReveal';
 import { GooglePlayBadge } from '@/components/GooglePlayBadge';
-import { AppStoreBadge } from '@/components/AppStoreBadge';
+import { FinalCtaSection } from '@/components/home/FinalCtaSection';
+
+interface FeatureTile {
+  icon: typeof Award;
+  label: string;
+  detail: string;
+  isRadar?: boolean;
+}
+
+interface FeatureCluster {
+  id: string;
+  badge: string;
+  title: string;
+  subtitle: string;
+  surface: 'white' | 'tint';
+  tiles: FeatureTile[];
+}
+
+const FEATURE_CLUSTERS: FeatureCluster[] = [
+  {
+    id: 'field-tools',
+    badge: 'Cluster 01 · On Site',
+    title: 'Field Tools',
+    subtitle: 'Built for basements, pump rooms, and technicians working on Android phones across India.',
+    surface: 'white',
+    tiles: [
+      {
+        icon: WifiOff,
+        label: 'Offline mode',
+        detail: 'Complete floor checklists and capture photos without signal; auto-syncs via local outbox when online.',
+      },
+      {
+        icon: MapPin,
+        label: 'GPS-stamped photos',
+        detail: 'Every camera capture burns in live GPS coordinates, date, time, and Asset Tag ID.',
+      },
+      {
+        icon: Languages,
+        label: '10 languages + voice',
+        detail: 'Switch between 10 Indian languages and dictate inspection remarks hands-free with browser voice input.',
+      },
+      {
+        icon: BellRing,
+        label: 'Task notifications',
+        detail: 'Push alerts wake your technician’s home screen the moment a new inspection or repair is assigned.',
+      },
+    ],
+  },
+  {
+    id: 'office-tools',
+    badge: 'Cluster 02 · Agency Desk',
+    title: 'Office Tools',
+    subtitle: 'Replace fragile spreadsheets and scattered WhatsApp updates with one clean operations workspace.',
+    surface: 'tint',
+    tiles: [
+      {
+        icon: FileSpreadsheet,
+        label: 'Excel import/export',
+        detail: 'Upload entire building and asset registers via .xlsx/.csv in minutes without re-typing equipment.',
+      },
+      {
+        icon: TableProperties,
+        label: 'Monthly register .xlsx',
+        detail: 'Download clean monthly audit registers ready for society committees and compliance reviewers.',
+      },
+      {
+        icon: Layers,
+        label: 'Bulk operations',
+        detail: 'Run AMC scheduling cycles, bulk-assign technicians, and update multiple assets in one step.',
+      },
+      {
+        icon: Users,
+        label: 'Teams & roles',
+        detail: 'Separate role permissions for agency owners, office coordinators, and field technicians.',
+      },
+    ],
+  },
+  {
+    id: 'reports-compliance',
+    badge: 'Cluster 03 · Audit & Client Proof',
+    title: 'Reports & Compliance',
+    subtitle: 'Turn verified field work into Form B PDFs, proactive due-date digests, and trackable repair closures.',
+    surface: 'white',
+    tiles: [
+      {
+        icon: Award,
+        label: 'White-label Form B',
+        detail: '5-page biannual compliance reports carrying your agency name, logo, license number, and signature.',
+      },
+      {
+        icon: MailCheck,
+        label: 'Email reports & due alerts',
+        detail: 'Send Form B links and automated 30 / 15 / 7-day expiry reminders straight to clients.',
+      },
+      {
+        icon: History,
+        label: 'Asset history timeline',
+        detail: 'Every inspection, refill, pressure test, and repair stays tied to its unit for audit verification.',
+      },
+      {
+        icon: Radar,
+        label: 'Status chips',
+        detail: 'Spot urgent expiries and overdue inspections immediately across every building.',
+        isRadar: true,
+      },
+      {
+        icon: CalendarSync,
+        label: 'Re-schedule workflow',
+        detail: 'Reschedule missed visits and assign follow-up repair jobs without losing earlier defect proof.',
+      },
+    ],
+  },
+  {
+    id: 'platform',
+    badge: 'Cluster 04 · Infrastructure',
+    title: 'Platform',
+    subtitle: 'Scalable, secure, and ready for agencies running sites across multiple Indian states.',
+    surface: 'tint',
+    tiles: [
+      {
+        icon: Languages,
+        label: '22 admin languages',
+        detail: 'Operate the office dashboard in English or 22 8th-Schedule Indian languages.',
+      },
+      {
+        icon: Building2,
+        label: 'Buildings & units',
+        detail: 'Structure multi-tower societies, factories, floors, basements, and pump rooms cleanly.',
+      },
+      {
+        icon: Download,
+        label: 'Data export',
+        detail: '1-click full export — your client records, asset logs, and history always stay yours.',
+      },
+      {
+        icon: Database,
+        label: 'Secure cloud (Supabase) + app security',
+        detail: 'Tenant-isolated PostgreSQL storage, encrypted sessions, and role-scoped access for every company.',
+      },
+    ],
+  },
+];
 
 export default function FeaturesPage() {
-  const [activePersona, setActivePersona] = useState<'contractor' | 'technician' | 'facility' | 'auditor'>('contractor');
-
-  const comparisonData = [
-    {
-      feature: 'GPS-Verified Inspections: Details, Floor Notes & Photo Proof',
-      vigil: true,
-      vigilStatus: 'BETA',
-      excel: false,
-      legacy: 'Partial',
-    },
-    {
-      feature: 'Biannual Form-B PDF Generation (State Fire Act Compliant Layout)',
-      vigil: true,
-      vigilStatus: 'LIVE',
-      excel: false,
-      legacy: false,
-    },
-    {
-      feature: 'Offline Mobile Inspection Checklist in Basements',
-      vigil: true,
-      vigilStatus: 'BETA',
-      excel: false,
-      legacy: false,
-    },
-    {
-      feature: 'Technician Geolocation & Timestamp Logging',
-      vigil: true,
-      vigilStatus: 'BETA',
-      excel: false,
-      legacy: false,
-    },
-    {
-      feature: 'Multi-Channel Expiry Notifications (Email & SMS)',
-      vigil: true,
-      vigilStatus: 'LIVE',
-      excel: false,
-      legacy: 'Email only',
-    },
-    {
-      feature: 'Client Self-Service Compliance Portal',
-      vigil: true,
-      vigilStatus: 'COMING SOON',
-      excel: false,
-      legacy: 'Custom ($$$)',
-    },
-    {
-      feature: 'Defect Workorder & Part Replacement Tracking',
-      vigil: true,
-      vigilStatus: 'SAMPLE',
-      excel: false,
-      legacy: 'Manual',
-    },
-    {
-      feature: 'IS 2190 & NBC 2016 Part 4 Inspection Checklists',
-      vigil: true,
-      vigilStatus: 'LIVE',
-      excel: false,
-      legacy: false,
-    },
-  ];
-
   return (
-    <div className="w-full bg-white">
-      {/* Header Banner */}
-      <section className="bg-gradient-to-b from-ocean-50 to-white py-20 px-4 sm:px-6 lg:px-8 border-b border-slate-200">
-        <div className="max-w-4xl mx-auto text-center">
-          <span className="text-xs uppercase font-extrabold tracking-widest text-[#C2410C] bg-white px-3.5 py-1.5 rounded-full border border-ocean-200 shadow-sm">
-            Platform Capabilities &amp; Architecture
-          </span>
-          <h1 className="text-4xl sm:text-5xl font-black text-[#1C1917] tracking-tight mt-4">
-            Engineered Specifically for Fire Safety AMC Operations
-          </h1>
-          <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
-            Generic field service software doesn&apos;t know what Form-B is or understand hydrostatic pressure test regulations. VigilAMC is purpose-built for life-safety maintenance workflows.
-          </p>
-        </div>
-      </section>
-
-      {/* Persona Customizer Tabs */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
-        <div className="text-center mb-10">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1C1917]">
-            Tailored Experiences for Every Stakeholder
-          </h2>
-          <p className="text-sm text-slate-500 mt-2">
-            Select a role to explore how VigilAMC addresses their operational needs.
-          </p>
-
-          <div className="mt-6 inline-flex flex-wrap justify-center gap-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-200">
-            <button
-              onClick={() => setActivePersona('contractor')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activePersona === 'contractor'
-                  ? 'bg-[#C2410C] text-white shadow'
-                  : 'text-slate-700 hover:text-[#C2410C]'
-              }`}
-            >
-              AMC Agency Owners
-            </button>
-            <button
-              onClick={() => setActivePersona('technician')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activePersona === 'technician'
-                  ? 'bg-[#C2410C] text-white shadow'
-                  : 'text-slate-700 hover:text-[#C2410C]'
-              }`}
-            >
-              Field Service Technicians
-            </button>
-            <button
-              onClick={() => setActivePersona('facility')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activePersona === 'facility'
-                  ? 'bg-[#C2410C] text-white shadow'
-                  : 'text-slate-700 hover:text-[#C2410C]'
-              }`}
-            >
-              Client Facility Heads
-            </button>
-            <button
-              onClick={() => setActivePersona('auditor')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activePersona === 'auditor'
-                  ? 'bg-[#C2410C] text-white shadow'
-                  : 'text-slate-700 hover:text-[#C2410C]'
-              }`}
-            >
-              Fire Directorate &amp; Surveyors
-            </button>
-          </div>
-        </div>
-
-        {/* Dynamic Persona Card */}
-        <div className="corp-card p-8 bg-slate-50 border-ocean-200 shadow-md">
-          {activePersona === 'contractor' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-              <div className="space-y-4">
-                <span className="text-xs font-bold text-[#C2410C] uppercase tracking-wider">
-                  For Fire AMC Business Owners &amp; Operations Heads
-                </span>
-                <h3 className="text-2xl font-bold text-[#1C1917]">
-                  Protect Contracts &amp; Scale From 3 to 30+ Facilities
-                </h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  Avoid contract disputes caused by missing logbooks or overlooked hydrostatic testing deadlines. Monitor scheduled visits, asset counts, open defects, and certificate preparation in one unified operations view.
-                </p>
-                <div className="space-y-2 text-xs font-semibold text-slate-700">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Centralized equipment registry with floor notes and GPS verification</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Automated Form-B collation saves hours of manual compilation</span>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                <h4 className="text-xs font-bold uppercase text-slate-400 mb-3">
-                  Agency Operations Focus
-                </h4>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center p-2.5 rounded bg-ocean-50 text-xs">
-                    <span className="font-bold text-[#1C1917]">Form-B Generation</span>
-                    <span className="font-bold text-[#C2410C]">PDF Export in Minutes</span>
-                  </div>
-                  <div className="flex justify-between items-center p-2.5 rounded bg-slate-50 text-xs">
-                    <span className="font-bold text-slate-700">Asset Defect Tracking</span>
-                    <span className="font-bold text-slate-900">Photo Logs &amp; Estimates</span>
-                  </div>
-                  <div className="flex justify-between items-center p-2.5 rounded bg-slate-50 text-xs">
-                    <span className="font-bold text-slate-700">Audit Preparedness</span>
-                    <span className="font-bold text-emerald-700">Verifiable History</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activePersona === 'technician' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-              <div className="space-y-4">
-                <span className="text-xs font-bold text-[#C2410C] uppercase tracking-wider">
-                  For On-Site Field Technicians
-                </span>
-                <h3 className="text-2xl font-bold text-[#1C1917]">
-                  Zero Paper Clipboards, Simple Mobile Inspection Forms
-                </h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  No more messy paper log sheets or trying to read faded inspection cards. Technicians record asset details, floor and location notes, GPS position, and condition photos directly in a simple mobile form.
-                </p>
-                <div className="space-y-2 text-xs font-semibold text-slate-700">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Works offline in subterranean pump rooms and basements (in beta)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Simple mobile form with photo capture and GPS verification (in beta)</span>
-                  </div>
-                </div>
-                <div className="pt-3 flex flex-wrap items-center gap-3">
-                  <GooglePlayBadge size="sm" theme="light" />
-                  <AppStoreBadge size="sm" theme="light" comingSoon />
-                  <span className="text-xs text-slate-600 font-medium block w-full sm:w-auto">
-                    Field app on Google Play &amp; Coming Soon to Apple App Store.
-                  </span>
-                </div>
-              </div>
-              <div className="bg-slate-900 text-white p-6 rounded-xl shadow-inner font-mono text-xs space-y-2">
-                <p className="text-cyan-400 font-bold">&gt; VIGIL_MOBILE_AUDIT_DEMO [Sample Data]</p>
-                <p className="text-slate-300">Target Asset: Pillar 4B, Extinguisher 04</p>
-                <p className="text-emerald-400">Pressure Gauge: 14.5 Bar ✓ NORMAL</p>
-                <p className="text-emerald-400">Seal &amp; Pin: Intact ✓ PASS</p>
-                <div className="p-2 rounded bg-slate-800 text-[11px] text-slate-300 border border-slate-700">
-                  Record stored locally. Will sync automatically upon reconnection.
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activePersona === 'facility' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-              <div className="space-y-4">
-                <span className="text-xs font-bold text-[#C2410C] uppercase tracking-wider">
-                  For Facility Managers &amp; Society Committees
-                </span>
-                <h3 className="text-2xl font-bold text-[#1C1917]">
-                  Clear Equipment Health Records Without Frantic Pre-Audit Rushes
-                </h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  Review exactly when each extinguisher or wet riser was last tested, inspect high-resolution defect photos, and receive client-ready Form-B reports formatted for authorized contractor signature.
-                </p>
-                <div className="space-y-2 text-xs font-semibold text-slate-700">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Digital access to scheduled inspection records</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Clear defect notes for fast maintenance approval</span>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-3">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                  <span className="text-xs font-bold text-slate-800">Facility Equipment Status [Sample View]</span>
-                  <span className="text-xs font-bold text-emerald-600">44 Operational / 4 Pending Refill</span>
-                </div>
-                <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                  <div className="bg-[#C2410C] h-full rounded-full" style={{ width: '92%' }} />
-                </div>
-                <p className="text-[11px] text-slate-500">
-                  Representative commercial facility schedule. Biannual Form-B cycle active.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {activePersona === 'auditor' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-              <div className="space-y-4">
-                <span className="text-xs font-bold text-[#C2410C] uppercase tracking-wider">
-                  For Fire Directorate &amp; Insurance Surveyors
-                </span>
-                <h3 className="text-2xl font-bold text-[#1C1917]">
-                  Verifiable Audit Trails &amp; Standardized Inspection Schedules
-                </h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  Every record in VigilAMC carries inspection timestamps, technician identifiers, and test findings matching IS 2190 and NBC 2016 Part 4 requirements, supporting thorough compliance evaluations.
-                </p>
-                <div className="space-y-2 text-xs font-semibold text-slate-700">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Structured Form-B format for authorized licensed agency endorsement</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Replaces unverifiable handwritten paper logbooks</span>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-2 text-xs">
-                <div className="p-2.5 rounded bg-emerald-50 text-emerald-800 flex justify-between font-bold">
-                  <span>AUDIT RECORD PREVIEW</span>
-                  <span>SAMPLE DATA</span>
-                </div>
-                <p className="text-slate-600">
-                  Statutory Reference: <strong>NBC 2016 Part 4 &amp; Applicable State Fire Rules (Form-B Style)</strong>
-                </p>
-                <p className="text-slate-600">
-                  Sample Equipment Log: <strong>48 Units Inspected &amp; Pressure-Tested</strong>
-                </p>
-                <p className="text-[11px] text-slate-500 italic">
-                  Note: Official certificates require physical/digital signature of licensed fire agency.
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Six Pillars of the VigilAMC Platform */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-50 border-y border-slate-200">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <span className="text-xs uppercase font-extrabold tracking-widest text-[#C2410C] bg-white px-3.5 py-1.5 rounded-full border border-slate-200">
-              Platform Modules
+    <div className="w-full bg-[#FFFFFF] text-[#1C1917] overflow-x-clip">
+      {/* Apple-Craft Hero */}
+      <section
+        aria-label="VigilAMC Features Overview"
+        className="pt-10 pb-14 sm:pt-14 sm:pb-18 border-b border-[#FED7AA]/50"
+        style={{
+          background: 'linear-gradient(180deg, #FFFFFF 0%, #FFF8F2 100%)',
+        }}
+      >
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FFF8F2] border border-[#FED7AA] mb-5">
+            <Flame className="w-4 h-4 text-[#EA580C]" aria-hidden="true" />
+            <span className="text-xs sm:text-[13px] font-semibold text-[#C2410C]">
+              17 capabilities across 4 pillars
             </span>
-            <h2 className="text-3xl font-extrabold text-[#1C1917] mt-3">
-              Six Pillars of the VigilAMC Platform
-            </h2>
-            <p className="text-sm text-slate-600 mt-2">
-              Modular capabilities designed to support every phase of fire protection maintenance.
-            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="corp-card p-6 bg-white border border-slate-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-10 h-10 rounded-lg bg-ocean-50 text-[#C2410C] flex items-center justify-center">
-                  <MapPin className="w-5 h-5" />
-                </div>
-                <StatusBadge status="BETA" />
-              </div>
-              <h4 className="text-base font-bold text-slate-900">GPS &amp; Location Asset Hub</h4>
-              <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                Unique serial number, manufacturing year, capacity, agent type, floor and room notes, and GPS coordinates for every piece of equipment.
-              </p>
-            </div>
+          <h1 className="font-display text-[38px] sm:text-[54px] lg:text-[66px] font-extrabold leading-[1.06] tracking-[-0.035em] text-[#1C1917] max-w-[900px] mx-auto text-balance">
+            Everything else your{' '}
+            <span className="text-[#C2410C]">agency runs on.</span>
+          </h1>
 
-            <div className="corp-card p-6 bg-white border border-slate-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-10 h-10 rounded-lg bg-navy-50 text-[#1C1917] flex items-center justify-center">
-                  <FileCheck2 className="w-5 h-5" />
-                </div>
-                <StatusBadge status="LIVE" />
-              </div>
-              <h4 className="text-base font-bold text-slate-900">Statutory Form-B Engine</h4>
-              <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                Automated collation of Biannual Fire Safety Declarations matching legal state government formats, ready for licensed contractor review and submission.
-              </p>
-            </div>
+          <p className="mt-4 sm:mt-5 text-[17px] sm:text-[19px] leading-[1.55] text-[#44403C] max-w-[640px] mx-auto">
+            Generic CRMs don&apos;t know IS 2190, NBC 2016 Part 4, or biannual Form B
+            declarations. Every tool below is built specifically for Indian fire-safety agencies.
+          </p>
 
-            <div className="corp-card p-6 bg-white border border-slate-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-10 h-10 rounded-lg bg-ocean-50 text-[#C2410C] flex items-center justify-center">
-                  <Smartphone className="w-5 h-5" />
-                </div>
-                <StatusBadge status="BETA" />
-              </div>
-              <h4 className="text-base font-bold text-slate-900">Offline Field Inspection App</h4>
-              <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                Mobile checklist and photo logging that functions without network coverage in basement pump rooms. Auto-syncs when online.
-              </p>
-            </div>
-
-            <div className="corp-card p-6 bg-white border border-slate-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-10 h-10 rounded-lg bg-navy-50 text-[#1C1917] flex items-center justify-center">
-                  <Wrench className="w-5 h-5" />
-                </div>
-                <StatusBadge status="SAMPLE" />
-              </div>
-              <h4 className="text-base font-bold text-slate-900">Defect &amp; Refilling Workorders</h4>
-              <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                Depressurized cylinders and leaking valves instantly trigger prioritized repair tickets with client approval summaries.
-              </p>
-            </div>
-
-            <div className="corp-card p-6 bg-white border border-slate-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-10 h-10 rounded-lg bg-ocean-50 text-[#C2410C] flex items-center justify-center">
-                  <BellRing className="w-5 h-5" />
-                </div>
-                <StatusBadge status="LIVE" />
-              </div>
-              <h4 className="text-base font-bold text-slate-900">Multi-Channel Expiry Alerts</h4>
-              <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                Automated 60 / 30 / 7-day Email &amp; Dashboard Renewal Alerts (WhatsApp Alerts in Pilot) notify your team well before statutory deadlines.
-              </p>
-            </div>
-
-            <div className="corp-card p-6 bg-white border border-slate-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-10 h-10 rounded-lg bg-navy-50 text-[#1C1917] flex items-center justify-center">
-                  <Users className="w-5 h-5" />
-                </div>
-                <StatusBadge status="COMING SOON" />
-              </div>
-              <h4 className="text-base font-bold text-slate-900">Client Compliance Portal</h4>
-              <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                Dedicated client portal for facility managers to inspect real-time safety asset status and download past certificates.
-              </p>
-            </div>
+          {/* Cluster Quick Links */}
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+            {FEATURE_CLUSTERS.map((cluster) => (
+              <a
+                key={cluster.id}
+                href={`#${cluster.id}`}
+                className="px-4 py-2 rounded-full bg-white border border-[#FED7AA] text-xs font-bold text-[#1C1917] hover:border-[#C2410C] hover:text-[#C2410C] transition-colors"
+              >
+                {cluster.title}
+              </a>
+            ))}
           </div>
-        </div>
-      </section>
 
-      {/* Feature Comparison Matrix */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1C1917]">
-            Why Modern AMC Fleets Choose VigilAMC
-          </h2>
-          <p className="text-sm text-slate-600 mt-2">
-            See how specialized life-safety software compares against manual spreadsheets and generic field tools.
-          </p>
-        </div>
-
-        <div className="overflow-x-auto corp-card border-slate-200">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[#1C1917] text-white">
-              <tr>
-                <th className="py-4 px-6 font-bold text-sm">Platform Capability</th>
-                <th className="py-4 px-6 font-black text-sm text-orange-100 bg-[#C2410C]">VigilAMC</th>
-                <th className="py-4 px-6 font-semibold">Manual Excel &amp; Paper</th>
-                <th className="py-4 px-6 font-semibold">Generic Field ERP</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 text-slate-700">
-              {comparisonData.map((row, i) => (
-                <tr key={i} className="hover:bg-slate-50 transition-colors">
-                  <td className="py-3.5 px-6 font-medium text-slate-900 flex items-center justify-between gap-2">
-                    <span>{row.feature}</span>
-                    <StatusBadge status={row.vigilStatus as any} />
-                  </td>
-                  <td className="py-3.5 px-6 bg-ocean-50/50 font-bold text-emerald-600">
-                    <div className="flex items-center gap-1.5">
-                      <Check className="w-4 h-4 text-emerald-600 stroke-[3]" />
-                      <span>Supported</span>
-                    </div>
-                  </td>
-                  <td className="py-3.5 px-6 text-red-600">
-                    <span className="flex items-center gap-1">
-                      <X className="w-4 h-4 text-red-500" />
-                      <span>No</span>
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-6 text-slate-500">
-                    {typeof row.legacy === 'boolean' ? (
-                      row.legacy ? 'Yes' : 'No'
-                    ) : (
-                      row.legacy
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16 px-4 bg-[#C2410C] text-white text-center">
-        <div className="max-w-3xl mx-auto space-y-4">
-          <h2 className="text-3xl font-extrabold">Ready to Join the Free Testing Program?</h2>
-          <p className="text-orange-50 text-sm max-w-xl mx-auto leading-relaxed">
-            VigilAMC is in its testing phase and is free for every agency that joins. Test asset registration, GPS-verified mobile forms, and Form-B generation with direct founder onboarding.
-          </p>
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3.5">
+            <Link
+              href="/contact"
+              className="btn-flame w-full sm:w-auto min-h-[48px] px-7 py-3 rounded-2xl text-white font-bold text-[15px] inline-flex items-center justify-center gap-2 shadow-[0_12px_28px_-8px_rgba(194,65,12,0.45)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C]"
+            >
+              <span>Book a Free Demo</span>
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
+            </Link>
             <Link
               href="/start-trial"
-              className="inline-flex items-center gap-2 px-8 py-3.5 bg-white text-[#9A3412] hover:bg-[#FFF8F2] font-bold text-sm rounded-xl transition-all shadow-lg"
+              className="btn-ghost-flame w-full sm:w-auto min-h-[48px] px-7 py-3 rounded-2xl font-bold text-[15px] inline-flex items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C]"
             >
-              <span>Start Free Trial</span>
-              <ArrowRight className="w-4 h-4" />
+              Start Free Trial
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Clusters 1 & 2 */}
+      {FEATURE_CLUSTERS.slice(0, 2).map((cluster) => (
+        <ClusterSection key={cluster.id} cluster={cluster} />
+      ))}
+
+      {/* Mid-Page FIRE CTA Band */}
+      <section
+        aria-label="Book a demo mid-page call to action"
+        className="py-14 sm:py-16 bg-[#C2410C] text-white border-y border-[#9A3412]/30"
+      >
+        <div className="max-w-[1000px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
+          <div className="space-y-2 max-w-[600px]">
+            <h2 className="font-sans font-bold text-[26px] sm:text-[32px] leading-[1.15] tracking-[-0.02em] text-white">
+              Ready to run every building without Excel chaos?
+            </h2>
+            <p className="text-[15px] sm:text-[16px] text-orange-50 leading-relaxed">
+              Bring one building register to a 15-minute live walkthrough — see offline inspections and Form B export on your own data.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-3 shrink-0">
+            <Link
+              href="/contact"
+              className="min-h-[48px] px-6 py-3 rounded-2xl bg-white text-[#9A3412] hover:bg-[#FFF8F2] font-bold text-sm inline-flex items-center gap-2 shadow-lg transition-colors"
+            >
+              <span>Book a Free Demo</span>
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </Link>
             <Link
               href="/sample-report"
-              className="inline-flex items-center gap-2 px-7 py-3.5 bg-white/10 hover:bg-white/20 text-white font-bold text-sm rounded-xl transition-all border border-white/30"
+              className="min-h-[48px] px-6 py-3 rounded-2xl bg-white/15 hover:bg-white/25 text-white border border-white/35 font-bold text-sm inline-flex items-center gap-2 transition-colors"
             >
-              <span>Inspect Sample Report</span>
+              <FileCheck2 className="w-4 h-4" aria-hidden="true" />
+              <span>Inspect Sample Form B</span>
             </Link>
           </div>
         </div>
       </section>
+
+      {/* Clusters 3 & 4 */}
+      {FEATURE_CLUSTERS.slice(2, 4).map((cluster) => (
+        <ClusterSection key={cluster.id} cluster={cluster} />
+      ))}
+
+      {/* Field App Availability & Statutory Scope Clarification */}
+      <section className="py-14 sm:py-16 bg-white border-t border-[#E7E5E4]">
+        <div className="max-w-[1000px] mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="rounded-3xl bg-[#FFF8F2] border border-[#FED7AA] p-6 sm:p-7 flex flex-col justify-between gap-4">
+            <div>
+              <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#C2410C] mb-2">
+                <ShieldCheck className="w-4 h-4" aria-hidden="true" />
+                <span>Standards Aligned</span>
+              </div>
+              <h3 className="font-sans font-bold text-xl text-[#1C1917]">
+                Built for IS 2190 &amp; NBC 2016 Part 4 workflows
+              </h3>
+              <p className="mt-2 text-sm text-[#44403C] leading-relaxed">
+                Every checklist and 5-page Form B report compiles your verified inspection records, unit serials, and rectification notes. Final statutory submission must always be signed and sealed by your licensed fire-safety agency.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-semibold text-[#047857]">
+              <CheckCircle2 className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span>Your agency branding &amp; signatory block stays front and centre.</span>
+            </div>
+          </div>
+
+          <div className="rounded-3xl bg-[#FFF8F2] border border-[#FED7AA] p-6 sm:p-7 flex flex-col justify-between gap-4">
+            <div>
+              <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#C2410C] mb-2">
+                <Lock className="w-4 h-4" aria-hidden="true" />
+                <span>Android Field App · com.vigilamc</span>
+              </div>
+              <h3 className="font-sans font-bold text-xl text-[#1C1917]">
+                Download VigilAMC Field on Google Play
+              </h3>
+              <p className="mt-2 text-sm text-[#44403C] leading-relaxed">
+                Also works cleanly on Android via the web app with the same Staff ID &amp; PIN account.
+              </p>
+            </div>
+            <div className="pt-1">
+              <GooglePlayBadge size="md" theme="dark" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Final Conversion Band */}
+      <FinalCtaSection />
     </div>
+  );
+}
+
+function ClusterSection({ cluster }: { cluster: FeatureCluster }) {
+  const isTint = cluster.surface === 'tint';
+  return (
+    <section
+      id={cluster.id}
+      aria-labelledby={`${cluster.id}-heading`}
+      className={`py-16 sm:py-22 border-t border-[#FED7AA]/50 ${
+        isTint ? 'bg-[#FFF8F2]' : 'bg-white'
+      }`}
+    >
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
+        <AppleReveal className="max-w-[680px] mb-10 sm:mb-12">
+          <p className="text-xs sm:text-[13px] font-bold uppercase tracking-[0.12em] text-[#C2410C] mb-2.5">
+            {cluster.badge}
+          </p>
+          <h2
+            id={`${cluster.id}-heading`}
+            className="font-sans font-bold text-[30px] sm:text-[40px] leading-[1.1] tracking-[-0.03em] text-[#1C1917]"
+          >
+            {cluster.title}
+          </h2>
+          <p className="mt-3 text-[16px] sm:text-[18px] text-[#44403C] leading-relaxed">
+            {cluster.subtitle}
+          </p>
+        </AppleReveal>
+
+        <div
+          className={`grid grid-cols-1 sm:grid-cols-2 ${
+            cluster.tiles.length >= 5 ? 'lg:grid-cols-3' : 'lg:grid-cols-4'
+          } gap-5`}
+        >
+          {cluster.tiles.map((tile, idx) => {
+            const Icon = tile.icon;
+            return (
+              <AppleReveal key={tile.label} delayMs={(idx % 4) * 50}>
+                <div
+                  className={`h-full rounded-2xl border p-6 flex flex-col justify-between transition-all duration-150 hover:-translate-y-0.5 ${
+                    isTint
+                      ? 'bg-white border-[#FED7AA]/80 shadow-[0_12px_30px_-20px_rgba(28,25,23,0.12)]'
+                      : 'bg-[#FFF8F2]/75 border-[#FED7AA]/80 hover:bg-[#FFF8F2]'
+                  }`}
+                >
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-white border border-[#FED7AA] flex items-center justify-center mb-4 shadow-xs">
+                      <Icon className="w-5 h-5 text-[#C2410C]" aria-hidden="true" />
+                    </div>
+                    <h3 className="font-sans font-bold text-[16px] text-[#1C1917]">
+                      {tile.label}
+                    </h3>
+                    <p className="mt-2 text-[14px] text-[#44403C] leading-relaxed">
+                      {tile.detail}
+                    </p>
+                  </div>
+
+                  {tile.isRadar && (
+                    <div className="mt-4 flex flex-wrap items-center gap-1.5">
+                      <span className="px-2.5 py-0.5 rounded-full bg-[#FEE2E2] text-[#991B1B] border border-[#DC2626]/40 text-[11px] font-bold">
+                        EXPIRED
+                      </span>
+                      <span className="px-2.5 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] border border-[#D97706]/40 text-[11px] font-bold">
+                        DUE SOON
+                      </span>
+                      <span className="px-2.5 py-0.5 rounded-full bg-[#D1FAE5] text-[#065F46] border border-[#059669]/40 text-[11px] font-bold">
+                        OK
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </AppleReveal>
+            );
+          })}
+        </div>
+      </div>
+    </section>
   );
 }

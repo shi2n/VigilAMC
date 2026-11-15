@@ -1,526 +1,449 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
-  Calendar,
-  Smartphone,
-  ShieldCheck,
-  FileCheck2,
-  CheckCircle2,
   AlertTriangle,
   ArrowRight,
-  Gauge,
+  BellRing,
+  CheckCircle2,
   Clock,
-  Check,
-  ChevronRight,
-  Layers,
-  Wrench,
-  Radio,
+  FileCheck2,
   FileSpreadsheet,
-  Download
+  Flame,
+  MailCheck,
+  MapPin,
+  Phone,
+  Smartphone,
+  Users,
 } from 'lucide-react';
-import { StatusBadge } from '@/components/StatusBadge';
+import { SITE_CONFIG } from '@/lib/siteConfig';
+import { AppleReveal } from '@/components/home/AppleReveal';
+import { LightBrowserFrame, LightPhoneFrame } from '@/components/home/DeviceFrames';
+import scenePump from '../../../public/images/scene-pump.jpg';
+import sceneGps from '../../../public/images/scene-gps.jpg';
+import sceneSignoff from '../../../public/images/scene-signoff.jpg';
+
+const FIRST_WEEK = [
+  {
+    day: 'Day 1',
+    title: 'Setup',
+    detail: 'Add your buildings and import your existing Excel equipment sheet, then invite your technicians.',
+  },
+  {
+    day: 'Day 2–3',
+    title: 'First inspections',
+    detail: 'Technicians run live checklists offline on Android with GPS-stamped camera photos.',
+  },
+  {
+    day: 'Day 4',
+    title: 'First reports to clients',
+    detail: 'Export your first 5-page white-label Form B PDF and share Portal access in one click.',
+  },
+  {
+    day: 'Day 5',
+    title: "You're running on it",
+    detail: 'Recurring service cycles, overdue alerts, and repair re-scheduling run on autopilot.',
+  },
+];
 
 export default function HowItWorksPage() {
-  // Interactive inspection simulator state
-  const [activeAssetType, setActiveAssetType] = useState<'extinguisher' | 'hydrant' | 'panel'>('extinguisher');
-  const [pressureCheck, setPressureCheck] = useState<'pass' | 'fail'>('pass');
-  const [tamperCheck, setTamperCheck] = useState<'pass' | 'fail'>('pass');
-  const [hoseCheck, setHoseCheck] = useState<'pass' | 'fail'>('pass');
-
   return (
-    <div className="w-full bg-white">
-      {/* Page Header Banner */}
-      <section className="bg-gradient-to-b from-ocean-50 to-white py-20 px-4 sm:px-6 lg:px-8 border-b border-slate-200">
-        <div className="max-w-4xl mx-auto text-center">
-          <span className="text-xs uppercase font-extrabold tracking-widest text-[#C2410C] bg-white px-3.5 py-1.5 rounded-full border border-ocean-200 shadow-sm">
-            Operational Blueprint
-          </span>
-          <h1 className="font-display text-4xl sm:text-5xl font-black text-[#1C1917] tracking-[-0.03em] mt-4 text-balance">
-            How VigilAMC Works in the Field
-          </h1>
-          <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto text-pretty">
-            From registering assets with floor locations to recording GPS and photo-verified inspections and generating Form-B certificates — here is how fire protection AMC workflows operate step by step.
-          </p>
-        </div>
-      </section>
-
-      {/* 4-Step Detailed Implementation Timeline */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
-        <div className="space-y-20">
-          {/* Step 1 */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-5 order-2 lg:order-1">
-              <div className="corp-card p-6 bg-slate-50 border-ocean-200/80 shadow-card">
-                <div className="flex items-center justify-between pb-4 border-b border-slate-200">
-                  <div className="flex items-center gap-2">
-                    <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
-                    <span className="text-xs font-bold text-slate-800">Asset Data Ingestion [Sample View]</span>
-                  </div>
-                  <span className="text-[11px] font-mono text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded font-bold tabular-nums">
-                    48 ASSETS PARSED
-                  </span>
-                </div>
-                <div className="mt-4 space-y-2 text-xs">
-                  <div className="p-3 bg-white rounded-lg border border-slate-200 flex justify-between items-center shadow-xs">
-                    <div>
-                      <p className="font-bold text-[#1C1917]">Tower B — Floor 04</p>
-                      <p className="text-slate-500">6kg ABC Powder #EXT-401 to #EXT-408</p>
-                    </div>
-                    <span className="text-emerald-600 font-bold">✓ Registered</span>
-                  </div>
-                  <div className="p-3 bg-white rounded-lg border border-slate-200 flex justify-between items-center shadow-xs">
-                    <div>
-                      <p className="font-bold text-[#1C1917]">Basement 2 Pump Room</p>
-                      <p className="text-slate-500">Wet Riser Landing Valves &amp; Jockey Pump</p>
-                    </div>
-                    <span className="text-emerald-600 font-bold">✓ Registered</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="lg:col-span-7 order-1 lg:order-2 space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ocean-50 text-[#C2410C] text-xs font-extrabold border border-ocean-200">
-                Phase 01 &bull; Register Assets
-              </div>
-              <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-[#1C1917] tracking-tight">
-                Register Equipment &amp; Location Details
-              </h2>
-              <p className="text-sm sm:text-base text-slate-600 leading-relaxed text-pretty">
-                Import existing facility equipment spreadsheets using structured CSV/Excel templates. Organize assets by building, wing, floor, and equipment classification.
-              </p>
-              <p className="text-sm text-slate-600 leading-relaxed text-pretty">
-                For each extinguisher, hydrant, hose reel, and panel, record equipment details: asset type, capacity, serial number, and exact floor and location notes for complete traceability.
-              </p>
-              <div className="grid grid-cols-2 gap-4 pt-2 text-xs font-medium text-slate-700">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Supports ABC, CO2, Foam, Wet Chemical, Hydrants</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Asset type, capacity, and serial numbers</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Step 2 */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-7 space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-navy-50 text-[#1C1917] text-xs font-extrabold border border-navy-200">
-                Phase 02 &bull; Scheduled Maintenance
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1C1917] tracking-tight">
-                Statutory Inspection Schedules &amp; Renewal Reminders
-              </h2>
-              <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
-                Fire regulations mandate periodic inspection intervals: monthly visual inspections, quarterly functional checks, biannual Form-B certifications, and periodic hydrostatic pressure testing (as per IS 2190).
-              </p>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                VigilAMC calculates the expiry window for each asset. When a renewal approaches, our reminder engine sends notifications to your operations desk 60, 30, and 7 days prior to expiry.
-              </p>
-              <div className="grid grid-cols-2 gap-4 pt-2 text-xs font-medium text-slate-700">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>60-30-7 day automated warning notifications</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Prevents last-minute emergency refilling panics</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="lg:col-span-5">
-              <div className="corp-card p-6 bg-white border-navy-200 shadow-md">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <span className="text-xs font-bold text-[#1C1917] flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-[#C2410C]" />
-                    Compliance Schedule [Sample View]
-                  </span>
-                  <span className="text-[10px] bg-ocean-50 text-[#C2410C] px-2 py-0.5 rounded font-bold">
-                    ACTIVE CADENCE
-                  </span>
-                </div>
-                <div className="mt-3 space-y-2.5 text-xs">
-                  <div className="p-2.5 rounded bg-emerald-50 border border-emerald-200 flex justify-between items-center">
-                    <div>
-                      <p className="font-bold text-emerald-900">Monthly Visual Check</p>
-                      <p className="text-emerald-700 text-[11px]">Due in 4 days &bull; Technician Scheduled</p>
-                    </div>
-                    <span className="px-2 py-0.5 bg-emerald-200 text-emerald-900 rounded text-[10px] font-bold">
-                      SCHEDULED
-                    </span>
-                  </div>
-                  <div className="p-2.5 rounded bg-amber-50 border border-amber-200 flex justify-between items-center">
-                    <div>
-                      <p className="font-bold text-amber-900">Biannual Form-B Cycle</p>
-                      <p className="text-amber-700 text-[11px]">Due in 18 days &bull; Summary In Progress</p>
-                    </div>
-                    <span className="px-2 py-0.5 bg-amber-200 text-amber-900 rounded text-[10px] font-bold">
-                      IN PROGRESS
-                    </span>
-                  </div>
-                  <div className="p-2.5 rounded bg-slate-50 border border-slate-200 flex justify-between items-center">
-                    <div>
-                      <p className="font-bold text-slate-800">Hydrostatic Pressure Testing</p>
-                      <p className="text-slate-500 text-[11px]">12 Cylinders Due in 2027</p>
-                    </div>
-                    <span className="px-2 py-0.5 bg-slate-200 text-slate-700 rounded text-[10px] font-bold">
-                      PLANNED
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Step 3 */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-5 order-2 lg:order-1">
-              <div className="corp-card p-6 bg-slate-900 text-white shadow-xl rounded-2xl">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <div className="flex items-center gap-2">
-                    <Smartphone className="w-4 h-4 text-[#48CAE4]" />
-                    <span className="text-xs font-bold text-slate-200">Mobile Inspection Form [Sample View]</span>
-                  </div>
-                  <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-mono">
-                    OFFLINE READY (BETA)
-                  </span>
-                </div>
-                <div className="mt-4 space-y-3 text-xs">
-                  <div className="p-3 rounded-lg bg-slate-800/80 border border-slate-700">
-                    <p className="text-slate-400">Inspected Asset Record</p>
-                    <p className="font-mono text-cyan-300 font-bold mt-0.5">VIGIL-EXT-2041 [Extinguisher #14]</p>
-                    <p className="text-[11px] text-slate-300 mt-1">Floor 4 North Wing &bull; GPS: 28.4595° N, 77.0266° E</p>
-                  </div>
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between items-center p-2 rounded bg-slate-800">
-                      <span>Pressure Gauge (14.2 Bar)</span>
-                      <span className="text-emerald-400 font-bold">✓ PASS</span>
-                    </div>
-                    <div className="flex justify-between items-center p-2 rounded bg-slate-800">
-                      <span>Condition Photo Attached</span>
-                      <span className="text-emerald-400 font-bold">✓ CAPTURED</span>
-                    </div>
-                    <div className="flex justify-between items-center p-2 rounded bg-slate-800">
-                      <span>Inspection Timestamp</span>
-                      <span className="text-emerald-400 font-bold">✓ RECORDED</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="lg:col-span-7 order-1 lg:order-2 space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ocean-50 text-[#C2410C] text-xs font-extrabold border border-ocean-200">
-                Phase 03 &bull; Record on Site
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1C1917] tracking-tight">
-                GPS-Verified Inspections &amp; Photo Proof
-              </h2>
-              <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
-                Technicians use a simple mobile form to record each equipment check: asset details (type, capacity, serial number), floor and location notes, GPS position, a photo, and the date and time.
-              </p>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Because indoor GPS signals can vary inside buildings, technicians record specific floor and room location notes alongside GPS position. Forms operate with local offline caching for shielded pump rooms and basements (in beta).
-              </p>
-            </div>
-          </div>
-
-          {/* Step 4 */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-7 space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-extrabold border border-emerald-200">
-                Phase 04 &bull; Form-B Certification
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1C1917] tracking-tight">
-                Automated Form-B Generation &amp; Client Reporting
-              </h2>
-              <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
-                At the end of each biannual cycle, generate a standardized Form-B certificate in PDF format. The system compiles every inspected asset, test date, and non-conformance rectification record into official legal formats for authorized contractor signature.
-              </p>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Deliver clean, professional documentation to building committees and municipal authorities, demonstrating thorough maintenance and protecting contract renewals.
-              </p>
-            </div>
-
-            <div className="lg:col-span-5">
-              <div className="corp-card p-6 bg-gradient-to-br from-white to-emerald-50/50 border-emerald-200 shadow-md">
-                <div className="flex items-center justify-between pb-3 border-b border-emerald-100">
-                  <div className="flex items-center gap-2">
-                    <FileCheck2 className="w-5 h-5 text-emerald-600" />
-                    <span className="text-xs font-bold text-slate-900">Form-B Biannual Certificate</span>
-                  </div>
-                  <StatusBadge status="SAMPLE" />
-                </div>
-
-                <div className="mt-4 space-y-2 text-xs text-slate-600">
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span>Statutory Reference:</span>
-                    <strong className="text-slate-900">NBC 2016 Part 4 &amp; Applicable State Rules</strong>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span>Equipments Compiled:</span>
-                    <strong className="text-slate-900">48 Units (44 OK / 4 Defect)</strong>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span>Licensed Agency Review:</span>
-                    <strong className="text-emerald-700">Ready for Endorsement</strong>
-                  </div>
-                  <div className="flex justify-between py-1">
-                    <span>Inspection Record:</span>
-                    <strong className="text-emerald-700 font-extrabold">Complete &amp; Timestamped</strong>
-                  </div>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-slate-200">
-                  <Link
-                    href="/sample-report"
-                    className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg text-center block transition-colors flex items-center justify-center gap-1.5"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Inspect Sample Form-B PDF</span>
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Statutory Clarification Box */}
-      <section className="py-6 px-4 max-w-4xl mx-auto">
-        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-          <p className="leading-relaxed">
-            <strong>Statutory Responsibility Clarification:</strong> Form-B certificates generated by VigilAMC provide standardized data compilation and formatting based on field logs. Final legal certification and Form-B submission must be signed and stamped by a licensed fire safety contractor holding a valid license issued by the relevant State Fire Authority.
-          </p>
-        </div>
-      </section>
-
-      {/* Interactive Simulator */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-50 border-y border-slate-200">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <span className="text-xs uppercase font-extrabold tracking-widest text-[#C2410C] bg-white px-3 py-1 rounded-full border border-slate-200">
-              Interactive Test Drive
+    <div className="w-full bg-[#FFFFFF] text-[#1C1917] overflow-x-clip">
+      {/* Compact Apple×FIRE Hero */}
+      <section
+        aria-label="How VigilAMC Works Hero"
+        className="pt-10 pb-14 sm:pt-14 sm:pb-18 border-b border-[#FED7AA]/50"
+        style={{
+          background: 'linear-gradient(180deg, #FFFFFF 0%, #FFF8F2 100%)',
+        }}
+      >
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FFF8F2] border border-[#FED7AA] mb-5">
+            <Flame className="w-4 h-4 text-[#EA580C]" aria-hidden="true" />
+            <span className="text-xs sm:text-[13px] font-semibold text-[#C2410C]">
+              Zero hardware · Zero messy onboarding
             </span>
-            <h3 className="text-2xl sm:text-3xl font-extrabold text-[#1C1917] tracking-tight mt-3">
-              Simulate a Live Field Asset Audit
-            </h3>
-            <p className="text-sm text-slate-600 mt-2">
-              Select an asset type, toggle inspection parameters, and see how VigilAMC records condition checks.
-            </p>
           </div>
 
-          <div className="corp-card p-6 sm:p-8 bg-white border-ocean-200 shadow-xl">
-            {/* Asset Selector Tabs */}
-            <div className="flex flex-wrap gap-2 pb-6 border-b border-slate-200">
-              <button
-                onClick={() => setActiveAssetType('extinguisher')}
-                className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                  activeAssetType === 'extinguisher'
-                    ? 'bg-[#C2410C] text-white shadow'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                }`}
-              >
-                ABC Fire Extinguisher (6kg)
-              </button>
-              <button
-                onClick={() => setActiveAssetType('hydrant')}
-                className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                  activeAssetType === 'hydrant'
-                    ? 'bg-[#C2410C] text-white shadow'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                }`}
-              >
-                Wet Riser Landing Valve
-              </button>
-              <button
-                onClick={() => setActiveAssetType('panel')}
-                className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                  activeAssetType === 'panel'
-                    ? 'bg-[#C2410C] text-white shadow'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                }`}
-              >
-                Fire Alarm Control Panel
-              </button>
-            </div>
+          <h1 className="font-display text-[38px] sm:text-[54px] lg:text-[66px] font-extrabold leading-[1.06] tracking-[-0.035em] text-[#1C1917] max-w-[820px] mx-auto text-balance">
+            Live in a day.{' '}
+            <span className="text-[#C2410C]">Not a quarter.</span>
+          </h1>
 
-            {/* Checklist Simulator Options */}
-            <div className="py-6 space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 gap-3">
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900">
-                    {activeAssetType === 'extinguisher'
-                      ? 'Pressure Gauge Needle Check'
-                      : activeAssetType === 'hydrant'
-                      ? 'Static Water Pressure (Min 3.5 Bar)'
-                      : 'Mains & Battery Standby Power'}
-                  </h4>
-                  <p className="text-xs text-slate-500">Visual gauge verification and pressure status</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setPressureCheck('pass')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      pressureCheck === 'pass'
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-slate-200 text-slate-700'
-                    }`}
-                  >
-                    ✓ In Green Zone
-                  </button>
-                  <button
-                    onClick={() => setPressureCheck('fail')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      pressureCheck === 'fail'
-                        ? 'bg-red-600 text-white'
-                        : 'bg-slate-200 text-slate-700'
-                    }`}
-                  >
-                    ⚠ Depressurized
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 gap-3">
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900">
-                    {activeAssetType === 'extinguisher'
-                      ? 'Tamper Seal & Safety Pull Pin'
-                      : activeAssetType === 'hydrant'
-                      ? 'Gland Packing Gasket & Spindle'
-                      : 'Zone Fault Indicator Status'}
-                  </h4>
-                  <p className="text-xs text-slate-500">Physical integrity and tamper verification</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setTamperCheck('pass')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      tamperCheck === 'pass'
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-slate-200 text-slate-700'
-                    }`}
-                  >
-                    ✓ Intact
-                  </button>
-                  <button
-                    onClick={() => setTamperCheck('fail')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      tamperCheck === 'fail'
-                        ? 'bg-red-600 text-white'
-                        : 'bg-slate-200 text-slate-700'
-                    }`}
-                  >
-                    ⚠ Defective / Broken
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 gap-3">
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900">
-                    {activeAssetType === 'extinguisher'
-                      ? 'Discharge Horn, Nozzle & Hose'
-                      : activeAssetType === 'hydrant'
-                      ? 'Canvas Hose Reel & Fog Nozzle'
-                      : 'Manual Call Point (MCP) Glass'}
-                  </h4>
-                  <p className="text-xs text-slate-500">Physical damage, obstruction, and cleanliness check</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setHoseCheck('pass')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      hoseCheck === 'pass'
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-slate-200 text-slate-700'
-                    }`}
-                  >
-                    ✓ Clear &amp; Ready
-                  </button>
-                  <button
-                    onClick={() => setHoseCheck('fail')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      hoseCheck === 'fail'
-                        ? 'bg-red-600 text-white'
-                        : 'bg-slate-200 text-slate-700'
-                    }`}
-                  >
-                    ⚠ Damaged / Missing
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Calculated Status Result */}
-            <div className="p-4 rounded-xl border flex flex-col sm:flex-row items-center justify-between gap-4 transition-colors">
-              {pressureCheck === 'pass' && tamperCheck === 'pass' && hoseCheck === 'pass' ? (
-                <div className="flex items-center gap-3 text-emerald-800">
-                  <CheckCircle2 className="w-8 h-8 text-emerald-600 shrink-0" />
-                  <div>
-                    <h5 className="text-sm font-bold text-emerald-900">
-                      Audit Status: Passed (Ready for Next Scheduled Cycle)
-                    </h5>
-                    <p className="text-xs text-emerald-700">
-                      Inspection logged in local cache. Next maintenance window scheduled according to IS 2190 standards.
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3 text-red-800">
-                  <AlertTriangle className="w-8 h-8 text-red-600 shrink-0" />
-                  <div>
-                    <h5 className="text-sm font-bold text-red-900">
-                      Defect Logged: Added to Remediation Schedule
-                    </h5>
-                    <p className="text-xs text-red-700">
-                      Non-conformance recorded with defect details. Marked for repair/refilling before Form-B finalization.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              <Link
-                href="/sample-report"
-                className="px-5 py-2.5 bg-[#C2410C] hover:bg-[#1C1917] text-white text-xs font-bold rounded-lg transition-colors whitespace-nowrap shadow cursor-pointer"
-              >
-                Inspect Sample Form-B
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Bottom CTA Banner */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white text-center">
-        <div className="max-w-3xl mx-auto space-y-4">
-          <h2 className="text-3xl font-extrabold text-[#1C1917]">
-            Ready to Put Your Operations on Autopilot?
-          </h2>
-          <p className="text-slate-600 text-sm leading-relaxed">
-            VigilAMC is in its testing phase and is free for every agency that joins. Test asset registration, GPS-verified inspections, and Form-B generation with your team.
+          <p className="mt-4 sm:mt-5 text-[17px] sm:text-[19px] leading-[1.55] text-[#44403C] max-w-[640px] mx-auto">
+            Three clear steps take your agency from scattered spreadsheets and WhatsApp updates to
+            GPS-stamped proof and automated Form B compliance.
           </p>
-          <div className="pt-4 flex flex-col sm:flex-row justify-center gap-4">
+
+          <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3.5">
+            <Link
+              href="/contact"
+              className="btn-flame w-full sm:w-auto min-h-[48px] px-7 py-3 rounded-2xl text-white font-bold text-[15px] inline-flex items-center justify-center gap-2 shadow-[0_12px_28px_-8px_rgba(194,65,12,0.45)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C]"
+            >
+              <span>Book a Free Demo</span>
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
+            </Link>
             <Link
               href="/start-trial"
-              className="px-8 py-3.5 bg-[#C2410C] hover:bg-[#9A3412] text-white font-bold text-sm rounded-xl shadow-lg transition-colors"
+              className="btn-ghost-flame w-full sm:w-auto min-h-[48px] px-7 py-3 rounded-2xl font-bold text-[15px] inline-flex items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C]"
             >
               Start Free Trial
             </Link>
-            <Link
-              href="/sample-report"
-              className="px-8 py-3.5 bg-slate-100 hover:bg-slate-200 text-[#1C1917] font-bold text-sm rounded-xl transition-colors"
+          </div>
+        </div>
+      </section>
+
+      {/* Step 1: Set up */}
+      <section className="py-16 sm:py-24 bg-white border-b border-[#E7E5E4]">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+          <AppleReveal className="lg:col-span-5 space-y-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FFF8F2] border border-[#FED7AA] text-xs font-extrabold text-[#C2410C]">
+              <span>STEP 01 · SET UP</span>
+            </div>
+            <h2 className="font-sans font-bold text-[30px] sm:text-[40px] leading-[1.1] tracking-[-0.03em] text-[#1C1917]">
+              Bring your buildings, equipment &amp; field team in minutes.
+            </h2>
+            <p className="text-[17px] text-[#44403C] leading-relaxed">
+              Add client buildings and assets manually or drop in your existing Excel register — then
+              invite your technicians with Staff IDs and 6-digit PINs.
+            </p>
+            <div className="rounded-2xl bg-[#FFF8F2] border border-[#FED7AA] px-4 py-3 text-sm font-bold text-[#9A3412] flex items-center gap-2.5">
+              <Clock className="w-4 h-4 shrink-0 text-[#C2410C]" aria-hidden="true" />
+              <span>Most agencies finish setup the same afternoon.</span>
+            </div>
+            <ul className="space-y-2.5 pt-1 text-[15px] text-[#1C1917]">
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-[#047857] shrink-0 mt-1" aria-hidden="true" />
+                <span>Map towers, basements, floors, zones, extinguishers, hydrants &amp; pumps</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-[#047857] shrink-0 mt-1" aria-hidden="true" />
+                <span>Upload `.xlsx` / `.csv` sheets directly with validation before import</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-[#047857] shrink-0 mt-1" aria-hidden="true" />
+                <span>Assign technicians to sites and set monthly, quarterly, or annual cycles</span>
+              </li>
+            </ul>
+          </AppleReveal>
+
+          <AppleReveal delayMs={70} className="lg:col-span-7 space-y-4">
+            <LightBrowserFrame url="vigilamc.com/dashboard · Bulk Import & Team Invite">
+              <div className="p-5 sm:p-6 bg-[#FFFDFB] grid grid-cols-1 sm:grid-cols-12 gap-5 items-center">
+                <div className="sm:col-span-7 space-y-3">
+                  <div className="flex items-center justify-between pb-2.5 border-b border-[#E7E5E4]">
+                    <span className="text-xs font-bold text-[#1C1917] flex items-center gap-1.5">
+                      <FileSpreadsheet className="w-4 h-4 text-[#C2410C]" aria-hidden="true" />
+                      <span>Agency_Master_Register.xlsx</span>
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-[#D1FAE5] text-[#065F46] text-[10px] font-bold">
+                      48 Units Parsed
+                    </span>
+                  </div>
+                  <div className="rounded-xl bg-white border border-[#E7E5E4] p-3 text-xs flex items-center justify-between">
+                    <div>
+                      <div className="font-bold text-[#1C1917]">Horizon IT Park · B2 Pump Room</div>
+                      <div className="text-[#44403C]">Main Jockey Pump + 18 Hydrant Valves</div>
+                    </div>
+                    <span className="font-bold text-[#047857]">Ready</span>
+                  </div>
+                  <div className="rounded-xl bg-white border border-[#E7E5E4] p-3 text-xs flex items-center justify-between">
+                    <div>
+                      <div className="font-bold text-[#1C1917]">Sunrise Plaza · Floors 1–6</div>
+                      <div className="text-[#44403C]">30 ABC &amp; CO2 Extinguishers</div>
+                    </div>
+                    <span className="font-bold text-[#047857]">Ready</span>
+                  </div>
+                  <div className="rounded-xl bg-[#FFF8F2] border border-[#FED7AA] p-3 text-xs flex items-center gap-2 text-[#9A3412] font-semibold">
+                    <Users className="w-4 h-4 shrink-0 text-[#C2410C]" aria-hidden="true" />
+                    <span>3 Field Technicians invited via Staff ID + PIN</span>
+                  </div>
+                </div>
+                <div className="sm:col-span-5">
+                  <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden border border-[#E7E5E4] bg-[#FFF8F2]">
+                    <Image
+                      src={scenePump}
+                      alt="Fire engineer inspecting pump room fire safety equipment during agency setup"
+                      fill
+                      sizes="(min-width: 1024px) 260px, 90vw"
+                      className="object-cover"
+                    />
+                  </div>
+                </div>
+              </div>
+            </LightBrowserFrame>
+          </AppleReveal>
+        </div>
+      </section>
+
+      {/* Step 2: Inspect */}
+      <section className="py-16 sm:py-24 bg-[#FFF8F2] border-b border-[#FED7AA]/70">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+          <AppleReveal delayMs={70} className="lg:col-span-7 order-2 lg:order-1">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 items-center">
+              <div className="sm:col-span-6 flex justify-center">
+                <div className="w-[215px]">
+                  <LightPhoneFrame>
+                    <div className="relative aspect-[9/19] w-full bg-[#FFF8F2]">
+                      <Image
+                        src="/screenshots/tech-checklist-detail.png"
+                        alt="VigilAMC Field Android checklist screen working offline with GPS proof"
+                        fill
+                        sizes="215px"
+                        className="object-cover object-top"
+                      />
+                    </div>
+                  </LightPhoneFrame>
+                </div>
+              </div>
+              <div className="sm:col-span-6 space-y-4">
+                <div className="rounded-2xl bg-white border border-[#FED7AA] p-3 shadow-sm">
+                  <div className="relative aspect-[16/10] w-full rounded-xl overflow-hidden bg-[#FFF8F2]">
+                    <Image
+                      src={sceneGps}
+                      alt="Technician logging hydrant inspection on phone with GPS coordinates"
+                      fill
+                      sizes="(min-width: 1024px) 280px, 90vw"
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="pt-2.5 px-1 flex items-center justify-between text-xs font-bold text-[#1C1917]">
+                    <span className="inline-flex items-center gap-1 text-[#C2410C]">
+                      <MapPin className="w-3.5 h-3.5" aria-hidden="true" />
+                      GPS + Timestamp Locked
+                    </span>
+                    <span className="text-[#047857]">Offline Outbox OK</span>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl bg-white border border-[#E7E5E4] p-4 space-y-2 text-xs">
+                  <div className="font-bold text-[#1C1917] flex items-center justify-between">
+                    <span>Live Office Status Sync</span>
+                    <span className="px-2 py-0.5 rounded-full bg-[#D1FAE5] text-[#065F46] font-bold">
+                      Updated
+                    </span>
+                  </div>
+                  <p className="text-[#44403C]">
+                    Completed floors, pressure readings, defect flags, and camera photos appear directly on the office dashboard.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </AppleReveal>
+
+          <AppleReveal className="lg:col-span-5 space-y-4 order-1 lg:order-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-[#FED7AA] text-xs font-extrabold text-[#C2410C]">
+              <span>STEP 02 · INSPECT</span>
+            </div>
+            <h2 className="font-sans font-bold text-[30px] sm:text-[40px] leading-[1.1] tracking-[-0.03em] text-[#1C1917]">
+              Your field team inspects offline, with GPS-stamped proof.
+            </h2>
+            <p className="text-[17px] text-[#44403C] leading-relaxed">
+              Technicians follow guided floor and zone checklists in their preferred Indian language,
+              capture rear-camera photos with GPS coordinates, and record voice remarks — even with zero basement signal.
+            </p>
+            <ul className="space-y-2.5 pt-1 text-[15px] text-[#1C1917]">
+              <li className="flex items-start gap-2.5">
+                <Smartphone className="w-4 h-4 text-[#C2410C] shrink-0 mt-1" aria-hidden="true" />
+                <span>Lock-screen push alerts wake technicians for urgent work orders</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-[#047857] shrink-0 mt-1" aria-hidden="true" />
+                <span>Local outbox stores inspections safely offline and syncs automatically</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-[#047857] shrink-0 mt-1" aria-hidden="true" />
+                <span>Office sees live building progress and flagged defects immediately</span>
+              </li>
+            </ul>
+          </AppleReveal>
+        </div>
+      </section>
+
+      {/* Step 3: Report & relax */}
+      <section className="py-16 sm:py-24 bg-white border-b border-[#E7E5E4]">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+          <AppleReveal className="lg:col-span-5 space-y-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FFF8F2] border border-[#FED7AA] text-xs font-extrabold text-[#C2410C]">
+              <span>STEP 03 · REPORT &amp; RELAX</span>
+            </div>
+            <h2 className="font-sans font-bold text-[30px] sm:text-[40px] leading-[1.1] tracking-[-0.03em] text-[#1C1917]">
+              Form B reports, client alerts &amp; renewals go out automatically.
+            </h2>
+            <p className="text-[17px] text-[#44403C] leading-relaxed">
+              No Sunday nights stitching photos into Word documents. Generate your 5-page white-label Form B PDF in minutes, email due-date alerts, and let clients check their Portal anytime.
+            </p>
+            <div className="pt-2">
+              <Link
+                href="/sample-report"
+                className="inline-flex items-center gap-2 text-sm font-bold text-[#C2410C] hover:text-[#9A3412] underline underline-offset-4"
+              >
+                <span>Inspect sample 5-page Form B report</span>
+                <ArrowRight className="w-4 h-4" aria-hidden="true" />
+              </Link>
+            </div>
+          </AppleReveal>
+
+          <AppleReveal delayMs={70} className="lg:col-span-7">
+            <LightBrowserFrame url="vigilamc.com/reports · Automated Form B & Digests">
+              <div className="p-5 sm:p-6 bg-[#FFFDFB] grid grid-cols-1 sm:grid-cols-12 gap-5 items-center">
+                <div className="sm:col-span-7 space-y-3">
+                  <div className="rounded-xl bg-[#FFF8F2] border border-[#FED7AA] p-4 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-[#1C1917] flex items-center gap-1.5">
+                        <FileCheck2 className="w-4 h-4 text-[#C2410C]" aria-hidden="true" />
+                        <span>Form B Biannual Declaration</span>
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-[#D1FAE5] text-[#065F46] text-[10px] font-bold">
+                        5 Pages Ready
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#44403C]">
+                      Stamped with your agency header, license number, verified units &amp; signatory block.
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl bg-white border border-[#E7E5E4] p-3.5 flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-2 font-semibold text-[#1C1917]">
+                      <MailCheck className="w-4 h-4 text-[#047857]" aria-hidden="true" />
+                      <span>Client Portal Delivery Receipt</span>
+                    </span>
+                    <span className="font-bold text-[#047857]">Acknowledged</span>
+                  </div>
+
+                  <div className="rounded-xl bg-white border border-[#E7E5E4] p-3.5 flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-2 font-semibold text-[#1C1917]">
+                      <BellRing className="w-4 h-4 text-[#C2410C]" aria-hidden="true" />
+                      <span>60 / 30 / 7-Day Renewal Alerts</span>
+                    </span>
+                    <span className="font-bold text-[#C2410C]">Scheduled</span>
+                  </div>
+                </div>
+
+                <div className="sm:col-span-5">
+                  <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden border border-[#E7E5E4] bg-[#FFF8F2]">
+                    <Image
+                      src={sceneSignoff}
+                      alt="Facility manager reviewing digital compliance report sign-off in building lobby"
+                      fill
+                      sizes="(min-width: 1024px) 260px, 90vw"
+                      className="object-cover"
+                    />
+                  </div>
+                </div>
+              </div>
+            </LightBrowserFrame>
+          </AppleReveal>
+        </div>
+      </section>
+
+      {/* "Your first week" Honest Mini-Timeline */}
+      <section
+        aria-labelledby="first-week-heading"
+        className="py-16 sm:py-24 bg-[#FFF8F2] border-b border-[#FED7AA]/70"
+      >
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
+          <AppleReveal className="text-center max-w-[680px] mx-auto mb-12">
+            <p className="text-xs sm:text-[13px] font-bold uppercase tracking-[0.12em] text-[#C2410C] mb-2.5">
+              Realistic rollout
+            </p>
+            <h2
+              id="first-week-heading"
+              className="font-sans font-bold text-[30px] sm:text-[42px] leading-[1.1] tracking-[-0.03em] text-[#1C1917]"
             >
-              Download Sample Form-B PDF
+              Your first week on VigilAMC.
+            </h2>
+            <p className="mt-3 text-[16px] sm:text-[18px] text-[#44403C]">
+              Honest day-by-day pace — no enterprise consulting required.
+            </p>
+          </AppleReveal>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {FIRST_WEEK.map((item, idx) => (
+              <AppleReveal key={item.day} delayMs={idx * 55}>
+                <div className="h-full rounded-2xl bg-white border border-[#FED7AA]/80 p-6 shadow-[0_12px_30px_-20px_rgba(28,25,23,0.12)] flex flex-col justify-between">
+                  <div>
+                    <span className="inline-flex px-3 py-1 rounded-full bg-[#C2410C] text-white text-xs font-bold">
+                      {item.day}
+                    </span>
+                    <h3 className="mt-4 font-sans font-bold text-lg text-[#1C1917]">
+                      {item.title}
+                    </h3>
+                    <p className="mt-2 text-sm text-[#44403C] leading-relaxed">
+                      {item.detail}
+                    </p>
+                  </div>
+                </div>
+              </AppleReveal>
+            ))}
+          </div>
+
+          {/* Honest Statutory Responsibility Note */}
+          <div className="mt-10 max-w-[900px] mx-auto rounded-2xl bg-white border border-[#FED7AA] p-5 flex items-start gap-3 text-xs sm:text-[13px] text-[#44403C]">
+            <AlertTriangle className="w-5 h-5 text-[#C2410C] shrink-0 mt-0.5" aria-hidden="true" />
+            <p className="leading-relaxed">
+              <strong className="text-[#1C1917]">Statutory Responsibility Note:</strong> VigilAMC compiles inspection records into standardized 5-page Form B formats aligned with IS 2190 and NBC 2016 Part 4. Final legal certification and authority submission remain signed and stamped by a licensed fire-safety contractor.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Bottom CTA Band: "Ready? Book a Free Demo." */}
+      <section
+        aria-labelledby="how-final-cta-heading"
+        className="relative overflow-hidden py-20 sm:py-24 bg-[#C2410C] text-white"
+      >
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[900px] h-[420px] rounded-full opacity-40"
+          style={{
+            background:
+              'radial-gradient(ellipse at center, #EA580C 0%, rgba(194, 65, 12, 0) 70%)',
+          }}
+        />
+        <div className="relative z-10 max-w-[900px] mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2
+            id="how-final-cta-heading"
+            className="font-display font-extrabold text-[34px] sm:text-[46px] lg:text-[54px] leading-[1.08] tracking-[-0.03em] text-white text-balance"
+          >
+            Ready? Book a Free Demo.
+          </h2>
+          <p className="mt-4 text-[17px] sm:text-[19px] text-orange-50 max-w-[580px] mx-auto leading-relaxed">
+            Bring one Excel register to a 15-minute call — we&apos;ll show you your buildings running live.
+          </p>
+
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5">
+            <Link
+              href="/contact"
+              className="w-full sm:w-auto min-h-[50px] px-8 py-3.5 rounded-2xl bg-white text-[#9A3412] hover:bg-[#FFF8F2] font-bold text-[15px] inline-flex items-center justify-center gap-2 shadow-[0_14px_30px_-8px_rgba(28,25,23,0.32)] transition-all hover:-translate-y-0.5"
+            >
+              <span>Book a Free Demo</span>
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </Link>
+            <Link
+              href="/start-trial"
+              className="w-full sm:w-auto min-h-[50px] px-8 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/40 font-bold text-[15px] inline-flex items-center justify-center transition-colors"
+            >
+              Start Free Trial
+            </Link>
+          </div>
+
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-white">
+            <a
+              href={SITE_CONFIG.PHONE_TEL}
+              className="inline-flex items-center gap-2 font-semibold hover:underline underline-offset-4"
+            >
+              <Phone className="w-4 h-4" aria-hidden="true" />
+              <span>{SITE_CONFIG.PHONE_DISPLAY}</span>
+            </a>
+            <a
+              href={`mailto:${SITE_CONFIG.SUPPORT_EMAIL}`}
+              className="inline-flex items-center gap-2 font-semibold hover:underline underline-offset-4"
+            >
+              <span>{SITE_CONFIG.SUPPORT_EMAIL}</span>
+            </a>
           </div>
         </div>
       </section>

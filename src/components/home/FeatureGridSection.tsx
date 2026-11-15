@@ -1,7 +1,9 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import {
+  ArrowRight,
   Award,
   Languages,
   FileSpreadsheet,
@@ -102,6 +104,15 @@ export function FeatureGridSection() {
           <p className="mt-4 text-[17px] sm:text-[18px] text-[#44403C] max-w-[560px] mx-auto leading-relaxed">
             Every workflow a growing fire-safety agency asks for — included out of the box.
           </p>
+          <div className="mt-4">
+            <Link
+              href="/features"
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-[#C2410C] hover:text-[#9A3412] underline underline-offset-4"
+            >
+              <span>Explore all features</span>
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
+            </Link>
+          </div>
         </AppleReveal>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">

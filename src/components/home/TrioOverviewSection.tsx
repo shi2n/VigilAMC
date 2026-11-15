@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, CheckCircle2, Smartphone, LayoutDashboard, Building2 } from 'lucide-react';
 import { AppleReveal } from './AppleReveal';
@@ -27,6 +28,15 @@ export function TrioOverviewSection() {
           <p className="mt-4 text-[17px] sm:text-[18px] text-[#44403C] max-w-[580px] mx-auto leading-relaxed">
             Your technicians in the field, your coordinators at the office, and your clients — all looking at the same live compliance record.
           </p>
+          <div className="mt-4">
+            <Link
+              href="/products"
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-[#C2410C] hover:text-[#9A3412] underline underline-offset-4"
+            >
+              <span>Explore all products</span>
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
+            </Link>
+          </div>
         </AppleReveal>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-7">

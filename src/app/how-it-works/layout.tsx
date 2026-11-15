@@ -2,20 +2,28 @@ import type { Metadata } from 'next';
 import { SITE_CONFIG } from '@/lib/siteConfig';
 
 export const metadata: Metadata = {
-  title: 'How It Works | VigilAMC — 3-Step Fire Safety AMC Workflow',
+  title: 'How It Works — Fire Safety Compliance Software for Agencies | VigilAMC',
   description:
-    'See how VigilAMC automates your fire safety operations: onboard premises, dispatch technicians with mobile GPS app, and generate Form-B compliance reports.',
+    'Fire safety compliance software for agencies that goes live in a day: import your Excel register, inspect offline with GPS proof, and automate 5-page Form B reports.',
   alternates: {
     canonical: '/how-it-works',
   },
   openGraph: {
-    title: 'How It Works | VigilAMC',
+    title: 'How It Works — Fire Safety Compliance Software for Agencies | VigilAMC',
     description:
-      'See how VigilAMC automates your fire safety operations in 3 simple steps.',
+      'Live in a day. Not a quarter. Step 1 Set up, Step 2 Inspect offline with GPS, Step 3 Form B reports & alerts.',
     url: `${SITE_CONFIG.SITE_URL}/how-it-works`,
     siteName: SITE_CONFIG.COMPANY_NAME,
     locale: 'en_IN',
     type: 'website',
+    images: [
+      {
+        url: `${SITE_CONFIG.SITE_URL}/images/scene-gps.jpg`,
+        width: 1200,
+        height: 750,
+        alt: 'VigilAMC step-by-step fire safety agency workflow',
+      },
+    ],
   },
 };
 

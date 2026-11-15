@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import Image, { type StaticImageData } from 'next/image';
-import { FileSpreadsheet, Smartphone, FileCheck2 } from 'lucide-react';
+import { ArrowRight, FileSpreadsheet, Smartphone, FileCheck2 } from 'lucide-react';
 import scenePump from '../../../public/images/scene-pump.jpg';
 import sceneGps from '../../../public/images/scene-gps.jpg';
 import sceneSignoff from '../../../public/images/scene-signoff.jpg';
@@ -65,6 +66,15 @@ export function HowItWorksSection() {
           <p className="mt-4 text-[17px] sm:text-[18px] text-[#44403C] max-w-[560px] mx-auto leading-relaxed">
             No extra hardware. No complex training. Your agency can go live in one afternoon.
           </p>
+          <div className="mt-4">
+            <Link
+              href="/how-it-works"
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-[#C2410C] hover:text-[#9A3412] underline underline-offset-4"
+            >
+              <span>Explore how it works</span>
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
+            </Link>
+          </div>
         </AppleReveal>
 
         {/* Horizontal 3-Step Timeline */}

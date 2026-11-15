@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import Image from 'next/image';
 import {
   WifiOff,
@@ -10,6 +11,7 @@ import {
   Camera,
   Award,
   CheckCircle2,
+  ArrowRight,
 } from 'lucide-react';
 import { GooglePlayBadge } from '@/components/GooglePlayBadge';
 import { AppleReveal } from './AppleReveal';
@@ -67,7 +69,7 @@ const RIGHT_CALLOUTS = [
   },
 ];
 
-export function TechnicianAppSection() {
+export function TechnicianAppSection({ showDemoCta = false }: { showDemoCta?: boolean }) {
   const [activeScreen, setActiveScreen] = useState(0);
   const current = APP_SCREENS[activeScreen];
 
@@ -228,6 +230,18 @@ export function TechnicianAppSection() {
         <p className="mt-10 sm:mt-12 text-center text-xs text-[#44403C] max-w-[680px] mx-auto">
           First = first fire-compliance field app purpose-built with offline + GPS-stamped inspections for Indian agencies.
         </p>
+
+        {showDemoCta && (
+          <div className="mt-8 text-center">
+            <Link
+              href="/contact"
+              className="btn-flame min-h-[48px] px-7 py-3 rounded-2xl text-white font-bold text-[15px] inline-flex items-center justify-center gap-2 shadow-[0_12px_28px_-8px_rgba(194,65,12,0.45)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C]"
+            >
+              <span>Book a Free Demo</span>
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );

@@ -6,7 +6,7 @@ import { Building2, CheckCircle2, FileCheck2, ArrowRight, ShieldCheck, MailCheck
 import { AppleReveal } from './AppleReveal';
 import { LightBrowserFrame } from './DeviceFrames';
 
-export function ClientPortalSection() {
+export function ClientPortalSection({ showDemoCta = false }: { showDemoCta?: boolean }) {
   return (
     <section
       id="client-portal"
@@ -54,7 +54,16 @@ export function ClientPortalSection() {
               </li>
             </ul>
 
-            <div className="pt-2">
+            <div className="pt-2 flex flex-wrap items-center gap-4">
+              {showDemoCta && (
+                <Link
+                  href="/contact"
+                  className="btn-flame min-h-[48px] px-7 py-3 rounded-2xl text-white font-bold text-[15px] inline-flex items-center justify-center gap-2 shadow-[0_12px_28px_-8px_rgba(194,65,12,0.45)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C]"
+                >
+                  <span>Book a Free Demo</span>
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                </Link>
+              )}
               <Link
                 href="/portal/login"
                 className="inline-flex items-center gap-2 text-sm font-bold text-[#C2410C] hover:text-[#9A3412] underline underline-offset-4"
