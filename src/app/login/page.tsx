@@ -88,6 +88,8 @@ export default function LoginPage() {
       if (params.get('reset') === 'success') {
         setSuccessMsg('Your password has been successfully updated! Please sign in with your new password.');
         setMode('SIGN_IN');
+      } else if (params.get('mode') === 'signup') {
+        setMode('SIGN_UP');
       }
     }
   }, [supabase, router]);

@@ -29,6 +29,11 @@ const nextConfig = {
         destination: '/technician',
         permanent: false,
       },
+      {
+        source: '/start-trial',
+        destination: '/login?mode=signup',
+        permanent: false,
+      },
     ];
   },
   async headers() {

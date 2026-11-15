@@ -9,9 +9,11 @@ export interface EmberWaypoint {
 }
 
 const DEFAULT_WAYPOINTS: EmberWaypoint[] = [
-  { id: 'hero-screen', label: '01 · Overview', topPct: '16%' },
-  { id: 'how-it-works', label: '02 · 3-Step Flow', topPct: '50%' },
-  { id: 'proof-screen', label: '03 · Proof & Action', topPct: '84%' },
+  { id: 'hero-screen', label: '01 · Overview', topPct: '12%' },
+  { id: 'technician-app', label: '02 · Field App', topPct: '34%' },
+  { id: 'admin-dashboard', label: '03 · Dashboard', topPct: '56%' },
+  { id: 'client-portal', label: '04 · Client Portal', topPct: '78%' },
+  { id: 'final-cta', label: '05 · Book Demo', topPct: '94%' },
 ];
 
 export function EmberLine({
@@ -106,7 +108,7 @@ export function EmberLine({
       ref={trackRef}
       aria-hidden="true"
       data-testid="ember-line"
-      className="no-print pointer-events-none fixed left-2.5 sm:left-5 lg:left-7 top-0 bottom-0 z-30 flex flex-col items-center"
+      className="no-print pointer-events-none fixed left-2.5 sm:left-5 lg:left-7 top-0 bottom-0 z-30 hidden xl:flex flex-col items-center"
     >
       {/* Base 1px neutral structural line */}
       <div

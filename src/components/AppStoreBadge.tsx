@@ -57,7 +57,7 @@ export function AppStoreBadge({
             App Store
           </span>
           {comingSoon && (
-            <span className="px-1.5 py-0.2 rounded-md bg-[#EA580C] text-white text-[9px] font-black uppercase tracking-wider">
+            <span className="px-1.5 py-0.2 rounded-md bg-[#C2410C] text-white text-[9px] font-black uppercase tracking-wider">
               SOON
             </span>
           )}

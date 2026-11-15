@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, ArrowUpRight, LogIn } from 'lucide-react';
-import { SITE_CONFIG } from '@/lib/siteConfig';
 
 interface CorporateHeaderProps {
   onOpenDemoModal?: () => void;
@@ -18,11 +17,10 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  const navLinks = [
-    { name: 'How It Works', href: '/#how-it-works' },
-    { name: 'Sample Report', href: '/sample-report' },
-    { name: 'Mobile App', href: '/#field-app', badge: 'iOS Soon' },
-    { name: 'Contact', href: '/contact' },
+  const navLinks: Array<{ name: string; href: string; badge?: string }> = [
+    { name: 'Products', href: '/#products' },
+    { name: 'Features', href: '/#features' },
+    { name: 'How it works', href: '/#how-it-works' },
   ];
 
   return (
@@ -83,28 +81,24 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
             <LogIn className="w-4 h-4" aria-hidden="true" />
             <span>Login</span>
           </Link>
-          <a
-            href={SITE_CONFIG.WHATSAPP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={onOpenDemoModal ? undefined : undefined}
+          <Link
+            href="/contact"
             className="btn-flame min-h-[44px] inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl text-white text-sm font-bold shadow-[0_6px_20px_-4px_rgba(194,65,12,0.38)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C]"
           >
             <span>Book a Free Demo</span>
             <ArrowUpRight className="w-4 h-4" aria-hidden="true" />
-          </a>
+          </Link>
         </div>
 
         {/* Mobile Actions */}
         <div className="flex md:hidden items-center gap-2">
-          <a
-            href={SITE_CONFIG.WHATSAPP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-flame min-h-[44px] inline-flex items-center justify-center px-3.5 py-2 rounded-xl text-white text-xs font-bold shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C]"
+          <Link
+            href="/contact"
+            className="btn-flame min-h-[44px] inline-flex items-center justify-center px-3.5 py-2 rounded-xl text-white text-xs font-bold whitespace-nowrap shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C]"
           >
-            Book a Free Demo
-          </a>
+            <span className="sm:hidden">Book Demo</span>
+            <span className="hidden sm:inline">Book a Free Demo</span>
+          </Link>
           <button
             type="button"
             onClick={() => setMobileMenuOpen((prev) => !prev)}
@@ -130,16 +124,14 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
               <LogIn className="w-4 h-4" aria-hidden="true" />
               <span>Login</span>
             </Link>
-            <a
-              href={SITE_CONFIG.WHATSAPP_URL}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/contact"
               onClick={() => setMobileMenuOpen(false)}
               className="btn-flame min-h-[48px] h-12 w-full rounded-xl text-white font-bold text-sm inline-flex items-center justify-center gap-1.5 shadow-[0_6px_20px_-4px_rgba(194,65,12,0.38)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C]"
             >
               <span>Book a Free Demo</span>
               <ArrowUpRight className="w-4 h-4" aria-hidden="true" />
-            </a>
+            </Link>
           </div>
 
           {/* Navigation Links */}

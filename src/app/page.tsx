@@ -1,41 +1,49 @@
-// UI 'unslop' pass method by Damir Sokolovsky (@heydamir) — github.com/heydamir/unslop (CC BY 4.0)
 import React from 'react';
 import type { Metadata } from 'next';
 import { SITE_CONFIG } from '@/lib/siteConfig';
 import { EmberLine } from '@/components/home/EmberLine';
-import { HeroGlass } from '@/components/home/HeroGlass';
-import { PainScene } from '@/components/home/PainScene';
-import { HowItWorks } from '@/components/home/HowItWorks';
-import { SectorMarquee } from '@/components/home/SectorMarquee';
-import { ProductOverviewSection } from '@/components/home/ProductOverviewSection';
-import { PlatformFeaturesGrid } from '@/components/home/PlatformFeaturesGrid';
+import { HeroSection } from '@/components/home/HeroSection';
+import { ProblemSection } from '@/components/home/ProblemSection';
+import { TrioOverviewSection } from '@/components/home/TrioOverviewSection';
+import { TechnicianAppSection } from '@/components/home/TechnicianAppSection';
+import { AdminDashboardSection } from '@/components/home/AdminDashboardSection';
+import { ClientPortalSection } from '@/components/home/ClientPortalSection';
+import { FeatureGridSection } from '@/components/home/FeatureGridSection';
+import { HowItWorksSection } from '@/components/home/HowItWorksSection';
 import { VideoExplainerSection } from '@/components/home/VideoExplainerSection';
-import { FreeToolsSection } from '@/components/home/FreeToolsSection';
-import { FieldAppSection } from '@/components/home/FieldAppSection';
-import { ProofSection } from '@/components/home/ProofSection';
+import { FinalCtaSection } from '@/components/home/FinalCtaSection';
 
 export const metadata: Metadata = {
-  title: 'VigilAMC - Fire Safety AMC & Compliance Software | India',
+  title: 'VigilAMC — Fire Safety Compliance Software for Agencies | Offline App, Dashboard & Form B',
   description:
-    'VigilAMC is the complete software suite that fire-safety service companies use to track every extinguisher, pump and alarm, record visits with live GPS, photos and client signatures, and send compliance-ready reports in minutes.',
+    'Fire safety compliance software for agencies — offline technician app, admin dashboard, client portal, and 5-page Form B reports.',
   alternates: {
     canonical: '/',
   },
   openGraph: {
-    title: 'VigilAMC - Fire Safety AMC & Compliance Software | India',
+    title: 'VigilAMC — Fire Safety Compliance Software for Agencies | Offline App, Dashboard & Form B',
     description:
-      'Never Miss a Fire Compliance Deadline Again. Track every extinguisher, pump and alarm with live GPS, photo proof, client signatures, and compliance reports in minutes.',
+      'Inspections, AMC schedules, compliance reports, your field team and your clients — connected. Online or offline.',
     url: SITE_CONFIG.SITE_URL,
     siteName: SITE_CONFIG.COMPANY_NAME,
     locale: 'en_IN',
     type: 'website',
+    images: [
+      {
+        url: `${SITE_CONFIG.SITE_URL}/images/hero-technician-v2.jpg`,
+        width: 1200,
+        height: 675,
+        alt: 'VigilAMC offline fire-safety technician inspection and agency compliance suite',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'VigilAMC - Fire Safety AMC & Compliance Software | India',
+    title: 'VigilAMC — Fire Safety Compliance Software for Agencies',
     description:
-      'Never Miss a Fire Compliance Deadline Again. Track every extinguisher, pump and alarm with live GPS, photo proof, client signatures, and compliance reports in minutes.',
+      'Inspections, AMC schedules, Form B compliance reports, your field team and your clients — connected. Online or offline.',
     creator: '@vigilamc',
+    images: [`${SITE_CONFIG.SITE_URL}/images/hero-technician-v2.jpg`],
   },
 };
 
@@ -86,57 +94,49 @@ export default function HomePage() {
         name: 'VigilAMC Technologies',
         url: SITE_CONFIG.SITE_URL,
       },
-      offers: {
-        '@type': 'Offer',
-        price: '0',
-        priceCurrency: 'INR',
-        description: 'Free 1-building pilot onboarding for fire-safety service companies.',
-      },
     },
   ];
 
   return (
-    <div className="relative w-full bg-[#FFFFFF] text-[#1C1917] overflow-x-hidden">
+    <div className="relative w-full bg-[#FFFFFF] text-[#1C1917] overflow-x-clip">
       {/* Structured Data: Organization + SoftwareApplication */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      {/* Signature Move: The Ember Line travelling down the page seam */}
+      {/* Signature Move: The Ember Line travelling down the page seam on wide desktops */}
       <EmberLine />
 
-      {/* Screen 1: Hero State with Flying Product Moments */}
-      <HeroGlass />
+      {/* S1: Hero — static composition, no hero video */}
+      <HeroSection />
 
-      {/* Screen 2: Pain Scene Drama (Replaces old/new strip) */}
-      <PainScene />
+      {/* S2: The Problem — 5 agency-owner pains + flip to solution */}
+      <ProblemSection />
 
-      {/* Screen 3: 3 Steps With Real Indian Inspection Imagery */}
-      <HowItWorks />
+      {/* S3: Three Products. One Platform. */}
+      <TrioOverviewSection />
 
-      {/* Building-Type Industry Photo Strip Marquee */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-        <SectorMarquee />
-      </div>
+      {/* S4: Technician App (Flagship — offline, GPS-stamped proof, Play Store) */}
+      <TechnicianAppSection />
 
-      {/* Screen 3A: Product Overview Section (Admin Dashboard + Field Technician App) */}
-      <ProductOverviewSection />
+      {/* S5: Admin Dashboard ("The office, organized") */}
+      <AdminDashboardSection />
 
-      {/* Screen 3B: Platform Features Grid (10 Core Tools) */}
-      <PlatformFeaturesGrid />
+      {/* S6: Client Portal */}
+      <ClientPortalSection />
 
-      {/* Screen 3C: Video Explainer Section (Owner 40s YouTube Facade) */}
+      {/* S7: 12-tile Feature Grid */}
+      <FeatureGridSection />
+
+      {/* S8: How It Works — 3-step horizontal timeline */}
+      <HowItWorksSection />
+
+      {/* S9: Video Explainer (youtube-nocookie) */}
       <VideoExplainerSection />
 
-      {/* Screen 3D: Free Tools & Live Demos Section (4 Real Tool Cards) */}
-      <FreeToolsSection />
-
-      {/* Screen 3E: VigilAMC Field Android App on Google Play */}
-      <FieldAppSection />
-
-      {/* Screen 4: Real Numbers + Guarantees + Founding Agency Promise + Final CTA */}
-      <ProofSection />
+      {/* S10: Final CTA band (followed by unchanged CorporateFooter in SiteLayout) */}
+      <FinalCtaSection />
     </div>
   );
 }
