@@ -424,7 +424,7 @@ export default function HowItWorksPage() {
             </Link>
             <Link
               href="/start-trial"
-              className="w-full sm:w-auto min-h-[50px] px-8 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/40 font-bold text-[15px] inline-flex items-center justify-center transition-colors"
+              className="w-full sm:w-auto min-h-[50px] px-8 py-3.5 rounded-2xl bg-[#9A3412] hover:bg-[#7C2D12] text-white border border-white/40 font-bold text-[15px] inline-flex items-center justify-center transition-colors"
             >
               Start Free Trial
             </Link>

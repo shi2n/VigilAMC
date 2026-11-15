@@ -345,7 +345,7 @@ export function CorporateFooter() {
         <div className="py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#57534E]">
           <p className="text-center sm:text-left leading-relaxed">
             VigilAMC is compliance software for fire-safety service agencies and building owners.
-            <span className="block sm:inline sm:ml-1 text-[11px] text-[#57534E]/80">
+            <span className="block sm:inline sm:ml-1 text-[11px] text-[#57534E]">
               DPIIT-recognized startup · Made in India
             </span>
           </p>

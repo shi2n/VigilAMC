@@ -41,22 +41,45 @@ export function AppleReveal({
     const el = ref.current;
     if (!el) return () => mq.removeEventListener('change', onChange);
 
+    const checkVisible = () => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top <= window.innerHeight * 0.98) {
+        setVisible(true);
+        return true;
+      }
+      return false;
+    };
+
+    if (checkVisible()) {
+      return () => mq.removeEventListener('change', onChange);
+    }
+
     const io = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (entry.isIntersecting) {
+          if (entry.isIntersecting || checkVisible()) {
             setVisible(true);
             io.disconnect();
+            window.removeEventListener('scroll', onScroll);
             break;
           }
         }
       },
-      { rootMargin: '0px 0px -6% 0px', threshold: 0.05 }
+      { rootMargin: '120px 0px 0px 0px', threshold: 0 }
     );
 
+    const onScroll = () => {
+      if (checkVisible()) {
+        io.disconnect();
+        window.removeEventListener('scroll', onScroll);
+      }
+    };
+
     io.observe(el);
+    window.addEventListener('scroll', onScroll, { passive: true });
     return () => {
       mq.removeEventListener('change', onChange);
+      window.removeEventListener('scroll', onScroll);
       io.disconnect();
     };
   }, []);

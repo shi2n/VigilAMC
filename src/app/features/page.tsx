@@ -260,7 +260,7 @@ export default function FeaturesPage() {
             </Link>
             <Link
               href="/sample-report"
-              className="min-h-[48px] px-6 py-3 rounded-2xl bg-white/15 hover:bg-white/25 text-white border border-white/35 font-bold text-sm inline-flex items-center gap-2 transition-colors"
+              className="min-h-[48px] px-6 py-3 rounded-2xl bg-[#9A3412] hover:bg-[#7C2D12] text-white border border-white/40 font-bold text-sm inline-flex items-center gap-2 transition-colors"
             >
               <FileCheck2 className="w-4 h-4" aria-hidden="true" />
               <span>Inspect Sample Form B</span>
