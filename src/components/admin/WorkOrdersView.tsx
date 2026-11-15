@@ -663,11 +663,15 @@ export function WorkOrdersView({
                       onChange={(e) => handleUpdateStatus(wo.id, e.target.value)}
                       className="px-2.5 py-1.5 rounded-lg bg-white border border-[#FED7AA] text-xs font-bold text-[#1C1917] shadow-xs focus:outline-none focus:border-[#C2410C] focus:ring-2 focus:ring-[#C2410C]/20"
                     >
+                      {wo.status === 'CANCELLED' && (
+                        <option value="CANCELLED" disabled hidden>
+                          CANCELLED
+                        </option>
+                      )}
                       <option value="OPEN">OPEN</option>
                       <option value="ASSIGNED">ASSIGNED</option>
                       <option value="IN_PROGRESS">IN_PROGRESS</option>
                       <option value="COMPLETED">COMPLETED</option>
-                      <option value="CANCELLED">CANCELLED</option>
                     </select>
                   </div>
                 </motion.div>
