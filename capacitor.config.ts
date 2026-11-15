@@ -4,12 +4,18 @@ const config: CapacitorConfig = {
   appId: 'com.vigilamc',
   appName: 'VigilAMC Field',
   webDir: 'public',
+  backgroundColor: '#FFF8F2',
   server: {
-    url: 'https://vigilamc.vercel.app/technician',
+    url: 'https://www.vigilamc.com/technician',
+    allowNavigation: ['www.vigilamc.com', 'vigilamc.com', '*.vigilamc.com'],
     cleartext: false,
     androidScheme: 'https',
   },
   plugins: {
+    SplashScreen: {
+      launchAutoHide: false,
+      backgroundColor: '#FFF8F2',
+    },
     PushNotifications: {
       presentationOptions: ['badge', 'sound', 'alert'],
     },

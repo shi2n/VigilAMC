@@ -68,6 +68,7 @@ import {
   registerNativePush,
   syncNativePushToken,
   unregisterNativePush,
+  notifyNativeAppReady,
   scheduleOfflineDueReminders,
   showLocalTaskNotification,
   capturePhotoNative,
@@ -139,7 +140,7 @@ const COMMON_DEFECT_CHIPS = [
 
 export default function TechnicianPWA() {
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   // ----------------------------------------------------------------------------------
   // I18N STATE
@@ -387,22 +388,6 @@ export default function TechnicianPWA() {
     // Set online status
     setIsOnline(navigator.onLine);
 
-    // Run legacy localStorage queue migration into IndexedDB outbox
-    migrateLegacyLocalStorageQueue().then((migratedCount) => {
-      if (migratedCount > 0) {
-        console.log(`Migrated ${migratedCount} legacy offline inspections to IndexedDB`);
-        refreshOutboxCounts();
-      }
-    });
-
-    // Section 2: Auto-repair any oversized legacy items from previous sessions (e.g. 5 stuck items)
-    repairOversizedOutboxItems().then((repaired) => {
-      if (repaired > 0) {
-        console.log(`Auto-repaired ${repaired} oversized outbox items into parent/child items`);
-        refreshOutboxCounts();
-      }
-    });
-
     // Check installed mode
     if (window.matchMedia('(display-mode: standalone)').matches) {
       setIsAppInstalled(true);
@@ -414,7 +399,13 @@ export default function TechnicianPWA() {
     };
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
 
+    // Safety cap: never trap the user on native launch splash if network stalls
+    const splashFailsafe = setTimeout(() => {
+      notifyNativeAppReady();
+    }, 8500);
+
     return () => {
+      clearTimeout(splashFailsafe);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
     };
   }, []);
@@ -532,97 +523,103 @@ export default function TechnicianPWA() {
   }, [requestLiveLocation]);
 
   // ----------------------------------------------------------------------------------
-  // 2. CONTINUOUS GPS WATCHER (WITH BASEMENT CACHE PERSISTENCE)
+  // 2. CONTINUOUS GPS WATCHER (DEFERRED UNTIL AUTHENTICATED & FIRST PAINT COMPLETE)
   // ----------------------------------------------------------------------------------
   useEffect(() => {
+    if (authChecking || !userProfile?.id) return;
+
     let nativeWatchId: string | null = null;
     let isCancelled = false;
 
-    if (isNativePlatform()) {
-      setGpsStatus('LOCKING');
-      try {
-        const savedGps = localStorage.getItem('vigil_last_known_gps');
-        if (savedGps) lastKnownGpsRef.current = JSON.parse(savedGps);
-      } catch {}
+    const gpsStartTimer = setTimeout(() => {
+      if (isCancelled) return;
 
-      watchNativeLocation(
-        (coords) => {
-          if (isCancelled) return;
-          setGpsLocation(coords);
-          setGpsStatus('LOCKED');
-          lastKnownGpsRef.current = coords;
-          try {
-            localStorage.setItem('vigil_last_known_gps', JSON.stringify(coords));
-          } catch {}
-        },
-        (err) => {
-          if (isCancelled) return;
-          console.warn('Native GPS drop:', err);
-          if (lastKnownGpsRef.current) {
-            setGpsLocation({ ...lastKnownGpsRef.current, isBasementCached: true });
-            setGpsStatus('BASEMENT_CACHED');
-          } else {
-            setGpsStatus('DENIED');
+      if (isNativePlatform()) {
+        setGpsStatus('LOCKING');
+        try {
+          const savedGps = localStorage.getItem('vigil_last_known_gps');
+          if (savedGps) lastKnownGpsRef.current = JSON.parse(savedGps);
+        } catch {}
+
+        watchNativeLocation(
+          (coords) => {
+            if (isCancelled) return;
+            setGpsLocation(coords);
+            setGpsStatus('LOCKED');
+            lastKnownGpsRef.current = coords;
+            try {
+              localStorage.setItem('vigil_last_known_gps', JSON.stringify(coords));
+            } catch {}
+          },
+          (err) => {
+            if (isCancelled) return;
+            console.warn('Native GPS drop:', err);
+            if (lastKnownGpsRef.current) {
+              setGpsLocation({ ...lastKnownGpsRef.current, isBasementCached: true });
+              setGpsStatus('BASEMENT_CACHED');
+            } else {
+              setGpsStatus('DENIED');
+            }
           }
-        }
-      ).then((id) => {
-        if (!isCancelled) nativeWatchId = id;
-        else if (id) clearNativeWatch(id);
-      });
+        ).then((id) => {
+          if (!isCancelled) nativeWatchId = id;
+          else if (id) clearNativeWatch(id);
+        });
+        return;
+      }
 
-      return () => {
-        isCancelled = true;
-        if (nativeWatchId) clearNativeWatch(nativeWatchId);
-      };
-    }
-
-    if (typeof window !== 'undefined' && 'geolocation' in navigator) {
-      setGpsStatus('LOCKING');
-      try {
-        const savedGps = localStorage.getItem('vigil_last_known_gps');
-        if (savedGps) {
-          lastKnownGpsRef.current = JSON.parse(savedGps);
-        }
-      } catch {}
-
-      watchIdRef.current = navigator.geolocation.watchPosition(
-        (pos) => {
-          const coords: GPSCoordinates = {
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-            accuracy: Math.round(pos.coords.accuracy || 10),
-            timestamp: pos.timestamp,
-            isBasementCached: false,
-          };
-          setGpsLocation(coords);
-          setGpsStatus('LOCKED');
-          lastKnownGpsRef.current = coords;
-          try {
-            localStorage.setItem('vigil_last_known_gps', JSON.stringify(coords));
-          } catch {}
-        },
-        (err) => {
-          console.warn('Geolocation drop / basement entry:', err);
-          if (lastKnownGpsRef.current) {
-            setGpsLocation({
-              ...lastKnownGpsRef.current,
-              isBasementCached: true,
-            });
-            setGpsStatus('BASEMENT_CACHED');
-          } else {
-            setGpsStatus('DENIED');
+      if (typeof window !== 'undefined' && 'geolocation' in navigator) {
+        setGpsStatus('LOCKING');
+        try {
+          const savedGps = localStorage.getItem('vigil_last_known_gps');
+          if (savedGps) {
+            lastKnownGpsRef.current = JSON.parse(savedGps);
           }
-        },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
-      );
+        } catch {}
 
-      return () => {
-        if (watchIdRef.current !== null) {
-          navigator.geolocation.clearWatch(watchIdRef.current);
-        }
-      };
-    }
-  }, []);
+        watchIdRef.current = navigator.geolocation.watchPosition(
+          (pos) => {
+            const coords: GPSCoordinates = {
+              latitude: pos.coords.latitude,
+              longitude: pos.coords.longitude,
+              accuracy: Math.round(pos.coords.accuracy || 10),
+              timestamp: pos.timestamp,
+              isBasementCached: false,
+            };
+            setGpsLocation(coords);
+            setGpsStatus('LOCKED');
+            lastKnownGpsRef.current = coords;
+            try {
+              localStorage.setItem('vigil_last_known_gps', JSON.stringify(coords));
+            } catch {}
+          },
+          (err) => {
+            console.warn('Geolocation drop / basement entry:', err);
+            if (lastKnownGpsRef.current) {
+              setGpsLocation({
+                ...lastKnownGpsRef.current,
+                isBasementCached: true,
+              });
+              setGpsStatus('BASEMENT_CACHED');
+            } else {
+              setGpsStatus('DENIED');
+            }
+          },
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+        );
+      }
+    }, 750);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(gpsStartTimer);
+      if (nativeWatchId) clearNativeWatch(nativeWatchId);
+      if (watchIdRef.current !== null && typeof window !== 'undefined' && 'geolocation' in navigator) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+    };
+  }, [authChecking, userProfile?.id]);
 
   // ----------------------------------------------------------------------------------
   // 3. DATA LOADING: LOAD LOCAL CACHE FIRST, THEN REFRESH FROM NETWORK
@@ -630,11 +627,13 @@ export default function TechnicianPWA() {
   const loadDashboardData = useCallback(async () => {
     setDataLoading(true);
 
-    // Read LOCAL state first (instant response in basements & offline)
-    const cachedTasks = await getLocalCache<any[]>('technician_tasks');
-    const cachedDashboard = await getLocalCache<any>('technician_dashboard');
-    const cachedHistory = await getLocalCache<any[]>('technician_history');
-    const cachedProfile = await getLocalCache<any>('technician_profile');
+    // Read LOCAL state first in parallel (instant response in basements, offline & reopen)
+    const [cachedTasks, cachedDashboard, cachedHistory, cachedProfile] = await Promise.all([
+      getLocalCache<any[]>('technician_tasks'),
+      getLocalCache<any>('technician_dashboard'),
+      getLocalCache<any[]>('technician_history'),
+      getLocalCache<any>('technician_profile'),
+    ]);
 
     if (cachedProfile?.data) {
       setUserProfile(cachedProfile.data);
@@ -655,25 +654,58 @@ export default function TechnicianPWA() {
     if (cachedHistory?.data) {
       setHistoryList(cachedHistory.data);
     }
-    if (!navigator.onLine && (cachedTasks || cachedDashboard)) {
-      setCachedDataNotice(true);
+
+    // Release skeleton blocking immediately if cached profile is ready (SWR-style UI paint)
+    if (cachedProfile?.data) {
+      setAuthChecking(false);
+    }
+
+    if (!navigator.onLine) {
+      if (cachedTasks || cachedDashboard) {
+        setCachedDataNotice(true);
+      }
       setDataLoading(false);
       setAuthChecking(false);
       await refreshOutboxCounts();
       return;
     }
 
+    const techToken =
+      typeof window !== 'undefined' ? localStorage.getItem('vigil_tech_token') : null;
+
+    // Fast-path unauthenticated cold launch: skip 4 guaranteed-401 API calls when no local session exists
+    if (!cachedProfile?.data && !techToken) {
+      const { data: sessionData } = await supabase.auth
+        .getSession()
+        .catch(() => ({ data: { session: null } }));
+      if (!sessionData?.session) {
+        setUserProfile(null);
+        setAuthChecking(false);
+        setDataLoading(false);
+        await refreshOutboxCounts();
+        return;
+      }
+    }
+
+    const authHeaders: Record<string, string> = techToken
+      ? { Authorization: `Bearer ${techToken}` }
+      : {};
+
     try {
       // 1. Fetch Dashboard, Tasks Feed, & Notifications in parallel
       const [dashRes, tasksRes, historyRes, notifsRes] = await Promise.all([
-        fetch('/api/technician/dashboard').catch(() => null),
-        fetch('/api/technician/tasks').catch(() => null),
-        fetch('/api/technician/history?dateRange=all').catch(() => null),
-        fetch('/api/technician/notifications').catch(() => null),
+        fetch('/api/technician/dashboard', { headers: authHeaders, credentials: 'include' }).catch(() => null),
+        fetch('/api/technician/tasks', { headers: authHeaders, credentials: 'include' }).catch(() => null),
+        fetch('/api/technician/history?dateRange=all', { headers: authHeaders, credentials: 'include' }).catch(() => null),
+        fetch('/api/technician/notifications', { headers: authHeaders, credentials: 'include' }).catch(() => null),
       ]);
 
       if (dashRes && dashRes.status === 401) {
         setUserProfile(null);
+        await setLocalCache('technician_profile', null).catch(() => {});
+        try {
+          localStorage.removeItem('vigil_tech_token');
+        } catch {}
         setAuthChecking(false);
         setDataLoading(false);
         return;
@@ -750,7 +782,7 @@ export default function TechnicianPWA() {
         knownTaskIdsRef.current = new Set(incomingTasks.map((t: any) => t.id));
         setTaskList(incomingTasks);
         scheduleOfflineDueReminders(incomingTasks);
-        fetch('/api/technician/digest').catch(() => null);
+        fetch('/api/technician/digest', { headers: authHeaders, credentials: 'include' }).catch(() => null);
         await setLocalCache('technician_tasks', incomingTasks);
       } else {
         setTasksFetchError('FAILED');
@@ -783,11 +815,75 @@ export default function TechnicianPWA() {
       setAuthChecking(false);
       await refreshOutboxCounts();
     }
-  }, [refreshOutboxCounts, playChimeNotification, triggerWebNotification, t.newTaskAssignedToast]);
+  }, [supabase, refreshOutboxCounts, playChimeNotification, triggerWebNotification, t.newTaskAssignedToast]);
 
   useEffect(() => {
     loadDashboardData();
   }, [loadDashboardData]);
+
+  // Signal native launch splash / overlay only after actual UI (Login or Tasks) has first-painted
+  useEffect(() => {
+    if (authChecking) return;
+    let cancelled = false;
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        if (!cancelled) {
+          notifyNativeAppReady();
+        }
+      });
+    });
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+    };
+  }, [authChecking]);
+
+  // Defer non-critical migration/repair and runtime chunk warming until after first paint
+  const postPaintWorkStartedRef = useRef(false);
+  useEffect(() => {
+    if (authChecking || postPaintWorkStartedRef.current) return;
+    postPaintWorkStartedRef.current = true;
+
+    const timer = setTimeout(() => {
+      migrateLegacyLocalStorageQueue()
+        .then((migratedCount) => {
+          if (migratedCount > 0) {
+            console.log(`Migrated ${migratedCount} legacy offline inspections to IndexedDB`);
+            refreshOutboxCounts();
+          }
+        })
+        .catch(() => null);
+
+      repairOversizedOutboxItems()
+        .then((repaired) => {
+          if (repaired > 0) {
+            console.log(`Auto-repaired ${repaired} oversized outbox items into parent/child items`);
+            refreshOutboxCounts();
+          }
+        })
+        .catch(() => null);
+
+      if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator && typeof performance !== 'undefined') {
+        try {
+          const urls = performance
+            .getEntriesByType('resource')
+            .map((entry) => entry.name)
+            .filter((u) => u.includes('/_next/static/') || u.includes('/brand/'));
+          if (urls.length > 0) {
+            navigator.serviceWorker.ready
+              .then((reg) => {
+                reg.active?.postMessage({ type: 'WARM_STATIC_ASSETS', urls });
+              })
+              .catch(() => null);
+          }
+        } catch {}
+      }
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, [authChecking, refreshOutboxCounts]);
 
   // ----------------------------------------------------------------------------------
   // 4. SYNC ENGINE: DRAIN OUTBOX IDEMPOTENTLY (Section 5.3 & Sections 2 & 4)
@@ -918,10 +1014,11 @@ export default function TechnicianPWA() {
         });
     }
 
-    // 2. Wrong-Origin Self-Heal: detect running on non-app origin
+    // 2. Wrong-Origin Self-Heal: treat custom domain (www.vigilamc.com / vigilamc.com) as canonical
     const hostname = window.location.hostname.toLowerCase();
     const isLocal = hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.local');
-    const isCorrectOrigin = isLocal || window.location.origin === 'https://vigilamc.vercel.app';
+    const isCorrectOrigin =
+      isLocal || hostname === 'www.vigilamc.com' || hostname === 'vigilamc.com';
     if (!isCorrectOrigin) {
       setIsWrongOrigin(true);
       (async () => {
@@ -940,6 +1037,44 @@ export default function TechnicianPWA() {
       })();
     }
   }, [refreshOutboxCounts]);
+
+  const exportOutboxAndLogs = useCallback(async () => {
+    try {
+      const [pendingItems, diagnosticLogs, counts] = await Promise.all([
+        getPendingOutboxItems(),
+        getSyncDiagnosticLogs(),
+        getOutboxCount(),
+      ]);
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        sourceOrigin: typeof window !== 'undefined' ? window.location.origin : '',
+        targetOrigin: 'https://www.vigilamc.com',
+        counts,
+        pendingItems,
+        diagnosticLogs,
+      };
+      const serialized = JSON.stringify(payload, null, 2);
+      await copyToClipboard(serialized);
+
+      try {
+        const blob = new Blob([serialized], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `vigilamc-outbox-${Date.now()}.json`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } catch {}
+
+      triggerToast(
+        `${t.wrongOriginExportSuccess || 'Saved outbox & diagnostics exported'} (${counts.pending} pending)`
+      );
+    } catch (err: any) {
+      triggerToast(err?.message || 'Failed to export outbox records');
+    }
+  }, [t.wrongOriginExportSuccess]);
 
   // ----------------------------------------------------------------------------------
   // 6. IN-APP MOBILE / STAFF ID LOGIN
@@ -970,6 +1105,11 @@ export default function TechnicianPWA() {
       if (techRes.ok && techData.success) {
         if (techData.token) {
           localStorage.setItem('vigil_tech_token', techData.token);
+        }
+        if (techData.profile) {
+          setUserProfile(techData.profile);
+          setAuthChecking(false);
+          await setLocalCache('technician_profile', techData.profile).catch(() => {});
         }
         setSessionExpiredAlert(false);
         triggerToast('✅ Signed in successfully!');
@@ -1019,9 +1159,9 @@ export default function TechnicianPWA() {
     }
   };
 
-  // Native Android Shell: Push notifications, FCM token registration & resume lifecycle
+  // Native Android Shell: Defer push registration until after login & first paint
   useEffect(() => {
-    if (!isNativePlatform()) return;
+    if (!isNativePlatform() || authChecking || !userProfile?.id) return;
 
     const unbindPushStatus = subscribeNativePushStatus((status) => {
       setNativePushStatus(status);
@@ -1044,29 +1184,36 @@ export default function TechnicianPWA() {
       console.warn('[push] disabled: lifecycle init warning:', err);
     }
 
-    try {
-      registerNativePush({
-        onNotificationReceived: (notif) => {
-          triggerToast(`🔔 ${notif.title || 'Task Notification'}`);
-          fetch('/api/technician/notifications')
-            .then((r) => r.json())
-            .then((d) => {
-              if (d.notifications) setNotifications(d.notifications);
+    const pushInitTimer = setTimeout(() => {
+      try {
+        registerNativePush({
+          onNotificationReceived: (notif) => {
+            triggerToast(`🔔 ${notif.title || 'Task Notification'}`);
+            const techToken =
+              typeof window !== 'undefined' ? localStorage.getItem('vigil_tech_token') : null;
+            fetch('/api/technician/notifications', {
+              headers: techToken ? { Authorization: `Bearer ${techToken}` } : {},
+              credentials: 'include',
             })
-            .catch(() => null);
-        },
-        onNotificationTapped: (action) => {
-          const taskId = action.notification?.data?.taskId;
-          if (taskId) {
-            setActiveTab('TASKS');
-          }
-        },
-      }).catch((err) => {
+              .then((r) => r.json())
+              .then((d) => {
+                if (d.notifications) setNotifications(d.notifications);
+              })
+              .catch(() => null);
+          },
+          onNotificationTapped: (action) => {
+            const taskId = action.notification?.data?.taskId;
+            if (taskId) {
+              setActiveTab('TASKS');
+            }
+          },
+        }).catch((err) => {
+          console.warn('[push] disabled:', err?.message || err);
+        });
+      } catch (err: any) {
         console.warn('[push] disabled:', err?.message || err);
-      });
-    } catch (err: any) {
-      console.warn('[push] disabled:', err?.message || err);
-    }
+      }
+    }, 1200);
 
     // Check URL parameters for tapped notification deep link (?taskId=...)
     if (typeof window !== 'undefined') {
@@ -1079,6 +1226,7 @@ export default function TechnicianPWA() {
     }
 
     return () => {
+      clearTimeout(pushInitTimer);
       try {
         unbindPushStatus();
       } catch {}
@@ -1086,7 +1234,7 @@ export default function TechnicianPWA() {
         unbindLifecycle();
       } catch {}
     };
-  }, [loadDashboardData]);
+  }, [authChecking, userProfile?.id, loadDashboardData]);
 
 
   // ----------------------------------------------------------------------------------
@@ -1144,9 +1292,15 @@ export default function TechnicianPWA() {
 
   const handleSignOut = async () => {
     try {
-      localStorage.removeItem('vigil_tech_token');
       await unregisterNativePush().catch(() => null);
-      await fetch('/api/technician/logout', { method: 'POST' }).catch(() => {});
+      localStorage.removeItem('vigil_tech_token');
+      await Promise.all([
+        setLocalCache('technician_profile', null),
+        setLocalCache('technician_dashboard', null),
+        setLocalCache('technician_tasks', null),
+        setLocalCache('technician_history', null),
+      ]).catch(() => {});
+      await fetch('/api/technician/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
       await supabase.auth.signOut().catch(() => {});
     } finally {
       setUserProfile(null);
@@ -1799,14 +1953,22 @@ export default function TechnicianPWA() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 pt-1">
+              <div className="flex flex-wrap items-center gap-2 pt-1">
                 <a
-                  href="https://vigilamc.vercel.app/technician"
+                  href="https://www.vigilamc.com/technician"
                   className="px-3 py-1.5 rounded-xl bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold text-xs shadow-xs inline-flex items-center gap-1.5 active:scale-95 transition-all"
                 >
                   <span>{t.wrongOriginOpenApp || 'Open Field App'}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </a>
+                <button
+                  type="button"
+                  onClick={exportOutboxAndLogs}
+                  className="px-3 py-1.5 rounded-xl bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs shadow-xs inline-flex items-center gap-1.5 active:scale-95 transition-all"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>{t.wrongOriginExportOutbox || 'Export Outbox & Logs'}</span>
+                </button>
               </div>
             </div>
           )}
@@ -1923,7 +2085,7 @@ export default function TechnicianPWA() {
             <div className="pt-3 border-t border-[#FED7AA]/50 text-center">
               <div className="inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl bg-[#FFF8F2] border border-[#FED7AA] text-[#C2410C] font-semibold text-[11px]">
                 <BellRing className="w-3.5 h-3.5 text-[#EA580C]" />
-                <span>Home-Screen FCM Notifications require installed APK v1.0.3</span>
+                <span>Home-Screen FCM Notifications active on VigilAMC Field v1.0.6</span>
               </div>
             </div>
           </div>
@@ -2377,14 +2539,22 @@ export default function TechnicianPWA() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 pt-1">
+              <div className="flex flex-wrap items-center gap-2 pt-1">
                 <a
-                  href="https://vigilamc.vercel.app/technician"
+                  href="https://www.vigilamc.com/technician"
                   className="px-3 py-1.5 rounded-xl bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold text-xs inline-flex items-center gap-1 shadow-xs active:scale-95 transition-all"
                 >
                   <span>{t.wrongOriginOpenApp || 'Open Field App'}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </a>
+                <button
+                  type="button"
+                  onClick={exportOutboxAndLogs}
+                  className="px-3 py-1.5 rounded-xl bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs inline-flex items-center gap-1 shadow-xs active:scale-95 transition-all"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>{t.wrongOriginExportOutbox || 'Export Outbox & Logs'}</span>
+                </button>
                 {pendingSyncCount > 0 && (
                   <span className="text-[10px] text-amber-700 font-bold">
                     {pendingSyncCount} saved items preserved
@@ -4524,7 +4694,7 @@ export default function TechnicianPWA() {
                 <span>{t.signOut || 'Sign Out'}</span>
               </button>
               <div className="text-center text-[10px] text-slate-400 font-mono">
-                VigilAMC Field v1.0.5 (Build 6)
+                VigilAMC Field v1.0.6 (Build 7)
               </div>
             </div>
           </div>
@@ -4920,7 +5090,7 @@ export default function TechnicianPWA() {
 
             <div className="pt-2 border-t border-slate-100 text-center">
               <span className="text-[10px] text-slate-400 font-mono">
-                VigilAMC Field v1.0.5 (Build 6) • Play Release
+                VigilAMC Field v1.0.6 (Build 7) • Play Release
               </span>
             </div>
           </div>

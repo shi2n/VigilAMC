@@ -3,14 +3,14 @@
  * Runtime Caching Strategy for Offline Fire Safety Audits & Inspections
  *
  * Rules:
- * 1. Navigations (/technician): Network-first with cached fallback (last-known app shell)
- * 2. /_next/static/*: Cache-first with runtime fill (immutable hashed chunks safe per filename)
+ * 1. Navigations (/technician): Stale-While-Revalidate (instant cached shell on reopen + background refresh)
+ * 2. /_next/static/*: Cache-first with runtime fill + WARM_STATIC_ASSETS message (immutable hashed chunks)
  * 3. /api/technician/*: Network-only (never cache sensitive live data; return 503 JSON offline)
- * 4. Versioned cache names + auto-cleanup of old 'vigilamc-field-pwa-v1' and outdated v2 caches on activate
+ * 4. Versioned cache names + auto-cleanup of outdated caches on activate
  * 5. skipWaiting on install, clientsClaim on activate
  */
 
-const CACHE_VERSION = 'v2-20261113-1';
+const CACHE_VERSION = 'v2-20261115-2';
 const SHELL_CACHE = `vigilamc-field-shell-${CACHE_VERSION}`;
 const STATIC_CACHE = `vigilamc-field-static-${CACHE_VERSION}`;
 const CURRENT_CACHES = [SHELL_CACHE, STATIC_CACHE];
@@ -81,6 +81,36 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// Warm additional /_next/static/* or /brand/* assets reported by the client after first paint
+self.addEventListener('message', (event) => {
+  const data = event.data;
+  if (!data || data.type !== 'WARM_STATIC_ASSETS' || !Array.isArray(data.urls)) return;
+  event.waitUntil(
+    (async () => {
+      try {
+        const cache = await caches.open(STATIC_CACHE);
+        await Promise.all(
+          data.urls.map(async (rawUrl) => {
+            try {
+              const parsed = new URL(rawUrl, self.location.origin);
+              if (parsed.origin !== self.location.origin) return;
+              if (!parsed.pathname.startsWith('/_next/static/') && !parsed.pathname.startsWith('/brand/')) {
+                return;
+              }
+              const existing = await cache.match(parsed.href);
+              if (existing) return;
+              const res = await fetch(parsed.href, { credentials: 'same-origin' });
+              if (res && res.status === 200) {
+                await cache.put(parsed.href, res);
+              }
+            } catch (_) {}
+          })
+        );
+      } catch (_) {}
+    })()
+  );
+});
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
@@ -112,32 +142,60 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3. HTML Navigations (/technician): NETWORK-FIRST with cached fallback
-  if (request.mode === 'navigate' || url.pathname.startsWith('/technician')) {
+  // 3. HTML Navigations (/technician): STALE-WHILE-REVALIDATE
+  // Never serve HTML for Next.js RSC flight fetches (? _rsc= or RSC: 1 header).
+  const isRscRequest = request.headers.get('RSC') === '1' || url.searchParams.has('_rsc');
+  if (!isRscRequest && (request.mode === 'navigate' || url.pathname === '/technician' || url.pathname.startsWith('/technician/'))) {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // Only real HTML may become the offline shell; RSC payloads on the same path would poison it.
-          if (response && response.status === 200 && isHtmlResponse(response)) {
-            const clone = response.clone();
-            const shellCopy = response.clone();
-            caches.open(SHELL_CACHE).then((cache) => {
-              cache.put(request, clone);
-              cache.put('/technician', shellCopy);
-            });
-          }
-          return response;
-        })
-        .catch(async () => {
-          const cached =
-            (await caches.match(request, { ignoreVary: true })) ||
-            (await caches.match('/technician', { ignoreVary: true, ignoreSearch: true }));
-          if (cached) return cached;
-          return new Response(
-            '<!DOCTYPE html><html><head><meta charset="utf-8"><title>VigilAMC Offline</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font-family:sans-serif;padding:24px;text-align:center;background:#FFF8F2;color:#1C1917;"><h2>VigilAMC Field App</h2><p>You are offline. Please reconnect to load the app shell for the first time.</p></body></html>',
-            { headers: { 'Content-Type': 'text/html' } }
-          );
-        })
+      (async () => {
+        const cached =
+          (await caches.match(request, { cacheName: SHELL_CACHE, ignoreVary: true })) ||
+          (await caches.match('/technician', { cacheName: SHELL_CACHE, ignoreVary: true, ignoreSearch: true }));
+
+        const networkPromise = fetch(request)
+          .then(async (response) => {
+            // Only real HTML may become the offline shell; RSC payloads on the same path would poison it.
+            if (response && response.status === 200 && isHtmlResponse(response)) {
+              const shellCache = await caches.open(SHELL_CACHE);
+              await Promise.all([
+                shellCache.put(request, response.clone()),
+                shellCache.put('/technician', response.clone()),
+              ]);
+              // Pre-warm any hashed _next/static assets referenced in fresh HTML
+              try {
+                const html = await response.clone().text();
+                const staticCache = await caches.open(STATIC_CACHE);
+                const assetPaths = new Set();
+                for (const match of html.match(/(?:\/_next\/)?static\/(?:chunks|css|media)\/[^"'\s)\\]+/g) || []) {
+                  assetPaths.add(match.startsWith('/_next/') ? match : `/_next/${match}`);
+                }
+                await Promise.all(
+                  [...assetPaths].map(async (path) => {
+                    const existing = await staticCache.match(path);
+                    if (!existing) {
+                      await staticCache.add(path).catch(() => null);
+                    }
+                  })
+                );
+              } catch (_) {}
+            }
+            return response;
+          })
+          .catch(() => null);
+
+        if (cached) {
+          event.waitUntil(networkPromise);
+          return cached;
+        }
+
+        const networkResponse = await networkPromise;
+        if (networkResponse) return networkResponse;
+
+        return new Response(
+          '<!DOCTYPE html><html><head><meta charset="utf-8"><title>VigilAMC Offline</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font-family:sans-serif;padding:24px;text-align:center;background:#FFF8F2;color:#1C1917;"><h2>VigilAMC Field App</h2><p>You are offline. Please reconnect to load the app shell for the first time.</p></body></html>',
+          { headers: { 'Content-Type': 'text/html' } }
+        );
+      })()
     );
     return;
   }

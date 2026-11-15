@@ -282,15 +282,25 @@ export async function unregisterNativePush(): Promise<void> {
     const stored = await Preferences.get({ key: 'vigil_fcm_token' });
     const fcmToken = stored.value;
     if (fcmToken) {
+      let authToken: string | null = null;
+      try {
+        authToken = typeof window !== 'undefined' ? window.localStorage.getItem('vigil_tech_token') : null;
+      } catch {}
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
       await Promise.allSettled([
         fetch('/api/technician/push-token', {
           method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          headers,
           body: JSON.stringify({ fcmToken, pushToken: fcmToken }),
         }),
         fetch('/api/technician/device-token', {
           method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          headers,
           body: JSON.stringify({ fcmToken, pushToken: fcmToken }),
         }),
       ]);
@@ -299,6 +309,35 @@ export async function unregisterNativePush(): Promise<void> {
   } catch (err) {
     console.warn('[NativeBridge] Unregister push error:', err);
   }
+}
+
+let appReadyDispatched = false;
+
+/**
+ * Signal native Android launch overlay / SplashScreen that web UI has first-painted.
+ * Safe and idempotent across Capacitor WebView and normal browsers.
+ */
+export async function notifyNativeAppReady(): Promise<void> {
+  if (typeof window === 'undefined' || appReadyDispatched) return;
+  appReadyDispatched = true;
+  try {
+    document.documentElement.dataset.appReady = 'true';
+    window.dispatchEvent(new CustomEvent('vigil:app-ready'));
+  } catch {}
+
+  try {
+    const nativeBridge = (window as any).VigilNativeSplash;
+    if (nativeBridge && typeof nativeBridge.hide === 'function') {
+      nativeBridge.hide();
+    }
+  } catch {}
+
+  try {
+    const splashPlugin = (Capacitor as any)?.Plugins?.SplashScreen;
+    if (splashPlugin && typeof splashPlugin.hide === 'function') {
+      await splashPlugin.hide({ fadeOutDuration: 300 });
+    }
+  } catch {}
 }
 
 /**
