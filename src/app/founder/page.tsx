@@ -200,6 +200,26 @@ export default function FounderDeskPage() {
                   {SITE_CONFIG.SUPPORT_EMAIL}
                 </a>
               </div>
+
+              <div className="p-4 rounded-xl bg-white border border-slate-200 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Sales &amp; Demos (Phone)</span>
+                <a
+                  href={SITE_CONFIG.SALES_PHONE_TEL}
+                  className="text-xs font-bold text-[#1C1917] hover:text-[#C2410C] transition-colors"
+                >
+                  {SITE_CONFIG.SALES_PHONE_DISPLAY}
+                </a>
+              </div>
+
+              <div className="p-4 rounded-xl bg-white border border-slate-200 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Sales &amp; Demos (Email)</span>
+                <a
+                  href={`mailto:${SITE_CONFIG.SALES_EMAIL}`}
+                  className="text-xs font-bold text-[#1C1917] hover:text-[#C2410C] transition-colors break-all"
+                >
+                  {SITE_CONFIG.SALES_EMAIL}
+                </a>
+              </div>
             </div>
 
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-600 border-t border-[#FED7AA]/60">

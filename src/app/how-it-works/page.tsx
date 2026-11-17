@@ -439,10 +439,23 @@ export default function HowItWorksPage() {
               <span>{SITE_CONFIG.PHONE_DISPLAY}</span>
             </a>
             <a
+              href={SITE_CONFIG.SALES_PHONE_TEL}
+              className="inline-flex items-center gap-2 font-semibold hover:underline underline-offset-4"
+            >
+              <Phone className="w-4 h-4" aria-hidden="true" />
+              <span>Sales &amp; Demos: {SITE_CONFIG.SALES_PHONE_DISPLAY}</span>
+            </a>
+            <a
               href={`mailto:${SITE_CONFIG.SUPPORT_EMAIL}`}
               className="inline-flex items-center gap-2 font-semibold hover:underline underline-offset-4"
             >
               <span>{SITE_CONFIG.SUPPORT_EMAIL}</span>
+            </a>
+            <a
+              href={`mailto:${SITE_CONFIG.SALES_EMAIL}`}
+              className="inline-flex items-center gap-2 font-semibold hover:underline underline-offset-4"
+            >
+              <span>{SITE_CONFIG.SALES_EMAIL}</span>
             </a>
           </div>
         </div>

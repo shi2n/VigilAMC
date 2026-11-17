@@ -255,28 +255,46 @@ export function CorporateFooter() {
               <div className="space-y-2 text-sm">
                 <div>
                   <span className="block text-[11px] font-bold uppercase tracking-wider text-[#C2410C]">
-                    Email Support
+                    Email Support &amp; Sales
                   </span>
-                  <a
-                    href={`mailto:${SITE_CONFIG.EMAILS.support}`}
-                    className="inline-flex items-center min-h-[36px] text-sm text-[#44403C] hover:text-[#EA580C] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#EA580C] rounded"
-                  >
-                    <Mail className="w-3.5 h-3.5 mr-1.5 text-[#C2410C] shrink-0" aria-hidden="true" />
-                    <span>{SITE_CONFIG.EMAILS.support}</span>
-                  </a>
+                  <div className="flex flex-col items-start">
+                    <a
+                      href={`mailto:${SITE_CONFIG.EMAILS.support}`}
+                      className="inline-flex items-center min-h-[36px] text-sm text-[#44403C] hover:text-[#EA580C] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#EA580C] rounded"
+                    >
+                      <Mail className="w-3.5 h-3.5 mr-1.5 text-[#C2410C] shrink-0" aria-hidden="true" />
+                      <span>{SITE_CONFIG.EMAILS.support}</span>
+                    </a>
+                    <a
+                      href={`mailto:${SITE_CONFIG.EMAILS.sales}`}
+                      className="inline-flex items-center min-h-[36px] text-sm text-[#44403C] hover:text-[#EA580C] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#EA580C] rounded"
+                    >
+                      <Mail className="w-3.5 h-3.5 mr-1.5 text-[#C2410C] shrink-0" aria-hidden="true" />
+                      <span>Sales &amp; Demos: {SITE_CONFIG.EMAILS.sales}</span>
+                    </a>
+                  </div>
                 </div>
 
                 <div>
                   <span className="block text-[11px] font-bold uppercase tracking-wider text-[#C2410C]">
                     Direct Phone / WhatsApp
                   </span>
-                  <a
-                    href={SITE_CONFIG.PHONE_TEL}
-                    className="inline-flex items-center min-h-[36px] text-sm font-semibold text-[#1C1917] hover:text-[#EA580C] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#EA580C] rounded"
-                  >
-                    <Phone className="w-3.5 h-3.5 mr-1.5 text-[#C2410C] shrink-0" aria-hidden="true" />
-                    <span>{SITE_CONFIG.PHONE_DISPLAY}</span>
-                  </a>
+                  <div className="flex flex-col items-start">
+                    <a
+                      href={SITE_CONFIG.PHONE_TEL}
+                      className="inline-flex items-center min-h-[36px] text-sm font-semibold text-[#1C1917] hover:text-[#EA580C] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#EA580C] rounded"
+                    >
+                      <Phone className="w-3.5 h-3.5 mr-1.5 text-[#C2410C] shrink-0" aria-hidden="true" />
+                      <span>{SITE_CONFIG.PHONE_DISPLAY}</span>
+                    </a>
+                    <a
+                      href={SITE_CONFIG.SALES_PHONE_TEL}
+                      className="inline-flex items-center min-h-[36px] text-sm font-semibold text-[#1C1917] hover:text-[#EA580C] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#EA580C] rounded"
+                    >
+                      <Phone className="w-3.5 h-3.5 mr-1.5 text-[#C2410C] shrink-0" aria-hidden="true" />
+                      <span>Sales &amp; Demos: {SITE_CONFIG.SALES_PHONE_DISPLAY}</span>
+                    </a>
+                  </div>
                 </div>
 
                 {/* Social Icon Bubbles with Real URLs */}

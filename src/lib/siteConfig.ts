@@ -48,11 +48,13 @@ export const SITE_CONFIG = {
   APP_STORE_STATUS: 'Coming Soon',
   CONTACT_EMAIL: process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'vigilamc@gmail.com',
   SUPPORT_EMAIL: 'support@vigilamc.com',
+  SALES_EMAIL: 'sales@vigilamc.com',
   FOUNDER_EMAIL: 'founder@vigilamc.com',
   COFOUNDER_EMAIL: 'co-founder@vigilamc.com',
   PRIMARY_GMAIL: 'vigilamc@gmail.com',
   EMAILS: {
     support: 'support@vigilamc.com',
+    sales: 'sales@vigilamc.com',
     founder: 'founder@vigilamc.com',
     cofounder: 'co-founder@vigilamc.com',
     general: 'vigilamc@gmail.com',
@@ -63,6 +65,8 @@ export const SITE_CONFIG = {
   FOUNDER_CITY: 'New Delhi, India',
   PHONE_DISPLAY: '+91 83838 90483',
   PHONE_TEL: 'tel:+918383890483',
+  SALES_PHONE_DISPLAY: '+91 70425 83193',
+  SALES_PHONE_TEL: 'tel:+917042583193',
   WHATSAPP_NUMBER: '918383890483',
   WHATSAPP_URL:
     'https://wa.me/918383890483?text=Hi%20Shaizan%2C%20I%20run%20a%20Fire%20Safety%20AMC%20agency%20and%20want%20to%20see%20a%20quick%20demo%20of%20VigilAMC.',

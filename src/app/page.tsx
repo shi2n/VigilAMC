@@ -71,14 +71,24 @@ export default function HomePage() {
         SITE_CONFIG.SOCIAL.INSTAGRAM,
         SITE_CONFIG.SOCIAL.TWITTER,
       ],
-      contactPoint: {
-        '@type': 'ContactPoint',
-        telephone: SITE_CONFIG.PHONE_DISPLAY,
-        email: SITE_CONFIG.CONTACT_EMAIL,
-        contactType: 'customer support',
-        areaServed: 'IN',
-        availableLanguage: ['English', 'Hindi'],
-      },
+      contactPoint: [
+        {
+          '@type': 'ContactPoint',
+          telephone: SITE_CONFIG.PHONE_DISPLAY,
+          email: SITE_CONFIG.CONTACT_EMAIL,
+          contactType: 'customer support',
+          areaServed: 'IN',
+          availableLanguage: ['English', 'Hindi'],
+        },
+        {
+          '@type': 'ContactPoint',
+          telephone: SITE_CONFIG.SALES_PHONE_DISPLAY,
+          email: SITE_CONFIG.SALES_EMAIL,
+          contactType: 'sales',
+          areaServed: 'IN',
+          availableLanguage: ['English', 'Hindi'],
+        },
+      ],
     },
     {
       '@context': 'https://schema.org',

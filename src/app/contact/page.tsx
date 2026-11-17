@@ -129,15 +129,21 @@ export default function ContactPage() {
               </p>
 
               <div className="mt-5 space-y-3.5 text-xs text-slate-700">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-[#C2410C] shadow-sm">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-[#C2410C] shadow-sm shrink-0 mt-0.5">
                     <Phone className="w-4 h-4" />
                   </div>
-                  <div>
+                  <div className="space-y-1">
                     <span className="text-slate-400 block text-[10px] uppercase font-bold">Helpline &amp; Calls</span>
-                    <a href={SITE_CONFIG.PHONE_TEL} className="font-extrabold text-[#1C1917] text-sm hover:underline">
+                    <a href={SITE_CONFIG.PHONE_TEL} className="font-extrabold text-[#1C1917] text-sm hover:underline block">
                       {SITE_CONFIG.PHONE_DISPLAY}
                     </a>
+                    <div className="text-xs">
+                      <span className="text-slate-500 font-medium mr-1.5">Sales &amp; Demos:</span>
+                      <a href={SITE_CONFIG.SALES_PHONE_TEL} className="font-extrabold text-[#1C1917] hover:text-[#C2410C] hover:underline">
+                        {SITE_CONFIG.SALES_PHONE_DISPLAY}
+                      </a>
+                    </div>
                   </div>
                 </div>
 
@@ -169,6 +175,12 @@ export default function ContactPage() {
                         <span className="text-slate-400 font-medium mr-1.5">Support:</span>
                         <a href={`mailto:${SITE_CONFIG.SUPPORT_EMAIL}`} className="font-bold text-slate-800 hover:text-[#C2410C] break-all">
                           {SITE_CONFIG.SUPPORT_EMAIL}
+                        </a>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 font-medium mr-1.5">Sales &amp; Demos:</span>
+                        <a href={`mailto:${SITE_CONFIG.SALES_EMAIL}`} className="font-bold text-slate-800 hover:text-[#C2410C] break-all">
+                          {SITE_CONFIG.SALES_EMAIL}
                         </a>
                       </div>
                       <div>
@@ -560,9 +572,17 @@ export default function ContactPage() {
                 <p className="text-xs text-slate-600 leading-relaxed">
                   {SITE_CONFIG.ADDRESS_DISPLAY}
                 </p>
-                <div className="pt-2 flex flex-wrap items-center gap-4 text-xs font-semibold">
+                <div className="pt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs font-semibold">
                   <a href={SITE_CONFIG.PHONE_TEL} className="text-[#C2410C] hover:underline">
                     {SITE_CONFIG.PHONE_DISPLAY}
+                  </a>
+                  <span className="text-slate-300">&bull;</span>
+                  <a href={SITE_CONFIG.SALES_PHONE_TEL} className="text-[#C2410C] hover:underline">
+                    Sales &amp; Demos: {SITE_CONFIG.SALES_PHONE_DISPLAY}
+                  </a>
+                  <span className="text-slate-300">&bull;</span>
+                  <a href={`mailto:${SITE_CONFIG.SALES_EMAIL}`} className="text-[#C2410C] hover:underline">
+                    {SITE_CONFIG.SALES_EMAIL}
                   </a>
                   <span className="text-slate-300">&bull;</span>
                   <a href={`mailto:${SITE_CONFIG.PRIMARY_GMAIL}`} className="text-[#C2410C] hover:underline">

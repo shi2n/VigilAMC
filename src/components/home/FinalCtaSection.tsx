@@ -66,11 +66,27 @@ export function FinalCtaSection() {
           </a>
 
           <a
+            href={SITE_CONFIG.SALES_PHONE_TEL}
+            className="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#9A3412] hover:bg-[#7C2D12] border border-white/30 text-white transition-colors"
+          >
+            <Phone className="w-4 h-4" aria-hidden="true" />
+            <span>Sales &amp; Demos: {SITE_CONFIG.SALES_PHONE_DISPLAY}</span>
+          </a>
+
+          <a
             href={`mailto:${SITE_CONFIG.SUPPORT_EMAIL}`}
             className="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#9A3412] hover:bg-[#7C2D12] border border-white/30 text-white transition-colors"
           >
             <Mail className="w-4 h-4" aria-hidden="true" />
             <span>{SITE_CONFIG.SUPPORT_EMAIL}</span>
+          </a>
+
+          <a
+            href={`mailto:${SITE_CONFIG.SALES_EMAIL}`}
+            className="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#9A3412] hover:bg-[#7C2D12] border border-white/30 text-white transition-colors"
+          >
+            <Mail className="w-4 h-4" aria-hidden="true" />
+            <span>{SITE_CONFIG.SALES_EMAIL}</span>
           </a>
         </div>
       </div>

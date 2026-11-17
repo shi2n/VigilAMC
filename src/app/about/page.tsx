@@ -139,6 +139,16 @@ export default function AboutUsPage() {
                     {SITE_CONFIG.CONTACT_EMAIL}
                   </a>
                 </p>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Sales &amp; Demos:{' '}
+                  <a href={SITE_CONFIG.SALES_PHONE_TEL} className="text-[#C2410C] font-semibold hover:underline">
+                    {SITE_CONFIG.SALES_PHONE_DISPLAY}
+                  </a>{' '}
+                  &bull;{' '}
+                  <a href={`mailto:${SITE_CONFIG.SALES_EMAIL}`} className="text-[#C2410C] hover:underline">
+                    {SITE_CONFIG.SALES_EMAIL}
+                  </a>
+                </p>
               </div>
             </div>
           </div>
