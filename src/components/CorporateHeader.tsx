@@ -21,6 +21,7 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
     { name: 'Products', href: '/products' },
     { name: 'Features', href: '/features' },
     { name: 'How it works', href: '/how-it-works' },
+    { name: 'Contact', href: '/contact' },
   ];
 
   return (
