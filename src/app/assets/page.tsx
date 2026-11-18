@@ -16,22 +16,34 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { EQUIPMENT_TYPES, getAssetRefillStatus } from '@/lib/compliance';
+import { toast } from 'sonner';
 
 export default function AssetsPage() {
   const [assets, setAssets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
   const fetchAssets = async () => {
     try {
       setLoading(true);
+      setLoadError(null);
       const url = statusFilter !== 'ALL' ? `/api/assets?status=${statusFilter}` : '/api/assets';
       const res = await fetch(url);
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = data.error || (res.status === 401 ? 'Please sign in to view equipment assets.' : 'Failed to load assets.');
+        setLoadError(msg);
+        toast.error(msg);
+        setAssets([]);
+        return;
+      }
       setAssets(data.assets || []);
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      const msg = e?.message || 'Network error loading assets.';
+      setLoadError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -73,7 +85,7 @@ export default function AssetsPage() {
 
         <div className="flex items-center gap-2.5">
           <Link
-            href="/scan"
+            href="/technician"
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold text-sm shadow-md transition-colors"
           >
             <MapPin className="w-4 h-4" />
@@ -81,6 +93,19 @@ export default function AssetsPage() {
           </Link>
         </div>
       </div>
+
+      {loadError && (
+        <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center justify-between gap-3">
+          <span className="font-medium">{loadError}</span>
+          <button
+            type="button"
+            onClick={fetchAssets}
+            className="px-2.5 py-1 rounded-lg bg-white border border-red-200 font-bold hover:bg-red-100"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Search and Filters */}
       <div className="flex flex-col sm:flex-row items-center gap-3">

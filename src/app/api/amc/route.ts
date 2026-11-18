@@ -1,10 +1,23 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth';
 import { addCalendarMonths, toDbDate, fromDbDate, todayCalendarDateString } from '@/lib/dates';
 
-export async function GET() {
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: Request) {
   try {
+    const auth = await getCurrentUser(request);
+    if (!auth || !auth.organization) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const contracts = (db as any).amcContract ? await (db as any).amcContract.findMany({
+      where: {
+        building: {
+          organizationId: auth.organization.id,
+        },
+      },
       include: {
         building: {
           select: {
@@ -46,6 +59,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const auth = await getCurrentUser(request);
+    if (!auth || !auth.organization) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const {
       buildingId,
@@ -59,7 +77,23 @@ export async function POST(request: Request) {
       scopeSummary,
     } = body;
 
-    const amc = (db as any).amcContract ? await (db as any).amcContract.create({
+    if (!buildingId) {
+      return NextResponse.json({ error: 'buildingId is required' }, { status: 400 });
+    }
+
+    const building = await (db as any).building.findFirst({
+      where: { id: buildingId, organizationId: auth.organization.id },
+      select: { id: true },
+    });
+    if (!building) {
+      return NextResponse.json({ error: 'Building not found in your organization' }, { status: 404 });
+    }
+
+    if (!(db as any).amcContract) {
+      return NextResponse.json({ error: 'AMC contract storage is not enabled on this deployment' }, { status: 501 });
+    }
+
+    const amc = await (db as any).amcContract.create({
       data: {
         buildingId,
         contractNumber: contractNumber || `AMC/${new Date().getFullYear()}/${Math.floor(100 + Math.random() * 900)}`,
@@ -74,7 +108,7 @@ export async function POST(request: Request) {
       include: {
         building: true,
       },
-    }) : null;
+    });
 
     return NextResponse.json({ success: true, amc });
   } catch (error: any) {

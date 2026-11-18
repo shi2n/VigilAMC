@@ -15,12 +15,14 @@ import {
   Calculator,
   RefreshCw
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function AmcPage() {
   const [contracts, setContracts] = useState<any[]>([]);
   const [analytics, setAnalytics] = useState<any>(null);
   const [buildings, setBuildings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [newModalOpen, setNewModalOpen] = useState(false);
 
   // New contract form
@@ -37,22 +39,34 @@ export default function AmcPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
+      setLoadError(null);
       const [amcRes, bldRes] = await Promise.all([
         fetch('/api/amc'),
         fetch('/api/buildings'),
       ]);
-      const amcData = await amcRes.json();
-      const bldData = await bldRes.json();
+      const amcData = await amcRes.json().catch(() => ({}));
+      const bldData = await bldRes.json().catch(() => ({}));
 
-      setContracts(amcData.contracts || []);
-      setAnalytics(amcData.analytics);
+      if (!amcRes.ok) {
+        const msg = amcData.error || (amcRes.status === 401 ? 'Please sign in to view AMC contracts.' : 'Failed to load AMC contracts.');
+        setLoadError(msg);
+        toast.error(msg);
+        setContracts([]);
+        setAnalytics(null);
+      } else {
+        setContracts(amcData.contracts || []);
+        setAnalytics(amcData.analytics);
+      }
+
       const blds = bldData.buildings || [];
       setBuildings(blds);
       if (blds.length > 0 && !form.buildingId) {
         setForm((prev) => ({ ...prev, buildingId: blds[0].id }));
       }
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      const msg = e?.message || 'Network error loading AMC contracts.';
+      setLoadError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -70,13 +84,16 @@ export default function AmcPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
-      const data = await res.json();
-      if (data.success) {
-        setNewModalOpen(false);
-        fetchData();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        toast.error(data.error || 'Failed to create AMC contract');
+        return;
       }
-    } catch (e) {
-      console.error(e);
+      toast.success('AMC contract created');
+      setNewModalOpen(false);
+      fetchData();
+    } catch (e: any) {
+      toast.error(e?.message || 'Network error creating AMC contract');
     }
   };
 
@@ -106,6 +123,19 @@ export default function AmcPage() {
           <span>New AMC Contract</span>
         </button>
       </div>
+
+      {loadError && (
+        <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center justify-between gap-3">
+          <span className="font-medium">{loadError}</span>
+          <button
+            type="button"
+            onClick={fetchData}
+            className="px-2.5 py-1 rounded-lg bg-white border border-red-200 font-bold hover:bg-red-100"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Revenue Metrics Row */}
       {analytics && (

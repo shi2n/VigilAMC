@@ -23,13 +23,16 @@ import {
 } from 'lucide-react';
 import { getNocStatus, getAssetRefillStatus, EQUIPMENT_TYPES } from '@/lib/compliance';
 import { todayCalendarDateString, addCalendarMonths } from '@/lib/dates';
+import { toast } from 'sonner';
 
 export default function BuildingDetailPage() {
   const params = useParams();
   const [building, setBuilding] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedFloor, setSelectedFloor] = useState('ALL');
   const [batchModalOpen, setBatchModalOpen] = useState(false);
+  const [batchSubmitting, setBatchSubmitting] = useState(false);
 
   // Batch generator state
   const [batchCount, setBatchCount] = useState(10);
@@ -40,11 +43,21 @@ export default function BuildingDetailPage() {
   const fetchBuilding = async () => {
     try {
       setLoading(true);
+      setLoadError(null);
       const res = await fetch(`/api/buildings/${params.id}`);
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = data.error || (res.status === 401 ? 'Please sign in to view building details.' : 'Failed to load building details.');
+        setLoadError(msg);
+        toast.error(msg);
+        setBuilding(null);
+        return;
+      }
       setBuilding(data.building);
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      const msg = e?.message || 'Network error while loading building details.';
+      setLoadError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -58,15 +71,16 @@ export default function BuildingDetailPage() {
 
   const handleBatchGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!building) return;
+    if (!building || batchSubmitting) return;
 
     const assetsToCreate = [];
     const prefix = building.name.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() || 'EXT';
     const startNum = (building.assets?.length || 0) + 1;
+    const floorsCount = Math.max(1, Number(building.totalFloors) || 1);
 
     for (let i = 0; i < batchCount; i++) {
       const num = startNum + i;
-      const targetFloor = ((num - 1) % building.totalFloors) + 1;
+      const targetFloor = ((num - 1) % floorsCount) + 1;
       assetsToCreate.push({
         buildingId: building.id,
         qrCode: `VGL-${prefix}-${String(num).padStart(3, '0')}`,
@@ -88,25 +102,53 @@ export default function BuildingDetailPage() {
     }
 
     try {
+      setBatchSubmitting(true);
       const res = await fetch('/api/assets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ assets: assetsToCreate }),
       });
-      const data = await res.json();
-      if (data.success) {
-        setBatchModalOpen(false);
-        fetchBuilding();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        toast.error(data.error || 'Failed to generate batch assets');
+        return;
       }
-    } catch (e) {
-      console.error(e);
+      toast.success(`Created ${data.count ?? assetsToCreate.length} assets for ${building.name}`);
+      setBatchModalOpen(false);
+      await fetchBuilding();
+    } catch (e: any) {
+      toast.error(e?.message || 'Network error while generating assets');
+    } finally {
+      setBatchSubmitting(false);
     }
   };
 
-  if (loading || !building) {
+  if (loading) {
     return (
       <div className="p-8 text-center text-slate-400">
         Loading facility assets & floor matrix...
+      </div>
+    );
+  }
+
+  if (loadError || !building) {
+    return (
+      <div className="p-8 max-w-xl mx-auto text-center space-y-4">
+        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm font-medium">
+          {loadError || 'Building not found.'}
+        </div>
+        <div className="flex justify-center gap-3">
+          <button
+            type="button"
+            onClick={fetchBuilding}
+            className="px-4 py-2 rounded-xl bg-[#EA580C] text-white text-xs font-bold"
+          >
+            Retry
+          </button>
+          <Link href="/login" className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold">
+            Sign In
+          </Link>
+        </div>
       </div>
     );
   }
@@ -352,7 +394,7 @@ export default function BuildingDetailPage() {
             </div>
 
             <p className="text-xs text-slate-400">
-              Quickly generate 10 to 50 equipment items with auto-incrementing serials and QR codes distributed across building floors.
+              Quickly generate 5 to 50 equipment items with auto-incrementing serials and Asset Tag IDs distributed across building floors.
             </p>
 
             <form onSubmit={handleBatchGenerate} className="space-y-4 text-xs">
@@ -417,8 +459,8 @@ export default function BuildingDetailPage() {
 
               <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-[11px] text-slate-400 space-y-1">
                 <div className="font-semibold text-white">Auto-Distribution Strategy:</div>
-                <div>• QRs will be tagged: <span className="font-mono text-red-400">VGL-{(building.name.replace(/[^A-Za-z]/g, '').slice(0, 3) || 'EXT').toUpperCase()}-XXX</span></div>
-                <div>• Distributed sequentially across Floors 1 to {building.totalFloors}</div>
+                <div>• Asset Tag IDs will be assigned: <span className="font-mono text-red-400">VGL-{(building.name.replace(/[^A-Za-z]/g, '').slice(0, 3) || 'EXT').toUpperCase()}-XXX</span></div>
+                <div>• Distributed sequentially across Floors 1 to {Math.max(1, Number(building.totalFloors) || 1)}</div>
                 <div>• Next refill automatically scheduled for +1 year per IS 2190</div>
               </div>
 

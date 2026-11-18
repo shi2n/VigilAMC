@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { getNocStatus } from '@/lib/compliance';
 import { addCalendarMonths, todayCalendarDateString } from '@/lib/dates';
+import { toast } from 'sonner';
 
 export default function BuildingsPage() {
   const [buildings, setBuildings] = useState<any[]>([]);
@@ -47,10 +48,14 @@ export default function BuildingsPage() {
     try {
       setLoading(true);
       const res = await fetch('/api/buildings');
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || 'Failed to load buildings');
+        return;
+      }
       setBuildings(data.buildings || []);
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      toast.error(e?.message || 'Network error loading buildings');
     } finally {
       setLoading(false);
     }
@@ -68,13 +73,16 @@ export default function BuildingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
-      const data = await res.json();
-      if (data.success) {
-        setNewModalOpen(false);
-        fetchBuildings();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        toast.error(data.error || 'Failed to create building');
+        return;
       }
-    } catch (e) {
-      console.error(e);
+      toast.success('Building created');
+      setNewModalOpen(false);
+      fetchBuildings();
+    } catch (e: any) {
+      toast.error(e?.message || 'Network error creating building');
     }
   };
 

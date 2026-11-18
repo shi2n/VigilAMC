@@ -9,6 +9,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { REPORT_TYPES } from '@/lib/compliance-engine';
+import { toast } from 'sonner';
 
 export default function CertificatesPage() {
   const [certificates, setCertificates] = useState<any[]>([]);
@@ -30,8 +31,11 @@ export default function CertificatesPage() {
         fetch('/api/certificates'),
         fetch('/api/buildings'),
       ]);
-      const certData = await certRes.json();
-      const bldData = await bldRes.json();
+      const certData = await certRes.json().catch(() => ({}));
+      const bldData = await bldRes.json().catch(() => ({}));
+      if (!certRes.ok || !bldRes.ok) {
+        toast.error(certData.error || bldData.error || 'Failed to load inspection reports');
+      }
 
       setCertificates(certData.certificates || []);
       const blds = bldData.buildings || [];
@@ -39,8 +43,8 @@ export default function CertificatesPage() {
       if (blds.length > 0 && !form.buildingId) {
         setForm((prev) => ({ ...prev, buildingId: blds[0].id }));
       }
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      toast.error(e?.message || 'Network error loading inspection reports');
     } finally {
       setLoading(false);
     }

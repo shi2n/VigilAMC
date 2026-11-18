@@ -139,26 +139,30 @@ export function TechnicianActivityLog() {
   const [buildingMap, setBuildingMap] = useState<Record<string, any>>({});
   const [equipmentMap, setEquipmentMap] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedTech, setSelectedTech] = useState('ALL');
   const [search, setSearch] = useState('');
 
   const fetchActivities = async () => {
     try {
       setLoading(true);
+      setLoadError(null);
       const query = new URLSearchParams();
       if (selectedTech !== 'ALL') query.set('technicianId', selectedTech);
 
       const { fetchWithAuth } = await import('@/lib/clientAuth');
       const res = await fetchWithAuth(`/api/admin/technicians/activity?${query.toString()}`);
-      const json = await res.json();
-      if (res.ok) {
-        setActivities(json.activities || []);
-        setTechnicians(json.technicians || []);
-        if (json.buildingMap) setBuildingMap(json.buildingMap);
-        if (json.equipmentMap) setEquipmentMap(json.equipmentMap);
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setLoadError(json.error || 'Failed to load technician activity logs.');
+        return;
       }
-    } catch (e) {
-      console.error('Error fetching activities:', e);
+      setActivities(json.activities || []);
+      setTechnicians(json.technicians || []);
+      if (json.buildingMap) setBuildingMap(json.buildingMap);
+      if (json.equipmentMap) setEquipmentMap(json.equipmentMap);
+    } catch (e: any) {
+      setLoadError(e?.message || 'Network error loading technician activity logs.');
     } finally {
       setLoading(false);
     }
@@ -207,6 +211,18 @@ export function TechnicianActivityLog() {
 
   return (
     <div className="space-y-6">
+      {loadError && (
+        <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center justify-between gap-3">
+          <span className="font-medium">{loadError}</span>
+          <button
+            type="button"
+            onClick={fetchActivities}
+            className="px-2.5 py-1 rounded-lg bg-white border border-red-200 font-bold hover:bg-red-100"
+          >
+            Retry
+          </button>
+        </div>
+      )}
       {/* Filter header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 glass-panel-dense p-4 rounded-2xl shadow-sm">
         <div className="flex items-center gap-3 flex-1 flex-wrap">

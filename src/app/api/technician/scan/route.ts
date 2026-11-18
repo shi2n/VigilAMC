@@ -8,14 +8,17 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
+    const auth = await getCurrentUser(request);
+    if (!auth || !auth.organization) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('qrCode') || searchParams.get('code');
 
     if (!code) {
-      return NextResponse.json({ error: 'QR Code is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Asset Tag ID is required' }, { status: 400 });
     }
-
-    const auth = await getCurrentUser(request);
 
     const equipment = await (db as any).equipment.findUnique({
       where: { qrCode: code.trim().toUpperCase() },
@@ -33,12 +36,12 @@ export async function GET(request: Request) {
     });
 
     if (!equipment) {
-      return NextResponse.json({ error: `No equipment found with QR code "${code}"` }, { status: 404 });
+      return NextResponse.json({ error: `No equipment found with Asset Tag "${code}"` }, { status: 404 });
     }
 
     // Tenant Isolation Check:
-    // If technician or admin is authenticated, ensure equipment belongs to their agency
-    if (auth?.organization && equipment.organizationId && equipment.organizationId !== auth.organization.id) {
+    // Ensure equipment belongs to the authenticated user's agency
+    if (equipment.organizationId && equipment.organizationId !== auth.organization.id) {
       return NextResponse.json(
         { error: 'Unauthorized: This asset belongs to another agency and cannot be accessed.' },
         { status: 403 }
@@ -83,6 +86,10 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const auth = await getCurrentUser(request);
+    if (!auth || !auth.organization) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { qrCode, equipmentId, intervalMonths = 12, notes } = body;
 
@@ -98,7 +105,7 @@ export async function POST(request: Request) {
     }
 
     // Tenant Isolation Check:
-    if (auth?.organization && eq.organizationId && eq.organizationId !== auth.organization.id) {
+    if (eq.organizationId && eq.organizationId !== auth.organization.id) {
       return NextResponse.json(
         { error: 'Unauthorized: This equipment belongs to another agency.' },
         { status: 403 }

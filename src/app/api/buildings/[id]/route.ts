@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,8 +9,16 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const building = await (db as any).building.findUnique({
-      where: { id: params.id },
+    const auth = await getCurrentUser(request);
+    if (!auth || !auth.organization) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const building = await (db as any).building.findFirst({
+      where: {
+        id: params.id,
+        organizationId: auth.organization.id,
+      },
       include: {
         client: true,
         equipments: {
@@ -33,10 +42,10 @@ export async function GET(
 
     const mapped = {
       ...building,
-      city: 'New Delhi',
-      occupancyType: 'Commercial Complex',
-      fireNocNumber: 'NOC-2026-DEL-892',
-      nocExpiryDate: building.nextFilingDueDate,
+      city: building.city || building.address || '',
+      occupancyType: building.occupancyType || 'Commercial / Residential',
+      fireNocNumber: building.fireNocNumber || building.fscNumber || null,
+      nocExpiryDate: building.fireNocExpiryDate || building.fscValidityDate || building.nextFilingDueDate,
       totalAssets: building.equipments?.length || 0,
       assets: building.equipments || [],
     };

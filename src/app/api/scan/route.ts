@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth';
 import { sanitizeAgencyCredentials } from '@/lib/compliance-engine';
 import { addCalendarMonths, todayCalendarDateString, toDbDate } from '@/lib/dates';
 
@@ -7,6 +8,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
+    const auth = await getCurrentUser(request);
+    if (!auth || !auth.organization) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
 
@@ -32,6 +38,10 @@ export async function GET(request: Request) {
 
     if (!equipment) {
       return NextResponse.json({ error: 'Equipment not found for this Asset Tag' }, { status: 404 });
+    }
+
+    if (equipment.organizationId && equipment.organizationId !== auth.organization.id) {
+      return NextResponse.json({ error: 'Forbidden: Asset belongs to another agency' }, { status: 403 });
     }
 
     const org = equipment.building?.organization;
@@ -79,6 +89,11 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const auth = await getCurrentUser(request);
+    if (!auth || !auth.organization) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const {
       qrCode,
@@ -100,6 +115,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Equipment not found' }, { status: 404 });
     }
 
+    if (equipment.organizationId && equipment.organizationId !== auth.organization.id) {
+      return NextResponse.json({ error: 'Forbidden: Asset belongs to another agency' }, { status: 403 });
+    }
+
+    const ALLOWED_STATUSES = ['COMPLIANT', 'DUE_SOON', 'OVERDUE', 'DEFECTIVE', 'VERIFIED', 'SERVICE_REQUIRED', 'REPLACEMENT_REQUIRED'];
+    const safeStatus = newStatus && ALLOWED_STATUSES.includes(String(newStatus).toUpperCase())
+      ? String(newStatus).toUpperCase()
+      : 'COMPLIANT';
+
     const todayStr = todayCalendarDateString();
     const intervalMonths = equipment.serviceIntervalMonths || 12;
     const nextDueStr = addCalendarMonths(todayStr, intervalMonths);
@@ -109,14 +133,14 @@ export async function POST(request: Request) {
       data: {
         lastServiceDate: toDbDate(todayStr),
         nextDueDate: toDbDate(nextDueStr),
-        status: newStatus || 'COMPLIANT',
+        status: safeStatus,
       },
     });
 
     const log = await (db as any).serviceLog.create({
       data: {
         equipmentId: equipment.id,
-        technicianName: technicianName || 'Field Service Technician',
+        technicianName: auth.profile?.fullName || technicianName || 'Field Service Technician',
         actionType: actionType || 'Routine Maintenance',
         nextDueDate: toDbDate(nextDueStr),
         notes: remarks || '',

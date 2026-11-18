@@ -11,21 +11,32 @@ import {
 } from 'lucide-react';
 import { EQUIPMENT_TYPES } from '@/lib/compliance';
 import { PERMANENT_LEGAL_DISCLAIMER_PARAGRAPHS } from '@/lib/compliance-engine';
+import { toast } from 'sonner';
 
 export default function CertificateDetailPage() {
   const params = useParams();
   const [cert, setCert] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCertificate = async () => {
       try {
         setLoading(true);
+        setLoadError(null);
         const res = await fetch(`/api/certificates/${params.id}`);
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.certificate) {
+          const msg = data.error || 'Certificate not found.';
+          setLoadError(msg);
+          toast.error(msg);
+          return;
+        }
         setCert(data.certificate);
-      } catch (e) {
-        console.error(e);
+      } catch (e: any) {
+        const msg = e?.message || 'Network error loading certificate.';
+        setLoadError(msg);
+        toast.error(msg);
       } finally {
         setLoading(false);
       }
@@ -40,10 +51,23 @@ export default function CertificateDetailPage() {
     window.print();
   };
 
-  if (loading || !cert) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-[#FFF8F2] py-20 flex justify-center text-[#44403C]">
         <RefreshCw className="w-8 h-8 animate-spin text-[#EA580C]" />
+      </div>
+    );
+  }
+
+  if (loadError || !cert) {
+    return (
+      <div className="min-h-screen bg-[#FFF8F2] py-20 px-4 flex flex-col items-center justify-center text-center gap-4">
+        <p className="text-sm font-semibold text-red-700 bg-red-50 border border-red-200 px-4 py-3 rounded-xl">
+          {loadError || 'Certificate not found.'}
+        </p>
+        <Link href="/certificates" className="text-xs font-bold text-[#EA580C] hover:underline">
+          ← Back to All Inspection Reports
+        </Link>
       </div>
     );
   }

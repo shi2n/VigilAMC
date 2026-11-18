@@ -32,6 +32,7 @@ export function ClientPortalAdminPanel({ clients = [], buildings = [] }: ClientP
   const [portalUsers, setPortalUsers] = useState<any[]>([]);
   const [receipts, setReceipts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [inviting, setInviting] = useState(false);
 
   // Form states
@@ -44,29 +45,36 @@ export function ClientPortalAdminPanel({ clients = [], buildings = [] }: ClientP
   const fetchUsers = async () => {
     try {
       const res = await fetch('/api/admin/portal-users');
-      if (res.ok) {
-        const data = await res.json();
-        setPortalUsers(data.portalUsers || []);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to load client portal users');
       }
-    } catch (e) {
-      console.error(e);
+      setPortalUsers(data.portalUsers || []);
+    } catch (e: any) {
+      const msg = e?.message || 'Failed to load client portal users';
+      setLoadError(msg);
+      toast.error(msg);
     }
   };
 
   const fetchReceipts = async () => {
     try {
       const res = await fetch('/api/admin/portal-receipts');
-      if (res.ok) {
-        const data = await res.json();
-        setReceipts(data.receipts || []);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to load portal acknowledgement receipts');
       }
-    } catch (e) {
-      console.error(e);
+      setReceipts(data.receipts || []);
+    } catch (e: any) {
+      const msg = e?.message || 'Failed to load portal acknowledgement receipts';
+      setLoadError(msg);
+      toast.error(msg);
     }
   };
 
   useEffect(() => {
     setLoading(true);
+    setLoadError(null);
     Promise.all([fetchUsers(), fetchReceipts()]).finally(() => setLoading(false));
   }, []);
 
@@ -186,6 +194,25 @@ export function ClientPortalAdminPanel({ clients = [], buildings = [] }: ClientP
 
   return (
     <div data-testid="client-portal-admin-panel" className="space-y-6">
+      {loadError && (
+        <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center justify-between gap-3">
+          <span className="flex items-center gap-2 font-medium">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            {loadError}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              setLoadError(null);
+              setLoading(true);
+              Promise.all([fetchUsers(), fetchReceipts()]).finally(() => setLoading(false));
+            }}
+            className="px-2.5 py-1 rounded-lg bg-white border border-red-200 font-bold hover:bg-red-100"
+          >
+            Retry
+          </button>
+        </div>
+      )}
       {/* Subtab Bar */}
       <div className="flex items-center justify-between border-b border-[#F0E4D8] pb-3 flex-wrap gap-2">
         <div className="flex items-center gap-2">

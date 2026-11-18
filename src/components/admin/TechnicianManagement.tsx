@@ -536,12 +536,16 @@ export function TechnicianManagement({
     setViewDetailTech(tech);
     try {
       const res = await fetch(`/api/admin/technicians/${tech.id}`);
-      const json = await res.json();
-      if (res.ok && json.technician) {
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showToast(json.error || 'Failed to load technician details');
+        return;
+      }
+      if (json.technician) {
         setViewDetailTech(json.technician);
       }
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      showToast(e?.message || 'Network error loading technician details');
     }
   };
 

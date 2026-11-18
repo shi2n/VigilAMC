@@ -305,7 +305,7 @@ export function dueState(
       daysDiff: null,
       monthsLeft: null,
       color: STATUS_COLORS.OK,
-      badgeClass: 'bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+      badgeClass: 'bg-slate-100 text-slate-700 border border-slate-200',
     };
   }
 
@@ -322,7 +322,7 @@ export function dueState(
       daysDiff,
       monthsLeft: 0,
       color: STATUS_COLORS.EXPIRED,
-      badgeClass: 'bg-rose-100 text-rose-800 border border-rose-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/30',
+      badgeClass: 'bg-rose-100 text-rose-800 border border-rose-200',
     };
   }
 
@@ -334,7 +334,7 @@ export function dueState(
       daysDiff: 0,
       monthsLeft: 0,
       color: STATUS_COLORS.DUE_SOON,
-      badgeClass: 'bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30',
+      badgeClass: 'bg-amber-100 text-amber-800 border border-amber-200',
     };
   }
 
@@ -347,7 +347,7 @@ export function dueState(
       daysDiff,
       monthsLeft,
       color: STATUS_COLORS.DUE_SOON,
-      badgeClass: 'bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30',
+      badgeClass: 'bg-amber-100 text-amber-800 border border-amber-200',
     };
   }
 
@@ -361,7 +361,7 @@ export function dueState(
     daysDiff,
     monthsLeft,
     color: STATUS_COLORS.OK,
-    badgeClass: 'bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30',
+    badgeClass: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
   };
 }
 
