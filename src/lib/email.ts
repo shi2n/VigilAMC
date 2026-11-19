@@ -145,17 +145,31 @@ function getZohoSmtpConfig(): {
   user: string;
   pass: string;
 } | null {
-  const host = sanitizeEnv(process.env.ZOHO_SMTP_HOST);
-  const rawPort = sanitizeEnv(process.env.ZOHO_SMTP_PORT);
+  const user = sanitizeEnv(process.env.ZOHO_SMTP_USER) || sanitizeEnv(process.env.SMTP_USER);
+  const pass = sanitizeEnv(process.env.ZOHO_SMTP_PASS) || sanitizeEnv(process.env.SMTP_PASS);
+  const host = sanitizeEnv(process.env.ZOHO_SMTP_HOST) || sanitizeEnv(process.env.SMTP_HOST) || 'smtp.zoho.in';
+  const rawPort = sanitizeEnv(process.env.ZOHO_SMTP_PORT) || sanitizeEnv(process.env.SMTP_PORT);
   const port = rawPort ? parseInt(rawPort, 10) : 465;
-  const user = sanitizeEnv(process.env.ZOHO_SMTP_USER);
-  const pass = sanitizeEnv(process.env.ZOHO_SMTP_PASS);
 
   if (!host || !user || !pass || Number.isNaN(port) || port <= 0) {
     return null;
   }
 
   return { host, port, user, pass };
+}
+
+export function getMissingSmtpEnvVars(): string[] {
+  const missing: string[] = [];
+  if (!sanitizeEnv(process.env.ZOHO_SMTP_HOST) && !sanitizeEnv(process.env.SMTP_HOST)) {
+    missing.push('ZOHO_SMTP_HOST');
+  }
+  if (!sanitizeEnv(process.env.ZOHO_SMTP_USER) && !sanitizeEnv(process.env.SMTP_USER)) {
+    missing.push('ZOHO_SMTP_USER');
+  }
+  if (!sanitizeEnv(process.env.ZOHO_SMTP_PASS) && !sanitizeEnv(process.env.SMTP_PASS)) {
+    missing.push('ZOHO_SMTP_PASS');
+  }
+  return missing;
 }
 
 export function isSmtpConfigured(): boolean {
@@ -547,10 +561,11 @@ export async function sendEmail(options: SendEmailOptions): Promise<EmailResult>
   }
 
   // 3. In production without credentials -> typed CONFIG_MISSING
+  const missingVars = getMissingSmtpEnvVars();
   return {
     success: false,
     errorCode: 'CONFIG_MISSING',
-    message: 'Email not configured: ZOHO_SMTP_* missing in environment',
+    message: `Email not configured: ${missingVars.length > 0 ? missingVars.join(', ') : 'ZOHO_SMTP_*'} missing in environment`,
   };
 }
 

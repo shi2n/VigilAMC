@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { isSmtpConfigured } from '@/lib/email';
 
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
@@ -10,6 +12,7 @@ export async function GET() {
       {
         status: 'ok',
         region: process.env.VERCEL_REGION || 'local',
+        emailConfigured: isSmtpConfigured(),
         timestamp: new Date().toISOString(),
       },
       {
