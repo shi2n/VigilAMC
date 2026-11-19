@@ -399,11 +399,11 @@ function createSmtpTransport() {
  * while preserving the requested display name (e.g. "VigilAMC Reports" or "<Agency> via VigilAMC").
  */
 function resolveAuthenticatedFrom(requestedFrom: string | undefined, smtpUser?: string): string {
-  const fallbackAddress = smtpUser || 'reports@vigilamc.com';
+  const fallbackAddress = smtpUser || 'support@vigilamc.com';
   const raw = (requestedFrom || '').trim();
 
   if (!raw) {
-    return `VigilAMC Reports <${fallbackAddress}>`;
+    return `VigilAMC <${fallbackAddress}>`;
   }
 
   if (!smtpUser || !smtpUser.includes('@')) {
@@ -416,7 +416,7 @@ function resolveAuthenticatedFrom(requestedFrom: string | undefined, smtpUser?: 
     return displayName ? `${displayName} <${smtpUser}>` : smtpUser;
   }
 
-  return `VigilAMC Reports <${smtpUser}>`;
+  return `VigilAMC <${smtpUser}>`;
 }
 
 function mapNodemailerError(err: any): { errorCode: EmailErrorCode; message: string } {
@@ -583,7 +583,7 @@ export async function sendFormBReportEmail(options: FormBEmailOptions): Promise<
     };
   }
 
-  const from = 'VigilAMC Reports <reports@vigilamc.com>';
+  const from = 'VigilAMC <support@vigilamc.com>';
 
   const bodyHtml = `
 <p style="margin: 0 0 14px 0;">Hello,</p>
@@ -708,7 +708,7 @@ export async function sendOverdueDigestEmail(options: OverdueDigestEmailOptions)
     createdById,
   } = options;
 
-  const from = 'VigilAMC Reports <reports@vigilamc.com>';
+  const from = 'VigilAMC <support@vigilamc.com>';
 
   const tableRowsHtml = items.map((item) => {
     const isExpired = item.status === 'EXPIRED';
@@ -910,7 +910,7 @@ If you did not request this link, you can safely ignore this email.
   const { attachments } = getBrandedEmailAttachments();
 
   return sendEmail({
-    from: `"${agency} via VigilAMC" <support@vigilamc.com>`,
+    from: 'VigilAMC <support@vigilamc.com>',
     to: data.to,
     replyTo: 'support@vigilamc.com',
     subject,
@@ -950,7 +950,7 @@ Source:       ${data.source || 'Website Lead Form'}
   const { attachments } = getBrandedEmailAttachments();
 
   const res = await sendEmail({
-    from: 'VigilAMC Alerts <alerts@vigilamc.com>',
+    from: 'VigilAMC <support@vigilamc.com>',
     to: recipient,
     replyTo: 'support@vigilamc.com',
     subject,
@@ -1013,7 +1013,7 @@ Submitted at:      ${formattedDate}
   const { attachments } = getBrandedEmailAttachments();
 
   const res = await sendEmail({
-    from: 'VigilAMC Investor Relations <alerts@vigilamc.com>',
+    from: 'VigilAMC <support@vigilamc.com>',
     to: recipient,
     replyTo: 'support@vigilamc.com',
     subject,

@@ -25,7 +25,7 @@ export function EmailOverdueModal({
   onSuccess,
 }: EmailOverdueModalProps) {
   const [to, setTo] = useState('');
-  const [cc, setCc] = useState('support@vigilamc.com');
+  const [cc, setCc] = useState('vigil.amc@vigilamc.com');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [includeOverdue, setIncludeOverdue] = useState(true);
@@ -56,7 +56,7 @@ export function EmailOverdueModal({
     if (!isOpen) return;
 
     setTo(clientEmail || '');
-    setCc('support@vigilamc.com');
+    setCc('vigil.amc@vigilamc.com');
     setIncludeOverdue(true);
     setIncludeNext7Days(true);
     setIncludeNext30Days(false);
@@ -316,7 +316,7 @@ export function EmailOverdueModal({
               type="text"
               value={cc}
               onChange={(e) => setCc(e.target.value)}
-              placeholder="support@vigilamc.com"
+              placeholder="vigil.amc@vigilamc.com"
               className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-[#1C1917] focus:outline-none focus:ring-2 focus:ring-[#EA580C]/40"
             />
           </div>

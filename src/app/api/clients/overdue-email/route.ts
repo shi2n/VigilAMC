@@ -211,7 +211,7 @@ export async function GET(request: Request) {
         totalItems: allItems.length,
       },
       defaultSubject,
-      defaultCc: 'support@vigilamc.com',
+      defaultCc: 'vigil.amc@vigilamc.com',
       previewItems: allItems.slice(0, 50),
     });
   } catch (error: any) {
@@ -315,7 +315,7 @@ export async function POST(request: Request) {
 
     const emailResult = await sendOverdueDigestEmail({
       to: to.trim(),
-      cc: (cc && typeof cc === 'string' && cc.trim()) ? cc.trim() : 'support@vigilamc.com',
+      cc: cc === undefined ? 'vigil.amc@vigilamc.com' : (typeof cc === 'string' && cc.trim() ? cc.trim() : null),
       subject: finalSubject,
       message: (message && typeof message === 'string') ? message.trim() : null,
       clientName: client.name,
