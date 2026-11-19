@@ -142,7 +142,7 @@ export default function HomePage() {
       {/* S8: How It Works — 3-step horizontal timeline */}
       <HowItWorksSection />
 
-      {/* S9: Video Explainer (youtube-nocookie) */}
+      {/* S9: Video Explainer (self-hosted MP4) */}
       <VideoExplainerSection />
 
       {/* S10: Final CTA band (followed by unchanged CorporateFooter in SiteLayout) */}

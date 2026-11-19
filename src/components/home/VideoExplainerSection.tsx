@@ -16,13 +16,13 @@ import { AppleReveal } from './AppleReveal';
 
 export function VideoExplainerSection() {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [videoError, setVideoError] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
 
-  const videoId = 'qNqN0RMSZ44';
-  const embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1`;
+  const videoSrc = '/videos/vigilamc-explainer.mp4';
 
   const transcript =
-    "Managing fire safety shouldn't mean endless paperwork and missed deadlines. Meet VigilAMC — your smarter way to manage fire safety operations. Manage clients, buildings, and fire safety equipment from one dashboard. Track asset records, maintenance schedules, and upcoming expiry dates effortlessly. Empower technicians with mobile inspections: capture GPS-verified visits, live photo evidence, voice-to-text remarks, and digital signatures directly from the field. Generate professional fire safety reports and manage your operations smarter. VigilAMC — built for fire safety AMC agencies across India.";
+    "Still chasing Excel sheets and WhatsApp messages for fire safety AMCs? Meet VigilAMC — built for Indian fire-safety agencies. Import your Excel asset register and automate monthly, quarterly, and annual AMC service cycles in minutes. Empower field technicians with our offline-ready mobile app: capture live rear-camera photo proof with GPS verification even in zero-signal basements, record voice-to-text remarks in 10 Indian languages, and collect digital guard or client sign-offs. Automatically generate 5-page audit-ready NBC 2016 / IS 2190 statutory Form B reports with 30/15/7-day due alerts. Go live in 24 hours with zero extra hardware.";
 
   return (
     <section
@@ -43,7 +43,7 @@ export function VideoExplainerSection() {
             id="video-explainer-heading"
             className="font-sans font-bold text-[32px] sm:text-[42px] lg:text-[48px] leading-[1.1] tracking-[-0.03em] text-[#1C1917]"
           >
-            See VigilAMC in 60 seconds.
+            See VigilAMC in action.
           </h2>
           <p className="mt-4 text-[17px] sm:text-[18px] text-[#44403C] max-w-[560px] mx-auto leading-relaxed">
             Watch how Indian fire-safety agencies connect field inspections, office scheduling, and Form B reports in one flow.
@@ -57,7 +57,10 @@ export function VideoExplainerSection() {
               <div
                 data-testid="video-facade-poster"
                 className="relative w-full h-full group cursor-pointer flex items-center justify-center"
-                onClick={() => setIsPlaying(true)}
+                onClick={() => {
+                  setVideoError(false);
+                  setIsPlaying(true);
+                }}
               >
                 <Image
                   src="/video-poster.jpg"
@@ -71,7 +74,7 @@ export function VideoExplainerSection() {
 
                 <div
                   aria-hidden="true"
-                  className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-black/25"
+                  className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/25 to-black/15"
                 />
 
                 <div className="relative z-10 flex flex-col items-center gap-3">
@@ -87,14 +90,31 @@ export function VideoExplainerSection() {
                   </span>
                 </div>
               </div>
+            ) : videoError ? (
+              <div className="w-full h-full flex flex-col items-center justify-center gap-3 p-6 text-center bg-[#FFF8F2]">
+                <p className="text-sm font-semibold text-[#1C1917]">
+                  Unable to load the walkthrough video right now.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setVideoError(false)}
+                  className="btn-flame px-5 py-2.5 rounded-xl text-xs font-bold"
+                >
+                  Retry playback
+                </button>
+              </div>
             ) : (
-              <iframe
-                src={embedUrl}
-                title="VigilAMC — Fire Safety Operations Walkthrough"
-                data-testid="youtube-embed-iframe"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="w-full h-full border-0"
+              <video
+                src={videoSrc}
+                poster="/video-poster.jpg"
+                controls
+                autoPlay
+                playsInline
+                preload="metadata"
+                data-testid="explainer-video-player"
+                aria-label="VigilAMC — Fire Safety Operations Walkthrough"
+                onError={() => setVideoError(true)}
+                className="w-full h-full object-contain bg-[#1C1917]"
               />
             )}
           </div>
