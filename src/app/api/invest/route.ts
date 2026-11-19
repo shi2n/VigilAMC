@@ -5,6 +5,7 @@ import { SITE_CONFIG } from '@/lib/siteConfig';
 import { getCurrentUser } from '@/lib/auth';
 import { isFounderOwner } from '@/lib/founderAuth';
 
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 // In-memory rate limiter for serverless instance (max 5 submissions per IP per 5 minutes)

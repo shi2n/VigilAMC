@@ -6,6 +6,7 @@ import { sendFormBReportEmail, EmailSenderInfo } from '@/lib/email';
 import { calculateBuildingCompliance, computeReportIntegrityHash } from '@/lib/compliance-engine';
 import { toCalendarDateInput, formatCalendarDate } from '@/lib/dateUtils';
 
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
@@ -203,7 +204,7 @@ export async function POST(request: Request) {
     if (!emailResult.success) {
       return NextResponse.json(
         {
-          error: emailResult.message || 'Failed to dispatch email via Resend',
+          error: emailResult.message || 'Failed to dispatch email via SMTP',
           errorCode: emailResult.errorCode,
         },
         { status: 500 }

@@ -5,6 +5,7 @@ import { generateMagicToken } from '@/lib/portalSession';
 import { isSmtpConfigured, sendMagicLinkEmail } from '@/lib/email';
 import { SITE_CONFIG, getBaseUrl } from '@/lib/siteConfig';
 
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {

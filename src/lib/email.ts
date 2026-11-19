@@ -135,12 +135,31 @@ export interface OverdueDigestEmailOptions {
   createdById?: string | null;
 }
 
+function sanitizeEnv(value: string | undefined): string {
+  return (value || '').trim().replace(/^["']|["']$/g, '');
+}
+
+function getZohoSmtpConfig(): {
+  host: string;
+  port: number;
+  user: string;
+  pass: string;
+} | null {
+  const host = sanitizeEnv(process.env.ZOHO_SMTP_HOST);
+  const rawPort = sanitizeEnv(process.env.ZOHO_SMTP_PORT);
+  const port = rawPort ? parseInt(rawPort, 10) : 465;
+  const user = sanitizeEnv(process.env.ZOHO_SMTP_USER);
+  const pass = sanitizeEnv(process.env.ZOHO_SMTP_PASS);
+
+  if (!host || !user || !pass || Number.isNaN(port) || port <= 0) {
+    return null;
+  }
+
+  return { host, port, user, pass };
+}
+
 export function isSmtpConfigured(): boolean {
-  return Boolean(
-    process.env.SMTP_HOST &&
-    process.env.SMTP_USER &&
-    process.env.SMTP_PASS
-  );
+  return Boolean(getZohoSmtpConfig());
 }
 
 function escapeHtml(str: string | null | undefined): string {
@@ -346,47 +365,111 @@ VigilAMC · New Delhi, India · support@vigilamc.com · vigilamc.com
 }
 
 function createSmtpTransport() {
-  const host = process.env.SMTP_HOST;
-  const port = parseInt(process.env.SMTP_PORT || '587', 10);
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-
-  if (!host || !user || !pass) {
+  const cfg = getZohoSmtpConfig();
+  if (!cfg) {
     return null;
   }
 
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: { user, pass },
-    tls: {
-      rejectUnauthorized: true,
-      minVersion: 'TLSv1.2',
-    },
-  });
+  const secure = cfg.port === 465;
+
+  return {
+    user: cfg.user,
+    transporter: nodemailer.createTransport({
+      host: cfg.host,
+      port: cfg.port,
+      secure,
+      requireTLS: !secure,
+      auth: {
+        user: cfg.user,
+        pass: cfg.pass,
+      },
+      tls: {
+        rejectUnauthorized: true,
+        minVersion: 'TLSv1.2',
+      },
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 20000,
+    }),
+  };
+}
+
+/**
+ * Ensures Zoho SMTP sends from the authenticated mailbox address (prevents 553 Relaying disallowed)
+ * while preserving the requested display name (e.g. "VigilAMC Reports" or "<Agency> via VigilAMC").
+ */
+function resolveAuthenticatedFrom(requestedFrom: string | undefined, smtpUser?: string): string {
+  const fallbackAddress = smtpUser || 'reports@vigilamc.com';
+  const raw = (requestedFrom || '').trim();
+
+  if (!raw) {
+    return `VigilAMC Reports <${fallbackAddress}>`;
+  }
+
+  if (!smtpUser || !smtpUser.includes('@')) {
+    return raw;
+  }
+
+  const angleMatch = raw.match(/^(.*?)\s*<([^>]+)>$/);
+  if (angleMatch) {
+    const displayName = angleMatch[1].trim();
+    return displayName ? `${displayName} <${smtpUser}>` : smtpUser;
+  }
+
+  return `VigilAMC Reports <${smtpUser}>`;
 }
 
 function mapNodemailerError(err: any): { errorCode: EmailErrorCode; message: string } {
-  const msg = err?.message || 'Email dispatch failed';
   const code = (err?.code || '').toString().toUpperCase();
+  const responseCode = Number(err?.responseCode || 0);
   const response = (err?.response || '').toString().toLowerCase();
 
-  if (code === 'EAUTH' || response.includes('authentication') || response.includes('bad credentials')) {
-    return { errorCode: 'AUTH_FAILED', message: 'SMTP authentication failed. Verify credentials.' };
+  if (
+    code === 'EAUTH' ||
+    responseCode === 535 ||
+    response.includes('authentication') ||
+    response.includes('bad credentials') ||
+    response.includes('invalid login')
+  ) {
+    return {
+      errorCode: 'AUTH_FAILED',
+      message: 'SMTP authentication failed. Verify ZOHO_SMTP_USER and ZOHO_SMTP_PASS.',
+    };
   }
-  if (response.includes('quota') || response.includes('rate limit') || response.includes('too many')) {
+  if (
+    responseCode === 452 ||
+    responseCode === 552 ||
+    response.includes('quota') ||
+    response.includes('rate limit') ||
+    response.includes('too many')
+  ) {
     return { errorCode: 'QUOTA_EXCEEDED', message: 'Email quota or rate limit exceeded.' };
   }
-  if (code === 'EENVELOPE' || response.includes('recipient') || response.includes('invalid address')) {
-    return { errorCode: 'INVALID_ADDRESS', message: 'Invalid recipient email address.' };
+  if (
+    code === 'EENVELOPE' ||
+    responseCode === 550 ||
+    responseCode === 553 ||
+    response.includes('recipient') ||
+    response.includes('invalid address') ||
+    response.includes('relaying disallowed')
+  ) {
+    return {
+      errorCode: 'INVALID_ADDRESS',
+      message: 'Invalid sender/recipient email address or unverified From alias.',
+    };
   }
-  return { errorCode: 'DISPATCH_FAILED', message: msg };
+  if (code === 'ETIMEDOUT' || code === 'ECONNECTION' || code === 'ESOCKET' || code === 'EDNS') {
+    return {
+      errorCode: 'DISPATCH_FAILED',
+      message: 'Could not connect to SMTP server. Verify ZOHO_SMTP_HOST and ZOHO_SMTP_PORT.',
+    };
+  }
+  return { errorCode: 'DISPATCH_FAILED', message: 'Email dispatch failed via SMTP.' };
 }
 
 /**
  * Universal spam-safe email dispatcher.
- * Uses verified vigilamc.com senders, Resend API first (or SMTP), plain-text + HTML, and CID attachments.
+ * Sends via Zoho SMTP (swappable to ZeptoMail via env vars only) with plain-text + HTML and CID/PDF attachments.
  */
 export async function sendEmail(options: SendEmailOptions): Promise<EmailResult> {
   const { from, to, cc, replyTo = 'support@vigilamc.com', subject, text, html, attachments = [] } = options;
@@ -400,78 +483,23 @@ export async function sendEmail(options: SendEmailOptions): Promise<EmailResult>
 
   const ccList = cc ? (Array.isArray(cc) ? cc : [cc]).map((e) => e.trim()).filter((e) => e.includes('@')) : undefined;
 
-  const fromAddress = from || 'VigilAMC <support@vigilamc.com>';
-
-  // 1. Resend API Dispatch (Primary for verified vigilamc.com domain)
-  const resendApiKey = (process.env.RESEND_API_KEY || '').trim().replace(/^["']|["']$/g, '');
-  if (resendApiKey) {
-    try {
-      const resendAttachments = attachments.map((att) => ({
-        filename: att.filename,
-        content: att.content,
-        content_type: att.content_type,
-        content_id: att.content_id,
-      }));
-
-      const payload: Record<string, any> = {
-        from: fromAddress,
-        to: validRecipients,
-        reply_to: replyTo,
-        subject: subject.slice(0, 60),
-        text,
-        html: html || undefined,
-      };
-
-      if (ccList && ccList.length > 0) {
-        payload.cc = ccList;
-      }
-
-      if (resendAttachments.length > 0) {
-        payload.attachments = resendAttachments;
-      }
-
-      const res = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${resendApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => ({}));
-        console.error('[Resend API Error]:', errJson);
-        return {
-          success: false,
-          errorCode: 'DISPATCH_FAILED',
-          message: errJson?.message || `Resend dispatch failed with HTTP ${res.status}`,
-        };
-      }
-
-      const resData = await res.json().catch(() => ({}));
-      return { success: true, messageId: resData?.id };
-    } catch (err: any) {
-      console.error('[Resend Fetch Error]:', err?.message);
-      return { success: false, errorCode: 'DISPATCH_FAILED', message: err?.message };
-    }
-  }
-
-  // 2. SMTP Transport Fallback
-  const transport = createSmtpTransport();
-  if (transport) {
+  // 1. Zoho SMTP Transport (Primary)
+  const smtp = createSmtpTransport();
+  if (smtp) {
+    const fromAddress = resolveAuthenticatedFrom(from, smtp.user);
     try {
       const nodemailerAttachments = attachments.map((att) => ({
         filename: att.filename,
         content: Buffer.from(att.content, 'base64'),
         cid: att.content_id,
         contentType: att.content_type,
+        contentDisposition: att.disposition,
       }));
 
-      const info = await transport.sendMail({
+      const info = await smtp.transporter.sendMail({
         from: fromAddress,
         to: validRecipients,
-        cc: ccList,
+        cc: ccList && ccList.length > 0 ? ccList : undefined,
         replyTo,
         subject: subject.slice(0, 60),
         text,
@@ -482,15 +510,21 @@ export async function sendEmail(options: SendEmailOptions): Promise<EmailResult>
       return { success: true, messageId: info.messageId };
     } catch (err: any) {
       const mapped = mapNodemailerError(err);
-      console.error('[SMTP Transport Error]:', mapped);
+      console.error('[Zoho SMTP Transport Error]:', {
+        errorCode: mapped.errorCode,
+        message: mapped.message,
+        code: err?.code || null,
+        responseCode: err?.responseCode || null,
+      });
       return { success: false, ...mapped };
     }
   }
 
-  // 3. Local Development Simulation Fallback:
-  // If running in development (e.g. npm run dev on localhost) and no Resend/SMTP key is set,
+  // 2. Local Development Simulation Fallback:
+  // If running in development (e.g. npm run dev on localhost) and ZOHO_SMTP_* env vars are not set,
   // simulate the email send so developer UI testing, PDF generation, and sent states work cleanly without throwing.
   if (process.env.NODE_ENV === 'development') {
+    const fromAddress = resolveAuthenticatedFrom(from);
     const devSimId = `dev_mock_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     console.log(`\n======================================================`);
     console.log(`[VigilAMC Email DEV SIMULATION]`);
@@ -501,7 +535,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<EmailResult>
     console.log(`Subject: ${subject.slice(0, 60)}`);
     console.log(`Attachments (${attachments.length}): ${attachments.map(a => `${a.filename} (${a.content_type || 'application/octet-stream'}, ~${Math.round((a.content.length * 0.75) / 1024)} KB)`).join(', ') || 'None'}`);
     console.log(`MessageId: ${devSimId}`);
-    console.log(`[Note] Email simulated locally in development mode. To send live emails to real inboxes, add RESEND_API_KEY=re_... in .env.local.`);
+    console.log(`[Note] Email simulated locally in development mode. To send live emails via Zoho SMTP, configure ZOHO_SMTP_HOST, ZOHO_SMTP_PORT, ZOHO_SMTP_USER, and ZOHO_SMTP_PASS in .env.local.`);
     console.log(`======================================================\n`);
 
     return {
@@ -512,11 +546,11 @@ export async function sendEmail(options: SendEmailOptions): Promise<EmailResult>
     };
   }
 
-  // 4. In production without credentials -> typed CONFIG_MISSING
+  // 3. In production without credentials -> typed CONFIG_MISSING
   return {
     success: false,
     errorCode: 'CONFIG_MISSING',
-    message: 'RESEND_API_KEY environment variable is not configured.',
+    message: 'Email not configured: ZOHO_SMTP_* missing in environment',
   };
 }
 
@@ -540,8 +574,16 @@ export async function sendFormBReportEmail(options: FormBEmailOptions): Promise<
     createdById,
   } = options;
 
-  const agency = sender.agencyName || 'Vigil Fire & Safety Solutions';
-  const from = `"${agency} via VigilAMC" <reports@vigilamc.com>`;
+  const MAX_PDF_BYTES = 5 * 1024 * 1024;
+  if (pdfBuffer.length > MAX_PDF_BYTES) {
+    return {
+      success: false,
+      errorCode: 'DISPATCH_FAILED',
+      message: 'Form B PDF exceeds the 5MB email attachment limit.',
+    };
+  }
+
+  const from = 'VigilAMC Reports <reports@vigilamc.com>';
 
   const bodyHtml = `
 <p style="margin: 0 0 14px 0;">Hello,</p>
@@ -621,25 +663,27 @@ This document carries full field inspection logs, asset rosters, and statutory F
     attachments,
   });
 
-  // Audit trail: Log to EmailLog
-  try {
-    if (db) {
-      await (db as any).emailLog.create({
-        data: {
-          organizationId: organizationId || null,
-          kind: 'REPORT',
-          to: Array.isArray(to) ? to.join(', ') : to,
-          cc: cc || null,
-          subject: subject.slice(0, 120),
-          refId: buildingId,
-          resendId: result.messageId || null,
-          sentAt: new Date(),
-          createdById: createdById || null,
-        },
-      });
+  // Audit trail: Log to EmailLog on successful dispatch
+  if (result.success) {
+    try {
+      if (db) {
+        await (db as any).emailLog.create({
+          data: {
+            organizationId: organizationId || null,
+            kind: 'REPORT',
+            to: Array.isArray(to) ? to.join(', ') : to,
+            cc: cc || null,
+            subject: subject.slice(0, 120),
+            refId: buildingId,
+            resendId: result.messageId || null,
+            sentAt: new Date(),
+            createdById: createdById || null,
+          },
+        });
+      }
+    } catch (err) {
+      console.error('[EmailLog Audit Error]:', err);
     }
-  } catch (err) {
-    console.error('[EmailLog Audit Error]:', err);
   }
 
   return result;
@@ -664,8 +708,7 @@ export async function sendOverdueDigestEmail(options: OverdueDigestEmailOptions)
     createdById,
   } = options;
 
-  const agency = sender.agencyName || 'Vigil Fire & Safety Solutions';
-  const from = `"${agency} via VigilAMC" <support@vigilamc.com>`;
+  const from = 'VigilAMC Reports <reports@vigilamc.com>';
 
   const tableRowsHtml = items.map((item) => {
     const isExpired = item.status === 'EXPIRED';
@@ -787,25 +830,27 @@ To schedule servicing, hydraulic testing, or dispatch a technician, please reply
     attachments,
   });
 
-  // Audit trail: Log to EmailLog
-  try {
-    if (db) {
-      await (db as any).emailLog.create({
-        data: {
-          organizationId: organizationId || null,
-          kind: 'OVERDUE_DIGEST',
-          to: Array.isArray(to) ? to.join(', ') : to,
-          cc: cc || null,
-          subject: subject.slice(0, 120),
-          refId: clientId || null,
-          resendId: result.messageId || null,
-          sentAt: new Date(),
-          createdById: createdById || null,
-        },
-      });
+  // Audit trail: Log to EmailLog on successful dispatch
+  if (result.success) {
+    try {
+      if (db) {
+        await (db as any).emailLog.create({
+          data: {
+            organizationId: organizationId || null,
+            kind: 'OVERDUE_DIGEST',
+            to: Array.isArray(to) ? to.join(', ') : to,
+            cc: cc || null,
+            subject: subject.slice(0, 120),
+            refId: clientId || null,
+            resendId: result.messageId || null,
+            sentAt: new Date(),
+            createdById: createdById || null,
+          },
+        });
+      }
+    } catch (err) {
+      console.error('[EmailLog Audit Error]:', err);
     }
-  } catch (err) {
-    console.error('[EmailLog Audit Error]:', err);
   }
 
   return result;

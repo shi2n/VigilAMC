@@ -7,6 +7,7 @@ import {
 import { sendMagicLinkEmail } from '@/lib/email';
 import { SITE_CONFIG, getBaseUrl } from '@/lib/siteConfig';
 
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {

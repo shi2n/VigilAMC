@@ -72,7 +72,7 @@ export function EmailReportModal({
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        if (data.errorCode === 'CONFIG_MISSING' || data.error?.includes('RESEND_API_KEY')) {
+        if (data.errorCode === 'CONFIG_MISSING' || data.error?.includes('ZOHO_SMTP_')) {
           setConfigMissing(true);
         }
         throw new Error(data.error || 'Failed to dispatch Form B email');
@@ -141,10 +141,10 @@ export function EmailReportModal({
             <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 text-xs space-y-1 animate-in fade-in">
               <div className="font-bold flex items-center gap-1.5 text-amber-900">
                 <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
-                <span>RESEND_API_KEY Not Configured</span>
+                <span>Email not configured: ZOHO_SMTP_* missing in environment</span>
               </div>
               <p className="text-[11px] text-amber-900 leading-relaxed">
-                Add <strong>RESEND_API_KEY</strong> in your <strong>Vercel Project Settings &rarr; Environment Variables</strong> (or in <code>.env.local</code> for local development), then redeploy to dispatch live emails.
+                Add <strong>ZOHO_SMTP_HOST</strong>, <strong>ZOHO_SMTP_PORT</strong>, <strong>ZOHO_SMTP_USER</strong>, and <strong>ZOHO_SMTP_PASS</strong> in your <strong>Vercel Project Settings &rarr; Environment Variables</strong> (or in <code>.env.local</code> for local development), then redeploy to dispatch live emails.
               </p>
             </div>
           )}

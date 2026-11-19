@@ -4,6 +4,7 @@ import { sendInquiryNotification } from '@/lib/email';
 import { getCurrentUser } from '@/lib/auth';
 import { isFounderOwner } from '@/lib/founderAuth';
 
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 // In-memory rate limiter for serverless instance (max 10 requests per IP per 5 minutes)
