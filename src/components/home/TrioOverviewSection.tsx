@@ -45,7 +45,7 @@ export function TrioOverviewSection() {
             <a
               href="#technician-app"
               data-testid="trio-card-technician"
-              className="group h-full rounded-3xl bg-[#FFF8F2] border border-[#FED7AA]/80 p-6 sm:p-7 flex flex-col justify-between hover:-translate-y-0.5 hover:border-[#EA580C]/50 shadow-[0_16px_40px_-24px_rgba(28,25,23,0.14)] transition-all duration-200"
+              className="group h-full rounded-3xl bg-[#FFF8F2] border border-[#FED7AA]/80 p-6 sm:p-7 flex flex-col hover:-translate-y-0.5 hover:border-[#EA580C]/50 shadow-[0_16px_40px_-24px_rgba(28,25,23,0.14)] transition-all duration-200"
             >
               <div>
                 <div className="mb-6 flex justify-center bg-white rounded-2xl p-5 border border-[#FED7AA]/60">
@@ -75,7 +75,12 @@ export function TrioOverviewSection() {
                   Offline-first Android app built for basements, shafts, and industrial sites.
                 </p>
 
-                <ul className="mt-4 space-y-2 text-[14px] text-[#1C1917]">
+                <div className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-[#C2410C] group-hover:translate-x-1 transition-transform">
+                  <span>See the Technician App</span>
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                </div>
+
+                <ul className="mt-5 pt-4 border-t border-[#FED7AA]/60 space-y-2 text-[14px] text-[#1C1917]">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#059669] shrink-0 mt-0.5" aria-hidden="true" />
                     <span>Works offline with auto-sync outbox</span>
@@ -90,11 +95,6 @@ export function TrioOverviewSection() {
                   </li>
                 </ul>
               </div>
-
-              <div className="mt-6 pt-4 border-t border-[#FED7AA]/60 inline-flex items-center gap-1.5 text-sm font-bold text-[#C2410C] group-hover:translate-x-1 transition-transform">
-                <span>See the Technician App</span>
-                <ArrowRight className="w-4 h-4" aria-hidden="true" />
-              </div>
             </a>
           </AppleReveal>
 
@@ -103,7 +103,7 @@ export function TrioOverviewSection() {
             <a
               href="#admin-dashboard"
               data-testid="trio-card-dashboard"
-              className="group h-full rounded-3xl bg-[#FFF8F2] border border-[#FED7AA]/80 p-6 sm:p-7 flex flex-col justify-between hover:-translate-y-0.5 hover:border-[#EA580C]/50 shadow-[0_16px_40px_-24px_rgba(28,25,23,0.14)] transition-all duration-200"
+              className="group h-full rounded-3xl bg-[#FFF8F2] border border-[#FED7AA]/80 p-6 sm:p-7 flex flex-col hover:-translate-y-0.5 hover:border-[#EA580C]/50 shadow-[0_16px_40px_-24px_rgba(28,25,23,0.14)] transition-all duration-200"
             >
               <div>
                 <div className="mb-6 bg-white rounded-2xl p-4 border border-[#FED7AA]/60 flex items-center justify-center min-h-[270px]">
@@ -131,7 +131,12 @@ export function TrioOverviewSection() {
                   Command centre for AMC cycles, equipment, repairs, teams, and Form B.
                 </p>
 
-                <ul className="mt-4 space-y-2 text-[14px] text-[#1C1917]">
+                <div className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-[#C2410C] group-hover:translate-x-1 transition-transform">
+                  <span>See the Admin Dashboard</span>
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                </div>
+
+                <ul className="mt-5 pt-4 border-t border-[#FED7AA]/60 space-y-2 text-[14px] text-[#1C1917]">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#059669] shrink-0 mt-0.5" aria-hidden="true" />
                     <span>Auto AMC cycles &amp; Run scheduling now</span>
@@ -146,11 +151,6 @@ export function TrioOverviewSection() {
                   </li>
                 </ul>
               </div>
-
-              <div className="mt-6 pt-4 border-t border-[#FED7AA]/60 inline-flex items-center gap-1.5 text-sm font-bold text-[#C2410C] group-hover:translate-x-1 transition-transform">
-                <span>See the Admin Dashboard</span>
-                <ArrowRight className="w-4 h-4" aria-hidden="true" />
-              </div>
             </a>
           </AppleReveal>
 
@@ -159,7 +159,7 @@ export function TrioOverviewSection() {
             <a
               href="#client-portal"
               data-testid="trio-card-portal"
-              className="group h-full rounded-3xl bg-[#FFF8F2] border border-[#FED7AA]/80 p-6 sm:p-7 flex flex-col justify-between hover:-translate-y-0.5 hover:border-[#EA580C]/50 shadow-[0_16px_40px_-24px_rgba(28,25,23,0.14)] transition-all duration-200"
+              className="group h-full rounded-3xl bg-[#FFF8F2] border border-[#FED7AA]/80 p-6 sm:p-7 flex flex-col hover:-translate-y-0.5 hover:border-[#EA580C]/50 shadow-[0_16px_40px_-24px_rgba(28,25,23,0.14)] transition-all duration-200"
             >
               <div>
                 <div className="mb-6 bg-white rounded-2xl p-4 border border-[#FED7AA]/60 flex items-center justify-center min-h-[270px]">
@@ -207,7 +207,12 @@ export function TrioOverviewSection() {
                   A clean portal for society committees and facility heads — zero PDF chaos.
                 </p>
 
-                <ul className="mt-4 space-y-2 text-[14px] text-[#1C1917]">
+                <div className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-[#C2410C] group-hover:translate-x-1 transition-transform">
+                  <span>See the Client Portal</span>
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                </div>
+
+                <ul className="mt-5 pt-4 border-t border-[#FED7AA]/60 space-y-2 text-[14px] text-[#1C1917]">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#059669] shrink-0 mt-0.5" aria-hidden="true" />
                     <span>Live building compliance status</span>
@@ -221,11 +226,6 @@ export function TrioOverviewSection() {
                     <span>White-labelled under your agency</span>
                   </li>
                 </ul>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-[#FED7AA]/60 inline-flex items-center gap-1.5 text-sm font-bold text-[#C2410C] group-hover:translate-x-1 transition-transform">
-                <span>See the Client Portal</span>
-                <ArrowRight className="w-4 h-4" aria-hidden="true" />
               </div>
             </a>
           </AppleReveal>

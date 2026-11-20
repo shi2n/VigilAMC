@@ -37,7 +37,7 @@ export function ClientPortalSection({ showDemoCta = false }: { showDemoCta?: boo
               <li className="flex items-start gap-2.5">
                 <CheckCircle2 className="w-4 h-4 text-[#047857] shrink-0 mt-1" aria-hidden="true" />
                 <span>
-                  <strong>Invite clients in one click</strong> — passwordless magic-link login for RWA secretaries &amp; facility heads
+                  <strong>Invite clients in seconds</strong> — one-click secure login for RWA secretaries &amp; facility heads
                 </span>
               </li>
               <li className="flex items-start gap-2.5">

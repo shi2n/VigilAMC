@@ -67,7 +67,7 @@ export function HeroSection() {
             <Link
               href="/start-trial"
               data-testid="hero-start-trial-btn"
-              className="btn-ghost-flame min-h-[48px] inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-[15px] bg-white"
+              className="min-h-[48px] inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-[15px] bg-transparent border-2 border-[#EA580C] text-[#C2410C] hover:bg-[#FFF0E6] hover:border-[#C2410C] hover:-translate-y-0.5 transition-all duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C]"
             >
               <span>Start Free Trial</span>
             </Link>

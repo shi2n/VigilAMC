@@ -58,23 +58,18 @@ export function NewsletterForm() {
 
   return (
     <div className="w-full">
-      <form onSubmit={handleSubmit} noValidate className="space-y-2">
+      <form onSubmit={handleSubmit} noValidate className="space-y-2.5">
         {/* Hidden Honeypot Input for anti-bot protection */}
-        <div className="sr-only" aria-hidden="true">
-          <label htmlFor="newsletter-website-hp">Website</label>
-          <input
-            id="newsletter-website-hp"
-            type="text"
-            name="website"
-            tabIndex={-1}
-            autoComplete="off"
-            value={honeypot}
-            onChange={(e) => setHoneypot(e.target.value)}
-          />
-        </div>
+        <input
+          type="hidden"
+          hidden
+          name="website"
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
+        />
 
-        <div className="flex flex-col sm:flex-row items-stretch gap-2.5">
-          <div className="relative flex-1">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+          <div className="relative flex-1 min-w-0">
             <label htmlFor="newsletter-email" className="sr-only">
               Email address
             </label>
@@ -94,14 +89,14 @@ export function NewsletterForm() {
               }}
               placeholder="Enter your work email"
               disabled={status === 'loading'}
-              className="w-full h-11 px-3.5 py-2.5 rounded-xl bg-white border border-[#44403C]/25 text-[#1C1917] placeholder:text-[#57534E]/70 text-sm focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-[#EA580C] transition-all disabled:opacity-60 shadow-sm"
+              className="w-full h-11 px-3.5 rounded-xl bg-white border border-[#44403C]/25 text-[#1C1917] placeholder:text-[#57534E]/70 text-sm focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-[#EA580C] transition-all disabled:opacity-60 shadow-sm"
             />
           </div>
 
           <button
             type="submit"
             disabled={status === 'loading'}
-            className="h-11 px-5 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] active:bg-[#7C2D12] text-white text-sm font-bold shadow-[0_4px_14px_-2px_rgba(194,65,12,0.35)] transition-all flex items-center justify-center gap-2 shrink-0 disabled:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C]"
+            className="h-11 w-full sm:w-auto px-5 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] active:bg-[#7C2D12] text-white text-sm font-bold shadow-[0_4px_14px_-2px_rgba(194,65,12,0.35)] transition-all flex items-center justify-center gap-2 shrink-0 disabled:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C]"
           >
             {status === 'loading' ? (
               <>
