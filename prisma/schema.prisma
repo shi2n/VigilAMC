@@ -1052,3 +1052,24 @@ model NewsletterSubscriber {
   @@map("NewsletterSubscriber")
 }
 
+model Message {
+  id             String    @id @default(uuid()) @db.Uuid
+  clientMsgId    String    @unique @map("client_msg_id") @db.Uuid
+  organizationId String    @map("organization_id")
+  technicianId   String    @map("technician_id")
+  senderRole     String    @map("sender_role") // 'AGENCY' | 'TECHNICIAN'
+  senderId       String    @map("sender_id")
+  body           String?   @db.Text
+  attachmentUrl  String?   @map("attachment_url") @db.Text
+  attachmentKind String?   @map("attachment_kind") // 'IMAGE' | null
+  readAt         DateTime? @map("read_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([technicianId, createdAt])
+  @@index([organizationId, createdAt])
+  @@index([technicianId, senderRole, readAt])
+  @@index([senderId, createdAt])
+  @@map("messages")
+}
+
+

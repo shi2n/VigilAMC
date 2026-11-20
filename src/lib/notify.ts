@@ -222,6 +222,166 @@ export async function sendFcmMessage(
 }
 
 /**
+ * Dispatch a strictly DATA-ONLY FCM v1 message (no `notification` block)
+ * so Android background services and custom notification channels handle display.
+ */
+export async function sendFcmDataOnlyMessage(
+  fcmToken: string,
+  data: Record<string, string>
+): Promise<boolean> {
+  const rawServiceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  if (!rawServiceAccount) {
+    console.info('[notify] FIREBASE_SERVICE_ACCOUNT_JSON not configured; skipping FCM data-only dispatch.');
+    return false;
+  }
+
+  const serviceAccount = parseServiceAccount(rawServiceAccount);
+  if (!serviceAccount || !serviceAccount.project_id || !serviceAccount.client_email || !serviceAccount.private_key) {
+    console.warn('[notify] Incomplete or unparseable FIREBASE_SERVICE_ACCOUNT_JSON structure');
+    return false;
+  }
+
+  try {
+    const accessToken = await getFcmAccessToken(serviceAccount);
+    const url = `https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`;
+
+    const stringData: Record<string, string> = {};
+    for (const [k, v] of Object.entries(data || {})) {
+      stringData[k] = String(v ?? '');
+    }
+
+    const messagePayload = {
+      message: {
+        token: fcmToken,
+        data: stringData,
+        android: {
+          priority: 'HIGH',
+          ttl: '86400s',
+        },
+      },
+    };
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(messagePayload),
+    });
+
+    if (!response.ok) {
+      const errBody = await response.text();
+      console.warn(`[notify] FCM v1 data-only send failed (${response.status}): ${errBody}`);
+      if (
+        response.status === 404 ||
+        errBody.includes('UNREGISTERED') ||
+        errBody.includes('NOT_FOUND') ||
+        errBody.includes('INVALID_ARGUMENT')
+      ) {
+        await (db as any).deviceToken.deleteMany({
+          where: { fcmToken },
+        }).catch(() => null);
+      }
+      return false;
+    }
+
+    return true;
+  } catch (err: any) {
+    console.warn('[notify] Error dispatching FCM data-only message:', err?.message || err);
+    return false;
+  }
+}
+
+export function buildChatMessageFcmData(params: {
+  technicianId: string;
+  body?: string | null;
+  attachmentKind?: string | null;
+  senderName: string;
+  messageId?: string;
+  senderRole?: 'AGENCY' | 'TECHNICIAN';
+}): Record<string, string> {
+  const cleanedBody = (params.body || '').replace(/\s+/g, ' ').trim();
+  let preview = cleanedBody;
+  if (!preview) {
+    preview = params.attachmentKind === 'IMAGE' ? 'Photo' : 'New message';
+  } else if (preview.length > 80) {
+    preview = `${preview.slice(0, 77)}...`;
+  }
+
+  return {
+    type: 'message',
+    technicianId: params.technicianId,
+    preview,
+    senderName: (params.senderName || 'VigilAMC').slice(0, 80),
+    ...(params.messageId ? { messageId: params.messageId } : {}),
+    ...(params.senderRole ? { senderRole: params.senderRole } : {}),
+  };
+}
+
+/**
+ * Enqueue DATA-only FCM push to recipient device(s) using the existing DeviceToken registry.
+ * Never throws; messaging APIs remain resilient if push fails or no devices are registered.
+ */
+export async function enqueueChatMessagePush(params: {
+  recipientUserIds: string[];
+  technicianId: string;
+  body?: string | null;
+  attachmentKind?: string | null;
+  senderName: string;
+  messageId?: string;
+  senderRole?: 'AGENCY' | 'TECHNICIAN';
+}): Promise<{ targetedDevices: number; sentCount: number; payload: Record<string, string> }> {
+  const payload = buildChatMessageFcmData({
+    technicianId: params.technicianId,
+    body: params.body,
+    attachmentKind: params.attachmentKind,
+    senderName: params.senderName,
+    messageId: params.messageId,
+    senderRole: params.senderRole,
+  });
+
+  try {
+    const uniqueIds = Array.from(new Set(params.recipientUserIds.filter(Boolean)));
+    if (uniqueIds.length === 0) {
+      return { targetedDevices: 0, sentCount: 0, payload };
+    }
+
+    const deviceTokens: Array<{ fcmToken: string; platform: string | null }> = await (db as any).deviceToken.findMany({
+      where: { technicianId: { in: uniqueIds } },
+      select: { fcmToken: true, platform: true },
+    });
+
+    if (!deviceTokens || deviceTokens.length === 0) {
+      return { targetedDevices: 0, sentCount: 0, payload };
+    }
+
+    let sentCount = 0;
+    await Promise.all(
+      deviceTokens.map(async (dt) => {
+        if (dt.platform === 'ios' || isApnsDeviceToken(dt.fcmToken)) {
+          // iOS APNs fallback if ever registered
+          const ok = await sendApnsMessage(dt.fcmToken, {
+            title: payload.senderName,
+            body: payload.preview,
+            data: payload,
+          });
+          if (ok) sentCount += 1;
+          return;
+        }
+        const ok = await sendFcmDataOnlyMessage(dt.fcmToken, payload);
+        if (ok) sentCount += 1;
+      })
+    );
+
+    return { targetedDevices: deviceTokens.length, sentCount, payload };
+  } catch (err: any) {
+    console.warn('[notify] Non-fatal enqueueChatMessagePush error:', err?.message || err);
+    return { targetedDevices: 0, sentCount: 0, payload };
+  }
+}
+
+/**
  * Route a push to the right provider: iOS devices register raw APNs tokens, Android devices register FCM tokens.
  */
 export async function sendPushToDevice(
