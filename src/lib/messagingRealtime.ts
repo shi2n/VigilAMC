@@ -101,6 +101,34 @@ function attachManagedChannel(params: {
         }
       }
     )
+    .on('broadcast', { event: 'message_insert' }, (msg: any) => {
+      const row = msg?.payload as RealtimeMessageRow | undefined;
+      if (row && params.onInsert) {
+        params.onInsert(row);
+      }
+    })
+    .on('broadcast', { event: 'message_read' }, (msg: any) => {
+      const info = msg?.payload as
+        | { technician_id?: string; organization_id?: string; read_at?: string; sender_role?: 'AGENCY' | 'TECHNICIAN'; ids?: string[] }
+        | undefined;
+      if (!info || !params.onUpdate) return;
+      const ids = Array.isArray(info.ids) ? info.ids : [];
+      for (const id of ids) {
+        params.onUpdate({
+          id,
+          client_msg_id: '',
+          organization_id: info.organization_id || '',
+          technician_id: info.technician_id || '',
+          sender_role: info.sender_role || 'AGENCY',
+          sender_id: '',
+          body: null,
+          attachment_url: null,
+          attachment_kind: null,
+          read_at: info.read_at || new Date().toISOString(),
+          created_at: info.read_at || new Date().toISOString(),
+        });
+      }
+    })
     .subscribe((status) => {
       if (disposed) return;
       const typedStatus = status as RealtimeChannelStatus;

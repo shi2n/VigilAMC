@@ -60,7 +60,11 @@ import {
   Copy,
   BellRing,
   Settings,
+  MessageSquare,
 } from 'lucide-react';
+import { getMessagingDictionary, formatMsgTemplate } from '@/lib/i18n/messaging';
+import { subscribeToTechnicianThread } from '@/lib/messagingRealtime';
+import { onMessageReceived } from '@/lib/messagingHooks';
 import { createClient } from '@/lib/supabase/client';
 import {
   isNativePlatform,
@@ -148,6 +152,12 @@ export default function TechnicianPWA() {
   const [currentLang, setCurrentLang] = useState<SupportedLanguage>('en');
   const [showLanguageSheet, setShowLanguageSheet] = useState(false);
   const t = useMemo(() => TRANSLATIONS[currentLang] || TRANSLATIONS.en, [currentLang]);
+  const msgT = useMemo(() => getMessagingDictionary(currentLang), [currentLang]);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState<number>(0);
+  const [incomingMsgBanner, setIncomingMsgBanner] = useState<{
+    senderName: string;
+    preview: string;
+  } | null>(null);
 
   // ----------------------------------------------------------------------------------
   // NAVIGATION TAB STATE (TASKS | CHECKLISTS | HISTORY)
@@ -417,6 +427,65 @@ export default function TechnicianPWA() {
     const pending = await getPendingOutboxItems();
     setFailedItemsList(pending.filter((i) => i.status === 'FAILED'));
   }, []);
+
+  const refreshUnreadMessages = useCallback(async () => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('vigil_tech_token') : null;
+      const res = await fetch('/api/messages/unread', {
+        credentials: 'include',
+        cache: 'no-store',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setUnreadMessagesCount(typeof json?.total === 'number' ? json.total : 0);
+      }
+    } catch {
+      // Non-fatal badge poll
+    }
+  }, []);
+
+  useEffect(() => {
+    const techId = userProfile?.id;
+    if (!techId) return;
+    refreshUnreadMessages();
+    const handle = subscribeToTechnicianThread({
+      supabase,
+      technicianId: techId,
+      onInsert: (row) => {
+        if (row.sender_role === 'AGENCY') {
+          refreshUnreadMessages();
+          const senderName = dashboardData?.organization?.name || msgT.agencyOffice;
+          const preview = (row.body || msgT.photoLabel).slice(0, 80);
+          setIncomingMsgBanner({ senderName, preview });
+          onMessageReceived({
+            surface: 'TECHNICIAN',
+            messageId: row.id,
+            technicianId: row.technician_id,
+            senderRole: row.sender_role,
+            senderName,
+            preview,
+            hasImage: row.attachment_kind === 'IMAGE',
+            createdAt: row.created_at,
+          });
+        }
+      },
+      onUpdate: () => {
+        refreshUnreadMessages();
+      },
+      onPollFallback: refreshUnreadMessages,
+    });
+    return () => {
+      handle.unsubscribe().catch(() => null);
+    };
+  }, [userProfile?.id, dashboardData?.organization?.name, supabase, refreshUnreadMessages, msgT.agencyOffice, msgT.photoLabel]);
+
+  useEffect(() => {
+    if (!incomingMsgBanner) return;
+    const timer = setTimeout(() => setIncomingMsgBanner(null), 6000);
+    return () => clearTimeout(timer);
+  }, [incomingMsgBanner]);
 
   // ----------------------------------------------------------------------------------
   // Section 5: VISIT STAMP RECORDING (Dedupe 30m per building)
@@ -2589,6 +2658,41 @@ export default function TechnicianPWA() {
             </div>
           )}
 
+          {/* Incoming Chat Message Banner Toast (any screen, fade/translate <=150ms, prefers-reduced-motion safe) */}
+          {incomingMsgBanner && (
+            <div
+              data-testid="tech-incoming-message-banner"
+              role="status"
+              className="px-3 py-2.5 rounded-xl bg-[#FFF0E6] border border-[#EA580C]/40 text-xs text-[#1C1917] flex items-center justify-between gap-2 shadow-sm motion-safe:transition-all motion-safe:duration-150"
+            >
+              <Link
+                href="/technician/messages"
+                onClick={() => setIncomingMsgBanner(null)}
+                className="flex items-center gap-2.5 min-w-0 flex-1"
+              >
+                <span className="w-7 h-7 rounded-full bg-[#EA580C] text-white flex items-center justify-center shrink-0">
+                  <MessageSquare className="w-3.5 h-3.5" />
+                </span>
+                <div className="min-w-0">
+                  <div className="font-extrabold text-[#9A3412] truncate">
+                    {formatMsgTemplate(msgT.newMessageFrom, { name: incomingMsgBanner.senderName })}
+                  </div>
+                  <div className="text-[11px] font-medium text-[#44403C] truncate">
+                    {incomingMsgBanner.preview}
+                  </div>
+                </div>
+              </Link>
+              <button
+                type="button"
+                onClick={() => setIncomingMsgBanner(null)}
+                className="p-1 text-[#9A3412] hover:text-[#1C1917] font-bold shrink-0"
+                aria-label={t.close || 'Close'}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
           {/* Section 8.7: Assignment Nudge Banner */}
           {assignmentNudge && (
             <div className="px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-300 text-xs text-emerald-900 flex items-center justify-between gap-2 shadow-xs">
@@ -2745,6 +2849,38 @@ export default function TechnicianPWA() {
                 </div>
               </button>
             </div>
+
+            {/* Home Entry: Agency Office Messages with live unread badge */}
+            <Link
+              href="/technician/messages"
+              data-testid="tech-home-messages-entry"
+              className="w-full p-3.5 rounded-2xl bg-white border border-[#FED7AA] shadow-xs hover:border-[#EA580C] transition-colors flex items-center justify-between gap-3"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-[#FEE6E0] border border-[#FED7AA] text-[#C2410C] flex items-center justify-center shrink-0">
+                  <MessageSquare className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-sm font-extrabold text-[#1C1917] truncate">
+                    {msgT.navMessages}
+                  </div>
+                  <div className="text-xs font-medium text-[#44403C] truncate">
+                    {dashboardData?.organization?.name || msgT.agencyOffice}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {unreadMessagesCount > 0 && (
+                  <span
+                    data-testid="tech-home-messages-badge"
+                    className="px-2 py-0.5 min-w-[22px] text-center rounded-full bg-[#C2410C] text-white text-xs font-extrabold"
+                  >
+                    {unreadMessagesCount}
+                  </span>
+                )}
+                <ChevronRight className="w-4 h-4 text-[#57534E]" />
+              </div>
+            </Link>
 
             {/* 3.4 "MY TASKS" SECTION HEADER */}
             <div className="flex items-center justify-between pt-1">
@@ -4588,6 +4724,21 @@ export default function TechnicianPWA() {
                 <span className="flex-1 text-left">{t.navHistory || t.historyTab || 'History'}</span>
                 {activeTab === 'HISTORY' && <span className="w-2 h-2 rounded-full bg-[#EA580C]" />}
               </button>
+
+              <Link
+                href="/technician/messages"
+                data-testid="tech-drawer-messages-link"
+                onClick={() => toggleNavDrawer(false)}
+                className="w-full min-h-[48px] px-3 rounded-xl flex items-center gap-3 text-sm font-bold text-[#1C1917] hover:bg-[#FFF0E6] hover:text-[#C2410C] transition-colors"
+              >
+                <MessageSquare className="w-5 h-5 text-[#EA580C]" />
+                <span className="flex-1 text-left">{msgT.navMessages}</span>
+                {unreadMessagesCount > 0 && (
+                  <span className="px-2 py-0.5 rounded-full bg-[#C2410C] text-white text-[11px] font-extrabold">
+                    {unreadMessagesCount}
+                  </span>
+                )}
+              </Link>
 
               <button
                 type="button"

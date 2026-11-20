@@ -6,6 +6,7 @@ import {
   NO_STORE_HEADERS,
   checkMessageRateLimit,
   deriveBroadcastClientMsgId,
+  emitRealtimeMessageBroadcast,
   isValidUuid,
   resolveMessagingActor,
   serializeMessagesWithSignedUrls,
@@ -341,6 +342,29 @@ export async function POST(request: Request) {
       }
 
       const serialized = await serializeMessagesWithSignedUrls(createdRows);
+      // Emit Realtime Broadcast for instant delivery across all auth paths
+      await Promise.allSettled(
+        createdRows.map((row) =>
+          emitRealtimeMessageBroadcast({
+            event: 'message_insert',
+            organizationId: row.organizationId,
+            technicianId: row.technicianId,
+            payload: {
+              id: row.id,
+              client_msg_id: row.clientMsgId,
+              organization_id: row.organizationId,
+              technician_id: row.technicianId,
+              sender_role: row.senderRole,
+              sender_id: row.senderId,
+              body: row.body,
+              attachment_url: row.attachmentUrl,
+              attachment_kind: row.attachmentKind,
+              read_at: row.readAt ? new Date(row.readAt).toISOString() : null,
+              created_at: new Date(row.createdAt).toISOString(),
+            },
+          })
+        )
+      );
       return NextResponse.json(
         {
           ok: true,
@@ -411,6 +435,27 @@ export async function POST(request: Request) {
         });
 
     const [serialized] = await serializeMessagesWithSignedUrls([created]);
+
+    if (!deduplicated) {
+      await emitRealtimeMessageBroadcast({
+        event: 'message_insert',
+        organizationId: created.organizationId,
+        technicianId: created.technicianId,
+        payload: {
+          id: created.id,
+          client_msg_id: created.clientMsgId,
+          organization_id: created.organizationId,
+          technician_id: created.technicianId,
+          sender_role: created.senderRole,
+          sender_id: created.senderId,
+          body: created.body,
+          attachment_url: created.attachmentUrl,
+          attachment_kind: created.attachmentKind,
+          read_at: created.readAt ? new Date(created.readAt).toISOString() : null,
+          created_at: new Date(created.createdAt).toISOString(),
+        },
+      });
+    }
 
     return NextResponse.json(
       {

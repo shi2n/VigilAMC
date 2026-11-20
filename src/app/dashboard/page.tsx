@@ -57,6 +57,9 @@ import {
   tallyDueChips,
 } from '@/lib/dates';
 import { getAdminDictionary } from '@/lib/i18n/admin';
+import { getMessagingDictionary } from '@/lib/i18n/messaging';
+import { subscribeToAgencyMessages } from '@/lib/messagingRealtime';
+import { onMessageReceived } from '@/lib/messagingHooks';
 import { getServiceCycleLabel } from '@/lib/compliance';
 import { formatBuildingPickerLabel } from '@/lib/buildingUtils';
 import { WelcomeTestingModal } from '@/components/admin/WelcomeTestingModal';
@@ -262,6 +265,58 @@ export default function AdminDashboardPage() {
     document.documentElement.classList.remove('dark');
     localStorage.setItem('vigil_dashboard_theme', 'light');
   }, []);
+
+  // Live Unread Messages Badge + Realtime subscription for sidebar
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState<number>(0);
+
+  const fetchUnreadMessages = useCallback(async () => {
+    try {
+      const res = await fetch('/api/messages/unread', { credentials: 'include', cache: 'no-store' });
+      if (res.ok) {
+        const json = await res.json();
+        setUnreadMessagesCount(typeof json?.total === 'number' ? json.total : 0);
+      }
+    } catch {
+      // Non-fatal badge poll
+    }
+  }, []);
+
+  useEffect(() => {
+    const orgId = data?.profile?.organizationId || data?.organization?.id || data?.company?.id;
+    if (!orgId) return;
+    fetchUnreadMessages();
+    const supabase = createClient();
+    const handle = subscribeToAgencyMessages({
+      supabase,
+      organizationId: orgId,
+      onInsert: (row) => {
+        if (row.sender_role === 'TECHNICIAN') {
+          fetchUnreadMessages();
+          const msgT = getMessagingDictionary(currentLanguage);
+          const preview = (row.body || msgT.photoLabel).slice(0, 80);
+          onMessageReceived({
+            surface: 'DASHBOARD',
+            messageId: row.id,
+            technicianId: row.technician_id,
+            senderRole: row.sender_role,
+            preview,
+            hasImage: row.attachment_kind === 'IMAGE',
+            createdAt: row.created_at,
+          });
+          toast.info(preview, {
+            description: msgT.navMessages,
+          });
+        }
+      },
+      onUpdate: () => {
+        fetchUnreadMessages();
+      },
+      onPollFallback: fetchUnreadMessages,
+    });
+    return () => {
+      handle.unsubscribe().catch(() => null);
+    };
+  }, [data?.profile?.organizationId, data?.organization?.id, data?.company?.id, fetchUnreadMessages, currentLanguage]);
 
   // Authenticated Admin Navigation Tab (6 Core Groups)
   const [activeTab, setActiveTab] = useState<AdminNavTab>('OVERVIEW');
@@ -1825,6 +1880,8 @@ export default function AdminDashboardPage() {
         userProfile={data?.profile}
         onLogout={handleLogout}
         openRepairsCount={liveOpenRepairsCount}
+        unreadMessagesCount={unreadMessagesCount}
+        currentLanguage={currentLanguage}
         t={t}
       />
 

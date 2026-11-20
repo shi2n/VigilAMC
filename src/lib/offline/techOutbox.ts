@@ -8,7 +8,13 @@ import { createClient } from '@/lib/supabase/client';
 
 export interface OutboxItem {
   clientSyncId: string;
-  actionType: 'COMPLETE_INSPECTION' | 'UPDATE_STATUS' | 'UPLOAD_PHOTO' | 'COMPLETE_WORK_ORDER' | 'VISIT_STAMP';
+  actionType:
+    | 'COMPLETE_INSPECTION'
+    | 'UPDATE_STATUS'
+    | 'UPLOAD_PHOTO'
+    | 'COMPLETE_WORK_ORDER'
+    | 'VISIT_STAMP'
+    | 'SEND_MESSAGE';
   payload: any;
   createdAt: number;
   attempts: number;
@@ -344,6 +350,22 @@ export async function resetOutboxItemForRetry(clientSyncId: string): Promise<voi
 }
 
 /**
+ * Get pending/failed queued chat messages ordered oldest-first (FIFO)
+ */
+export async function getPendingMessageOutboxItems(technicianId?: string): Promise<OutboxItem[]> {
+  try {
+    const items = await getPendingOutboxItems();
+    return items.filter(
+      (i) =>
+        i.actionType === 'SEND_MESSAGE' &&
+        (!technicianId || !i.technicianId || i.technicianId === technicianId)
+    );
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Get count of pending outbox items
  */
 export async function getOutboxCount(): Promise<{ pending: number; failed: number }> {
@@ -521,15 +543,25 @@ export async function drainOutbox(options?: DrainOptions): Promise<DrainResult> 
     let resStatus = 0;
     let resBodyText = '';
 
+    const isChatMessage = item.actionType === 'SEND_MESSAGE';
+    const targetUrl = isChatMessage ? '/api/messages' : '/api/technician/sync';
+    const requestPayload = isChatMessage
+      ? {
+          technicianId: item.payload?.technicianId || item.technicianId || undefined,
+          body: item.payload?.body,
+          clientMsgId: item.clientSyncId,
+        }
+      : { items: [item] };
+
     try {
-      res = await fetch('/api/technician/sync', {
+      res = await fetch(targetUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(authHeader ? { Authorization: authHeader } : {}),
         },
         credentials: 'include',
-        body: JSON.stringify({ items: [item] }),
+        body: JSON.stringify(requestPayload),
       });
       resStatus = res.status;
     } catch (netErr: any) {
@@ -557,14 +589,14 @@ export async function drainOutbox(options?: DrainOptions): Promise<DrainResult> 
           authHeader = freshHeader;
           // Silent retry with refreshed session token
           try {
-            const retryRes = await fetch('/api/technician/sync', {
+            const retryRes = await fetch(targetUrl, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 Authorization: authHeader,
               },
               credentials: 'include',
-              body: JSON.stringify({ items: [item] }),
+              body: JSON.stringify(requestPayload),
             });
             if (retryRes.ok) {
               res = retryRes;
@@ -629,33 +661,60 @@ export async function drainOutbox(options?: DrainOptions): Promise<DrainResult> 
       continue;
     }
 
-    // HTTP 200: Parse per-item JSON result
+    // HTTP 200/201: Parse per-item JSON result
     try {
       const data = await res.json();
-      const perItemResult = Array.isArray(data.results) ? data.results[0] : null;
 
-      if (perItemResult && perItemResult.status === 'SYNCED') {
-        await markOutboxItemSynced(clientSyncId);
-        await recordSyncDiagnosticLog({
-          clientSyncId,
-          actionType: item.actionType,
-          status: 'SYNCED',
-          httpStatus: 200,
-          message: perItemResult.message || 'Synced successfully',
-        });
-        syncedCount++;
+      if (isChatMessage) {
+        if (data?.ok && data?.message) {
+          await markOutboxItemSynced(clientSyncId);
+          await recordSyncDiagnosticLog({
+            clientSyncId,
+            actionType: item.actionType,
+            status: 'SYNCED',
+            httpStatus: resStatus,
+            message: data.deduplicated ? 'Message already synced (deduplicated)' : 'Message sent',
+          });
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+              new CustomEvent('vigil:message-outbox-synced', {
+                detail: { clientMsgId: clientSyncId, message: data.message, deduplicated: Boolean(data.deduplicated) },
+              })
+            );
+          }
+          syncedCount++;
+        } else {
+          const errMsg = data?.error || 'Server rejected chat message';
+          await markOutboxItemFailed(clientSyncId, errMsg, resStatus);
+          failedCount++;
+          errors.push(errMsg);
+        }
       } else {
-        const errMsg = perItemResult?.error || 'Server rejected item';
-        await markOutboxItemFailed(clientSyncId, errMsg, 200);
-        await recordSyncDiagnosticLog({
-          clientSyncId,
-          actionType: item.actionType,
-          status: 'FAILED',
-          httpStatus: 200,
-          message: errMsg,
-        });
-        failedCount++;
-        errors.push(errMsg);
+        const perItemResult = Array.isArray(data.results) ? data.results[0] : null;
+
+        if (perItemResult && perItemResult.status === 'SYNCED') {
+          await markOutboxItemSynced(clientSyncId);
+          await recordSyncDiagnosticLog({
+            clientSyncId,
+            actionType: item.actionType,
+            status: 'SYNCED',
+            httpStatus: 200,
+            message: perItemResult.message || 'Synced successfully',
+          });
+          syncedCount++;
+        } else {
+          const errMsg = perItemResult?.error || 'Server rejected item';
+          await markOutboxItemFailed(clientSyncId, errMsg, 200);
+          await recordSyncDiagnosticLog({
+            clientSyncId,
+            actionType: item.actionType,
+            status: 'FAILED',
+            httpStatus: 200,
+            message: errMsg,
+          });
+          failedCount++;
+          errors.push(errMsg);
+        }
       }
     } catch (jsonErr: any) {
       const errMsg = 'Invalid JSON response from server';

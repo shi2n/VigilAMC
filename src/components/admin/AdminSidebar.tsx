@@ -16,9 +16,11 @@ import {
   ShieldCheck,
   PanelLeftClose,
   PanelLeftOpen,
+  MessageSquare,
 } from 'lucide-react';
 import Link from 'next/link';
 import { AdminDictionary } from '@/lib/i18n/admin';
+import { getMessagingDictionary } from '@/lib/i18n/messaging';
 
 export type AdminNavTab =
   | 'OVERVIEW'
@@ -26,6 +28,7 @@ export type AdminNavTab =
   | 'FIRE_EQUIPMENT'
   | 'INSPECTIONS_WORK'
   | 'FIELD_TEAM'
+  | 'MESSAGES'
   | 'REPORTS'
   | 'CLIENT_PORTAL'
   | 'SETTINGS'
@@ -50,6 +53,8 @@ interface AdminSidebarProps {
   userProfile?: any;
   onLogout: () => void;
   openRepairsCount?: number;
+  unreadMessagesCount?: number;
+  currentLanguage?: string;
   isDarkMode?: boolean;
   onToggleDarkMode?: () => void;
   t?: AdminDictionary;
@@ -66,8 +71,11 @@ export function AdminSidebar({
   userProfile,
   onLogout,
   openRepairsCount = 0,
+  unreadMessagesCount = 0,
+  currentLanguage,
   t,
 }: AdminSidebarProps) {
+  const msgT = getMessagingDictionary(currentLanguage || userProfile?.preferredLanguage || 'en');
   const prefersReducedMotion = useReducedMotion();
   const isMobile = isMobileOpen ?? isOpenMobile ?? false;
 
@@ -117,6 +125,7 @@ export function AdminSidebar({
     id: AdminNavTab;
     label: string;
     icon: any;
+    href?: string;
     badge?: string | number;
     badgeColor?: string;
   }[] = [
@@ -131,6 +140,14 @@ export function AdminSidebar({
       badgeColor: 'bg-[#DC2626] text-white',
     },
     { id: 'FIELD_TEAM', label: t?.navFieldTeam || 'Technicians', icon: Users },
+    {
+      id: 'MESSAGES',
+      label: msgT.navMessages,
+      icon: MessageSquare,
+      href: '/dashboard/messages',
+      badge: unreadMessagesCount > 0 ? unreadMessagesCount : undefined,
+      badgeColor: 'bg-[#C2410C] text-white',
+    },
     { id: 'REPORTS', label: t?.navReports || 'Reports', icon: FileText },
     { id: 'CLIENT_PORTAL', label: t?.portalNavTab || 'Client Portal', icon: ShieldCheck },
     {
@@ -237,63 +254,84 @@ export function AdminSidebar({
           const Icon = item.icon;
           const isActive = normalizedActiveTab === item.id;
 
+          const innerContent = (
+            <>
+              {isActive && (
+                <motion.div
+                  layoutId={prefersReducedMotion ? undefined : layoutGroupId}
+                  transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                  className="absolute inset-0 rounded-xl border border-[#EA580C]/25 shadow-xs border-l-[3px] border-l-[#C2410C]"
+                  style={{ backgroundColor: 'rgba(234, 88, 12, 0.10)' }}
+                />
+              )}
+
+              <div className={`relative z-10 flex items-center ${collapsed ? 'justify-center' : 'gap-2.5 truncate'}`}>
+                <Icon
+                  className={`w-4 h-4 shrink-0 transition-transform duration-150 group-hover:scale-110 ${
+                    isActive ? 'text-[#C2410C]' : 'text-[#44403C] group-hover:text-[#C2410C]'
+                  }`}
+                />
+                {!collapsed && <span className="truncate">{item.label}</span>}
+              </div>
+
+              {/* Badge when expanded */}
+              {!collapsed && item.badge && (
+                <span
+                  data-testid={item.id === 'MESSAGES' ? 'sidebar-messages-unread-badge' : undefined}
+                  className={`relative z-10 px-1.5 py-0.5 rounded-full text-[10px] font-extrabold shrink-0 ${
+                    item.badgeColor || 'bg-[#FFF0E6] text-[#C2410C]'
+                  }`}
+                >
+                  {item.badge}
+                </span>
+              )}
+
+              {/* Dot indicator when collapsed */}
+              {collapsed && item.badge && (
+                <span
+                  className={`absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full border-2 border-white shadow-xs ${
+                    item.id === 'MESSAGES' ? 'bg-[#EA580C]' : 'bg-[#DC2626]'
+                  }`}
+                  title={`${item.badge}`}
+                />
+              )}
+            </>
+          );
+
+          const sharedClassName = `relative w-full flex items-center rounded-xl text-xs transition-colors ${
+            collapsed
+              ? 'justify-center p-2.5'
+              : 'justify-between px-3.5 py-2.5'
+          } ${
+            isActive
+              ? 'text-[#C2410C] font-bold'
+              : 'text-[#1C1917] hover:text-[#C2410C] hover:bg-[#FFF0E6]/70 font-medium'
+          }`;
+
           return (
             <div key={item.id} className="relative group">
-              <button
-                onClick={() => {
-                  onSelectTab(item.id);
-                  onCloseMobile();
-                }}
-                className={`relative w-full flex items-center rounded-xl text-xs transition-colors ${
-                  collapsed
-                    ? 'justify-center p-2.5'
-                    : 'justify-between px-3.5 py-2.5'
-                } ${
-                  isActive
-                    ? 'text-[#C2410C] font-bold'
-                    : 'text-[#1C1917] hover:text-[#C2410C] hover:bg-[#FFF0E6]/70 font-medium'
-                }`}
-                aria-label={item.label}
-              >
-                {isActive && (
-                  <motion.div
-                    layoutId={prefersReducedMotion ? undefined : layoutGroupId}
-                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                    className={`absolute inset-0 rounded-xl border border-[#EA580C]/25 shadow-xs ${
-                      collapsed ? 'border-l-[3px] border-l-[#C2410C]' : 'border-l-[3px] border-l-[#C2410C]'
-                    }`}
-                    style={{ backgroundColor: 'rgba(234, 88, 12, 0.10)' }}
-                  />
-                )}
-                
-                <div className={`relative z-10 flex items-center ${collapsed ? 'justify-center' : 'gap-2.5 truncate'}`}>
-                  <Icon
-                    className={`w-4 h-4 shrink-0 transition-transform duration-150 group-hover:scale-110 ${
-                      isActive ? 'text-[#C2410C]' : 'text-[#44403C] group-hover:text-[#C2410C]'
-                    }`}
-                  />
-                  {!collapsed && <span className="truncate">{item.label}</span>}
-                </div>
-
-                {/* Badge when expanded */}
-                {!collapsed && item.badge && (
-                  <span
-                    className={`relative z-10 px-1.5 py-0.5 rounded-full text-[10px] font-extrabold shrink-0 ${
-                      item.badgeColor || 'bg-[#FFF0E6] text-[#C2410C]'
-                    }`}
-                  >
-                    {item.badge}
-                  </span>
-                )}
-
-                {/* Red dot indicator when collapsed */}
-                {collapsed && item.badge && (
-                  <span
-                    className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-[#DC2626] border-2 border-white shadow-xs"
-                    title={`${item.badge} open repairs`}
-                  />
-                )}
-              </button>
+              {item.href ? (
+                <Link
+                  href={item.href}
+                  onClick={() => onCloseMobile()}
+                  className={sharedClassName}
+                  aria-label={item.label}
+                  data-testid={item.id === 'MESSAGES' ? 'sidebar-messages-link' : undefined}
+                >
+                  {innerContent}
+                </Link>
+              ) : (
+                <button
+                  onClick={() => {
+                    onSelectTab(item.id);
+                    onCloseMobile();
+                  }}
+                  className={sharedClassName}
+                  aria-label={item.label}
+                >
+                  {innerContent}
+                </button>
+              )}
 
               {/* Tooltip on hover when collapsed */}
               {collapsed && (

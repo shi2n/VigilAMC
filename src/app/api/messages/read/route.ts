@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import {
   NO_STORE_HEADERS,
+  emitRealtimeMessageBroadcast,
   isValidUuid,
   resolveMessagingActor,
   verifyTechnicianInOrg,
@@ -76,18 +77,40 @@ export async function POST(request: Request) {
     }
 
     const now = new Date();
+    const whereClause = {
+      organizationId: actor.organizationId,
+      technicianId: targetTechnicianId,
+      senderRole: otherSideRole,
+      readAt: null,
+      ...(cutoffDate ? { createdAt: { lte: cutoffDate } } : {}),
+    };
+
+    const unreadRows: Array<{ id: string }> = await (db as any).message.findMany({
+      where: whereClause,
+      select: { id: true },
+    });
+
     const result = await (db as any).message.updateMany({
-      where: {
-        organizationId: actor.organizationId,
-        technicianId: targetTechnicianId,
-        senderRole: otherSideRole,
-        readAt: null,
-        ...(cutoffDate ? { createdAt: { lte: cutoffDate } } : {}),
-      },
+      where: whereClause,
       data: {
         readAt: now,
       },
     });
+
+    if (unreadRows.length > 0) {
+      await emitRealtimeMessageBroadcast({
+        event: 'message_read',
+        organizationId: actor.organizationId,
+        technicianId: targetTechnicianId,
+        payload: {
+          organization_id: actor.organizationId,
+          technician_id: targetTechnicianId,
+          sender_role: otherSideRole,
+          read_at: now.toISOString(),
+          ids: unreadRows.map((r) => r.id),
+        },
+      });
+    }
 
     return NextResponse.json(
       {

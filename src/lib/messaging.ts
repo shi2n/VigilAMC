@@ -318,3 +318,46 @@ export async function serializeMessagesWithSignedUrls(
     createdAt: new Date(r.createdAt).toISOString(),
   }));
 }
+
+/**
+ * Push a live Supabase Realtime Broadcast event via HTTP API (serverless-safe, ~50ms).
+ * Delivers instant INSERT / READ events to both Supabase-Auth dashboard users AND
+ * vigil_tech_session technicians without relaxing PostgreSQL RLS on public.messages.
+ */
+export async function emitRealtimeMessageBroadcast(params: {
+  event: 'message_insert' | 'message_read';
+  organizationId: string;
+  technicianId: string;
+  payload: Record<string, any>;
+}): Promise<void> {
+  try {
+    const supabaseUrl = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/$/, '');
+    const secretKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+    if (!supabaseUrl || !secretKey) return;
+
+    const messages = [
+      {
+        topic: `messages:tech:${params.technicianId}`,
+        event: params.event,
+        payload: params.payload,
+      },
+      {
+        topic: `messages:agency:${params.organizationId}`,
+        event: params.event,
+        payload: params.payload,
+      },
+    ];
+
+    await fetch(`${supabaseUrl}/realtime/v1/api/broadcast`, {
+      method: 'POST',
+      headers: {
+        apikey: secretKey,
+        Authorization: `Bearer ${secretKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ messages }),
+    }).catch(() => null);
+  } catch {
+    // Non-fatal: postgres_changes + 15s polling fallback remain active
+  }
+}
