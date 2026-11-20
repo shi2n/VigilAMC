@@ -4,11 +4,16 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { ArrowLeft, WifiOff, X, RefreshCw } from 'lucide-react';
+import { ArrowLeft, WifiOff, X, RefreshCw, Volume2, VolumeX } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { getMessagingDictionary } from '@/lib/i18n/messaging';
+import { getMessagingDictionary, getMessagingSoundDictionary } from '@/lib/i18n/messaging';
 import { subscribeToTechnicianThread } from '@/lib/messagingRealtime';
 import { onMessageReceived } from '@/lib/messagingHooks';
+import {
+  ensureMessageSoundHookRegistered,
+  isMessageSoundEnabled,
+  setMessageSoundEnabled,
+} from '@/lib/messagingSound';
 import {
   drainOutbox,
   enqueueOutboxItem,
@@ -48,6 +53,8 @@ export default function TechnicianMessagesPage() {
 
   const [currentLang, setCurrentLang] = useState<string>('en');
   const msgT = useMemo(() => getMessagingDictionary(currentLang), [currentLang]);
+  const soundT = useMemo(() => getMessagingSoundDictionary(currentLang), [currentLang]);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
 
   const [agencyName, setAgencyName] = useState<string>('');
   const [technicianId, setTechnicianId] = useState<string>('');
@@ -68,9 +75,11 @@ export default function TechnicianMessagesPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const scrollEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Read persisted technician language + online state
+  // Read persisted technician language + online state + sound hook
   useEffect(() => {
     document.documentElement.classList.remove('dark');
+    ensureMessageSoundHookRegistered();
+    setSoundEnabled(isMessageSoundEnabled('TECHNICIAN'));
     try {
       const savedLang = localStorage.getItem('vigil_preferred_lang');
       if (savedLang) setCurrentLang(savedLang);
@@ -533,15 +542,36 @@ export default function TechnicianMessagesPage() {
           </div>
         </div>
 
-        {!isOnline && (
-          <span
-            data-testid="tech-messages-offline-pill"
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FEF3C7] text-[#92400E] text-[11px] font-extrabold shrink-0"
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            data-testid="tech-messages-sound-toggle"
+            onClick={() => {
+              const next = !soundEnabled;
+              setSoundEnabled(next);
+              setMessageSoundEnabled('TECHNICIAN', next);
+            }}
+            className="w-9 h-9 rounded-full border border-[#E7E5E4] bg-white hover:bg-[#FFF0E6] flex items-center justify-center shrink-0"
+            aria-label={soundT.soundToggleTitle}
+            title={soundEnabled ? soundT.soundOn : soundT.soundOff}
           >
-            <WifiOff className="w-3.5 h-3.5" />
-            <span>{msgT.queuedStatus}</span>
-          </span>
-        )}
+            {soundEnabled ? (
+              <Volume2 className="w-4 h-4 text-[#C2410C]" />
+            ) : (
+              <VolumeX className="w-4 h-4 text-[#57534E]" />
+            )}
+          </button>
+
+          {!isOnline && (
+            <span
+              data-testid="tech-messages-offline-pill"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FEF3C7] text-[#92400E] text-[11px] font-extrabold shrink-0"
+            >
+              <WifiOff className="w-3.5 h-3.5" />
+              <span>{msgT.queuedStatus}</span>
+            </span>
+          )}
+        </div>
       </header>
 
       {/* Honest Offline Banner */}

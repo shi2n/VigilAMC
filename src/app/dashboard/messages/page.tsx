@@ -3,13 +3,19 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Menu, Search, ArrowLeft, X, WifiOff, RefreshCw } from 'lucide-react';
+import { Menu, Search, ArrowLeft, X, WifiOff, RefreshCw, Volume2, VolumeX } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { getAdminDictionary } from '@/lib/i18n/admin';
-import { getMessagingDictionary, formatMsgTemplate } from '@/lib/i18n/messaging';
+import { getMessagingDictionary, getMessagingSoundDictionary, formatMsgTemplate } from '@/lib/i18n/messaging';
 import { subscribeToAgencyMessages } from '@/lib/messagingRealtime';
 import { onMessageReceived } from '@/lib/messagingHooks';
+import {
+  ensureMessageSoundHookRegistered,
+  isMessageSoundEnabled,
+  requestDashboardNotificationPermissionOnce,
+  setMessageSoundEnabled,
+} from '@/lib/messagingSound';
 import {
   BroadcastIcon,
   ChatBubble,
@@ -50,6 +56,8 @@ export default function DashboardMessagesPage() {
   const [currentLanguage, setCurrentLanguage] = useState<string>('en');
   const adminT = useMemo(() => getAdminDictionary(currentLanguage), [currentLanguage]);
   const msgT = useMemo(() => getMessagingDictionary(currentLanguage), [currentLanguage]);
+  const soundT = useMemo(() => getMessagingSoundDictionary(currentLanguage), [currentLanguage]);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
 
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [orgId, setOrgId] = useState<string>('');
@@ -84,9 +92,11 @@ export default function DashboardMessagesPage() {
   const selectedTechRef = useRef<string | null>(null);
   selectedTechRef.current = selectedTechId;
 
-  // Enforce light FIRE theme & read persisted language
+  // Enforce light FIRE theme, sound hook & read persisted language
   useEffect(() => {
     document.documentElement.classList.remove('dark');
+    ensureMessageSoundHookRegistered();
+    setSoundEnabled(isMessageSoundEnabled('DASHBOARD'));
     try {
       const saved = localStorage.getItem('vigilamc_admin_language');
       if (saved) setCurrentLanguage(saved);
@@ -94,11 +104,17 @@ export default function DashboardMessagesPage() {
     setIsOnline(typeof navigator !== 'undefined' ? navigator.onLine : true);
     const onUp = () => setIsOnline(true);
     const onDown = () => setIsOnline(false);
+    const onFirstClick = () => {
+      requestDashboardNotificationPermissionOnce().catch(() => null);
+      window.removeEventListener('pointerdown', onFirstClick);
+    };
     window.addEventListener('online', onUp);
     window.addEventListener('offline', onDown);
+    window.addEventListener('pointerdown', onFirstClick, { passive: true });
     return () => {
       window.removeEventListener('online', onUp);
       window.removeEventListener('offline', onDown);
+      window.removeEventListener('pointerdown', onFirstClick);
     };
   }, []);
 
@@ -493,12 +509,36 @@ export default function DashboardMessagesPage() {
             )}
           </div>
 
-          {!isOnline && (
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FEF3C7] text-[#92400E] text-xs font-bold">
-              <WifiOff className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{msgT.offlinePhotoHint}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              data-testid="dashboard-sound-toggle"
+              onClick={() => {
+                const next = !soundEnabled;
+                setSoundEnabled(next);
+                setMessageSoundEnabled('DASHBOARD', next);
+              }}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-[#E7E5E4] bg-white hover:bg-[#FFF0E6] text-xs font-bold text-[#1C1917] transition-colors"
+              aria-label={soundT.soundToggleTitle}
+              title={soundT.soundToggleTitle}
+            >
+              {soundEnabled ? (
+                <Volume2 className="w-4 h-4 text-[#C2410C]" />
+              ) : (
+                <VolumeX className="w-4 h-4 text-[#57534E]" />
+              )}
+              <span className="hidden sm:inline">
+                {soundEnabled ? soundT.soundOn : soundT.soundOff}
+              </span>
+            </button>
+
+            {!isOnline && (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FEF3C7] text-[#92400E] text-xs font-bold">
+                <WifiOff className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{msgT.offlinePhotoHint}</span>
+              </div>
+            )}
+          </div>
         </header>
 
         {/* Split Messaging Body */}

@@ -909,3 +909,156 @@ export function formatMsgTemplate(template: string, vars: Record<string, string 
   }
   return out;
 }
+
+export interface MessagingSoundDictionary {
+  soundToggleTitle: string;
+  soundToggleDesc: string;
+  soundOn: string;
+  soundOff: string;
+}
+
+export const MESSAGING_SOUND_TRANSLATIONS: Record<string, MessagingSoundDictionary> = {
+  en: {
+    soundToggleTitle: 'Message sound',
+    soundToggleDesc: 'Play a short ding when a new message arrives',
+    soundOn: 'Sound On',
+    soundOff: 'Muted',
+  },
+  hi: {
+    soundToggleTitle: 'संदेश ध्वनि',
+    soundToggleDesc: 'नया संदेश आने पर हल्की डिंग ध्वनि बजाएं',
+    soundOn: 'ध्वनि चालू',
+    soundOff: 'म्यूट',
+  },
+  mr: {
+    soundToggleTitle: 'संदेश आवाज',
+    soundToggleDesc: 'नवीन संदेश आल्यावर छोटा डिंग आवाज वाजवा',
+    soundOn: 'आवाज चालू',
+    soundOff: 'म्यूट',
+  },
+  gu: {
+    soundToggleTitle: 'સંદેશ અવાજ',
+    soundToggleDesc: 'નવો સંદેશ આવે ત્યારે નાનો ડિંગ અવાજ વગાડો',
+    soundOn: 'અવાજ ચાલુ',
+    soundOff: 'મ્યૂટ',
+  },
+  ta: {
+    soundToggleTitle: 'செய்தி ஒலி',
+    soundToggleDesc: 'புதிய செய்தி வரும்போது சிறிய டிங் ஒலி எழுப்பு',
+    soundOn: 'ஒலி இயக்கத்தில்',
+    soundOff: 'ஒலி முடக்கம்',
+  },
+  te: {
+    soundToggleTitle: 'సందేశ ధ్వని',
+    soundToggleDesc: 'కొత్త సందేశం వచ్చినప్పుడు చిన్న డింగ్ ధ్వని ప్లే చేయండి',
+    soundOn: 'ధ్వని ఆన్',
+    soundOff: 'మ్యూట్',
+  },
+  kn: {
+    soundToggleTitle: 'ಸಂದೇಶ ಧ್ವನಿ',
+    soundToggleDesc: 'ಹೊಸ ಸಂದೇಶ ಬಂದಾಗ ಸಣ್ಣ ಡಿಂಗ್ ಧ್ವನಿ ಪ್ಲೇ ಮಾಡಿ',
+    soundOn: 'ಧ್ವನಿ ಆನ್',
+    soundOff: 'ಮ್ಯೂಟ್',
+  },
+  ml: {
+    soundToggleTitle: 'സന്ദേശ ശബ്ദം',
+    soundToggleDesc: 'പുതിയ സന്ദേശം വരുമ്പോൾ ചെറിയ ഡിംഗ് ശബ്ദം കേൾപ്പിക്കുക',
+    soundOn: 'ശബ്ദം ഓൺ',
+    soundOff: 'മ്യൂട്ട്',
+  },
+  bn: {
+    soundToggleTitle: 'বার্তার শব্দ',
+    soundToggleDesc: 'নতুন বার্তা এলে ছোট্ট ডিং শব্দ বাজান',
+    soundOn: 'শব্দ চালু',
+    soundOff: 'নিঃশব্দ',
+  },
+  pa: {
+    soundToggleTitle: 'ਸੁਨੇਹਾ ਆਵਾਜ਼',
+    soundToggleDesc: 'ਨਵਾਂ ਸੁਨੇਹਾ ਆਉਣ ਤੇ ਹਲਕੀ ਡਿੰਗ ਆਵਾਜ਼ ਵਜਾਓ',
+    soundOn: 'ਆਵਾਜ਼ ਚਾਲੂ',
+    soundOff: 'ਮਿਊਟ',
+  },
+  or: {
+    soundToggleTitle: 'ବାର୍ତ୍ତା ଶବ୍ଦ',
+    soundToggleDesc: 'ନୂଆ ବାର୍ତ୍ତା ଆସିଲେ ଛୋଟ ଡିଂ ଶବ୍ଦ ବଜାନ୍ତୁ',
+    soundOn: 'ଶବ୍ଦ ଚାଲୁ',
+    soundOff: 'ନିଃଶବ୍ଦ',
+  },
+  as: {
+    soundToggleTitle: 'বাৰ্তাৰ শব্দ',
+    soundToggleDesc: 'নতুন বাৰ্তা আহিলে সৰু ডিং শব্দ বজাওক',
+    soundOn: 'শব্দ চালু',
+    soundOff: 'নিঃশব্দ',
+  },
+  ur: {
+    soundToggleTitle: 'پیغام کی آواز',
+    soundToggleDesc: 'نیا پیغام آنے پر ہلکی ڈنگ آواز بجائیں',
+    soundOn: 'آواز آن',
+    soundOff: 'خاموش',
+  },
+  sa: {
+    soundToggleTitle: 'सन्देशध्वनिः',
+    soundToggleDesc: 'नवीने सन्देशे आगते लघुध्वनिं वादयतु',
+    soundOn: 'ध्वनिः सक्रियः',
+    soundOff: 'मौनम्',
+  },
+  kok: {
+    soundToggleTitle: 'संदेश आवाज',
+    soundToggleDesc: 'नवो संदेश आयल्यार ल्हान डिंग आवाज वाजय',
+    soundOn: 'आवाज सुरू',
+    soundOff: 'म्यूट',
+  },
+  mai: {
+    soundToggleTitle: 'संदेश ध्वनि',
+    soundToggleDesc: 'नव संदेश अएला पर हल्का डिंग ध्वनि बजाउ',
+    soundOn: 'ध्वनि चालू',
+    soundOff: 'म्यूट',
+  },
+  ne: {
+    soundToggleTitle: 'सन्देश ध्वनि',
+    soundToggleDesc: 'नयाँ सन्देश आउँदा सानो डिङ ध्वनि बजाउनुहोस्',
+    soundOn: 'ध्वनि चालु',
+    soundOff: 'म्युट',
+  },
+  sd: {
+    soundToggleTitle: 'پيغام جو آواز',
+    soundToggleDesc: 'نئون پيغام اچڻ تي هلڪو ڊنگ آواز وڄايو',
+    soundOn: 'آواز آن',
+    soundOff: 'خاموش',
+  },
+  ks: {
+    soundToggleTitle: 'پیغامُک آواز',
+    soundToggleDesc: 'نٔو پیغام یِنہٕ پؠٹھ ہلکٕ ڈنگ آواز بجاوو',
+    soundOn: 'آواز آن',
+    soundOff: 'خاموش',
+  },
+  doi: {
+    soundToggleTitle: 'सनेस आवाज',
+    soundToggleDesc: 'नमां सनेस औने पर हल्की डिंग आवाज बजाओ',
+    soundOn: 'आवाज चालू',
+    soundOff: 'म्यूट',
+  },
+  mni: {
+    soundToggleTitle: 'পাউজেল মখোল',
+    soundToggleDesc: 'অনৌবা পাউজেল লাকপদা মখোল অতেনবা থোকহনবা',
+    soundOn: 'মখোল ওন',
+    soundOff: 'মখোল থিংবা',
+  },
+  sat: {
+    soundToggleTitle: 'ᱠᱷᱚᱵᱚᱨ ᱥᱟᱰᱮ',
+    soundToggleDesc: 'ᱱᱟᱣᱟ ᱠᱷᱚᱵᱚᱨ ᱦᱮᱡ ᱞᱮᱱᱠᱷᱟᱱ ᱠᱟᱹᱴᱤᱡ ᱰᱤᱝ ᱥᱟᱰᱮ ᱵᱟᱡᱟᱣ ᱢᱮ',
+    soundOn: 'ᱥᱟᱰᱮ ᱪᱟᱹᱞᱩ',
+    soundOff: 'ᱛᱷᱤᱨ',
+  },
+  brx: {
+    soundToggleTitle: 'खौरां सोदोब',
+    soundToggleDesc: 'गोदान खौरां फैब्ला फिसा डिं सोदोब दाम',
+    soundOn: 'सोदोब सोलिदों',
+    soundOff: 'सोदोब बन्द',
+  },
+};
+
+export function getMessagingSoundDictionary(langCode?: string | null): MessagingSoundDictionary {
+  const code = String(langCode || 'en').trim().toLowerCase();
+  return MESSAGING_SOUND_TRANSLATIONS[code] || MESSAGING_SOUND_TRANSLATIONS.en;
+}

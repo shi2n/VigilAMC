@@ -21,6 +21,8 @@ import { AlertsSettingsView } from './AlertsSettingsView';
 import { AdminUsersView } from './AdminUsersView';
 import { SubscriptionManager } from './SubscriptionManager';
 import { ALL_INDIAN_LANGUAGES, AdminDictionary } from '@/lib/i18n/admin';
+import { getMessagingSoundDictionary } from '@/lib/i18n/messaging';
+import { isMessageSoundEnabled, setMessageSoundEnabled } from '@/lib/messagingSound';
 import { compressImageToDataUrl, uploadCompressedPhoto } from '@/lib/compressImage';
 import { formatBuildingPickerLabel } from '@/lib/buildingUtils';
 
@@ -92,6 +94,14 @@ export function SettingsView({
     }
     return userProfile?.preferredLanguage || currentLanguage || 'en';
   });
+  const [msgSoundOn, setMsgSoundOn] = useState<boolean>(() => isMessageSoundEnabled('DASHBOARD'));
+  const msgSoundT = getMessagingSoundDictionary(selectedLang);
+
+  const handleToggleMessageSound = (next: boolean) => {
+    setMsgSoundOn(next);
+    setMessageSoundEnabled('DASHBOARD', next);
+    showToast(`${msgSoundT.soundToggleTitle}: ${next ? msgSoundT.soundOn : msgSoundT.soundOff}`);
+  };
 
   useEffect(() => {
     if (currentLanguage) {
@@ -781,6 +791,27 @@ export function SettingsView({
       ========================================================================= */}
       {activeSubTab === 'PREFERENCES' && (
         <div className="space-y-8">
+          {/* Section 0: Messaging Sound Notification Toggle */}
+          <div className="max-w-2xl p-4 rounded-2xl bg-white border border-[#FED7AA] flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <h3 className="text-sm font-bold text-[#1C1917]">{msgSoundT.soundToggleTitle}</h3>
+              <p className="text-xs text-[#44403C] mt-0.5">{msgSoundT.soundToggleDesc}</p>
+            </div>
+            <label className="inline-flex items-center gap-2 cursor-pointer select-none shrink-0">
+              <span className="text-xs font-bold text-[#44403C]">
+                {msgSoundOn ? msgSoundT.soundOn : msgSoundT.soundOff}
+              </span>
+              <input
+                type="checkbox"
+                data-testid="settings-message-sound-toggle"
+                checked={msgSoundOn}
+                onChange={(e) => handleToggleMessageSound(e.target.checked)}
+                className="sr-only peer"
+              />
+              <span className="w-10 h-5 rounded-full bg-[#D6D3D1] peer-checked:bg-[#EA580C] relative transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-4 after:h-4 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-5" />
+            </label>
+          </div>
+
           {/* Section 1: Language & Regional Preferences */}
           <div className="space-y-4 max-w-2xl">
             <div>

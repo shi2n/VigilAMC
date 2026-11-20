@@ -2,6 +2,7 @@ package com.vigilamc;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -195,6 +196,42 @@ public class MainActivity extends BridgeActivity {
 
         attachLaunchSplashOverlay();
         mainHandler.postDelayed(failsafeHideRunnable, SPLASH_FAILSAFE_MS);
+
+        // Create "Messages" notification channel at app start (default system sound + vibration)
+        VigilMessagingService.ensureMessagesChannel(this);
+
+        // Handle deep-link if launched from a message notification tap
+        handleDeepLinkIntent(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleDeepLinkIntent(intent);
+    }
+
+    private void handleDeepLinkIntent(Intent intent) {
+        if (intent == null) return;
+        String deepLink = intent.getStringExtra(VigilMessagingService.EXTRA_DEEP_LINK);
+        if (deepLink == null || deepLink.trim().isEmpty()) return;
+
+        // Clear pending message badge/notifications once user opens chat
+        if (deepLink.startsWith(VigilMessagingService.DEEP_LINK_MESSAGES_PATH)) {
+            VigilMessagingService.clearPendingMessageNotifications(this);
+        }
+
+        final String safePath = deepLink.startsWith("/") ? deepLink : ("/" + deepLink);
+        mainHandler.postDelayed(() -> {
+            try {
+                if (this.bridge != null && this.bridge.getWebView() != null) {
+                    String js = "if (window.location.pathname !== '" + safePath + "') { window.location.href = '" + safePath + "'; }";
+                    this.bridge.getWebView().evaluateJavascript(js, null);
+                }
+            } catch (Throwable t) {
+                Log.w(TAG, "Deep-link navigation warning: " + t.getMessage());
+            }
+        }, 400L);
     }
 
     private int dp(int value) {

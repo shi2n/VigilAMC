@@ -60,6 +60,7 @@ import { getAdminDictionary } from '@/lib/i18n/admin';
 import { getMessagingDictionary } from '@/lib/i18n/messaging';
 import { subscribeToAgencyMessages } from '@/lib/messagingRealtime';
 import { onMessageReceived } from '@/lib/messagingHooks';
+import { ensureMessageSoundHookRegistered } from '@/lib/messagingSound';
 import { getServiceCycleLabel } from '@/lib/compliance';
 import { formatBuildingPickerLabel } from '@/lib/buildingUtils';
 import { WelcomeTestingModal } from '@/components/admin/WelcomeTestingModal';
@@ -264,6 +265,7 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     document.documentElement.classList.remove('dark');
     localStorage.setItem('vigil_dashboard_theme', 'light');
+    ensureMessageSoundHookRegistered();
   }, []);
 
   // Live Unread Messages Badge + Realtime subscription for sidebar

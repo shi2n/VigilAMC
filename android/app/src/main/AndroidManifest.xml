@@ -34,6 +34,15 @@
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
 
+        <!-- Background DATA-only FCM handler for Agency <-> Technician Messaging -->
+        <service
+            android:name=".VigilMessagingService"
+            android:exported="false">
+            <intent-filter android:priority="100">
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
         <!-- Default FCM Push Notification Channel and Styling for Home-Screen / System-Tray alerts -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"

@@ -62,9 +62,14 @@ import {
   Settings,
   MessageSquare,
 } from 'lucide-react';
-import { getMessagingDictionary, formatMsgTemplate } from '@/lib/i18n/messaging';
+import { getMessagingDictionary, getMessagingSoundDictionary, formatMsgTemplate } from '@/lib/i18n/messaging';
 import { subscribeToTechnicianThread } from '@/lib/messagingRealtime';
 import { onMessageReceived } from '@/lib/messagingHooks';
+import {
+  ensureMessageSoundHookRegistered,
+  isMessageSoundEnabled,
+  setMessageSoundEnabled,
+} from '@/lib/messagingSound';
 import { createClient } from '@/lib/supabase/client';
 import {
   isNativePlatform,
@@ -153,6 +158,8 @@ export default function TechnicianPWA() {
   const [showLanguageSheet, setShowLanguageSheet] = useState(false);
   const t = useMemo(() => TRANSLATIONS[currentLang] || TRANSLATIONS.en, [currentLang]);
   const msgT = useMemo(() => getMessagingDictionary(currentLang), [currentLang]);
+  const msgSoundT = useMemo(() => getMessagingSoundDictionary(currentLang), [currentLang]);
+  const [msgSoundOn, setMsgSoundOn] = useState<boolean>(true);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState<number>(0);
   const [incomingMsgBanner, setIncomingMsgBanner] = useState<{
     senderName: string;
@@ -397,6 +404,8 @@ export default function TechnicianPWA() {
 
     // Set online status
     setIsOnline(navigator.onLine);
+    ensureMessageSoundHookRegistered();
+    setMsgSoundOn(isMessageSoundEnabled('TECHNICIAN'));
 
     // Check installed mode
     if (window.matchMedia('(display-mode: standalone)').matches) {
@@ -3787,6 +3796,31 @@ export default function TechnicianPWA() {
                   <span className="text-[10px] font-bold text-slate-500 uppercase">Sync Health</span>
                 </div>
               </div>
+            </div>
+
+            {/* Per-User Message Sound Toggle */}
+            <div className="p-4 rounded-2xl bg-white border border-[#FED7AA] shadow-xs flex items-center justify-between gap-3">
+              <div className="min-w-0 text-left">
+                <div className="text-sm font-extrabold text-[#1C1917]">{msgSoundT.soundToggleTitle}</div>
+                <div className="text-xs font-medium text-[#44403C] mt-0.5">{msgSoundT.soundToggleDesc}</div>
+              </div>
+              <label className="inline-flex items-center gap-2 cursor-pointer select-none shrink-0">
+                <span className="text-xs font-bold text-[#44403C]">
+                  {msgSoundOn ? msgSoundT.soundOn : msgSoundT.soundOff}
+                </span>
+                <input
+                  type="checkbox"
+                  data-testid="tech-profile-sound-toggle"
+                  checked={msgSoundOn}
+                  onChange={(e) => {
+                    const next = e.target.checked;
+                    setMsgSoundOn(next);
+                    setMessageSoundEnabled('TECHNICIAN', next);
+                  }}
+                  className="sr-only peer"
+                />
+                <span className="w-10 h-5 rounded-full bg-[#D6D3D1] peer-checked:bg-[#EA580C] relative transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-4 after:h-4 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-5" />
+              </label>
             </div>
 
 
