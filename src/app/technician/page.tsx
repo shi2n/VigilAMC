@@ -118,7 +118,7 @@ import {
   OutboxItem,
   SyncDiagnosticLog,
 } from '@/lib/offline/techOutbox';
-import { todayCalendarDateString, addCalendarDays, addCalendarMonths, fromDbDate, calendarDayDiff } from '@/lib/dates';
+import { todayCalendarDateString, addCalendarDays, addCalendarMonths, fromDbDate, calendarDayDiff, dueChip, formatDisplay } from '@/lib/dates';
 
 interface GPSCoordinates {
   latitude: number;
@@ -1908,43 +1908,61 @@ export default function TechnicianPWA() {
   };
 
   // ----------------------------------------------------------------------------------
-  // COMPUTED TASK LIST COUNTERS
+  // COMPUTED TASK LIST COUNTERS (LIVE CLIENT-SIDE CALENDAR MATH)
   // ----------------------------------------------------------------------------------
+  const getLiveTaskDue = useCallback((task: any) => {
+    if (task?.dueDate) {
+      const chip = dueChip(task.dueDate);
+      return {
+        state: chip.state === 'NONE' ? 'OK' : chip.state,
+        diff: chip.diff ?? 0,
+        label: chip.label,
+      };
+    }
+    const fallbackState = task?.dueState === 'EXPIRED' ? 'EXPIRED' : task?.dueState === 'DUE_SOON' ? 'DUE_SOON' : 'OK';
+    const fallbackDiff = typeof task?.diffDays === 'number' ? task.diffDays : 0;
+    return {
+      state: fallbackState,
+      diff: fallbackDiff,
+      label: fallbackState === 'EXPIRED' ? `${fallbackDiff < 0 ? fallbackDiff : -1}d overdue` : 'Scheduled',
+    };
+  }, []);
+
   const activeTasks = useMemo(
     () => taskList.filter((t) => t.status !== 'CANCELLED' && t.status !== 'COMPLETED'),
     [taskList]
   );
   const overdueTasksCount = useMemo(
-    () => activeTasks.filter((t) => t.dueState === 'EXPIRED').length,
-    [activeTasks]
+    () => activeTasks.filter((t) => getLiveTaskDue(t).state === 'EXPIRED').length,
+    [activeTasks, getLiveTaskDue]
   );
   const dueSoonTasksCount = useMemo(
-    () => activeTasks.filter((t) => t.dueState === 'DUE_SOON').length,
-    [activeTasks]
+    () => activeTasks.filter((t) => getLiveTaskDue(t).state === 'DUE_SOON').length,
+    [activeTasks, getLiveTaskDue]
   );
   const upcomingTasksCount = useMemo(
-    () => activeTasks.filter((t) => t.dueState === 'OK').length,
-    [activeTasks]
+    () => activeTasks.filter((t) => getLiveTaskDue(t).state === 'OK').length,
+    [activeTasks, getLiveTaskDue]
   );
 
   const filteredTasks = useMemo(() => {
-    if (taskFilter === 'OVERDUE') return activeTasks.filter((t) => t.dueState === 'EXPIRED');
-    if (taskFilter === 'DUE_SOON') return activeTasks.filter((t) => t.dueState === 'DUE_SOON');
-    if (taskFilter === 'OK') return activeTasks.filter((t) => t.dueState === 'OK');
+    if (taskFilter === 'OVERDUE') return activeTasks.filter((t) => getLiveTaskDue(t).state === 'EXPIRED');
+    if (taskFilter === 'DUE_SOON') return activeTasks.filter((t) => getLiveTaskDue(t).state === 'DUE_SOON');
+    if (taskFilter === 'OK') return activeTasks.filter((t) => getLiveTaskDue(t).state === 'OK');
     return taskList; // Show all (including completed at bottom)
-  }, [taskList, activeTasks, taskFilter]);
+  }, [taskList, activeTasks, taskFilter, getLiveTaskDue]);
 
   const filteredAndSortedTasks = useMemo(() => {
     return [...activeTasks].sort((a: any, b: any) => {
       const rank = (state: string) => (state === 'EXPIRED' ? 0 : state === 'DUE_SOON' ? 1 : 2);
-      const rA = rank(a.dueState);
-      const rB = rank(b.dueState);
+      const dA = getLiveTaskDue(a);
+      const dB = getLiveTaskDue(b);
+      const rA = rank(dA.state);
+      const rB = rank(dB.state);
       if (rA !== rB) return rA - rB;
-      const dueA = a.dueDate ? new Date(a.dueDate).getTime() : 0;
-      const dueB = b.dueDate ? new Date(b.dueDate).getTime() : 0;
-      return dueA - dueB;
+      return dA.diff - dB.diff;
     });
-  }, [activeTasks]);
+  }, [activeTasks, getLiveTaskDue]);
 
   // ----------------------------------------------------------------------------------
   // COMPUTED HISTORY LIST
@@ -2953,16 +2971,19 @@ export default function TechnicianPWA() {
                 )
               )}
               {filteredAndSortedTasks.slice(0, 4).map((task: any) => {
-                const isOverdue = task.dueState === 'EXPIRED';
-                const isDueSoon = task.dueState === 'DUE_SOON';
-                const diff = task.diffDays ?? 0;
-                const dueText = isOverdue
-                  ? `Overdue by ${Math.abs(diff || 1)}d`
-                  : isDueSoon
+                const liveDue = getLiveTaskDue(task);
+                const isOverdue = liveDue.state === 'EXPIRED';
+                const isDueSoon = liveDue.state === 'DUE_SOON';
+                const diff = liveDue.diff;
+                const dueText = !task.dueDate
+                  ? 'Scheduled'
+                  : diff < 0
+                  ? `${diff}d overdue`
+                  : diff === 0
+                  ? 'Due today'
+                  : diff === 1
                   ? 'Due tomorrow'
-                  : task.dueDate
-                  ? `Due in ${Math.max(1, diff)} days`
-                  : 'Scheduled';
+                  : `Due in ${diff}d`;
 
                 return (
                   <div
@@ -3011,7 +3032,7 @@ export default function TechnicianPWA() {
                     <div className="flex items-center justify-between text-xs text-slate-600 pt-1 border-t border-slate-100">
                       <div className="flex items-center gap-1 font-mono text-[11px] text-slate-500">
                         <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Due: {task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Scheduled'}</span>
+                        <span>Due: {task.dueDate ? formatDisplay(task.dueDate) : 'Scheduled'}</span>
                       </div>
                       <div className="flex items-center gap-1 text-[11px] font-semibold text-slate-600">
                         <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" />
@@ -3223,20 +3244,32 @@ export default function TechnicianPWA() {
                   const isCancelled = task.status === 'CANCELLED';
 
                   // Mandated Due Colors: EXPIRED #DC2626 · DUE SOON #D97706 · OK #059669
-                  const dueBadge =
-                    task.dueState === 'EXPIRED' ? (
-                      <span className="px-2 py-0.5 rounded-full bg-red-100 text-[#DC2626] font-bold text-[10px] border border-red-200">
-                        {t.overdueByDays.replace('{n}', String(Math.abs(task.diffDays || 1)))}
-                      </span>
-                    ) : task.dueState === 'DUE_SOON' ? (
-                      <span className="px-2 py-0.5 rounded-full bg-amber-100 text-[#D97706] font-bold text-[10px] border border-amber-200">
-                        {t.dueTomorrow}
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-[#059669] font-bold text-[10px] border border-emerald-200">
-                        {task.dueDate ? t.dueOn.replace('{date}', formatLocalizedDate(task.dueDate, currentLang)) : 'Scheduled'}
-                      </span>
-                    );
+                  const liveDue = getLiveTaskDue(task);
+                  const dueBadge = !task.dueDate ? (
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-[#059669] font-bold text-[10px] border border-emerald-200">
+                      Scheduled
+                    </span>
+                  ) : liveDue.diff < 0 ? (
+                    <span className="px-2 py-0.5 rounded-full bg-red-100 text-[#DC2626] font-bold text-[10px] border border-red-200 tabular-nums">
+                      {`${liveDue.diff}d overdue`}
+                    </span>
+                  ) : liveDue.diff === 0 ? (
+                    <span className="px-2 py-0.5 rounded-full bg-amber-100 text-[#D97706] font-bold text-[10px] border border-amber-200">
+                      Due today
+                    </span>
+                  ) : liveDue.diff === 1 ? (
+                    <span className="px-2 py-0.5 rounded-full bg-amber-100 text-[#D97706] font-bold text-[10px] border border-amber-200">
+                      {t.dueTomorrow || 'Due tomorrow'}
+                    </span>
+                  ) : liveDue.state === 'DUE_SOON' ? (
+                    <span className="px-2 py-0.5 rounded-full bg-amber-100 text-[#D97706] font-bold text-[10px] border border-amber-200 tabular-nums">
+                      {`Due in ${liveDue.diff}d`}
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-[#059669] font-bold text-[10px] border border-emerald-200 tabular-nums">
+                      {t.dueOn.replace('{date}', formatDisplay(task.dueDate))}
+                    </span>
+                  );
 
                   // Priority Chip
                   const priorityColor =

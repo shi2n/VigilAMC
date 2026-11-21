@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { getAuthenticatedActor } from '@/lib/techSession';
 import { getCurrentUser } from '@/lib/auth';
 import { notifyOnAssignment } from '@/lib/notify';
-import { toDateInputString } from '@/lib/dates';
+import { toDateInputString, toDbDate } from '@/lib/dates';
 import { logEquipmentHistory } from '@/lib/equipmentHistory';
 
 export const dynamic = 'force-dynamic';
@@ -117,10 +117,7 @@ export async function POST(request: Request) {
 
     let parsedDueDate: Date | null = null;
     if (dueDate && String(dueDate).trim() !== '') {
-      const dt = new Date(dueDate);
-      if (!isNaN(dt.getTime())) {
-        parsedDueDate = dt;
-      }
+      parsedDueDate = toDbDate(dueDate);
     }
 
     // When assigned to a technician by human admin, status is 'ASSIGNED'. Unassigned tasks start as 'OPEN'.
@@ -217,8 +214,8 @@ export async function PATCH(request: Request) {
     let newDueDateStr = '';
 
     if (isReschedule && dueDate) {
-      const dt = new Date(dueDate);
-      if (!isNaN(dt.getTime())) {
+      const dt = toDbDate(dueDate);
+      if (dt && !isNaN(dt.getTime())) {
         isReschedulingAction = true;
         updateData.dueDate = dt;
         newDueDateStr = toDateInputString(dt);
@@ -229,8 +226,8 @@ export async function PATCH(request: Request) {
       }
     } else if (dueDate !== undefined) {
       if (dueDate && String(dueDate).trim() !== '') {
-        const dt = new Date(dueDate);
-        if (!isNaN(dt.getTime())) {
+        const dt = toDbDate(dueDate);
+        if (dt && !isNaN(dt.getTime())) {
           updateData.dueDate = dt;
         }
       } else {

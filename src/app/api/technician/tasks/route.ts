@@ -120,6 +120,8 @@ export async function GET(request: Request) {
 
     // Unify tasks
     const tasks: any[] = [];
+    const istNow = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
+    const todayIstStr = `${istNow.getUTCFullYear()}-${String(istNow.getUTCMonth() + 1).padStart(2, '0')}-${String(istNow.getUTCDate()).padStart(2, '0')}`;
 
     // Map Work Orders
     for (const wo of workOrders) {
@@ -133,9 +135,9 @@ export async function GET(request: Request) {
       let dueState: 'EXPIRED' | 'DUE_SOON' | 'OK' = 'OK';
       let diffDays = 0;
       if (wo.dueDate) {
-        diffDays = calendarDayDiff(wo.dueDate, now);
+        diffDays = calendarDayDiff(wo.dueDate, todayIstStr);
         if (diffDays < 0) dueState = 'EXPIRED';
-        else if (diffDays <= 2) dueState = 'DUE_SOON';
+        else if (diffDays <= 30) dueState = 'DUE_SOON';
         else dueState = 'OK';
       }
 
@@ -180,14 +182,18 @@ export async function GET(request: Request) {
         let dueState: 'EXPIRED' | 'DUE_SOON' | 'OK' = 'OK';
 
         if (eq.nextDueDate) {
-          diffDays = calendarDayDiff(eq.nextDueDate, now);
-          if (diffDays < 0 || eq.status === 'OVERDUE' || eq.status === 'DEFECTIVE') {
+          diffDays = calendarDayDiff(eq.nextDueDate, todayIstStr);
+          if (diffDays < 0) {
             dueState = 'EXPIRED';
-          } else if (diffDays <= 2 || eq.status === 'DUE_SOON') {
+          } else if (diffDays <= 30) {
             dueState = 'DUE_SOON';
           } else {
             dueState = 'OK';
           }
+        } else if (eq.status === 'OVERDUE' || eq.status === 'DEFECTIVE') {
+          dueState = 'EXPIRED';
+        } else if (eq.status === 'DUE_SOON') {
+          dueState = 'DUE_SOON';
         }
 
         let floorZone = eq.floor || '';

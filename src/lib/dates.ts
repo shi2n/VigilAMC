@@ -314,7 +314,7 @@ export function dueState(
 
   if (daysDiff < 0) {
     const overdueDays = Math.abs(daysDiff);
-    const label = `${overdueDays}d overdue`;
+    const label = `-${overdueDays}d overdue`;
     return {
       state: 'EXPIRED',
       label,
@@ -403,7 +403,7 @@ export function dueChip(dueDate: CalendarDateInput, todayInput?: CalendarDateInp
   const diff = calendarDayDiff(cd, todayInput || todayCalendarDate());
   const days = Math.abs(diff);
   if (diff < 0) {
-    return { state: 'EXPIRED', label: `${days}d overdue`, days, diff, statusText: 'EXPIRED', color: STATUS_COLORS.EXPIRED };
+    return { state: 'EXPIRED', label: `-${days}d overdue`, days, diff, statusText: 'EXPIRED', color: STATUS_COLORS.EXPIRED };
   }
   if (diff === 0) {
     return { state: 'DUE_SOON', label: 'Due today', days: 0, diff, statusText: 'DUE SOON', color: STATUS_COLORS.DUE_SOON };

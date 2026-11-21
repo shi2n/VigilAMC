@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { formatCalendarDate, getCalendarDayDiff } from '@/lib/dateUtils';
-import { toDateInputString, todayCalendarDateString } from '@/lib/dates';
+import { formatCalendarDate } from '@/lib/dateUtils';
+import { toDateInputString, todayCalendarDateString, dueChip } from '@/lib/dates';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { toast } from 'sonner';
 import { CreateWorkOrderModal } from './CreateWorkOrderModal';
@@ -540,11 +540,10 @@ export function WorkOrdersView({
         ) : (
           <div className="divide-y divide-[#FED7AA]/60">
             {filteredOrders.map((wo, idx) => {
-              const dueDiff = getCalendarDayDiff(wo.dueDate);
-              const isOverdue =
-                ['OPEN', 'ASSIGNED', 'IN_PROGRESS'].includes(wo.status) &&
-                dueDiff !== null &&
-                dueDiff < 0;
+              const chip = dueChip(wo.dueDate);
+              const isActiveOrder = ['OPEN', 'ASSIGNED', 'IN_PROGRESS'].includes(wo.status || 'OPEN');
+              const isOverdue = isActiveOrder && chip.state === 'EXPIRED';
+              const isDueSoon = isActiveOrder && chip.state === 'DUE_SOON';
               const isUnassigned = !wo.assignedToId && !wo.assignedTo;
 
               return (
@@ -605,8 +604,8 @@ export function WorkOrdersView({
                         </span>
                       )}
                       {isOverdue && (
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-50 text-[#B91C1C] border border-[#B91C1C]/30">
-                          Overdue
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-[#DC2626] border border-[#DC2626]/30 tabular-nums">
+                          {chip.label}
                         </span>
                       )}
                       <h4 className="text-sm font-bold text-[#1C1917]">{wo.title}</h4>
@@ -644,12 +643,29 @@ export function WorkOrdersView({
                         <>
                           <span>&bull;</span>
                           <span
-                            className={`flex items-center gap-1 ${
-                              isOverdue ? 'text-[#B91C1C] font-bold' : 'text-slate-600'
+                            className={`flex items-center gap-1.5 tabular-nums ${
+                              isOverdue
+                                ? 'text-[#DC2626] font-bold'
+                                : isDueSoon
+                                ? 'text-[#D97706] font-semibold'
+                                : 'text-slate-600'
                             }`}
                           >
                             <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                            Due: {formatCalendarDate(wo.dueDate)}
+                            <span>Due: {formatCalendarDate(wo.dueDate)}</span>
+                            {isActiveOrder && chip.state !== 'NONE' && (
+                              <span
+                                className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${
+                                  isOverdue
+                                    ? 'bg-rose-50 text-[#DC2626] border-rose-200'
+                                    : isDueSoon
+                                    ? 'bg-amber-50 text-[#D97706] border-amber-200'
+                                    : 'bg-emerald-50 text-[#059669] border-emerald-200'
+                                }`}
+                              >
+                                {chip.label}
+                              </span>
+                            )}
                           </span>
                         </>
                       )}
@@ -657,6 +673,18 @@ export function WorkOrdersView({
                   </div>
 
                   <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                    {isActiveOrder && (
+                      <button
+                        type="button"
+                        data-testid={`reschedule-wo-btn-${wo.id}`}
+                        onClick={() => handleOpenReschedule(wo)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#FFF8F2] hover:bg-[#FFF0E6] border border-[#FED7AA] text-[#C2410C] text-xs font-bold transition-colors shadow-xs"
+                        title="Re-schedule due date"
+                      >
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span>Re-schedule</span>
+                      </button>
+                    )}
                     <select
                       data-testid="workorder-status-select"
                       value={wo.status || 'OPEN'}
@@ -692,6 +720,92 @@ export function WorkOrdersView({
         }}
         showToast={showToast}
       />
+
+      {/* Re-schedule Work Order Modal */}
+      <AnimatePresence>
+        {rescheduleModalWO && (
+          <div
+            data-testid="reschedule-workorder-modal"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+            onClick={() => !rescheduling && setRescheduleModalWO(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md bg-[#FFF8F2] border border-[#FED7AA] rounded-2xl shadow-2xl overflow-hidden text-[#1C1917]"
+            >
+              <div className="flex items-center justify-between p-5 border-b border-[#FED7AA] bg-white/80">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-[#FFF0E6] text-[#EA580C] border border-[#EA580C]/20">
+                    <Calendar className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-[#1C1917]">Re-schedule Task</h3>
+                    <p className="text-xs text-[#44403C] truncate max-w-[260px]">
+                      {rescheduleModalWO.title}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  disabled={rescheduling}
+                  onClick={() => setRescheduleModalWO(null)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                  aria-label="Close reschedule modal"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="p-5 space-y-4 text-xs">
+                <div className="p-3 rounded-xl bg-white border border-[#FED7AA] flex items-center justify-between">
+                  <span className="text-[#44403C] font-semibold">Current Due Date</span>
+                  <span className="font-bold text-[#1C1917]">
+                    {rescheduleModalWO.dueDate ? formatCalendarDate(rescheduleModalWO.dueDate) : 'No due date set'}
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-[#1C1917] font-bold mb-1.5">
+                    New Due Date *
+                  </label>
+                  <input
+                    type="date"
+                    data-testid="reschedule-due-date-input"
+                    min={todayCalendarDateString()}
+                    value={newDueDateInput}
+                    onChange={(e) => setNewDueDateInput(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl bg-white border border-[#FED7AA] text-slate-900 font-semibold focus:outline-none focus:border-[#C2410C] focus:ring-2 focus:ring-[#C2410C]/20"
+                  />
+                </div>
+              </div>
+
+              <div className="p-4 border-t border-[#FED7AA] bg-white/60 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  disabled={rescheduling}
+                  onClick={() => setRescheduleModalWO(null)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  data-testid="confirm-reschedule-btn"
+                  disabled={rescheduling || !newDueDateInput}
+                  onClick={handleConfirmReschedule}
+                  className="px-5 py-2 rounded-xl bg-[#EA580C] hover:bg-[#C2410C] disabled:opacity-50 text-white text-xs font-bold transition-all shadow-xs"
+                >
+                  {rescheduling ? 'Saving...' : 'Confirm Re-schedule'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Status Lifecycle Guide Modal (What do these mean?) */}
       <AnimatePresence>
