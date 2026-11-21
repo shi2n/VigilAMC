@@ -15,22 +15,38 @@ export async function GET(request: Request) {
     }
 
     if (actor.kind === 'TECHNICIAN') {
-      const count = await (db as any).message.count({
+      // Count ALL unread messages addressed to this technician (Office + Tech<->Tech DMs)
+      const grouped: Array<{ dmKey: string | null; _count: { _all: number } }> = await (
+        db as any
+      ).message.groupBy({
+        by: ['dmKey'],
         where: {
           organizationId: actor.organizationId,
-          technicianId: actor.userId,
-          senderRole: 'AGENCY',
+          recipientRole: 'TECHNICIAN',
+          recipientId: actor.userId,
           readAt: null,
         },
+        _count: { _all: true },
       });
 
-      const perTechnician: Record<string, number> = count > 0 ? { [actor.userId]: count } : {};
+      const perDmKey: Record<string, number> = {};
+      let total = 0;
+      for (const row of grouped) {
+        const c = row._count?._all ?? 0;
+        if (c > 0) {
+          if (row.dmKey) perDmKey[row.dmKey] = c;
+          total += c;
+        }
+      }
+
+      const perTechnician: Record<string, number> = total > 0 ? { [actor.userId]: total } : {};
       return NextResponse.json(
-        { total: count, perTechnician },
+        { total, perTechnician, perDmKey },
         { status: 200, headers: NO_STORE_HEADERS }
       );
     }
 
+    // AGENCY: strictly office<->technician messages only (NEVER private tech<->tech DMs)
     const grouped: Array<{ technicianId: string; _count: { _all: number } }> = await (
       db as any
     ).message.groupBy({
@@ -38,6 +54,8 @@ export async function GET(request: Request) {
       where: {
         organizationId: actor.organizationId,
         senderRole: 'TECHNICIAN',
+        recipientRole: 'AGENCY',
+        dmKey: { startsWith: 'office__' },
         readAt: null,
       },
       _count: {

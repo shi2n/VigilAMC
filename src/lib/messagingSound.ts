@@ -228,8 +228,11 @@ export function ensureMessageSoundHookRegistered(): void {
 
   registerMessageReceivedListener((event: IncomingMessageHookEvent) => {
     // Never play sound for messages sent by yourself
-    if (event.surface === 'DASHBOARD' && event.senderRole === 'AGENCY') return;
-    if (event.surface === 'TECHNICIAN' && event.senderRole === 'TECHNICIAN') return;
+    if (event.isOwn === true) return;
+    if (event.isOwn === undefined) {
+      if (event.surface === 'DASHBOARD' && event.senderRole === 'AGENCY') return;
+      if (event.surface === 'TECHNICIAN' && event.senderRole === 'TECHNICIAN') return;
+    }
 
     playMessageDing(event.surface);
 

@@ -164,6 +164,7 @@ export default function TechnicianPWA() {
   const [incomingMsgBanner, setIncomingMsgBanner] = useState<{
     senderName: string;
     preview: string;
+    dmKey?: string;
   } | null>(null);
 
   // ----------------------------------------------------------------------------------
@@ -463,16 +464,25 @@ export default function TechnicianPWA() {
       supabase,
       technicianId: techId,
       onInsert: (row) => {
-        if (row.sender_role === 'AGENCY') {
+        const isIncoming = row.sender_id !== techId;
+        if (isIncoming) {
           refreshUnreadMessages();
-          const senderName = dashboardData?.organization?.name || msgT.agencyOffice;
+          const senderName =
+            row.sender_name ||
+            (row.sender_role === 'AGENCY'
+              ? dashboardData?.organization?.name || msgT.agencyOffice
+              : 'Technician');
           const preview = (row.body || msgT.photoLabel).slice(0, 80);
-          setIncomingMsgBanner({ senderName, preview });
+          const dmKey = row.dm_key || undefined;
+          setIncomingMsgBanner({ senderName, preview, dmKey });
           onMessageReceived({
             surface: 'TECHNICIAN',
             messageId: row.id,
             technicianId: row.technician_id,
             senderRole: row.sender_role,
+            senderId: row.sender_id,
+            dmKey,
+            isOwn: false,
             senderName,
             preview,
             hasImage: row.attachment_kind === 'IMAGE',
@@ -2675,7 +2685,11 @@ export default function TechnicianPWA() {
               className="px-3 py-2.5 rounded-xl bg-[#FFF0E6] border border-[#EA580C]/40 text-xs text-[#1C1917] flex items-center justify-between gap-2 shadow-sm motion-safe:transition-all motion-safe:duration-150"
             >
               <Link
-                href="/technician/messages"
+                href={
+                  incomingMsgBanner.dmKey
+                    ? `/technician/messages?dmKey=${encodeURIComponent(incomingMsgBanner.dmKey)}`
+                    : '/technician/messages'
+                }
                 onClick={() => setIncomingMsgBanner(null)}
                 className="flex items-center gap-2.5 min-w-0 flex-1"
               >
@@ -4429,7 +4443,7 @@ export default function TechnicianPWA() {
                 <span className={`font-bold ${isNativePlatform() && !nativePushStatus.available ? 'text-amber-700' : 'text-emerald-700'}`}>
                   {isNativePlatform()
                     ? nativePushStatus.available
-                      ? `Native FCM Active${nativePushStatus.token ? ` (${nativePushStatus.token.slice(0, 8)}…)` : ' (channel: vigilamc-tasks)'}`
+                      ? `Native FCM Active${nativePushStatus.token ? ` (${nativePushStatus.token.slice(0, 8)}…)` : ' (channel: vigilamc-tasks-v2)'}`
                       : (t.pushUnavailableNotice || 'Push notifications unavailable on this device')
                     : 'Web / PWA Mode (ready)'}
                 </span>

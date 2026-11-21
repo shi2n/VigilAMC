@@ -30,6 +30,42 @@ export function isValidUuid(value: unknown): value is string {
 }
 
 /**
+ * Canonical normalized dm_key helpers.
+ * - Office <-> Technician: office__<technicianId>
+ * - Technician <-> Technician DM: dm__<min(idA,idB)>__<max(idA,idB)>
+ */
+export function buildOfficeDmKey(technicianId: string): string {
+  return `office__${technicianId.trim()}`;
+}
+
+export function buildTechDmKey(techIdA: string, techIdB: string): string {
+  const [first, second] = [techIdA.trim(), techIdB.trim()].sort();
+  return `dm__${first}__${second}`;
+}
+
+export type ParsedDmKey =
+  | { kind: 'OFFICE'; technicianId: string }
+  | { kind: 'DM'; techIds: [string, string] };
+
+export function parseDmKey(dmKey: string | null | undefined): ParsedDmKey | null {
+  if (!dmKey || typeof dmKey !== 'string') return null;
+  const trimmed = dmKey.trim();
+  if (trimmed.startsWith('office__')) {
+    const techId = trimmed.slice('office__'.length).trim();
+    if (!techId) return null;
+    return { kind: 'OFFICE', technicianId: techId };
+  }
+  if (trimmed.startsWith('dm__')) {
+    const rest = trimmed.slice('dm__'.length);
+    const parts = rest.split('__').map((p) => p.trim()).filter(Boolean);
+    if (parts.length !== 2 || parts[0] === parts[1]) return null;
+    const [a, b] = parts.sort();
+    return { kind: 'DM', techIds: [a, b] };
+  }
+  return null;
+}
+
+/**
  * Deterministic UUID from (baseUuid, technicianId) so broadcast retries with the
  * same clientMsgId are idempotent per technician thread.
  */
@@ -262,6 +298,9 @@ export interface SerializedMessage {
   technicianId: string;
   senderRole: 'AGENCY' | 'TECHNICIAN';
   senderId: string;
+  recipientRole: 'AGENCY' | 'TECHNICIAN';
+  recipientId: string | null;
+  dmKey: string;
   body: string | null;
   attachmentUrl: string | null;
   attachmentSignedUrl: string | null;
@@ -303,31 +342,52 @@ export async function serializeMessagesWithSignedUrls(
     }
   }
 
-  return rows.map((r) => ({
-    id: r.id,
-    clientMsgId: r.clientMsgId,
-    organizationId: r.organizationId,
-    technicianId: r.technicianId,
-    senderRole: r.senderRole,
-    senderId: r.senderId,
-    body: r.body ?? null,
-    attachmentUrl: r.attachmentUrl ?? null,
-    attachmentSignedUrl: r.attachmentUrl ? signedMap.get(r.attachmentUrl) ?? null : null,
-    attachmentKind: (r.attachmentKind as 'IMAGE' | null) ?? null,
-    readAt: r.readAt ? new Date(r.readAt).toISOString() : null,
-    createdAt: new Date(r.createdAt).toISOString(),
-  }));
+  return rows.map((r) => {
+    const resolvedRecipientRole: 'AGENCY' | 'TECHNICIAN' =
+      r.recipientRole === 'TECHNICIAN' || r.recipientRole === 'AGENCY'
+        ? r.recipientRole
+        : r.senderRole === 'AGENCY'
+          ? 'TECHNICIAN'
+          : 'AGENCY';
+    const resolvedDmKey =
+      typeof r.dmKey === 'string' && r.dmKey.trim()
+        ? r.dmKey.trim()
+        : buildOfficeDmKey(r.technicianId);
+
+    return {
+      id: r.id,
+      clientMsgId: r.clientMsgId,
+      organizationId: r.organizationId,
+      technicianId: r.technicianId,
+      senderRole: r.senderRole,
+      senderId: r.senderId,
+      recipientRole: resolvedRecipientRole,
+      recipientId: r.recipientId ?? (resolvedRecipientRole === 'TECHNICIAN' ? r.technicianId : null),
+      dmKey: resolvedDmKey,
+      body: r.body ?? null,
+      attachmentUrl: r.attachmentUrl ?? null,
+      attachmentSignedUrl: r.attachmentUrl ? signedMap.get(r.attachmentUrl) ?? null : null,
+      attachmentKind: (r.attachmentKind as 'IMAGE' | null) ?? null,
+      readAt: r.readAt ? new Date(r.readAt).toISOString() : null,
+      createdAt: new Date(r.createdAt).toISOString(),
+    };
+  });
 }
 
 /**
  * Push a live Supabase Realtime Broadcast event via HTTP API (serverless-safe, ~50ms).
  * Delivers instant INSERT / READ events to both Supabase-Auth dashboard users AND
  * vigil_tech_session technicians without relaxing PostgreSQL RLS on public.messages.
+ *
+ * PRIVACY: For tech<->tech DMs, pass includeAgency: false and recipientTechnicianIds: [senderId, recipientId]
+ * so the agency channel NEVER receives private tech<->tech messages.
  */
 export async function emitRealtimeMessageBroadcast(params: {
   event: 'message_insert' | 'message_read';
   organizationId: string;
   technicianId: string;
+  recipientTechnicianIds?: string[];
+  includeAgency?: boolean;
   payload: Record<string, any>;
 }): Promise<void> {
   try {
@@ -335,18 +395,30 @@ export async function emitRealtimeMessageBroadcast(params: {
     const secretKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
     if (!supabaseUrl || !secretKey) return;
 
-    const messages = [
-      {
-        topic: `messages:tech:${params.technicianId}`,
+    const techTopics = Array.from(
+      new Set(
+        (params.recipientTechnicianIds && params.recipientTechnicianIds.length > 0
+          ? params.recipientTechnicianIds
+          : [params.technicianId]
+        ).filter(Boolean)
+      )
+    );
+
+    const messages: Array<{ topic: string; event: string; payload: Record<string, any> }> = techTopics.map(
+      (tid) => ({
+        topic: `messages:tech:${tid}`,
         event: params.event,
         payload: params.payload,
-      },
-      {
+      })
+    );
+
+    if (params.includeAgency !== false) {
+      messages.push({
         topic: `messages:agency:${params.organizationId}`,
         event: params.event,
         payload: params.payload,
-      },
-    ];
+      });
+    }
 
     await fetch(`${supabaseUrl}/realtime/v1/api/broadcast`, {
       method: 'POST',

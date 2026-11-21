@@ -352,14 +352,20 @@ export async function resetOutboxItemForRetry(clientSyncId: string): Promise<voi
 /**
  * Get pending/failed queued chat messages ordered oldest-first (FIFO)
  */
-export async function getPendingMessageOutboxItems(technicianId?: string): Promise<OutboxItem[]> {
+export async function getPendingMessageOutboxItems(
+  technicianId?: string,
+  dmKey?: string
+): Promise<OutboxItem[]> {
   try {
     const items = await getPendingOutboxItems();
-    return items.filter(
-      (i) =>
-        i.actionType === 'SEND_MESSAGE' &&
-        (!technicianId || !i.technicianId || i.technicianId === technicianId)
-    );
+    return items.filter((i) => {
+      if (i.actionType !== 'SEND_MESSAGE') return false;
+      if (dmKey) {
+        const itemDmKey = i.payload?.dmKey || (i.technicianId ? `office__${i.technicianId}` : '');
+        return itemDmKey === dmKey;
+      }
+      return !technicianId || !i.technicianId || i.technicianId === technicianId;
+    });
   } catch {
     return [];
   }
@@ -547,6 +553,9 @@ export async function drainOutbox(options?: DrainOptions): Promise<DrainResult> 
     const targetUrl = isChatMessage ? '/api/messages' : '/api/technician/sync';
     const requestPayload = isChatMessage
       ? {
+          target: item.payload?.target || undefined,
+          dmKey: item.payload?.dmKey || undefined,
+          recipientId: item.payload?.recipientId || undefined,
           technicianId: item.payload?.technicianId || item.technicianId || undefined,
           body: item.payload?.body,
           clientMsgId: item.clientSyncId,

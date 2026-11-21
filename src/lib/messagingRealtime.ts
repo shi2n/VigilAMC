@@ -7,6 +7,10 @@ export interface RealtimeMessageRow {
   technician_id: string;
   sender_role: 'AGENCY' | 'TECHNICIAN';
   sender_id: string;
+  recipient_role?: 'AGENCY' | 'TECHNICIAN';
+  recipient_id?: string | null;
+  dm_key?: string | null;
+  sender_name?: string | null;
   body: string | null;
   attachment_url: string | null;
   attachment_kind: 'IMAGE' | null;

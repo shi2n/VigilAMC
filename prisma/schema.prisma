@@ -1059,6 +1059,9 @@ model Message {
   technicianId   String    @map("technician_id")
   senderRole     String    @map("sender_role") // 'AGENCY' | 'TECHNICIAN'
   senderId       String    @map("sender_id")
+  recipientRole  String    @default("AGENCY") @map("recipient_role") // 'AGENCY' | 'TECHNICIAN'
+  recipientId    String?   @map("recipient_id")
+  dmKey          String?   @map("dm_key") @db.Text
   body           String?   @db.Text
   attachmentUrl  String?   @map("attachment_url") @db.Text
   attachmentKind String?   @map("attachment_kind") // 'IMAGE' | null
@@ -1069,6 +1072,9 @@ model Message {
   @@index([organizationId, createdAt])
   @@index([technicianId, senderRole, readAt])
   @@index([senderId, createdAt])
+  @@index([dmKey, createdAt])
+  @@index([organizationId, dmKey, createdAt])
+  @@index([recipientId, readAt])
   @@map("messages")
 }
 

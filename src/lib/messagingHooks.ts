@@ -9,6 +9,9 @@ export interface IncomingMessageHookEvent {
   messageId: string;
   technicianId: string;
   senderRole: 'AGENCY' | 'TECHNICIAN';
+  senderId?: string;
+  dmKey?: string;
+  isOwn?: boolean;
   senderName?: string;
   preview: string;
   hasImage: boolean;

@@ -24,8 +24,8 @@ export async function GET(request: Request) {
       const unreadCount = await (db as any).message.count({
         where: {
           organizationId: actor.organizationId,
-          technicianId: actor.userId,
-          senderRole: 'AGENCY',
+          recipientRole: 'TECHNICIAN',
+          recipientId: actor.userId,
           readAt: null,
         },
       });
@@ -40,7 +40,8 @@ export async function GET(request: Request) {
       );
     }
 
-    // Agency view: list all technicians in org with last message & unread count
+    // Agency view: list all technicians in org with last OFFICE message & unread count
+    // PRIVACY: strictly scoped to office__* threads — tech<->tech DMs are never exposed to agency
     const [technicians, unreadGrouped, recentMessages] = await Promise.all([
       (db as any).userProfile.findMany({
         where: {
@@ -62,12 +63,17 @@ export async function GET(request: Request) {
         where: {
           organizationId: actor.organizationId,
           senderRole: 'TECHNICIAN',
+          recipientRole: 'AGENCY',
+          dmKey: { startsWith: 'office__' },
           readAt: null,
         },
         _count: { _all: true },
       }),
       (db as any).message.findMany({
-        where: { organizationId: actor.organizationId },
+        where: {
+          organizationId: actor.organizationId,
+          dmKey: { startsWith: 'office__' },
+        },
         orderBy: { createdAt: 'desc' },
         distinct: ['technicianId'],
         select: {

@@ -1062,3 +1062,144 @@ export function getMessagingSoundDictionary(langCode?: string | null): Messaging
   const code = String(langCode || 'en').trim().toLowerCase();
   return MESSAGING_SOUND_TRANSLATIONS[code] || MESSAGING_SOUND_TRANSLATIONS.en;
 }
+
+export interface MessagingContactsDictionary {
+  contactsTitle: string;
+  searchContacts: string;
+  officeLabel: string;
+  pinnedLabel: string;
+  colleagueLabel: string;
+  noOtherTechnicians: string;
+  startChatHint: string;
+  backToContacts: string;
+  privateDmBadge: string;
+  noMatchingContacts: string;
+}
+
+export const MESSAGING_CONTACTS_TRANSLATIONS: Record<string, MessagingContactsDictionary> = {
+  en: {
+    contactsTitle: 'Messages',
+    searchContacts: 'Search office or technicians...',
+    officeLabel: 'Office',
+    pinnedLabel: 'Pinned',
+    colleagueLabel: 'Technician',
+    noOtherTechnicians: 'No other active technicians in your team yet.',
+    startChatHint: 'Tap to start chatting',
+    backToContacts: 'Contacts',
+    privateDmBadge: 'Private technician chat',
+    noMatchingContacts: 'No matching contacts',
+  },
+  hi: {
+    contactsTitle: 'संदेश',
+    searchContacts: 'ऑफिस या तकनीशियन खोजें...',
+    officeLabel: 'ऑफिस',
+    pinnedLabel: 'पिन किया गया',
+    colleagueLabel: 'तकनीशियन',
+    noOtherTechnicians: 'आपकी टीम में अभी कोई अन्य सक्रिय तकनीशियन नहीं है।',
+    startChatHint: 'बातचीत शुरू करने के लिए टैप करें',
+    backToContacts: 'संपर्क',
+    privateDmBadge: 'निजी तकनीशियन चैट',
+    noMatchingContacts: 'कोई मिलता-जुलता संपर्क नहीं मिला',
+  },
+  mr: {
+    contactsTitle: 'संदेश',
+    searchContacts: 'ऑफिस किंवा तंत्रज्ञ शोधा...',
+    officeLabel: 'ऑफिस',
+    pinnedLabel: 'पिन केलेले',
+    colleagueLabel: 'तंत्रज्ञ',
+    noOtherTechnicians: 'तुमच्या टीममध्ये अद्याप इतर सक्रिय तंत्रज्ञ नाहीत.',
+    startChatHint: 'चॅट सुरू करण्यासाठी टॅप करा',
+    backToContacts: 'संपर्क',
+    privateDmBadge: 'खाजगी तंत्रज्ञ चॅट',
+    noMatchingContacts: 'जुळणारे संपर्क सापडले नाहीत',
+  },
+  gu: {
+    contactsTitle: 'સંદેશાઓ',
+    searchContacts: 'ઓફિસ અથવા ટેકનિશિયન શોધો...',
+    officeLabel: 'ઓફિસ',
+    pinnedLabel: 'પિન કરેલ',
+    colleagueLabel: 'ટેકનિશિયન',
+    noOtherTechnicians: 'તમારી ટીમમાં હજી સુધી અન્ય કોઈ સક્રિય ટેકનિશિયન નથી.',
+    startChatHint: 'વાતચીત શરૂ કરવા ટૅપ કરો',
+    backToContacts: 'સંપર્કો',
+    privateDmBadge: 'ખાનગી ટેકનિશિયન ચેટ',
+    noMatchingContacts: 'કોઈ મેળ ખાતા સંપર્કો મળ્યા નથી',
+  },
+  ta: {
+    contactsTitle: 'செய்திகள்',
+    searchContacts: 'அலுவலகம் அல்லது தொழில்நுட்ப வல்லுநரைத் தேடுங்கள்...',
+    officeLabel: 'அலுவலகம்',
+    pinnedLabel: 'பின் செய்யப்பட்டது',
+    colleagueLabel: 'தொழில்நுட்ப வல்லுநர்',
+    noOtherTechnicians: 'உங்கள் குழுவில் வேறு செயலில் உள்ள தொழில்நுட்ப வல்லுநர்கள் இல்லை.',
+    startChatHint: 'அரட்டை தொடங்க தட்டவும்',
+    backToContacts: 'தொடர்புகள்',
+    privateDmBadge: 'தனிப்பட்ட தொழில்நுட்ப அரட்டை',
+    noMatchingContacts: 'பொருத்தமான தொடர்புகள் இல்லை',
+  },
+  te: {
+    contactsTitle: 'సందేశాలు',
+    searchContacts: 'ఆఫీస్ లేదా టెక్నీషియన్‌ను వెతకండి...',
+    officeLabel: 'ఆఫీస్',
+    pinnedLabel: 'పిన్ చేయబడింది',
+    colleagueLabel: 'టెక్నీషియన్',
+    noOtherTechnicians: 'మీ టీమ్‌లో ఇంకా ఇతర క్రియాశీల టెక్నీషియన్లు లేరు.',
+    startChatHint: 'చాట్ ప్రారంభించడానికి ట్యాప్ చేయండి',
+    backToContacts: 'సంప్రదింపులు',
+    privateDmBadge: 'ప్రైవేట్ టెక్నీషియన్ చాట్',
+    noMatchingContacts: 'సరిపోయే సంప్రదింపులు లేవు',
+  },
+  kn: {
+    contactsTitle: 'ಸಂದೇಶಗಳು',
+    searchContacts: 'ಕಚೇರಿ ಅಥವಾ ತಂತ್ರಜ್ಞರನ್ನು ಹುಡುಕಿ...',
+    officeLabel: 'ಕಚೇರಿ',
+    pinnedLabel: 'ಪಿನ್ ಮಾಡಲಾಗಿದೆ',
+    colleagueLabel: 'ತಂತ್ರಜ್ಞ',
+    noOtherTechnicians: 'ನಿಮ್ಮ ತಂಡದಲ್ಲಿ ಇನ್ನೂ ಬೇರೆ ಸಕ್ರಿಯ ತಂತ್ರಜ್ಞರಿಲ್ಲ.',
+    startChatHint: 'ಚಾಟ್ ಪ್ರಾರಂಭಿಸಲು ಟ್ಯಾಪ್ ಮಾಡಿ',
+    backToContacts: 'ಸಂಪರ್ಕಗಳು',
+    privateDmBadge: 'ಖಾಸಗಿ ತಂತ್ರಜ್ಞ ಚಾಟ್',
+    noMatchingContacts: 'ಹೊಂದಾಣಿಕೆಯಾಗುವ ಸಂಪರ್ಕಗಳಿಲ್ಲ',
+  },
+  ml: {
+    contactsTitle: 'സന്ദേശങ്ങൾ',
+    searchContacts: 'ഓഫീസ് അല്ലെങ്കിൽ ടെക്നീഷ്യനെ തിരയുക...',
+    officeLabel: 'ഓഫീസ്',
+    pinnedLabel: 'പിൻ ചെയ്തത്',
+    colleagueLabel: 'ടെക്നീഷ്യൻ',
+    noOtherTechnicians: 'നിങ്ങളുടെ ടീമിൽ മറ്റ് സജീവ ടെക്നീഷ്യന്മാർ ഇതുവരെ ഇല്ല.',
+    startChatHint: 'ചാറ്റ് തുടങ്ങാൻ ടാപ്പ് ചെയ്യുക',
+    backToContacts: 'കോൺടാക്റ്റുകൾ',
+    privateDmBadge: 'സ്വകാര്യ ടെക്നീഷ്യൻ ചാറ്റ്',
+    noMatchingContacts: 'പൊരുത്തപ്പെടുന്ന കോൺടാക്റ്റുകളില്ല',
+  },
+  bn: {
+    contactsTitle: 'বার্তা',
+    searchContacts: 'অফিস বা টেকনিশিয়ান খুঁজুন...',
+    officeLabel: 'অফিস',
+    pinnedLabel: 'পিন করা',
+    colleagueLabel: 'টেকনিশিয়ান',
+    noOtherTechnicians: 'আপনার দলে এখনও অন্য কোনো সক্রিয় টেকনিশিয়ান নেই।',
+    startChatHint: 'চ্যাট শুরু করতে ট্যাপ করুন',
+    backToContacts: 'যোগাযোগ',
+    privateDmBadge: 'ব্যক্তিগত টেকনিশিয়ান চ্যাট',
+    noMatchingContacts: 'কোনো মিল থাকা যোগাযোগ পাওয়া যায়নি',
+  },
+  pa: {
+    contactsTitle: 'ਸੁਨੇਹੇ',
+    searchContacts: 'ਦਫ਼ਤਰ ਜਾਂ ਟੈਕਨੀਸ਼ੀਅਨ ਖੋਜੋ...',
+    officeLabel: 'ਦਫ਼ਤਰ',
+    pinnedLabel: 'ਪਿੰਨ ਕੀਤਾ',
+    colleagueLabel: 'ਟੈਕਨੀਸ਼ੀਅਨ',
+    noOtherTechnicians: 'ਤੁਹਾਡੀ ਟੀਮ ਵਿੱਚ ਅਜੇ ਕੋਈ ਹੋਰ ਸਰਗਰਮ ਟੈਕਨੀਸ਼ੀਅਨ ਨਹੀਂ ਹੈ।',
+    startChatHint: 'ਚੈਟ ਸ਼ੁਰੂ ਕਰਨ ਲਈ ਟੈਪ ਕਰੋ',
+    backToContacts: 'ਸੰਪਰਕ',
+    privateDmBadge: 'ਨਿੱਜੀ ਟੈਕਨੀਸ਼ੀਅਨ ਚੈਟ',
+    noMatchingContacts: 'ਕੋਈ ਮਿਲਦਾ ਸੰਪਰਕ ਨਹੀਂ ਮਿਲਿਆ',
+  },
+};
+
+export function getMessagingContactsDictionary(langCode?: string | null): MessagingContactsDictionary {
+  const code = String(langCode || 'en').trim().toLowerCase();
+  return MESSAGING_CONTACTS_TRANSLATIONS[code] || MESSAGING_CONTACTS_TRANSLATIONS.en;
+}

@@ -173,13 +173,12 @@ export async function sendFcmMessage(
           ttl: '86400s',
           collapse_key: payload.data?.taskId ? `task-${payload.data.taskId}` : 'vigilamc_tasks',
           notification: {
-            channel_id: 'vigilamc-tasks',
+            channel_id: 'vigilamc-tasks-v2',
             color: '#EA580C',
             icon: 'ic_stat_fire',
-            sound: 'default',
             default_sound: true,
             default_vibrate_timings: true,
-            notification_priority: 'PRIORITY_MAX',
+            notification_priority: 'PRIORITY_HIGH',
             visibility: 'PUBLIC',
             notification_count: 1,
           },
@@ -295,6 +294,7 @@ export async function sendFcmDataOnlyMessage(
 
 export function buildChatMessageFcmData(params: {
   technicianId: string;
+  dmKey?: string;
   body?: string | null;
   attachmentKind?: string | null;
   senderName: string;
@@ -312,6 +312,7 @@ export function buildChatMessageFcmData(params: {
   return {
     type: 'message',
     technicianId: params.technicianId,
+    ...(params.dmKey ? { dmKey: params.dmKey } : {}),
     preview,
     senderName: (params.senderName || 'VigilAMC').slice(0, 80),
     ...(params.messageId ? { messageId: params.messageId } : {}),
@@ -326,6 +327,7 @@ export function buildChatMessageFcmData(params: {
 export async function enqueueChatMessagePush(params: {
   recipientUserIds: string[];
   technicianId: string;
+  dmKey?: string;
   body?: string | null;
   attachmentKind?: string | null;
   senderName: string;
@@ -334,6 +336,7 @@ export async function enqueueChatMessagePush(params: {
 }): Promise<{ targetedDevices: number; sentCount: number; payload: Record<string, string> }> {
   const payload = buildChatMessageFcmData({
     technicianId: params.technicianId,
+    dmKey: params.dmKey,
     body: params.body,
     attachmentKind: params.attachmentKind,
     senderName: params.senderName,

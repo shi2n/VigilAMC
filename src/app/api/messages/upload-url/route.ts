@@ -84,12 +84,7 @@ export async function POST(request: Request) {
       const safeOrgId = actor.organizationId.replace(/[^a-zA-Z0-9_-]/g, '');
       pathScope = `broadcast_${safeOrgId}`;
     } else if (actor.kind === 'TECHNICIAN') {
-      if (requestedTechId && requestedTechId !== actor.userId) {
-        return NextResponse.json(
-          { error: 'Forbidden: technicians can only upload media to their own thread' },
-          { status: 403, headers: NO_STORE_HEADERS }
-        );
-      }
+      // Technicians always upload into their own sender folder (works for both Office and Tech<->Tech DMs)
       pathScope = actor.userId.replace(/[^a-zA-Z0-9_-]/g, '');
     } else {
       if (!requestedTechId) {

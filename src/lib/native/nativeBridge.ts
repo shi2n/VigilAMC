@@ -162,14 +162,16 @@ export async function registerNativePush(options?: {
 
   try {
     // 1. Create High-Priority Notification Channel for Home-Screen / System-Tray Notifications
+    // IMPORTANT: Do NOT pass `sound: 'default'` — Capacitor's NotificationChannelManager maps any
+    // non-empty `sound` string to `android.resource://<pkg>/raw/<sound>`, which does not exist and
+    // silences the channel. Omitting `sound` preserves the phone's default system notification sound.
     try {
       await PushNotifications.createChannel({
-        id: 'vigilamc-tasks',
-        name: 'VigilAMC Tasks',
+        id: 'vigilamc-tasks-v2',
+        name: 'Task Alerts',
         description: 'Instant fire safety task assignment and inspection alerts',
-        importance: 5,
+        importance: 4,
         visibility: 1,
-        sound: 'default',
         vibration: true,
         lights: true,
         lightColor: '#EA580C',
@@ -366,7 +368,7 @@ export async function showLocalTaskNotification(task: {
           id: Math.abs(task.id.split('').reduce((acc, char) => (acc << 5) - acc + char.charCodeAt(0), 0)) % 100000,
           title: 'New Task Assigned',
           body: `${task.title}${bldgStr}${dueStr}`,
-          channelId: 'vigilamc-tasks',
+          channelId: 'vigilamc-tasks-v2',
           smallIcon: 'ic_stat_fire',
           iconColor: '#EA580C',
           extra: { taskId: task.id, type: 'task_assigned' },
@@ -408,6 +410,7 @@ export async function scheduleOfflineDueReminders(
           id: Math.abs(task.id.split('').reduce((acc, char) => (acc << 5) - acc + char.charCodeAt(0), 0)) % 100000,
           title: `Task Due Soon: ${task.title}`,
           body: `Due in 4 hours. Tap to review checklists and equipment.`,
+          channelId: 'vigilamc-tasks-v2',
           schedule: { at: new Date(reminderTime) },
           smallIcon: 'ic_stat_fire',
           iconColor: '#EA580C',

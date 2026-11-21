@@ -11,6 +11,9 @@ export interface ChatMessageItem {
   technicianId: string;
   senderRole: 'AGENCY' | 'TECHNICIAN';
   senderId: string;
+  recipientRole?: 'AGENCY' | 'TECHNICIAN';
+  recipientId?: string | null;
+  dmKey?: string;
   body: string | null;
   attachmentUrl: string | null;
   attachmentSignedUrl: string | null;

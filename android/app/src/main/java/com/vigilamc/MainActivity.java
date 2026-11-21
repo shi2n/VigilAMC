@@ -197,8 +197,9 @@ public class MainActivity extends BridgeActivity {
         attachLaunchSplashOverlay();
         mainHandler.postDelayed(failsafeHideRunnable, SPLASH_FAILSAFE_MS);
 
-        // Create "Messages" notification channel at app start (default system sound + vibration)
+        // Create high-importance notification channels at app start (default system sound + vibration)
         VigilMessagingService.ensureMessagesChannel(this);
+        VigilMessagingService.ensureTasksChannel(this);
 
         // Handle deep-link if launched from a message notification tap
         handleDeepLinkIntent(getIntent());
@@ -221,11 +222,11 @@ public class MainActivity extends BridgeActivity {
             VigilMessagingService.clearPendingMessageNotifications(this);
         }
 
-        final String safePath = deepLink.startsWith("/") ? deepLink : ("/" + deepLink);
+        final String safePath = (deepLink.startsWith("/") ? deepLink : ("/" + deepLink)).replace("'", "");
         mainHandler.postDelayed(() -> {
             try {
                 if (this.bridge != null && this.bridge.getWebView() != null) {
-                    String js = "if (window.location.pathname !== '" + safePath + "') { window.location.href = '" + safePath + "'; }";
+                    String js = "if ((window.location.pathname + window.location.search) !== '" + safePath + "') { window.location.href = '" + safePath + "'; }";
                     this.bridge.getWebView().evaluateJavascript(js, null);
                 }
             } catch (Throwable t) {

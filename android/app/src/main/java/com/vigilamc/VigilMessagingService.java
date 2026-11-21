@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
 import androidx.annotation.NonNull;
@@ -31,6 +32,9 @@ public class VigilMessagingService extends FirebaseMessagingService {
 
     public static final String MESSAGES_CHANNEL_ID = "vigilamc-messages";
     public static final String MESSAGES_CHANNEL_NAME = "Messages";
+    public static final String TASKS_CHANNEL_ID = "vigilamc-tasks-v2";
+    public static final String LEGACY_TASKS_CHANNEL_ID = "vigilamc-tasks";
+    public static final String TASKS_CHANNEL_NAME = "Task Alerts";
     public static final String MESSAGES_GROUP_KEY = "com.vigilamc.MESSAGES_GROUP";
     public static final String EXTRA_DEEP_LINK = "vigil_deep_link";
     public static final String EXTRA_TECHNICIAN_ID = "vigil_technician_id";
@@ -73,6 +77,48 @@ public class VigilMessagingService extends FirebaseMessagingService {
             nm.createNotificationChannel(channel);
         } catch (Throwable t) {
             Log.w(TAG, "Failed to create Messages notification channel: " + t.getMessage());
+        }
+    }
+
+    /**
+     * Create the high-importance "Task Alerts" channel (vigilamc-tasks-v2) at app start.
+     * Deletes the legacy "vigilamc-tasks" channel (which previously had a broken raw/default URI)
+     * and intentionally does NOT call setSound() with a custom URI so Android plays the phone's
+     * default system notification sound + short vibration.
+     */
+    public static void ensureTasksChannel(Context context) {
+        if (context == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            return;
+        }
+        try {
+            NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm == null) return;
+
+            // Clean up broken v1 channel from earlier installs
+            try {
+                if (nm.getNotificationChannel(LEGACY_TASKS_CHANNEL_ID) != null) {
+                    nm.deleteNotificationChannel(LEGACY_TASKS_CHANNEL_ID);
+                }
+            } catch (Throwable ignored) {}
+
+            NotificationChannel existing = nm.getNotificationChannel(TASKS_CHANNEL_ID);
+            if (existing != null) return;
+
+            NotificationChannel channel = new NotificationChannel(
+                TASKS_CHANNEL_ID,
+                TASKS_CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_HIGH
+            );
+            channel.setDescription("Task assignments, work orders, and inspection alerts");
+            channel.enableVibration(true);
+            channel.setVibrationPattern(new long[] { 0L, 200L, 120L, 200L });
+            channel.enableLights(true);
+            channel.setLightColor(0xFFEA580C);
+            channel.setShowBadge(true);
+            // Do NOT setSound() with a custom URI — preserves the phone's default notification sound
+            nm.createNotificationChannel(channel);
+        } catch (Throwable t) {
+            Log.w(TAG, "Failed to create Task Alerts notification channel: " + t.getMessage());
         }
     }
 
@@ -136,6 +182,11 @@ public class VigilMessagingService extends FirebaseMessagingService {
                 preview = "Naya message";
             }
             String technicianId = data.get("technicianId");
+            String dmKey = data.get("dmKey");
+            String deepLinkPath = DEEP_LINK_MESSAGES_PATH;
+            if (dmKey != null && !dmKey.trim().isEmpty()) {
+                deepLinkPath = DEEP_LINK_MESSAGES_PATH + "?dmKey=" + Uri.encode(dmKey.trim());
+            }
 
             long now = System.currentTimeMillis();
             SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
@@ -173,7 +224,7 @@ public class VigilMessagingService extends FirebaseMessagingService {
             Intent tapIntent = new Intent(this, MainActivity.class);
             tapIntent.setAction(Intent.ACTION_VIEW);
             tapIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            tapIntent.putExtra(EXTRA_DEEP_LINK, DEEP_LINK_MESSAGES_PATH);
+            tapIntent.putExtra(EXTRA_DEEP_LINK, deepLinkPath);
             if (technicianId != null) {
                 tapIntent.putExtra(EXTRA_TECHNICIAN_ID, technicianId);
             }
@@ -182,7 +233,8 @@ public class VigilMessagingService extends FirebaseMessagingService {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 piFlags |= PendingIntent.FLAG_IMMUTABLE;
             }
-            PendingIntent pendingIntent = PendingIntent.getActivity(this, 9201, tapIntent, piFlags);
+            int reqCode = dmKey != null ? (9201 + Math.abs(dmKey.hashCode() % 5000)) : 9201;
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, reqCode, tapIntent, piFlags);
 
             NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             if (nm == null) return;
