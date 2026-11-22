@@ -1,7 +1,15 @@
 import crypto from 'crypto';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import {
+  buildR2PrivateObjectUrl,
+  extractR2PrivateKey,
+  isR2PrivateConfigured,
+  presignR2GetUrl,
+  uploadPrivateToR2,
+} from '@/lib/r2';
 
 export const EVIDENCE_PHOTOS_BUCKET = 'evidence-photos';
+export const PRIVATE_R2_PREFIX = 'private-evidence';
 export const MAX_EVIDENCE_PHOTO_BYTES = 2 * 1024 * 1024; // 2 MB hard cap
 export const SIGNED_EVIDENCE_URL_TTL_SEC = 900; // 15 min short-lived read URLs
 
@@ -35,11 +43,9 @@ function getSupabaseOrigin(): string {
  */
 export function detectImageMimeFromBuffer(buf: Buffer): 'image/jpeg' | 'image/png' | 'image/webp' | null {
   if (!buf || buf.length < 12) return null;
-  // JPEG: FF D8 FF
   if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) {
     return 'image/jpeg';
   }
-  // PNG: 89 50 4E 47 0D 0A 1A 0A
   if (
     buf[0] === 0x89 &&
     buf[1] === 0x50 &&
@@ -52,7 +58,6 @@ export function detectImageMimeFromBuffer(buf: Buffer): 'image/jpeg' | 'image/pn
   ) {
     return 'image/png';
   }
-  // WebP: RIFF....WEBP
   if (
     buf[0] === 0x52 &&
     buf[1] === 0x49 &&
@@ -75,12 +80,6 @@ export function sanitizeIdSegment(raw: string, fallback = 'item'): string {
   return cleaned.slice(0, 80) || fallback;
 }
 
-/**
- * Canonical private storage HTTPS URL stored in database records.
- * Format: https://<supabase-host>/storage/v1/object/evidence-photos/orgs/<orgId>/<folder>/<clientPhotoId>.<ext>
- * Direct unauthenticated requests to this URL fail (bucket is private).
- * Authorized reads exchange this URL for a short-lived signed read URL.
- */
 export function buildCanonicalEvidenceStorageUrl(storagePath: string): string {
   const origin = getSupabaseOrigin();
   const cleanPath = storagePath.replace(/^\/+/, '');
@@ -88,15 +87,13 @@ export function buildCanonicalEvidenceStorageUrl(storagePath: string): string {
 }
 
 /**
- * Extract the bucket-relative storage path if a URL points to our private `evidence-photos` bucket.
- * Supports canonical object URLs, signed URLs (strips query), and bare `orgs/...` paths.
+ * Extract the bucket-relative storage path if a URL points to Supabase private `evidence-photos`.
  */
 export function extractPrivateEvidencePath(urlOrPath: string | null | undefined): string | null {
   if (!urlOrPath || typeof urlOrPath !== 'string') return null;
   const trimmed = urlOrPath.trim();
   if (!trimmed) return null;
 
-  // Bare tenant path (backward-safe helper)
   if (trimmed.startsWith('orgs/') && !trimmed.includes('..')) {
     return trimmed;
   }
@@ -125,9 +122,11 @@ export function extractPrivateEvidencePath(urlOrPath: string | null | undefined)
 
 /**
  * Server-side strict validation for persisted photo URLs.
- * - Rejects blob:, data:, http:, javascript:, relative paths, or empty strings.
+ * - Rejects blob:, data:, http:, javascript:, relative paths, or empty strings (HTTP 400).
  * - Requires https:// URL.
- * - If URL references our private evidence-photos bucket, enforces that it belongs to `organizationId`.
+ * - For private storage URLs (R2 private S3 endpoint OR Supabase private bucket), enforces that
+ *   the path belongs strictly to `organizationId` (HTTP 403 on cross-org spoofing) and strips
+ *   any expiring signature query params so canonical unsigned private URLs are persisted.
  */
 export function validateStoredPhotoUrl(
   rawUrl: unknown,
@@ -167,28 +166,45 @@ export function validateStoredPhotoUrl(
     return { valid: false, error: 'Only confirmed https:// photo URLs are allowed.', status: 400 };
   }
 
-  // Enforce strict tenant isolation for private evidence-photos bucket URLs
-  const privatePath = extractPrivateEvidencePath(trimmed);
-  if (privatePath) {
-    const safeOrgId = sanitizeIdSegment(organizationId, '');
-    if (!safeOrgId || !privatePath.startsWith(`orgs/${safeOrgId}/`)) {
+  const safeOrgId = sanitizeIdSegment(organizationId, '');
+
+  // Check 1: Private R2 S3 endpoint URL
+  const r2PrivateKey = extractR2PrivateKey(trimmed);
+  if (r2PrivateKey) {
+    const allowedPrefix1 = `${PRIVATE_R2_PREFIX}/orgs/${safeOrgId}/`;
+    const allowedPrefix2 = `orgs/${safeOrgId}/`;
+    if (!safeOrgId || (!r2PrivateKey.startsWith(allowedPrefix1) && !r2PrivateKey.startsWith(allowedPrefix2))) {
       return {
         valid: false,
         error: 'Forbidden: photo URL does not belong to your organization.',
         status: 403,
       };
     }
-    // Always store the canonical (unsigned) https:// storage object URL, never an expiring signed token
-    return { valid: true, url: buildCanonicalEvidenceStorageUrl(privatePath) };
+    return { valid: true, url: buildR2PrivateObjectUrl(r2PrivateKey) };
+  }
+
+  // Check 2: Private Supabase Storage `evidence-photos` URL
+  const supabasePrivatePath = extractPrivateEvidencePath(trimmed);
+  if (supabasePrivatePath) {
+    if (!safeOrgId || !supabasePrivatePath.startsWith(`orgs/${safeOrgId}/`)) {
+      return {
+        valid: false,
+        error: 'Forbidden: photo URL does not belong to your organization.',
+        status: 403,
+      };
+    }
+    return { valid: true, url: buildCanonicalEvidenceStorageUrl(supabasePrivatePath) };
   }
 
   return { valid: true, url: trimmed };
 }
 
 /**
- * Upload raw image bytes (Buffer) into private Supabase Storage bucket `evidence-photos`.
- * Uses deterministic idempotent key `orgs/<orgId>/<folder>/<clientPhotoId>.<ext>` with upsert:true
- * so retried uploads NEVER duplicate objects.
+ * Upload raw image bytes (Buffer) into private tenant-isolated storage.
+ * Primary: Cloudflare R2 private S3 endpoint (`private-evidence/orgs/<orgId>/<folder>/<clientPhotoId>.<ext>`)
+ *   with short-lived AWS SigV4 presigned GET read URLs (direct unsigned GET denied with 400/403).
+ * Fallback: Private Supabase Storage bucket `evidence-photos` if R2 is not configured.
+ * Deterministic idempotent key guarantees retried uploads NEVER duplicate objects.
  */
 export async function uploadEvidencePhotoBuffer(params: {
   buffer: Buffer;
@@ -218,7 +234,6 @@ export async function uploadEvidencePhotoBuffer(params: {
   const declaredClean = (declaredMimeType || '').toLowerCase().trim();
   const normalizedDeclared = declaredClean === 'image/jpg' ? 'image/jpeg' : declaredClean;
 
-  // Enforce real image binary signature (prevents non-image payloads)
   if (!detectedMime) {
     throw new Error('Invalid image file. Only JPEG, PNG, and WebP images are supported.');
   }
@@ -238,8 +253,28 @@ export async function uploadEvidencePhotoBuffer(params: {
   const folderClean = (params.folder || 'inspections').toLowerCase().trim();
   const safeFolder = ALLOWED_EVIDENCE_FOLDERS.has(folderClean) ? folderClean : 'inspections';
   const clientPhotoId = sanitizeIdSegment(params.clientPhotoId || '', '') || crypto.randomUUID();
-  const storagePath = `orgs/${safeOrgId}/${safeFolder}/${clientPhotoId}.${ext}`;
 
+  // Primary: Private Cloudflare R2 S3 endpoint + short-lived SigV4 presigned GET read URLs
+  if (isR2PrivateConfigured()) {
+    const r2Key = `${PRIVATE_R2_PREFIX}/orgs/${safeOrgId}/${safeFolder}/${clientPhotoId}.${ext}`;
+    const uploaded = await uploadPrivateToR2({
+      key: r2Key,
+      body: buffer,
+      contentType,
+      expiresSec: SIGNED_EVIDENCE_URL_TTL_SEC,
+    });
+    return {
+      clientPhotoId,
+      storagePath: uploaded.key,
+      storageUrl: uploaded.storageUrl,
+      signedUrl: uploaded.signedUrl,
+      contentType,
+      sizeBytes: buffer.byteLength,
+    };
+  }
+
+  // Fallback: Private Supabase Storage bucket `evidence-photos`
+  const storagePath = `orgs/${safeOrgId}/${safeFolder}/${clientPhotoId}.${ext}`;
   const supabase = getSupabaseAdmin();
   const { error: uploadError } = await supabase.storage
     .from(EVIDENCE_PHOTOS_BUCKET)
@@ -254,8 +289,6 @@ export async function uploadEvidencePhotoBuffer(params: {
   }
 
   const storageUrl = buildCanonicalEvidenceStorageUrl(storagePath);
-
-  // Also mint a short-lived signed read URL for immediate confirmation/preview
   const { data: signedData } = await supabase.storage
     .from(EVIDENCE_PHOTOS_BUCKET)
     .createSignedUrl(storagePath, SIGNED_EVIDENCE_URL_TTL_SEC)
@@ -273,7 +306,7 @@ export async function uploadEvidencePhotoBuffer(params: {
 
 /**
  * Decode a base64 `data:image/...;base64,...` string (used ONLY for server-side legacy outbox recovery)
- * and upload it to the private `evidence-photos` bucket. Throws on ANY error (never silently returns data:!).
+ * and upload it to private storage FIRST. Throws on ANY error (never silently returns data:!).
  */
 export async function uploadLegacyDataUrlToEvidenceBucket(params: {
   dataUrl: string;
@@ -304,10 +337,11 @@ export async function uploadLegacyDataUrlToEvidenceBucket(params: {
 /**
  * Batch-mint short-lived signed read URLs for a list of raw stored URLs,
  * enforcing strict tenant isolation (`orgs/<organizationId>/...`).
- * - Private `evidence-photos` URLs belonging to `organizationId` -> short-lived signed URL (15 min).
- * - Private `evidence-photos` URLs belonging to ANOTHER org -> null (blocked!).
- * - Legacy external `https://` URLs (e.g. historic R2 URLs) -> returned as-is for backward compatibility.
- * - Any invalid / non-https / data: / blob: URL -> null (triggers honest "Photo not received" placeholder).
+ * - Private R2 S3 URLs belonging to `organizationId` -> 15-min AWS SigV4 presigned GET URL (<1ms local signing!).
+ * - Private Supabase `evidence-photos` URLs belonging to `organizationId` -> 15-min Supabase signed URL.
+ * - Private URLs belonging to ANOTHER org -> null (blocked!).
+ * - Legacy external `https://` URLs (historic R2 public URLs) -> returned as-is for backward compatibility.
+ * - Any invalid / non-https / data: / blob: URL -> null (renders honest "Photo not received" placeholder).
  */
 export async function resolveSignedEvidenceUrlMap(
   rawUrls: Array<string | null | undefined>,
@@ -315,8 +349,8 @@ export async function resolveSignedEvidenceUrlMap(
 ): Promise<Map<string, string | null>> {
   const result = new Map<string, string | null>();
   const safeOrgId = sanitizeIdSegment(organizationId, '');
-  const pathsToSign: string[] = [];
-  const rawToPath = new Map<string, string>();
+  const sbPathsToSign: string[] = [];
+  const rawToSbPath = new Map<string, string>();
 
   const uniqueUrls = Array.from(
     new Set(
@@ -327,19 +361,34 @@ export async function resolveSignedEvidenceUrlMap(
   );
 
   for (const raw of uniqueUrls) {
-    const privatePath = extractPrivateEvidencePath(raw);
-    if (privatePath) {
-      if (!safeOrgId || !privatePath.startsWith(`orgs/${safeOrgId}/`)) {
+    // 1. Private R2 S3 endpoint URL -> instant local SigV4 presigned GET URL
+    const r2Key = extractR2PrivateKey(raw);
+    if (r2Key) {
+      const okPrefix1 = `${PRIVATE_R2_PREFIX}/orgs/${safeOrgId}/`;
+      const okPrefix2 = `orgs/${safeOrgId}/`;
+      if (!safeOrgId || (!r2Key.startsWith(okPrefix1) && !r2Key.startsWith(okPrefix2))) {
         result.set(raw, null);
         continue;
       }
-      rawToPath.set(raw, privatePath);
-      if (!pathsToSign.includes(privatePath)) {
-        pathsToSign.push(privatePath);
+      result.set(raw, presignR2GetUrl(r2Key, SIGNED_EVIDENCE_URL_TTL_SEC));
+      continue;
+    }
+
+    // 2. Private Supabase Storage `evidence-photos` URL
+    const sbPath = extractPrivateEvidencePath(raw);
+    if (sbPath) {
+      if (!safeOrgId || !sbPath.startsWith(`orgs/${safeOrgId}/`)) {
+        result.set(raw, null);
+        continue;
+      }
+      rawToSbPath.set(raw, sbPath);
+      if (!sbPathsToSign.includes(sbPath)) {
+        sbPathsToSign.push(sbPath);
       }
       continue;
     }
 
+    // 3. Historic external https:// URLs (backward compatibility for pre-fix R2 photos)
     if (raw.startsWith('https://')) {
       result.set(raw, raw);
     } else {
@@ -347,12 +396,12 @@ export async function resolveSignedEvidenceUrlMap(
     }
   }
 
-  if (pathsToSign.length > 0) {
+  if (sbPathsToSign.length > 0) {
     try {
       const supabase = getSupabaseAdmin();
       const { data, error } = await supabase.storage
         .from(EVIDENCE_PHOTOS_BUCKET)
-        .createSignedUrls(pathsToSign, SIGNED_EVIDENCE_URL_TTL_SEC);
+        .createSignedUrls(sbPathsToSign, SIGNED_EVIDENCE_URL_TTL_SEC);
 
       const signedByPath = new Map<string, string>();
       if (!error && Array.isArray(data)) {
@@ -363,12 +412,12 @@ export async function resolveSignedEvidenceUrlMap(
         }
       }
 
-      for (const [raw, path] of rawToPath.entries()) {
+      for (const [raw, path] of rawToSbPath.entries()) {
         result.set(raw, signedByPath.get(path) || null);
       }
     } catch (err) {
-      console.error('[evidencePhotos] Failed to mint signed read URLs:', err);
-      for (const [raw] of rawToPath.entries()) {
+      console.error('[evidencePhotos] Failed to mint Supabase signed read URLs:', err);
+      for (const [raw] of rawToSbPath.entries()) {
         result.set(raw, null);
       }
     }
@@ -377,9 +426,6 @@ export async function resolveSignedEvidenceUrlMap(
   return result;
 }
 
-/**
- * Helper to parse legacy `Inspection.photos` JSON/string into array of strings
- */
 export function parsePhotosField(raw: unknown): string[] {
   if (!raw) return [];
   if (Array.isArray(raw)) {
@@ -402,9 +448,6 @@ export function parsePhotosField(raw: unknown): string[] {
   return [];
 }
 
-/**
- * Sign all evidence photos on an array of Inspection rows (both `inspectionPhotos` and `photos` JSON).
- */
 export async function signInspectionRecords<T extends Record<string, any>>(
   inspections: T[],
   organizationId: string
@@ -456,9 +499,6 @@ export async function signInspectionRecords<T extends Record<string, any>>(
   });
 }
 
-/**
- * Sign all evidence photos on an array of WorkOrder rows (`photoUrl` and `photos: WorkOrderPhoto[]`).
- */
 export async function signWorkOrderRecords<T extends Record<string, any>>(
   workOrders: T[],
   organizationId: string
