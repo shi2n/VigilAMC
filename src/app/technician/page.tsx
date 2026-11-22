@@ -119,6 +119,12 @@ import {
   SyncDiagnosticLog,
 } from '@/lib/offline/techOutbox';
 import { todayCalendarDateString, addCalendarDays, addCalendarMonths, fromDbDate, calendarDayDiff, dueChip, formatDisplay } from '@/lib/dates';
+import {
+  AssignedTaskDetailView,
+  TaskCompleteSubmitModal,
+  TaskSubmitPayload,
+} from '@/components/technician/AssignedTaskFlow';
+import { getTaskActionDictionary, getActionTakenLabel } from '@/lib/i18n/taskAction';
 
 interface GPSCoordinates {
   latitude: number;
@@ -157,6 +163,7 @@ export default function TechnicianPWA() {
   const [currentLang, setCurrentLang] = useState<SupportedLanguage>('en');
   const [showLanguageSheet, setShowLanguageSheet] = useState(false);
   const t = useMemo(() => TRANSLATIONS[currentLang] || TRANSLATIONS.en, [currentLang]);
+  const taskT = useMemo(() => getTaskActionDictionary(currentLang), [currentLang]);
   const msgT = useMemo(() => getMessagingDictionary(currentLang), [currentLang]);
   const msgSoundT = useMemo(() => getMessagingSoundDictionary(currentLang), [currentLang]);
   const [msgSoundOn, setMsgSoundOn] = useState<boolean>(true);
@@ -221,6 +228,15 @@ export default function TechnicianPWA() {
   const [selectedBuilding, setSelectedBuilding] = useState<any>(null);
   const [activeFloorFilter, setActiveFloorFilter] = useState<string>('ALL');
   const [activeAssetInspection, setActiveAssetInspection] = useState<any>(null);
+
+  // Assigned Task (Work-Order) Detail & Submit Flow (task-scoped; checklists untouched)
+  const [activeTaskDetailId, setActiveTaskDetailId] = useState<string | null>(null);
+  const [showTaskSubmitModal, setShowTaskSubmitModal] = useState<boolean>(false);
+  const [submittingTaskCompletion, setSubmittingTaskCompletion] = useState<boolean>(false);
+  const activeTaskDetail = useMemo(
+    () => (activeTaskDetailId ? taskList.find((item: any) => item.id === activeTaskDetailId) || null : null),
+    [activeTaskDetailId, taskList]
+  );
 
   // Assignment Nudge Banner (Section 8.7)
   const [assignmentNudge, setAssignmentNudge] = useState<string | null>(null);
@@ -1395,6 +1411,8 @@ export default function TechnicianPWA() {
       setDashboardData(null);
       setSelectedBuilding(null);
       setActiveAssetInspection(null);
+      setActiveTaskDetailId(null);
+      setShowTaskSubmitModal(false);
       triggerToast('Signed out');
     }
   };
@@ -1828,6 +1846,191 @@ export default function TechnicianPWA() {
       console.warn('Status update error:', err);
     }
   };
+
+  // Dedicated GPS/timestamp photo processor for Assigned-Task completion (isolated from Checklists state)
+  const stampTaskPhotoFile = useCallback(
+    async (file: File, task: any): Promise<string | null> => {
+      try {
+        const img = new Image();
+        const objectUrl = URL.createObjectURL(file);
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = objectUrl;
+        });
+
+        const maxDim = 1600;
+        let width = img.naturalWidth || img.width;
+        let height = img.naturalHeight || img.height;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Canvas not supported');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const now = new Date();
+        const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+        const dayOfWeek = dayNames[now.getDay()];
+        const barHeight = Math.max(76, Math.round(height * 0.11));
+        ctx.fillStyle = 'rgba(28, 25, 23, 0.94)';
+        ctx.fillRect(0, height - barHeight, width, barHeight);
+
+        const bldgName = task?.building?.name || task?.buildingName || 'VigilAMC Task';
+        const line1 = `VigilAMC Task • ${bldgName} • ${task?.title || ''}`.slice(0, 72);
+        const line2 = `${dayOfWeek} • ${formatLocalizedDateTime(now, currentLang)} IST`;
+        const isBasement = gpsLocation?.isBasementCached || gpsStatus === 'BASEMENT_CACHED';
+        const coords = gpsLocation || lastKnownGpsRef.current;
+        const line3 = coords
+          ? `${coords.latitude.toFixed(6)}, ${coords.longitude.toFixed(6)} (±${Math.round(coords.accuracy || 8)}m)`
+          : 'GPS Site Verified';
+
+        const fontSize1 = Math.max(13, Math.round(barHeight * 0.28));
+        const fontSize2 = Math.max(11, Math.round(barHeight * 0.22));
+        ctx.fillStyle = '#FF8C42';
+        ctx.font = `bold ${fontSize1}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+        ctx.fillText(line1, 20, height - barHeight * 0.64);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = `${fontSize2}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+        ctx.fillText(line2, 20, height - barHeight * 0.36);
+        ctx.fillStyle = isBasement ? '#FBBF24' : '#34D399';
+        ctx.font = `bold ${fontSize2}px monospace`;
+        ctx.fillText(line3, 20, height - barHeight * 0.12);
+
+        const compRes = await compressPhotoToBudget(canvas, 280 * 1024);
+        URL.revokeObjectURL(objectUrl);
+        return compRes.dataUrl;
+      } catch (err) {
+        console.warn('Task photo stamping error:', err);
+        triggerToast('Error capturing photo. Please try again.');
+        return null;
+      }
+    },
+    [currentLang, gpsLocation, gpsStatus]
+  );
+
+  // Offline-first idempotent Assigned-Task completion with action_taken
+  const handleSubmitTaskCompletion = useCallback(
+    async (payload: TaskSubmitPayload): Promise<boolean> => {
+      if (!activeTaskDetail || submittingTaskCompletion) return false;
+      if (payload.actionTaken === 'OTHER' && payload.notes.trim().length < 4) {
+        triggerToast(taskT.actionOtherRemarksRequired);
+        return false;
+      }
+
+      setSubmittingTaskCompletion(true);
+      const prevTasks = taskList;
+      const nowTs = Date.now();
+      const completedAtIso = new Date(nowTs).toISOString();
+      const clientSyncId = `WO-COMPLETE-${activeTaskDetail.id}-${nowTs}-${Math.random().toString(36).slice(2, 6)}`;
+
+      const outboxItem: OutboxItem = {
+        clientSyncId,
+        actionType: 'COMPLETE_WORK_ORDER',
+        payload: {
+          workOrderId: activeTaskDetail.id,
+          status: 'COMPLETED',
+          actionTaken: payload.actionTaken,
+          notes: payload.notes.trim() || null,
+          completedAt: completedAtIso,
+          photoDataUrl: payload.photoDataUrl || undefined,
+          latitude: gpsLocation?.latitude ?? lastKnownGpsRef.current?.latitude ?? null,
+          longitude: gpsLocation?.longitude ?? lastKnownGpsRef.current?.longitude ?? null,
+          gpsAccuracy: gpsLocation?.accuracy ?? lastKnownGpsRef.current?.accuracy ?? null,
+        },
+        createdAt: nowTs,
+        attempts: 0,
+        status: 'PENDING',
+        technicianId: userProfile?.id,
+      };
+
+      try {
+        await enqueueOutboxItem(outboxItem);
+        await refreshOutboxCounts();
+
+        const nextTasks = prevTasks.map((item: any) =>
+          item.id === activeTaskDetail.id
+            ? {
+                ...item,
+                status: 'COMPLETED',
+                actionTaken: payload.actionTaken,
+                notes: payload.notes.trim() || item.notes || null,
+                completedAt: completedAtIso,
+              }
+            : item
+        );
+        setTaskList(nextTasks);
+        await setLocalCache('technician_tasks', nextTasks).catch(() => {});
+
+        if (!navigator.onLine) {
+          setShowTaskSubmitModal(false);
+          triggerToast(t.offlineSavedToast);
+          return true;
+        }
+
+        const drainRes = await drainOutbox({ force: true, targetSyncId: clientSyncId });
+        await refreshOutboxCounts();
+
+        if (drainRes.authRequired) {
+          setSessionExpiredAlert(true);
+          setShowTaskSubmitModal(false);
+          triggerToast('Session expired — saved in outbox, please sign in to sync.');
+          return true;
+        }
+
+        if (drainRes.syncedCount > 0) {
+          setShowTaskSubmitModal(false);
+          triggerToast(taskT.taskSubmittedToast);
+          await loadDashboardData();
+          return true;
+        }
+
+        const firstErr = drainRes.errors?.[0] || '';
+        const isNetworkDrop = /network|offline|fetch/i.test(firstErr);
+        if (isNetworkDrop) {
+          setShowTaskSubmitModal(false);
+          triggerToast(t.offlineSavedToast);
+          return true;
+        }
+
+        // Server rejected validation/state: revert optimistic UI, discard bad item, keep modal OPEN
+        await discardOutboxItem(clientSyncId).catch(() => {});
+        await refreshOutboxCounts();
+        setTaskList(prevTasks);
+        await setLocalCache('technician_tasks', prevTasks).catch(() => {});
+        triggerToast(firstErr || 'Failed to submit task. Please check inputs.');
+        return false;
+      } catch (err: any) {
+        setTaskList(prevTasks);
+        triggerToast(err?.message || 'Error saving task completion. Please try again.');
+        return false;
+      } finally {
+        setSubmittingTaskCompletion(false);
+      }
+    },
+    [
+      activeTaskDetail,
+      submittingTaskCompletion,
+      taskList,
+      gpsLocation,
+      userProfile?.id,
+      refreshOutboxCounts,
+      loadDashboardData,
+      t.offlineSavedToast,
+      taskT.actionOtherRemarksRequired,
+      taskT.taskSubmittedToast,
+    ]
+  );
 
   // Guard Signature Pad Draw Handlers
   const startDrawingSig = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
@@ -2320,7 +2523,16 @@ export default function TechnicianPWA() {
           {/* Top Bar: Logo, Wordmark, and Circular Actions */}
           <div className="flex items-center justify-between gap-1.5 sm:gap-2 min-w-0">
             <div className="flex items-center gap-2.5">
-              {selectedBuilding ? (
+              {activeTab === 'TASKS' && activeTaskDetail ? (
+                <button
+                  type="button"
+                  onClick={() => setActiveTaskDetailId(null)}
+                  className="w-10 h-10 rounded-full bg-slate-100 border border-[#FED7AA] text-slate-700 hover:text-slate-900 flex items-center justify-center shrink-0 active:scale-95 transition-transform"
+                  aria-label={taskT.taskBackToTasks}
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </button>
+              ) : selectedBuilding ? (
                 <button
                   type="button"
                   onClick={() => setSelectedBuilding(null)}
@@ -3041,22 +3253,30 @@ export default function TechnicianPWA() {
                       </div>
                     </div>
 
-                    {/* Action buttons (Solid orange Open Checklist + White outline Navigate) */}
+                    {/* Action buttons (WORK_ORDER opens Assigned Task Detail; Routine AMC opens Checklists) */}
                     <div className="grid grid-cols-2 gap-2 pt-1">
                       <button
                         type="button"
+                        data-testid={task.source === 'WORK_ORDER' ? `home-open-task-${task.id}` : undefined}
                         onClick={() => {
-                          const targetBldg = assignedBuildings.find((b: any) => b.id === (task.buildingId || task.building?.id));
-                          if (targetBldg) {
-                            setSelectedBuilding(targetBldg);
-                            recordVisitStamp(targetBldg.id, task.id);
+                          if (task.source === 'WORK_ORDER') {
+                            const bldgId = task.buildingId || task.building?.id;
+                            if (bldgId) recordVisitStamp(bldgId, task.id);
+                            setActiveTaskDetailId(task.id);
+                            setActiveTab('TASKS');
+                          } else {
+                            const targetBldg = assignedBuildings.find((b: any) => b.id === (task.buildingId || task.building?.id));
+                            if (targetBldg) {
+                              setSelectedBuilding(targetBldg);
+                              recordVisitStamp(targetBldg.id, task.id);
+                            }
+                            setActiveTab('CHECKLISTS');
                           }
-                          setActiveTab('CHECKLISTS');
                         }}
                         className="btn-flame py-2.5 px-3 rounded-xl text-white font-bold text-xs shadow-xs text-center flex items-center justify-center gap-1 active:scale-[0.98]"
                       >
                         <FileCheck2 className="w-3.5 h-3.5" />
-                        <span>{t.openChecklist || 'Open Checklist'}</span>
+                        <span>{task.source === 'WORK_ORDER' ? taskT.taskOpenDetails : (t.openChecklist || 'Open Checklist')}</span>
                       </button>
 
                       <button
@@ -3126,7 +3346,23 @@ export default function TechnicianPWA() {
                 {/* =========================================================================
             TAB 1: "MY TASKS" DASHBOARD (Feature A & Section 3)
         ========================================================================= */}
-        {activeTab === 'TASKS' && (
+        {activeTab === 'TASKS' && activeTaskDetail && (
+          <AssignedTaskDetailView
+            task={activeTaskDetail}
+            fallbackBuildingEquipments={
+              assignedBuildings.find(
+                (b: any) => b.id === (activeTaskDetail.buildingId || activeTaskDetail.building?.id)
+              )?.equipments || []
+            }
+            currentLang={currentLang}
+            t={t}
+            onBack={() => setActiveTaskDetailId(null)}
+            onStartTask={(targetTask) => handleTaskStatusChange(targetTask, 'IN_PROGRESS')}
+            onOpenSubmitModal={() => setShowTaskSubmitModal(true)}
+          />
+        )}
+
+        {activeTab === 'TASKS' && !activeTaskDetail && (
           <div className="p-4 space-y-4">
             {/* Today Summary Strip (Section 3.1 & 8.1 Due-State Intelligence) */}
             <div className="grid grid-cols-3 gap-2">
@@ -3331,8 +3567,8 @@ export default function TechnicianPWA() {
                         )}
                       </div>
 
-                      {/* Status Pill */}
-                      <div className="flex items-center gap-2 text-xs">
+                      {/* Status Pill + Recorded Action Taken (if completed work order) */}
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
                         <span className="text-[11px] text-slate-500 font-semibold">Status:</span>
                         <span
                           className={`px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold font-mono uppercase ${
@@ -3341,18 +3577,53 @@ export default function TechnicianPWA() {
                               : task.status === 'IN_PROGRESS'
                               ? 'bg-amber-100 text-[#D97706]'
                               : task.status === 'ASSIGNED'
-                              ? 'bg-blue-100 text-blue-700'
+                              ? 'bg-[#FFF0E6] text-[#9A3412]'
                               : 'bg-slate-100 text-slate-700'
                           }`}
                         >
                           {task.status}
                         </span>
+                        {task.source === 'WORK_ORDER' && task.actionTaken && (
+                          <span className="px-2 py-0.5 rounded-full bg-[#FEE6E0] text-[#9A3412] border border-[#EA580C]/30 text-[10px] font-extrabold">
+                            {getActionTakenLabel(task.actionTaken, currentLang)}
+                          </span>
+                        )}
                       </div>
 
                       {/* One-Tap Action Buttons (≥ 48px Glove-Friendly Touch Targets, Section 8.6) */}
                       <div className="grid grid-cols-2 gap-2 pt-1">
-                        {/* Start Button (Section 3.2: sets IN_PROGRESS) */}
-                        {task.status !== 'IN_PROGRESS' && task.status !== 'COMPLETED' ? (
+                        {task.source === 'WORK_ORDER' ? (
+                          task.status !== 'IN_PROGRESS' && task.status !== 'COMPLETED' ? (
+                            <button
+                              type="button"
+                              data-testid={`open-task-detail-btn-${task.id}`}
+                              onClick={() => {
+                                const bldgId = task.building?.id || task.buildingId;
+                                if (bldgId) recordVisitStamp(bldgId, task.id);
+                                handleTaskStatusChange(task, 'IN_PROGRESS');
+                                setActiveTaskDetailId(task.id);
+                              }}
+                              className="btn-flame min-h-[48px] py-2.5 px-3 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white font-extrabold text-xs shadow-sm flex items-center justify-center gap-1.5 active:scale-95"
+                            >
+                              <Flame className="w-4 h-4" />
+                              <span>{t.startTask}</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              data-testid={`open-task-detail-btn-${task.id}`}
+                              onClick={() => {
+                                const bldgId = task.building?.id || task.buildingId;
+                                if (bldgId) recordVisitStamp(bldgId, task.id);
+                                setActiveTaskDetailId(task.id);
+                              }}
+                              className="btn-flame min-h-[48px] py-2.5 px-3 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white font-extrabold text-xs shadow-sm flex items-center justify-center gap-1.5 active:scale-95"
+                            >
+                              <FileCheck2 className="w-4 h-4" />
+                              <span>{taskT.taskOpenDetails}</span>
+                            </button>
+                          )
+                        ) : task.status !== 'IN_PROGRESS' && task.status !== 'COMPLETED' ? (
                           <button
                             type="button"
                             onClick={() => handleTaskStatusChange(task, 'IN_PROGRESS')}
@@ -3365,7 +3636,7 @@ export default function TechnicianPWA() {
                           <button
                             type="button"
                             onClick={() => {
-                              // Open checklist directly
+                              // Open checklist directly (Routine AMC items only)
                               const bldg = assignedBuildings.find((b: any) => b.id === (task.building?.id || task.buildingId));
                               if (bldg) {
                                 setSelectedBuilding(bldg);
@@ -3744,6 +4015,16 @@ export default function TechnicianPWA() {
                           {item.equipmentType && <span>• {item.equipmentType}</span>}
                         </p>
                       </div>
+
+                      {/* Action Taken pill for completed Work Orders in History */}
+                      {item.source === 'WORK_ORDER' && item.actionTaken && (
+                        <div className="flex items-center gap-1.5 text-[11px]">
+                          <span className="font-bold text-[#44403C]">{taskT.actionTakenLabel}:</span>
+                          <span className="px-2 py-0.5 rounded-full bg-[#FEE6E0] text-[#9A3412] border border-[#EA580C]/30 font-extrabold">
+                            {getActionTakenLabel(item.actionTaken, currentLang)}
+                          </span>
+                        </div>
+                      )}
 
                       {/* Remarks */}
                       {item.remarks && (
@@ -4276,6 +4557,27 @@ export default function TechnicianPWA() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* =========================================================================
+          MODAL: ASSIGNED TASK COMPLETE / SUBMIT WITH ACTION-TAKEN OPTIONS
+          (Task-scoped ONLY; Checklists unit-inspection modal above is UNTOUCHED)
+      ========================================================================= */}
+      {showTaskSubmitModal && activeTaskDetail && (
+        <TaskCompleteSubmitModal
+          task={activeTaskDetail}
+          currentLang={currentLang}
+          t={t}
+          submitting={submittingTaskCompletion}
+          onClose={() => !submittingTaskCompletion && setShowTaskSubmitModal(false)}
+          onCapturePhotoFile={(file) => stampTaskPhotoFile(file, activeTaskDetail)}
+          onCapturePhotoNative={async () => {
+            const nativeFile = await capturePhotoNative();
+            return nativeFile ? stampTaskPhotoFile(nativeFile, activeTaskDetail) : null;
+          }}
+          isNativePlatform={isNativePlatform()}
+          onSubmit={handleSubmitTaskCompletion}
+        />
       )}
 
       {/* =========================================================================

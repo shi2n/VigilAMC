@@ -472,6 +472,15 @@ model Defect {
   @@index([status])
 }
 
+enum WorkOrderActionTaken {
+  NO_ACTION
+  REFILLED
+  REPLACED
+  SERVICED
+  MISSING
+  OTHER
+}
+
 model WorkOrder {
   id             String        @id @default(cuid())
   organizationId String
@@ -491,6 +500,7 @@ model WorkOrder {
   dueDate         DateTime?
   completedAt     DateTime?
   notes           String?
+  actionTaken     WorkOrderActionTaken? @map("action_taken")
   isAutoScheduled Boolean       @default(false)
   rescheduledCount Int          @default(0)
   lastRescheduledAt DateTime?

@@ -5,6 +5,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { notifyOnAssignment } from '@/lib/notify';
 import { toDateInputString, toDbDate } from '@/lib/dates';
 import { logEquipmentHistory } from '@/lib/equipmentHistory';
+import { validateTaskCompletionAction } from '@/lib/i18n/taskAction';
 
 export const dynamic = 'force-dynamic';
 
@@ -176,7 +177,8 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const { id, status, assignedToId, dueDate, isReschedule } = body;
+    const { id, status, assignedToId, dueDate, isReschedule, notes } = body;
+    const rawActionTaken = body.actionTaken ?? body.action_taken;
 
     if (!id || typeof id !== 'string') {
       return NextResponse.json({ error: 'Work order not found' }, { status: 404 });
@@ -238,6 +240,19 @@ export async function PATCH(request: Request) {
     if (status && !isReschedulingAction) {
       updateData.status = status;
       updateData.completedAt = status === 'COMPLETED' ? new Date() : null;
+    }
+    if (rawActionTaken !== undefined) {
+      const validation = validateTaskCompletionAction(rawActionTaken, notes);
+      if (!validation.ok) {
+        return NextResponse.json({ error: validation.error }, { status: 400 });
+      }
+      updateData.actionTaken = validation.actionTaken;
+      if (notes !== undefined) {
+        updateData.notes = validation.notes;
+      }
+    } else if (notes !== undefined) {
+      const trimmed = typeof notes === 'string' ? notes.trim() : '';
+      updateData.notes = trimmed.length > 0 ? trimmed : null;
     }
     if (assignedToId !== undefined) {
       updateData.assignedToId =

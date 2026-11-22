@@ -216,6 +216,7 @@ export async function GET(request: Request) {
         equipmentType: wo.title,
         floorZone,
         result: 'COMPLETED',
+        actionTaken: wo.actionTaken || null,
         remarks: wo.description + (wo.notes ? `\nNotes: ${wo.notes}` : ''),
         photos: [],
         syncStatus: 'SYNCED',

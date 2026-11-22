@@ -2457,6 +2457,7 @@ export default function AdminDashboardPage() {
                       statusFilter={repairsStatusFilter}
                       onStatusFilterChange={setRepairsStatusFilter}
                       onRefreshDashboard={() => refreshDashboard({ silent: true })}
+                      lang={currentLanguage}
                     />
                   </div>
                 )}
@@ -2525,7 +2526,7 @@ export default function AdminDashboardPage() {
                 )}
 
                 {techniciansSubTab === 'ACTIVITY' && (
-                  <TechnicianActivityLog />
+                  <TechnicianActivityLog lang={currentLanguage} />
                 )}
               </div>
             )}

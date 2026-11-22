@@ -17,9 +17,10 @@ import {
   X,
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { HelpCircle, MessageCircle } from 'lucide-react';
+import { HelpCircle, MessageCircle, Eye, CheckCircle2 } from 'lucide-react';
 import { isDuplicateSubmission } from '@/lib/submissionGuard';
 import { Ripple } from '@/components/ui/ripple';
+import { getActionTakenLabel, getTaskActionDictionary } from '@/lib/i18n/taskAction';
 
 interface WorkOrdersViewProps {
   showToast: (msg: string) => void;
@@ -30,6 +31,7 @@ interface WorkOrdersViewProps {
   statusFilter?: 'ALL' | 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'RESCHEDULED';
   onStatusFilterChange?: (status: 'ALL' | 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'RESCHEDULED') => void;
   onRefreshDashboard?: () => Promise<void> | void;
+  lang?: string;
 }
 
 function getStatusPillStyle(status: string) {
@@ -56,8 +58,11 @@ export function WorkOrdersView({
   statusFilter: controlledStatusFilter,
   onStatusFilterChange,
   onRefreshDashboard,
+  lang = 'en',
 }: WorkOrdersViewProps) {
   const prefersReducedMotion = useReducedMotion();
+  const taskT = getTaskActionDictionary(lang);
+  const [detailModalWO, setDetailModalWO] = useState<any | null>(null);
   const [workOrders, setWorkOrders] = useState<any[]>(initialWorkOrders || []);
   const [technicians, setTechnicians] = useState<any[]>(initialTechnicians || []);
   const [buildings, setBuildings] = useState<any[]>(initialBuildings || []);
@@ -611,6 +616,30 @@ export function WorkOrdersView({
                       <h4 className="text-sm font-bold text-[#1C1917]">{wo.title}</h4>
                     </div>
                     <p className="text-xs text-slate-600 leading-relaxed">{wo.description}</p>
+                    {(wo.actionTaken || wo.notes) && (
+                      <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                        {wo.actionTaken && (
+                          <span
+                            data-testid={`workorder-action-taken-${wo.id}`}
+                            className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#FEE6E0] text-[#9A3412] border border-[#EA580C]/35"
+                          >
+                            <CheckCircle2 className="w-3 h-3 text-[#9A3412] shrink-0" />
+                            <span>
+                              {taskT.dashboardActionTaken}: {getActionTakenLabel(wo.actionTaken, lang)}
+                            </span>
+                          </span>
+                        )}
+                        {wo.notes && (
+                          <span
+                            data-testid={`workorder-notes-${wo.id}`}
+                            className="text-[11px] text-[#44403C] bg-[#FFF8F2] border border-[#FED7AA] px-2 py-0.5 rounded-lg max-w-md truncate"
+                            title={wo.notes}
+                          >
+                            <span className="font-bold">{taskT.dashboardRemarks}:</span> {wo.notes}
+                          </span>
+                        )}
+                      </div>
+                    )}
                     <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 pt-1">
                       <span className="flex items-center gap-1 text-slate-600">
                         <Building2 className="w-3.5 h-3.5 text-[#C2410C]" />
@@ -673,6 +702,16 @@ export function WorkOrdersView({
                   </div>
 
                   <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                    <button
+                      type="button"
+                      data-testid={`workorder-detail-btn-${wo.id}`}
+                      onClick={() => setDetailModalWO(wo)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white hover:bg-[#FFF8F2] border border-[#D6D3D1] text-[#1C1917] text-xs font-bold transition-colors shadow-xs"
+                      title={taskT.dashboardTaskDetails}
+                    >
+                      <Eye className="w-3.5 h-3.5 text-[#C2410C]" />
+                      <span>{taskT.dashboardTaskDetails}</span>
+                    </button>
                     {isActiveOrder && (
                       <button
                         type="button"
@@ -720,6 +759,127 @@ export function WorkOrdersView({
         }}
         showToast={showToast}
       />
+
+      {/* Work Order Task Detail Modal */}
+      <AnimatePresence>
+        {detailModalWO && (
+          <div
+            data-testid="workorder-detail-modal"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-xs"
+            onClick={() => setDetailModalWO(null)}
+          >
+            <motion.div
+              initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.96, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={prefersReducedMotion ? undefined : { opacity: 0, scale: 0.96, y: 8 }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-lg bg-white border border-[#FED7AA] rounded-2xl shadow-2xl overflow-hidden text-[#1C1917]"
+            >
+              <div className="flex items-center justify-between p-5 border-b border-[#FED7AA] bg-[#FFF8F2]">
+                <div className="min-w-0">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#9A3412] block">
+                    {taskT.dashboardTaskDetails}
+                  </span>
+                  <h3 className="text-base font-black text-[#1C1917] truncate mt-0.5">
+                    {detailModalWO.title}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  data-testid="close-workorder-detail-modal"
+                  onClick={() => setDetailModalWO(null)}
+                  className="p-2 rounded-xl text-[#44403C] hover:bg-white border border-transparent hover:border-[#FED7AA] transition-colors"
+                  aria-label="Close task details"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="p-5 space-y-4 text-xs">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={`text-[11px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border ${getStatusPillStyle(
+                      detailModalWO.status || 'OPEN'
+                    )}`}
+                  >
+                    {detailModalWO.status || 'OPEN'}
+                  </span>
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#FFF8F2] text-[#1C1917] border border-[#FED7AA]">
+                    {detailModalWO.priority || 'MEDIUM'}
+                  </span>
+                  {detailModalWO.building?.name && (
+                    <span className="inline-flex items-center gap-1 text-[#44403C] font-semibold">
+                      <Building2 className="w-3.5 h-3.5 text-[#C2410C]" />
+                      {detailModalWO.building.name}
+                    </span>
+                  )}
+                </div>
+
+                {detailModalWO.description && (
+                  <p className="text-xs text-[#44403C] leading-relaxed bg-[#FFF8F2] border border-[#FED7AA] rounded-xl p-3">
+                    {detailModalWO.description}
+                  </p>
+                )}
+
+                {/* Action Taken + Remarks Panel */}
+                <div className="p-4 rounded-xl bg-[#FFF8F2] border border-[#FED7AA] space-y-2.5">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span className="text-xs font-extrabold text-[#1C1917]">
+                      {taskT.dashboardActionTaken}
+                    </span>
+                    <span
+                      data-testid="workorder-detail-action-taken"
+                      className="px-3 py-1 rounded-full bg-[#FEE6E0] text-[#9A3412] border border-[#EA580C]/40 font-extrabold text-xs"
+                    >
+                      {getActionTakenLabel(detailModalWO.actionTaken, lang)}
+                    </span>
+                  </div>
+
+                  {detailModalWO.notes && (
+                    <div className="pt-2 border-t border-[#FED7AA]/70">
+                      <span className="text-[11px] font-bold text-[#44403C] block mb-1">
+                        {taskT.dashboardRemarks}
+                      </span>
+                      <p
+                        data-testid="workorder-detail-remarks"
+                        className="text-xs text-[#1C1917] whitespace-pre-wrap break-words bg-white p-2.5 rounded-lg border border-[#FED7AA]/60"
+                      >
+                        {detailModalWO.notes}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-[11px] text-[#44403C]">
+                  <div className="p-3 rounded-xl bg-white border border-stone-200">
+                    <span className="font-bold text-[#57534E] block">{taskT.taskDueDateLabel}</span>
+                    <span className="font-bold text-[#1C1917] mt-0.5 block">
+                      {detailModalWO.dueDate ? formatCalendarDate(detailModalWO.dueDate) : 'No due date set'}
+                    </span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-white border border-stone-200">
+                    <span className="font-bold text-[#57534E] block">{taskT.dashboardCompletedOn}</span>
+                    <span className="font-bold text-[#1C1917] mt-0.5 block">
+                      {detailModalWO.completedAt ? formatCalendarDate(detailModalWO.completedAt) : '—'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 border-t border-[#FED7AA] bg-[#FFF8F2]/60 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setDetailModalWO(null)}
+                  className="px-4 py-2 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white text-xs font-bold shadow-xs transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Re-schedule Work Order Modal */}
       <AnimatePresence>

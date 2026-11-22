@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getAuthenticatedActor } from '@/lib/techSession';
-import { calendarDayDiff } from '@/lib/dates';
+import { addCalendarDays, calendarDayDiff, dueChip, toDbDate } from '@/lib/dates';
+import { validateTaskCompletionAction } from '@/lib/i18n/taskAction';
+import { logAuditActivity } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -75,10 +77,14 @@ export async function GET(request: Request) {
             id: true,
             qrCode: true,
             type: true,
+            category: true,
+            capacity: true,
             location: true,
             floor: true,
             wing: true,
             status: true,
+            nextDueDate: true,
+            lastServiceDate: true,
           },
         },
       },
@@ -123,6 +129,70 @@ export async function GET(request: Request) {
     const istNow = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
     const todayIstStr = `${istNow.getUTCFullYear()}-${String(istNow.getUTCMonth() + 1).padStart(2, '0')}-${String(istNow.getUTCDate()).padStart(2, '0')}`;
 
+    // Server-side overdue equipment query for work-order buildings:
+    // ONLY fetch overdue fire equipment (due_date < today) + explicitly linked work-order equipment IDs.
+    const woBuildingIds = Array.from(
+      new Set(workOrders.map((wo: any) => wo.buildingId).filter(Boolean))
+    ) as string[];
+    const linkedWoEquipmentIds = Array.from(
+      new Set(workOrders.map((wo: any) => wo.equipmentId).filter(Boolean))
+    ) as string[];
+
+    // Use tomorrow Noon UTC as SQL upper bound, then enforce exact calendar-day due_date < today via dueChip()
+    const overdueSqlUpperBound = toDbDate(addCalendarDays(todayIstStr, 1)) || now;
+
+    const [candidateOverdueEquipments, buildingTotalCounts] =
+      woBuildingIds.length > 0
+        ? await Promise.all([
+            (db as any).equipment.findMany({
+              where: {
+                organizationId,
+                buildingId: { in: woBuildingIds },
+                OR: [
+                  { nextDueDate: { lt: overdueSqlUpperBound } },
+                  ...(linkedWoEquipmentIds.length > 0
+                    ? [{ id: { in: linkedWoEquipmentIds } }]
+                    : []),
+                ],
+              },
+              select: {
+                id: true,
+                buildingId: true,
+                qrCode: true,
+                type: true,
+                category: true,
+                capacity: true,
+                location: true,
+                floor: true,
+                wing: true,
+                status: true,
+                nextDueDate: true,
+                lastServiceDate: true,
+              },
+            }),
+            (db as any).equipment.groupBy({
+              by: ['buildingId'],
+              where: {
+                organizationId,
+                buildingId: { in: woBuildingIds },
+              },
+              _count: { _all: true },
+            }),
+          ])
+        : [[], []];
+
+    const buildingTotalMap = new Map<string, number>();
+    for (const row of buildingTotalCounts as any[]) {
+      buildingTotalMap.set(row.buildingId, row._count?._all ?? 0);
+    }
+
+    const candidatesByBuilding = new Map<string, any[]>();
+    for (const eq of candidateOverdueEquipments as any[]) {
+      const list = candidatesByBuilding.get(eq.buildingId) || [];
+      list.push(eq);
+      candidatesByBuilding.set(eq.buildingId, list);
+    }
+
     // Map Work Orders
     for (const wo of workOrders) {
       let floorZone = wo.equipment?.floor || '';
@@ -141,6 +211,70 @@ export async function GET(request: Request) {
         else dueState = 'OK';
       }
 
+      // Build server-filtered task equipment list:
+      // 1) ONLY fire equipment whose due date is strictly OVERDUE (dueChip state === 'EXPIRED', i.e. due_date < today)
+      // 2) Guard: if work-order is linked to a specific equipmentId, always include it with its real status
+      // 3) Sort: most overdue first (most negative diff first)
+      const buildingCandidates = candidatesByBuilding.get(wo.buildingId) || [];
+      const taskEquipments: any[] = [];
+      const seenEqIds = new Set<string>();
+
+      for (const eq of buildingCandidates) {
+        const chip = dueChip(eq.nextDueDate, todayIstStr);
+        const isLinked = Boolean(wo.equipmentId && eq.id === wo.equipmentId);
+        if (chip.state !== 'EXPIRED' && !isLinked) continue;
+        if (seenEqIds.has(eq.id)) continue;
+        seenEqIds.add(eq.id);
+
+        taskEquipments.push({
+          id: eq.id,
+          qrCode: eq.qrCode,
+          type: eq.type,
+          category: eq.category || null,
+          capacity: eq.capacity || null,
+          location: eq.location,
+          floor: eq.floor || null,
+          wing: eq.wing || null,
+          status: eq.status,
+          nextDueDate: eq.nextDueDate,
+          lastServiceDate: eq.lastServiceDate,
+          dueState: chip.state,
+          diffDays: chip.diff,
+          daysOverdue: chip.state === 'EXPIRED' ? (chip.days ?? 0) : 0,
+          isLinkedToTask: isLinked,
+        });
+      }
+
+      // Fallback guard: if wo.equipment exists from include and wasn't in buildingCandidates
+      if (wo.equipment && !seenEqIds.has(wo.equipment.id)) {
+        const chip = dueChip(wo.equipment.nextDueDate, todayIstStr);
+        taskEquipments.push({
+          id: wo.equipment.id,
+          qrCode: wo.equipment.qrCode,
+          type: wo.equipment.type,
+          category: wo.equipment.category || null,
+          capacity: wo.equipment.capacity || null,
+          location: wo.equipment.location,
+          floor: wo.equipment.floor || null,
+          wing: wo.equipment.wing || null,
+          status: wo.equipment.status,
+          nextDueDate: wo.equipment.nextDueDate || null,
+          lastServiceDate: wo.equipment.lastServiceDate || null,
+          dueState: chip.state,
+          diffDays: chip.diff,
+          daysOverdue: chip.state === 'EXPIRED' ? (chip.days ?? 0) : 0,
+          isLinkedToTask: true,
+        });
+      }
+
+      // Sort most overdue first (lowest/most-negative diffDays first, null dates last)
+      taskEquipments.sort((a, b) => {
+        const dA = typeof a.diffDays === 'number' ? a.diffDays : Number.MAX_SAFE_INTEGER;
+        const dB = typeof b.diffDays === 'number' ? b.diffDays : Number.MAX_SAFE_INTEGER;
+        if (dA !== dB) return dA - dB;
+        return String(a.qrCode || a.id).localeCompare(String(b.qrCode || b.id));
+      });
+
       tasks.push({
         id: wo.id,
         source: 'WORK_ORDER',
@@ -150,6 +284,8 @@ export async function GET(request: Request) {
         status: wo.status, // OPEN, ASSIGNED, IN_PROGRESS, COMPLETED, CANCELLED
         dueDate: wo.dueDate,
         completedAt: wo.completedAt,
+        actionTaken: wo.actionTaken || null,
+        notes: wo.notes || null,
         dueState,
         diffDays,
         buildingId: wo.buildingId,
@@ -168,6 +304,9 @@ export async function GET(request: Request) {
         contactName: wo.building?.client?.name || '',
         equipmentId: wo.equipmentId,
         equipment: wo.equipment,
+        buildingTotalEquipments: buildingTotalMap.get(wo.buildingId) ?? 0,
+        overdueEquipmentsCount: taskEquipments.filter((e) => e.dueState === 'EXPIRED').length,
+        taskEquipments,
       });
     }
 
@@ -281,9 +420,15 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'UNAUTHORIZED: Authentication required' }, { status: 401 });
     }
 
+    const organizationId = auth.organization?.id;
+    if (!organizationId) {
+      return NextResponse.json({ error: 'No associated organization found' }, { status: 403 });
+    }
+
     const body = await request.json();
     const taskId = body.taskId || body.workOrderId;
     const { status, notes } = body;
+    const rawActionTaken = body.actionTaken ?? body.action_taken;
 
     if (!taskId || !status) {
       return NextResponse.json({ error: 'taskId and status are required' }, { status: 400 });
@@ -304,22 +449,65 @@ export async function PATCH(request: Request) {
       });
     }
 
+    const existing = await (db as any).workOrder.findFirst({
+      where: { id: taskId, organizationId },
+      select: { id: true, title: true, buildingId: true, equipmentId: true, notes: true },
+    });
+    if (!existing) {
+      return NextResponse.json({ error: 'Work order not found' }, { status: 404 });
+    }
+
     const updateData: any = { status };
+    if (status === 'COMPLETED' || rawActionTaken !== undefined) {
+      const validation = validateTaskCompletionAction(
+        rawActionTaken,
+        notes !== undefined ? notes : existing.notes
+      );
+      if (!validation.ok) {
+        return NextResponse.json({ error: validation.error }, { status: 400 });
+      }
+      updateData.actionTaken = validation.actionTaken;
+      if (notes !== undefined) {
+        updateData.notes = validation.notes;
+      }
+    } else if (notes !== undefined) {
+      const trimmed = typeof notes === 'string' ? notes.trim() : '';
+      updateData.notes = trimmed.length > 0 ? trimmed : null;
+    }
+
     if (status === 'COMPLETED') {
       updateData.completedAt = new Date();
     }
-    if (notes) {
-      updateData.notes = String(notes).trim();
-    }
 
     const updated = await (db as any).workOrder.update({
-      where: { id: taskId },
+      where: { id: existing.id },
       data: updateData,
       include: {
         building: true,
         equipment: true,
       },
     });
+
+    if (status === 'COMPLETED') {
+      await logAuditActivity({
+        organizationId,
+        userId: auth.user.id,
+        userEmail: auth.user.email,
+        action: 'WORK_ORDER_COMPLETED',
+        entityType: 'WorkOrder',
+        entityId: updated.id,
+        details: JSON.stringify({
+          workOrderId: updated.id,
+          title: updated.title,
+          buildingId: updated.buildingId,
+          buildingName: updated.building?.name || null,
+          equipmentId: updated.equipmentId || null,
+          status: 'COMPLETED',
+          actionTaken: updated.actionTaken || 'NO_ACTION',
+          notes: updated.notes || null,
+        }),
+      }).catch(() => {});
+    }
 
     return NextResponse.json({
       success: true,

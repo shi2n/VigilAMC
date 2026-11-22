@@ -13,6 +13,7 @@ import {
   KeyRound,
   FileText
 } from 'lucide-react';
+import { getActionTakenLabel, getTaskActionDictionary } from '@/lib/i18n/taskAction';
 
 function formatHumanStatus(rawStatus: unknown, fallback = 'Passed'): string {
   if (!rawStatus) return fallback;
@@ -23,7 +24,8 @@ function formatHumanStatus(rawStatus: unknown, fallback = 'Passed'): string {
 export function formatActivitySentence(
   act: any,
   buildingMap?: Record<string, any>,
-  equipmentMap?: Record<string, any>
+  equipmentMap?: Record<string, any>,
+  lang = 'en'
 ): string {
   const rawDetails = act?.details;
   if (!rawDetails) {
@@ -34,7 +36,8 @@ export function formatActivitySentence(
       return formatActivitySentence(
         { ...act, details: JSON.stringify(rawDetails) },
         buildingMap,
-        equipmentMap
+        equipmentMap,
+        lang
       );
     } catch {
       return 'Details recorded';
@@ -93,6 +96,13 @@ export function formatActivitySentence(
       if (action.includes('ASSIGN') || p.assignedToName) {
         return `Work order assigned${p.assignedToName ? ` to ${p.assignedToName}` : ''} · ${bldgName}`;
       }
+      if (action === 'WORK_ORDER_COMPLETED' || p.actionTaken) {
+        const taskT = getTaskActionDictionary(lang);
+        const actionLabel = getActionTakenLabel(p.actionTaken, lang);
+        const titlePart = p.title ? ` (${p.title})` : '';
+        const notesPart = p.notes ? ` · ${taskT.dashboardRemarks}: ${p.notes}` : '';
+        return `${taskT.dashboardActivityTaskCompleted}${titlePart} — ${taskT.dashboardActionTaken}: ${actionLabel}${notesPart} · ${bldgName}`;
+      }
       const statusText = formatHumanStatus(p.status, 'Service Submitted');
       if (eqLabel) {
         return `${eqLabel} — ${statusText} · ${bldgName}`;
@@ -133,7 +143,7 @@ export function formatActivitySentence(
   }
 }
 
-export function TechnicianActivityLog() {
+export function TechnicianActivityLog({ lang = 'en' }: { lang?: string } = {}) {
   const [activities, setActivities] = useState<any[]>([]);
   const [technicians, setTechnicians] = useState<any[]>([]);
   const [buildingMap, setBuildingMap] = useState<Record<string, any>>({});
@@ -175,7 +185,7 @@ export function TechnicianActivityLog() {
   const filteredActivities = activities.filter((act) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
-    const sentence = formatActivitySentence(act, buildingMap, equipmentMap).toLowerCase();
+    const sentence = formatActivitySentence(act, buildingMap, equipmentMap, lang).toLowerCase();
     return (
       act.action.toLowerCase().includes(q) ||
       sentence.includes(q) ||
@@ -314,7 +324,7 @@ export function TechnicianActivityLog() {
                 </div>
 
                 <p className="text-xs text-slate-700 pl-1 leading-relaxed font-medium">
-                  {formatActivitySentence(act, buildingMap, equipmentMap)}
+                  {formatActivitySentence(act, buildingMap, equipmentMap, lang)}
                 </p>
               </div>
             ))}

@@ -4,6 +4,7 @@ import { getAuthenticatedActor } from '@/lib/techSession';
 import { ensureR2PhotoUrl } from '@/lib/r2';
 import { logAuditActivity } from '@/lib/auth';
 import { toDbDate, addCalendarMonths, toDateInputString } from '@/lib/dates';
+import { validateTaskCompletionAction } from '@/lib/i18n/taskAction';
 
 export const dynamic = 'force-dynamic';
 
@@ -347,7 +348,15 @@ export async function POST(request: Request) {
           }).catch(() => {});
 
         } else if (actionType === 'UPDATE_STATUS' || actionType === 'COMPLETE_WORK_ORDER') {
-          const { workOrderId, status: woStatus, notes, completedAt } = data;
+          const {
+            workOrderId,
+            status: woStatus,
+            notes,
+            completedAt,
+            photoDataUrl,
+            photoUrl,
+          } = data;
+          const rawActionTaken = data.actionTaken ?? data.action_taken;
           if (!workOrderId) {
             throw new Error('workOrderId is required for work order status update');
           }
@@ -356,15 +365,23 @@ export async function POST(request: Request) {
             // Routine AMC task status is tracked via inspections
             createdEntityId = workOrderId;
           } else {
-            const existingWo = await (db as any).workOrder.findUnique({
-              where: { id: workOrderId },
-              select: { id: true },
+            const existingWo = await (db as any).workOrder.findFirst({
+              where: { id: workOrderId, organizationId },
+              select: {
+                id: true,
+                title: true,
+                buildingId: true,
+                equipmentId: true,
+                notes: true,
+                building: { select: { name: true } },
+              },
             });
 
             if (!existingWo) {
               throw new Error(`Work order '${workOrderId}' not found in database`);
             }
 
+            const isCompleting = woStatus === 'COMPLETED' || actionType === 'COMPLETE_WORK_ORDER';
             const updateData: any = {};
             if (woStatus) {
               // Whitelist work order statuses
@@ -373,17 +390,79 @@ export async function POST(request: Request) {
                 updateData.status = woStatus;
               }
             }
-            if (woStatus === 'COMPLETED' || actionType === 'COMPLETE_WORK_ORDER') {
+            if (isCompleting) {
+              const validation = validateTaskCompletionAction(
+                rawActionTaken,
+                notes !== undefined ? notes : existingWo.notes
+              );
+              if (!validation.ok) {
+                throw new Error(validation.error);
+              }
               updateData.status = 'COMPLETED';
               updateData.completedAt = completedAt ? new Date(completedAt) : new Date();
+              updateData.actionTaken = validation.actionTaken;
+              if (notes !== undefined) {
+                updateData.notes = validation.notes;
+              }
+            } else {
+              if (rawActionTaken !== undefined) {
+                const validation = validateTaskCompletionAction(rawActionTaken, notes ?? existingWo.notes);
+                if (!validation.ok) {
+                  throw new Error(validation.error);
+                }
+                updateData.actionTaken = validation.actionTaken;
+              }
+              if (notes !== undefined) {
+                const trimmed = typeof notes === 'string' ? notes.trim() : '';
+                updateData.notes = trimmed.length > 0 ? trimmed : null;
+              }
             }
-            if (notes) updateData.notes = String(notes);
+
+            let uploadedPhotoUrl: string | null = null;
+            const rawTaskPhoto = photoDataUrl || photoUrl;
+            if (isCompleting && typeof rawTaskPhoto === 'string' && (rawTaskPhoto.startsWith('data:') || rawTaskPhoto.startsWith('http'))) {
+              try {
+                const u = await ensureR2PhotoUrl({
+                  photoUrl: rawTaskPhoto,
+                  organizationId,
+                  folder: 'inspections',
+                });
+                if (u) uploadedPhotoUrl = u;
+              } catch (r2Err: any) {
+                console.warn(`R2 upload warning for work order ${workOrderId}:`, r2Err?.message);
+                if (rawTaskPhoto.startsWith('http')) uploadedPhotoUrl = rawTaskPhoto;
+              }
+            }
 
             const updated = await (db as any).workOrder.update({
-              where: { id: workOrderId },
+              where: { id: existingWo.id },
               data: updateData,
             });
             createdEntityId = updated.id;
+
+            if (isCompleting) {
+              await logAuditActivity({
+                organizationId,
+                userId,
+                userEmail: auth.user.email,
+                action: 'WORK_ORDER_COMPLETED',
+                entityType: 'WorkOrder',
+                entityId: updated.id,
+                details: JSON.stringify({
+                  workOrderId: updated.id,
+                  title: existingWo.title,
+                  buildingId: existingWo.buildingId,
+                  buildingName: existingWo.building?.name || null,
+                  equipmentId: existingWo.equipmentId || null,
+                  status: 'COMPLETED',
+                  actionTaken: updated.actionTaken || 'NO_ACTION',
+                  notes: updated.notes || null,
+                  photoUrl: uploadedPhotoUrl,
+                  syncedFromField: true,
+                  clientSyncId,
+                }),
+              }).catch(() => {});
+            }
           }
 
         } else if (actionType === 'UPLOAD_PHOTO') {
