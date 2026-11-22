@@ -89,13 +89,29 @@ import {
   NativePushStatus,
 } from '@/lib/native/nativeBridge';
 import {
-  compressPhotoToBudget,
-  createInspectionThumbnail,
   compressSignatureToBudget,
-  estimateDataUrlBytes,
+  stampAndNormalizeEvidencePhoto,
+  StampedEvidencePhoto,
 } from '@/lib/photoPipeline';
 import {
+  enqueueOutboxItem,
+  enqueuePhotoUpload,
+  getAllQueuedPhotos,
+  getPendingOutboxItems,
+  getOutboxCount,
+  setLocalCache,
+  getLocalCache,
+  drainOutbox,
+  recoverUnsentPhotos,
   repairOversizedOutboxItems,
+  retryQueuedPhotoUpload,
+  migrateLegacyLocalStorageQueue,
+  discardOutboxItem,
+  deleteQueuedPhoto,
+  getSyncDiagnosticLogs,
+  OutboxItem,
+  QueuedPhotoItem,
+  SyncDiagnosticLog,
 } from '@/lib/offline/techOutbox';
 import {
   SupportedLanguage,
@@ -105,19 +121,6 @@ import {
   formatLocalizedTime,
   formatLocalizedDateTime,
 } from '@/lib/i18n/technician';
-import {
-  enqueueOutboxItem,
-  getPendingOutboxItems,
-  getOutboxCount,
-  setLocalCache,
-  getLocalCache,
-  drainOutbox,
-  migrateLegacyLocalStorageQueue,
-  discardOutboxItem,
-  getSyncDiagnosticLogs,
-  OutboxItem,
-  SyncDiagnosticLog,
-} from '@/lib/offline/techOutbox';
 import { todayCalendarDateString, addCalendarDays, addCalendarMonths, fromDbDate, calendarDayDiff, dueChip, formatDisplay } from '@/lib/dates';
 import {
   AssignedTaskDetailView,
@@ -125,6 +128,7 @@ import {
   TaskSubmitPayload,
 } from '@/components/technician/AssignedTaskFlow';
 import { getTaskActionDictionary, getActionTakenLabel } from '@/lib/i18n/taskAction';
+import { getPhotoEvidenceDictionary, formatPhotoTemplate } from '@/lib/i18n/photoEvidence';
 
 interface GPSCoordinates {
   latitude: number;
@@ -164,6 +168,7 @@ export default function TechnicianPWA() {
   const [showLanguageSheet, setShowLanguageSheet] = useState(false);
   const t = useMemo(() => TRANSLATIONS[currentLang] || TRANSLATIONS.en, [currentLang]);
   const taskT = useMemo(() => getTaskActionDictionary(currentLang), [currentLang]);
+  const photoT = useMemo(() => getPhotoEvidenceDictionary(currentLang), [currentLang]);
   const msgT = useMemo(() => getMessagingDictionary(currentLang), [currentLang]);
   const msgSoundT = useMemo(() => getMessagingSoundDictionary(currentLang), [currentLang]);
   const [msgSoundOn, setMsgSoundOn] = useState<boolean>(true);
@@ -306,6 +311,9 @@ export default function TechnicianPWA() {
   const [isOnline, setIsOnline] = useState(true);
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
   const [failedSyncCount, setFailedSyncCount] = useState(0);
+  const [pendingPhotoCount, setPendingPhotoCount] = useState(0);
+  const [failedPhotoCount, setFailedPhotoCount] = useState(0);
+  const [queuedPhotos, setQueuedPhotos] = useState<QueuedPhotoItem[]>([]);
   const [failedItemsList, setFailedItemsList] = useState<OutboxItem[]>([]);
   const [showFailedDetails, setShowFailedDetails] = useState(false);
   const [showSyncDiagnostics, setShowSyncDiagnostics] = useState(false);
@@ -317,6 +325,11 @@ export default function TechnicianPWA() {
   const [tasksFetchError, setTasksFetchError] = useState<string | null>(null);
   const [isWrongOrigin, setIsWrongOrigin] = useState<boolean>(false);
   const [wrongOriginPreserving, setWrongOriginPreserving] = useState<boolean>(false);
+  const [unrecoverableNoteDismissed, setUnrecoverableNoteDismissed] = useState<boolean>(false);
+  const recoveryRanRef = useRef<boolean>(false);
+  const [taskPhotoUploadError, setTaskPhotoUploadError] = useState<string | null>(null);
+  const activeTaskPendingSyncIdRef = useRef<string | null>(null);
+  const activeInspPendingSyncIdRef = useRef<string | null>(null);
 
   // ----------------------------------------------------------------------------------
   // INSPECTION MODAL STATE
@@ -328,8 +341,10 @@ export default function TechnicianPWA() {
   const [isListeningMic, setIsListeningMic] = useState(false);
   const [submittingInspection, setSubmittingInspection] = useState(false);
 
-  // Camera & Geo-Stamped Photo State (Feature E)
+  // Camera & Geo-Stamped Photo State (Feature E — shared normalized JPEG Blob pipeline)
   const [capturedPhotoUrl, setCapturedPhotoUrl] = useState<string | null>(null);
+  const [capturedStampedPhoto, setCapturedStampedPhoto] = useState<StampedEvidencePhoto | null>(null);
+  const [inspPhotoUploadError, setInspPhotoUploadError] = useState<string | null>(null);
   const [photoMeta, setPhotoMeta] = useState<StoredPhotoMetadata | null>(null);
   const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
   const [photoStampConfirmed, setPhotoStampConfirmed] = useState(false);
@@ -447,11 +462,17 @@ export default function TechnicianPWA() {
   }, []);
 
   const refreshOutboxCounts = useCallback(async () => {
-    const counts = await getOutboxCount();
+    const [counts, pending, photos] = await Promise.all([
+      getOutboxCount(),
+      getPendingOutboxItems(),
+      getAllQueuedPhotos(),
+    ]);
     setPendingSyncCount(counts.pending);
     setFailedSyncCount(counts.failed);
-    const pending = await getPendingOutboxItems();
+    setPendingPhotoCount(counts.pendingPhotos);
+    setFailedPhotoCount(counts.failedPhotos);
     setFailedItemsList(pending.filter((i) => i.status === 'FAILED'));
+    setQueuedPhotos(photos.filter((p) => p.status !== 'UPLOADED'));
   }, []);
 
   const refreshUnreadMessages = useCallback(async () => {
@@ -990,34 +1011,36 @@ export default function TechnicianPWA() {
   }, [authChecking, refreshOutboxCounts]);
 
   // ----------------------------------------------------------------------------------
-  // 4. SYNC ENGINE: DRAIN OUTBOX IDEMPOTENTLY (Section 5.3 & Sections 2 & 4)
+  // 4. SYNC ENGINE: DRAIN PHOTOS FIRST -> THEN RECORDS IDEMPOTENTLY (Single-Flight Safe)
   // ----------------------------------------------------------------------------------
   const handleTriggerSync = useCallback(
-    async (opts?: { force?: boolean; targetSyncId?: string }) => {
+    async (opts?: { force?: boolean; targetSyncId?: string; targetPhotoId?: string }) => {
       if (!navigator.onLine) {
         triggerToast(t.offlineSavedToast);
         return;
       }
-      if (isSyncing) return;
 
       setIsSyncing(true);
       try {
         const result = await drainOutbox({
           force: opts?.force ?? true,
           targetSyncId: opts?.targetSyncId,
+          targetPhotoId: opts?.targetPhotoId,
         });
         const nowStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
         setLastSyncedTime(nowStr);
 
         if (result.authRequired) {
           setSessionExpiredAlert(true);
-          triggerToast('⚠️ Session expired — sign in to send your saved items.');
-        } else if (result.syncedCount > 0) {
+          triggerToast('Session expired — sign in to send your saved items.');
+        } else if (result.failedPhotosCount > 0) {
+          triggerToast(photoT.uploadFailedRetry);
+        } else if (result.failedCount > 0) {
+          triggerToast(`${result.failedCount} item(s) failed sync — tap to view details.`);
+        } else if (result.syncedCount > 0 || result.uploadedPhotosCount > 0) {
           setSessionExpiredAlert(false);
           triggerToast(t.allSyncedToast);
           await loadDashboardData();
-        } else if (result.failedCount > 0) {
-          triggerToast(`⚠ ${result.failedCount} item(s) failed sync — tap to view details.`);
         }
       } catch (err: any) {
         triggerToast(`Sync failed: ${err.message || 'Network error'}`);
@@ -1026,18 +1049,55 @@ export default function TechnicianPWA() {
         await refreshOutboxCounts();
       }
     },
-    [isSyncing, t, loadDashboardData, refreshOutboxCounts]
+    [t, photoT.uploadFailedRetry, loadDashboardData, refreshOutboxCounts]
   );
+
+  // Automatic photo recovery on app open (once authenticated) — drains any stuck local/legacy photos
+  useEffect(() => {
+    if (authChecking || !userProfile?.id || recoveryRanRef.current) return;
+    recoveryRanRef.current = true;
+    (async () => {
+      const rec = await recoverUnsentPhotos();
+      await refreshOutboxCounts();
+      if (rec.uploaded > 0) {
+        triggerToast(formatPhotoTemplate(photoT.recoveryUploadedToast, rec.uploaded));
+        await loadDashboardData();
+      }
+    })();
+  }, [authChecking, userProfile?.id, refreshOutboxCounts, loadDashboardData, photoT.recoveryUploadedToast]);
+
+  // Compute honest count of recent completed items missing photo evidence with no local copy left
+  const unrecoverablePhotosCount = useMemo(() => {
+    if (!Array.isArray(historyList) || historyList.length === 0) return 0;
+    const cutoff = Date.now() - 14 * 24 * 60 * 60 * 1000;
+    const queuedTargetIds = new Set(
+      queuedPhotos.map((p) => p.targetId).filter(Boolean)
+    );
+    return historyList.filter((item: any) => {
+      if (item.syncStatus !== 'SYNCED') return false;
+      const dt = item.date ? new Date(item.date).getTime() : 0;
+      if (!dt || dt < cutoff) return false;
+      const hasPhoto = Array.isArray(item.photos) && item.photos.some((p: any) => Boolean(p?.photoUrl));
+      if (hasPhoto) return false;
+      if (queuedTargetIds.has(item.id)) return false;
+      return item.source === 'WORK_ORDER' || item.source === 'INSPECTION';
+    }).length;
+  }, [historyList, queuedPhotos]);
 
   // Network Online / Visibility / Window Focus / 60s Interval Auto-Sync & Task Freshness Triggers
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const onOnline = () => {
+    const onOnline = async () => {
       setIsOnline(true);
       triggerToast(t.networkRestoredToast);
-      loadDashboardData();
-      handleTriggerSync({ force: true });
+      const rec = await recoverUnsentPhotos();
+      await refreshOutboxCounts();
+      if (rec.uploaded > 0) {
+        triggerToast(formatPhotoTemplate(photoT.recoveryUploadedToast, rec.uploaded));
+      }
+      await handleTriggerSync({ force: true });
+      await loadDashboardData();
     };
     const onOffline = () => {
       setIsOnline(false);
@@ -1431,126 +1491,52 @@ export default function TechnicianPWA() {
   };
 
   // ----------------------------------------------------------------------------------
-  // 7. FEATURE E: PHOTO STAMP UPGRADE (TIME + DAY + GPS IN PIXELS AND STORED)
+  // 7. FEATURE E: SHARED PHOTO STAMP + JPEG NORMALIZATION PIPELINE (1600px, q≈0.82, <=2MB)
   // ----------------------------------------------------------------------------------
   const processPhotoFile = async (file: File) => {
     try {
       setIsProcessingPhoto(true);
       setPhotoStampConfirmed(false);
+      setInspPhotoUploadError(null);
 
       const originalSize = file.size;
-      const img = new Image();
-      const objectUrl = URL.createObjectURL(file);
-
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-        img.src = objectUrl;
-      });
-
-      // Section 8.3: Cap longest edge at 1600px for data-light transfer
-      const maxDim = 1600;
-      let width = img.naturalWidth || img.width;
-      let height = img.naturalHeight || img.height;
-
-      if (width > maxDim || height > maxDim) {
-        if (width > height) {
-          height = Math.round((height * maxDim) / width);
-          width = maxDim;
-        } else {
-          width = Math.round((width * maxDim) / height);
-          height = maxDim;
-        }
-      }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Canvas not supported');
-
-      ctx.drawImage(img, 0, 0, width, height);
-
-      // Current capture metadata (authoritative)
-      const now = new Date();
-      const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-      const dayOfWeek = dayNames[now.getDay()];
-
-      // Section 6.1: High contrast charcoal (#1C1917) bar at bottom, height ~110px on 1600px
-      const barHeight = Math.max(76, Math.round(height * 0.11));
-      ctx.fillStyle = 'rgba(28, 25, 23, 0.94)';
-      ctx.fillRect(0, height - barHeight, width, barHeight);
-
       const bldgName = selectedBuilding?.name || 'VigilAMC Site Inspection';
       const assetCode = activeAssetInspection?.qrCode || activeAssetInspection?.id || 'Fire Unit';
-
-      // Line 1: VigilAMC Verified • Building • Asset Tag
-      const line1 = `VigilAMC Verified • ${bldgName} • ${assetCode}`;
-
-      // Line 2: DAY + full date + time (IST) e.g. "Mon • 12 Oct 2026 • 10:42:07 IST"
-      const dateStr = formatLocalizedDateTime(now, currentLang);
-      const line2 = `${dayOfWeek} • ${dateStr} IST`;
-
-      // Line 3: GPS Coordinates (6 decimal places) or Cached basement notice
-      let line3 = 'GPS Locked • Site Verified';
+      const coords = gpsLocation || lastKnownGpsRef.current;
       const isBasement = gpsLocation?.isBasementCached || gpsStatus === 'BASEMENT_CACHED';
-      if (gpsLocation?.latitude && gpsLocation?.longitude) {
-        const lat = gpsLocation.latitude.toFixed(6);
-        const lng = gpsLocation.longitude.toFixed(6);
-        const acc = Math.round(gpsLocation.accuracy || 8);
-        if (isBasement) {
-          const cacheMin = Math.max(1, Math.round((Date.now() - gpsLocation.timestamp) / 60000));
-          line3 = `GPS cached ${cacheMin}m ago • ${lat}, ${lng} (±${acc}m)`;
-        } else {
-          line3 = `${lat}, ${lng} (±${acc}m)`;
-        }
-      } else if (lastKnownGpsRef.current) {
-        const lat = lastKnownGpsRef.current.latitude.toFixed(6);
-        const lng = lastKnownGpsRef.current.longitude.toFixed(6);
-        line3 = `GPS cached (gate) • ${lat}, ${lng} (±${lastKnownGpsRef.current.accuracy}m)`;
+
+      const stamped = await stampAndNormalizeEvidencePhoto({
+        file,
+        buildingName: bldgName,
+        subjectLabel: assetCode,
+        formattedDateTime: formatLocalizedDateTime(new Date(), currentLang),
+        gps: coords,
+        isBasementCached: isBasement,
+      });
+
+      if (capturedPhotoUrl?.startsWith('blob:')) {
+        try {
+          URL.revokeObjectURL(capturedPhotoUrl);
+        } catch {}
       }
 
-      const fontSize1 = Math.max(13, Math.round(barHeight * 0.28));
-      const fontSize2 = Math.max(11, Math.round(barHeight * 0.22));
+      setCapturedStampedPhoto(stamped);
+      setCapturedPhotoUrl(stamped.previewUrl);
+      activeInspPendingSyncIdRef.current = null;
 
-      // Draw Line 1 (Ember orange)
-      ctx.fillStyle = '#FF8C42';
-      ctx.font = `bold ${fontSize1}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
-      ctx.fillText(line1, 20, height - barHeight * 0.64);
-
-      // Draw Line 2 (White)
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = `${fontSize2}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
-      ctx.fillText(`🕒 ${line2}`, 20, height - barHeight * 0.36);
-
-      // Draw Line 3 (Light emerald / amber)
-      ctx.fillStyle = isBasement ? '#FBBF24' : '#34D399';
-      ctx.font = `bold ${fontSize2}px monospace`;
-      ctx.fillText(`📍 ${line3}`, 20, height - barHeight * 0.12);
-
-      // Section 2.1: Hard Client-Side Size Budget: Compress photo until <= 300KB
-      const compRes = await compressPhotoToBudget(canvas, 300 * 1024);
-      const watermarkedWebP = compRes.dataUrl;
-      setCapturedPhotoUrl(watermarkedWebP);
-
-      // Section 6.2: Save STORED metadata
       const meta: StoredPhotoMetadata = {
-        url: watermarkedWebP,
-        capturedAt: now.getTime(),
-        dayOfWeek,
-        latitude: gpsLocation?.latitude || lastKnownGpsRef.current?.latitude,
-        longitude: gpsLocation?.longitude || lastKnownGpsRef.current?.longitude,
-        gpsAccuracy: gpsLocation?.accuracy || lastKnownGpsRef.current?.accuracy,
-        gpsSource: isBasement ? 'BASEMENT_CACHED' : 'LIVE',
+        url: stamped.previewUrl,
+        capturedAt: stamped.capturedAt,
+        dayOfWeek: stamped.dayOfWeek,
+        latitude: stamped.latitude ?? undefined,
+        longitude: stamped.longitude ?? undefined,
+        gpsAccuracy: stamped.gpsAccuracy ?? undefined,
+        gpsSource: stamped.gpsSource,
       };
       setPhotoMeta(meta);
       setPhotoStampConfirmed(true);
 
-      URL.revokeObjectURL(objectUrl);
-
-      // Section 8.3: Toast compressed size savings
-      const approxCompressedBytes = Math.round((watermarkedWebP.length * 3) / 4);
-      const savedBytes = Math.max(0, originalSize - approxCompressedBytes);
+      const savedBytes = Math.max(0, originalSize - stamped.sizeBytes);
       const savedMb = (savedBytes / (1024 * 1024)).toFixed(1);
       triggerToast(
         savedBytes > 100000
@@ -1647,55 +1633,84 @@ export default function TechnicianPWA() {
   };
 
   // ----------------------------------------------------------------------------------
-  // 9. SUBMIT CHECK SHEET: ENQUEUE TO OUTBOX & ATTEMPT SYNC (Section 2 Rework)
+  // 9. SUBMIT CHECK SHEET: ENQUEUE PHOTO BLOB FIRST -> CONFIRMED UPLOAD -> SYNC RECORD
   // ----------------------------------------------------------------------------------
   const handleSubmitChecksheet = async () => {
     if (!selectedBuilding || !activeAssetInspection) return;
     setSubmittingInspection(true);
+    setInspPhotoUploadError(null);
 
-    const clientSyncId = `SYNC-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const nowTs = Date.now();
+    // Reuse same clientSyncId on retry so retried submits are 100% idempotent (zero duplicates!)
+    const clientSyncId =
+      activeInspPendingSyncIdRef.current ||
+      `SYNC-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    activeInspPendingSyncIdRef.current = clientSyncId;
+
+    const nowTs = capturedStampedPhoto?.capturedAt || photoMeta?.capturedAt || Date.now();
     const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+    const capturedDay = capturedStampedPhoto?.dayOfWeek || photoMeta?.dayOfWeek || dayNames[new Date(nowTs).getDay()];
 
-    // Section 2.1: Generate small thumbnail for instant admin preview (<= 50KB)
-    let thumbnailDataUrl: string | undefined = undefined;
-    if (capturedPhotoUrl) {
-      try {
-        thumbnailDataUrl = await createInspectionThumbnail(capturedPhotoUrl, 50 * 1024);
-      } catch {
-        thumbnailDataUrl = undefined;
-      }
-    }
-
-    // COMPLETE_INSPECTION payload carries NO full photos (only lightweight thumbnail + metadata)
-    const inspectionPayload = {
-      clientSyncId,
-      buildingId: selectedBuilding.id,
-      equipmentId: activeAssetInspection.id,
-      status: inspStatus,
-      checklist: {
-        pressure: pressureReading || (inspStatus === 'PASSED' ? 'NORMAL' : 'LOW'),
-        condition: inspStatus === 'PASSED' ? 'GOOD' : 'NEEDS_ATTENTION',
-        issues: selectedIssues,
-      },
-      remarks: remarks.trim(),
-      photoDataUrl: thumbnailDataUrl || undefined,
-      photos: thumbnailDataUrl ? [thumbnailDataUrl] : [],
-      hasExternalPhotos: Boolean(capturedPhotoUrl),
-      technicianSignature: signatureDataUrl || undefined,
-      latitude: photoMeta?.latitude ?? gpsLocation?.latitude,
-      longitude: photoMeta?.longitude ?? gpsLocation?.longitude,
-      gpsAccuracy: photoMeta?.gpsAccuracy ?? gpsLocation?.accuracy,
-      gpsSource: photoMeta?.gpsSource || (gpsStatus === 'BASEMENT_CACHED' ? 'BASEMENT_CACHED' : 'LIVE'),
-      capturedAt: photoMeta?.capturedAt || nowTs,
-      dayOfWeek: photoMeta?.dayOfWeek || dayNames[new Date().getDay()],
-      technicianName: userProfile?.fullName || 'Field Technician',
-      issueChips: selectedIssues,
-      createdAt: nowTs,
-    };
+    const pendingPhotoIds: string[] = [];
 
     try {
-      // 1. Enqueue parent COMPLETE_INSPECTION item (<= 150KB body)
+      // 1. If a stamped photo was captured, queue its binary JPEG Blob into photo_queue FIRST
+      if (capturedStampedPhoto) {
+        pendingPhotoIds.push(capturedStampedPhoto.clientPhotoId);
+        await enqueuePhotoUpload({
+          clientPhotoId: capturedStampedPhoto.clientPhotoId,
+          parentSyncId: clientSyncId,
+          targetType: 'INSPECTION',
+          targetId: activeAssetInspection.id,
+          buildingId: selectedBuilding.id,
+          equipmentId: activeAssetInspection.id,
+          folder: 'inspections',
+          blob: capturedStampedPhoto.blob,
+          contentType: capturedStampedPhoto.contentType,
+          sizeBytes: capturedStampedPhoto.sizeBytes,
+          width: capturedStampedPhoto.width,
+          height: capturedStampedPhoto.height,
+          capturedAt: capturedStampedPhoto.capturedAt,
+          dayOfWeek: capturedStampedPhoto.dayOfWeek,
+          latitude: capturedStampedPhoto.latitude,
+          longitude: capturedStampedPhoto.longitude,
+          gpsAccuracy: capturedStampedPhoto.gpsAccuracy,
+          gpsSource: capturedStampedPhoto.gpsSource,
+          caption: remarks.trim() || 'Field Inspection Photo',
+          category: 'GAUGE',
+          status: 'PENDING',
+          attempts: 0,
+          createdAt: nowTs,
+        });
+      }
+
+      // 2. Enqueue lightweight COMPLETE_INSPECTION referencing pendingPhotoIds (NEVER blob:/data: URL!)
+      const inspectionPayload = {
+        clientSyncId,
+        buildingId: selectedBuilding.id,
+        equipmentId: activeAssetInspection.id,
+        status: inspStatus,
+        checklist: {
+          pressure: pressureReading || (inspStatus === 'PASSED' ? 'NORMAL' : 'LOW'),
+          condition: inspStatus === 'PASSED' ? 'GOOD' : 'NEEDS_ATTENTION',
+          issues: selectedIssues,
+        },
+        remarks: remarks.trim(),
+        pendingPhotoIds,
+        technicianSignature: signatureDataUrl || undefined,
+        latitude: capturedStampedPhoto?.latitude ?? photoMeta?.latitude ?? gpsLocation?.latitude ?? null,
+        longitude: capturedStampedPhoto?.longitude ?? photoMeta?.longitude ?? gpsLocation?.longitude ?? null,
+        gpsAccuracy: capturedStampedPhoto?.gpsAccuracy ?? photoMeta?.gpsAccuracy ?? gpsLocation?.accuracy ?? null,
+        gpsSource:
+          capturedStampedPhoto?.gpsSource ||
+          photoMeta?.gpsSource ||
+          (gpsStatus === 'BASEMENT_CACHED' ? 'BASEMENT_CACHED' : 'LIVE'),
+        capturedAt: nowTs,
+        dayOfWeek: capturedDay,
+        technicianName: userProfile?.fullName || 'Field Technician',
+        issueChips: selectedIssues,
+        createdAt: nowTs,
+      };
+
       const outboxItem: OutboxItem = {
         clientSyncId,
         actionType: 'COMPLETE_INSPECTION',
@@ -1705,90 +1720,89 @@ export default function TechnicianPWA() {
         status: 'PENDING',
       };
       await enqueueOutboxItem(outboxItem);
-
-      // 2. Enqueue child UPLOAD_PHOTO item carrying the full compressed photo (<= 300KB)
-      if (capturedPhotoUrl) {
-        const photoSyncId = `PHOTO-${clientSyncId}`;
-        const photoItem: OutboxItem = {
-          clientSyncId: photoSyncId,
-          actionType: 'UPLOAD_PHOTO',
-          parentClientSyncId: clientSyncId,
-          payload: {
-            parentClientSyncId: clientSyncId,
-            photoDataUrl: capturedPhotoUrl,
-            category: 'GAUGE',
-            caption: remarks.trim() || 'Field Inspection Photo',
-            equipmentId: activeAssetInspection.id,
-            buildingId: selectedBuilding.id,
-            capturedAt: photoMeta?.capturedAt || nowTs,
-            latitude: inspectionPayload.latitude,
-            longitude: inspectionPayload.longitude,
-            gpsAccuracy: inspectionPayload.gpsAccuracy,
-            gpsSource: inspectionPayload.gpsSource,
-          },
-          createdAt: nowTs + 5,
-          attempts: 0,
-          status: 'PENDING',
-        };
-        await enqueueOutboxItem(photoItem);
-      }
-
       await refreshOutboxCounts();
 
-      // 2. Optimistically update local tasks & history
-      const localHistoryEntry = {
-        id: clientSyncId,
-        source: 'INSPECTION',
-        date: new Date(nowTs).toISOString(),
-        building: {
-          id: selectedBuilding.id,
-          name: selectedBuilding.name,
-          address: selectedBuilding.address,
-        },
-        assetTag: activeAssetInspection.qrCode || activeAssetInspection.id,
-        equipmentType: activeAssetInspection.type || 'Fire Unit',
-        floorZone: activeAssetInspection.floorZone || 'Main Zone',
-        result: inspStatus,
-        remarks: remarks.trim(),
-        photos: capturedPhotoUrl
-          ? [
-              {
-                id: `local-photo-${clientSyncId}`,
-                photoUrl: capturedPhotoUrl,
-                caption: remarks.trim() || null,
-                capturedAt: new Date(photoMeta?.capturedAt || nowTs).toISOString(),
-                dayOfWeek: photoMeta?.dayOfWeek || dayNames[new Date().getDay()],
-                latitude: inspectionPayload.latitude,
-                longitude: inspectionPayload.longitude,
-                gpsAccuracy: inspectionPayload.gpsAccuracy,
-                gpsSource: inspectionPayload.gpsSource,
-              },
-            ]
-          : [],
-        syncStatus: navigator.onLine ? 'SYNCED' : 'PENDING',
-      };
-
-      setHistoryList((prev) => [localHistoryEntry, ...prev]);
-      setTaskList((prev) =>
-        prev.map((t) => {
-          if (t.equipmentId === activeAssetInspection.id) {
-            return { ...t, status: 'COMPLETED', completedAt: new Date(nowTs).toISOString() };
-          }
-          return t;
-        })
-      );
-
-      closeInspectionModal();
-
+      // Offline: keep photo + record safely in IndexedDB; status bar shows honest "1 photo pending"
       if (!navigator.onLine) {
+        const localHistoryEntry = {
+          id: clientSyncId,
+          source: 'INSPECTION',
+          date: new Date(nowTs).toISOString(),
+          building: {
+            id: selectedBuilding.id,
+            name: selectedBuilding.name,
+            address: selectedBuilding.address,
+          },
+          assetTag: activeAssetInspection.qrCode || activeAssetInspection.id,
+          equipmentType: activeAssetInspection.type || 'Fire Unit',
+          floorZone: activeAssetInspection.floorZone || 'Main Zone',
+          result: inspStatus,
+          remarks: remarks.trim(),
+          photos: capturedPhotoUrl
+            ? [
+                {
+                  id: `local-photo-${clientSyncId}`,
+                  photoUrl: capturedPhotoUrl,
+                  caption: remarks.trim() || null,
+                  capturedAt: new Date(nowTs).toISOString(),
+                  dayOfWeek: capturedDay,
+                  latitude: inspectionPayload.latitude,
+                  longitude: inspectionPayload.longitude,
+                  gpsAccuracy: inspectionPayload.gpsAccuracy,
+                  gpsSource: inspectionPayload.gpsSource,
+                },
+              ]
+            : [],
+          syncStatus: 'PENDING',
+        };
+        setHistoryList((prev) => [localHistoryEntry, ...prev.filter((h) => h.id !== clientSyncId)]);
+        closeInspectionModal();
         triggerToast(t.offlineSavedToast);
-      } else {
-        triggerToast(t.allSyncedToast);
-        handleTriggerSync({ force: true });
+        return;
       }
+
+      // Online: Upload photo FIRST and confirm server sync BEFORE closing modal or claiming "All synced"!
+      const drainRes = await drainOutbox({ force: true, targetSyncId: clientSyncId });
+      await refreshOutboxCounts();
+
+      if (drainRes.authRequired) {
+        setSessionExpiredAlert(true);
+        closeInspectionModal();
+        triggerToast('Session expired — saved in outbox, please sign in to sync.');
+        return;
+      }
+
+      if (drainRes.failedPhotosCount > 0) {
+        // Honest failure state: photo stays safely queued in IndexedDB; show "Upload failed — Retry" card!
+        const errText = drainRes.errors?.[0] || photoT.uploadFailedRetry;
+        setInspPhotoUploadError(errText);
+        triggerToast(photoT.uploadFailedRetry);
+        return;
+      }
+
+      if (drainRes.syncedCount > 0) {
+        activeInspPendingSyncIdRef.current = null;
+        setTaskList((prev) =>
+          prev.map((item) =>
+            item.equipmentId === activeAssetInspection.id
+              ? { ...item, status: 'COMPLETED', completedAt: new Date(nowTs).toISOString() }
+              : item
+          )
+        );
+        closeInspectionModal();
+        triggerToast(t.allSyncedToast);
+        await loadDashboardData();
+        return;
+      }
+
+      const firstErr = drainRes.errors?.[0] || 'Failed to sync inspection — please retry.';
+      setInspPhotoUploadError(firstErr);
+      triggerToast(firstErr);
     } catch (err: any) {
-      console.error('Failed to enqueue inspection:', err);
-      triggerToast('Error saving inspection. Please try again.');
+      console.error('Failed to submit inspection:', err);
+      const errMsg = err?.message || 'Error saving inspection. Please try again.';
+      setInspPhotoUploadError(errMsg);
+      triggerToast(errMsg);
     } finally {
       setSubmittingInspection(false);
     }
@@ -1797,6 +1811,9 @@ export default function TechnicianPWA() {
   const closeInspectionModal = () => {
     setActiveAssetInspection(null);
     setCapturedPhotoUrl(null);
+    setCapturedStampedPhoto(null);
+    setInspPhotoUploadError(null);
+    activeInspPendingSyncIdRef.current = null;
     setPhotoMeta(null);
     setPhotoStampConfirmed(false);
     setRemarks('');
@@ -1847,69 +1864,23 @@ export default function TechnicianPWA() {
     }
   };
 
-  // Dedicated GPS/timestamp photo processor for Assigned-Task completion (isolated from Checklists state)
+  // Shared GPS/timestamp photo processor for Assigned-Task completion (reuses stampAndNormalizeEvidencePhoto)
   const stampTaskPhotoFile = useCallback(
-    async (file: File, task: any): Promise<string | null> => {
+    async (file: File, task: any): Promise<StampedEvidencePhoto | null> => {
       try {
-        const img = new Image();
-        const objectUrl = URL.createObjectURL(file);
-        await new Promise((resolve, reject) => {
-          img.onload = resolve;
-          img.onerror = reject;
-          img.src = objectUrl;
-        });
-
-        const maxDim = 1600;
-        let width = img.naturalWidth || img.width;
-        let height = img.naturalHeight || img.height;
-        if (width > maxDim || height > maxDim) {
-          if (width > height) {
-            height = Math.round((height * maxDim) / width);
-            width = maxDim;
-          } else {
-            width = Math.round((width * maxDim) / height);
-            height = maxDim;
-          }
-        }
-
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) throw new Error('Canvas not supported');
-        ctx.drawImage(img, 0, 0, width, height);
-
-        const now = new Date();
-        const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-        const dayOfWeek = dayNames[now.getDay()];
-        const barHeight = Math.max(76, Math.round(height * 0.11));
-        ctx.fillStyle = 'rgba(28, 25, 23, 0.94)';
-        ctx.fillRect(0, height - barHeight, width, barHeight);
-
+        setTaskPhotoUploadError(null);
+        activeTaskPendingSyncIdRef.current = null;
         const bldgName = task?.building?.name || task?.buildingName || 'VigilAMC Task';
-        const line1 = `VigilAMC Task • ${bldgName} • ${task?.title || ''}`.slice(0, 72);
-        const line2 = `${dayOfWeek} • ${formatLocalizedDateTime(now, currentLang)} IST`;
-        const isBasement = gpsLocation?.isBasementCached || gpsStatus === 'BASEMENT_CACHED';
         const coords = gpsLocation || lastKnownGpsRef.current;
-        const line3 = coords
-          ? `${coords.latitude.toFixed(6)}, ${coords.longitude.toFixed(6)} (±${Math.round(coords.accuracy || 8)}m)`
-          : 'GPS Site Verified';
-
-        const fontSize1 = Math.max(13, Math.round(barHeight * 0.28));
-        const fontSize2 = Math.max(11, Math.round(barHeight * 0.22));
-        ctx.fillStyle = '#FF8C42';
-        ctx.font = `bold ${fontSize1}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
-        ctx.fillText(line1, 20, height - barHeight * 0.64);
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = `${fontSize2}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
-        ctx.fillText(line2, 20, height - barHeight * 0.36);
-        ctx.fillStyle = isBasement ? '#FBBF24' : '#34D399';
-        ctx.font = `bold ${fontSize2}px monospace`;
-        ctx.fillText(line3, 20, height - barHeight * 0.12);
-
-        const compRes = await compressPhotoToBudget(canvas, 280 * 1024);
-        URL.revokeObjectURL(objectUrl);
-        return compRes.dataUrl;
+        const isBasement = gpsLocation?.isBasementCached || gpsStatus === 'BASEMENT_CACHED';
+        return await stampAndNormalizeEvidencePhoto({
+          file,
+          buildingName: bldgName,
+          subjectLabel: task?.title || 'Assigned Task',
+          formattedDateTime: formatLocalizedDateTime(new Date(), currentLang),
+          gps: coords,
+          isBasementCached: isBasement,
+        });
       } catch (err) {
         console.warn('Task photo stamping error:', err);
         triggerToast('Error capturing photo. Please try again.');
@@ -1919,7 +1890,7 @@ export default function TechnicianPWA() {
     [currentLang, gpsLocation, gpsStatus]
   );
 
-  // Offline-first idempotent Assigned-Task completion with action_taken
+  // Offline-first, upload-first, idempotent Assigned-Task completion with action_taken + confirmed photo
   const handleSubmitTaskCompletion = useCallback(
     async (payload: TaskSubmitPayload): Promise<boolean> => {
       if (!activeTaskDetail || submittingTaskCompletion) return false;
@@ -1929,66 +1900,134 @@ export default function TechnicianPWA() {
       }
 
       setSubmittingTaskCompletion(true);
+      setTaskPhotoUploadError(null);
       const prevTasks = taskList;
-      const nowTs = Date.now();
+      const nowTs = payload.stampedPhoto?.capturedAt || Date.now();
       const completedAtIso = new Date(nowTs).toISOString();
-      const clientSyncId = `WO-COMPLETE-${activeTaskDetail.id}-${nowTs}-${Math.random().toString(36).slice(2, 6)}`;
+      const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
-      const outboxItem: OutboxItem = {
-        clientSyncId,
-        actionType: 'COMPLETE_WORK_ORDER',
-        payload: {
-          workOrderId: activeTaskDetail.id,
-          status: 'COMPLETED',
-          actionTaken: payload.actionTaken,
-          notes: payload.notes.trim() || null,
-          completedAt: completedAtIso,
-          photoDataUrl: payload.photoDataUrl || undefined,
-          latitude: gpsLocation?.latitude ?? lastKnownGpsRef.current?.latitude ?? null,
-          longitude: gpsLocation?.longitude ?? lastKnownGpsRef.current?.longitude ?? null,
-          gpsAccuracy: gpsLocation?.accuracy ?? lastKnownGpsRef.current?.accuracy ?? null,
-        },
-        createdAt: nowTs,
-        attempts: 0,
-        status: 'PENDING',
-        technicianId: userProfile?.id,
-      };
+      // Reuse same clientSyncId on retry so retried submits are 100% idempotent (zero duplicates!)
+      const clientSyncId =
+        activeTaskPendingSyncIdRef.current ||
+        `WO-COMPLETE-${activeTaskDetail.id}-${nowTs}-${Math.random().toString(36).slice(2, 6)}`;
+      activeTaskPendingSyncIdRef.current = clientSyncId;
+
+      const pendingPhotoIds: string[] = [];
 
       try {
+        // 1. Enqueue stamped photo JPEG Blob into photo_queue FIRST (if photo captured)
+        if (payload.stampedPhoto) {
+          pendingPhotoIds.push(payload.stampedPhoto.clientPhotoId);
+          await enqueuePhotoUpload({
+            clientPhotoId: payload.stampedPhoto.clientPhotoId,
+            parentSyncId: clientSyncId,
+            targetType: 'WORK_ORDER',
+            targetId: activeTaskDetail.id,
+            buildingId: activeTaskDetail.buildingId || activeTaskDetail.building?.id,
+            equipmentId: activeTaskDetail.equipmentId || undefined,
+            folder: 'tasks',
+            blob: payload.stampedPhoto.blob,
+            contentType: payload.stampedPhoto.contentType,
+            sizeBytes: payload.stampedPhoto.sizeBytes,
+            width: payload.stampedPhoto.width,
+            height: payload.stampedPhoto.height,
+            capturedAt: payload.stampedPhoto.capturedAt,
+            dayOfWeek: payload.stampedPhoto.dayOfWeek,
+            latitude: payload.stampedPhoto.latitude,
+            longitude: payload.stampedPhoto.longitude,
+            gpsAccuracy: payload.stampedPhoto.gpsAccuracy,
+            gpsSource: payload.stampedPhoto.gpsSource,
+            caption: payload.notes.trim() || activeTaskDetail.title || 'Task Photo',
+            category: 'TASK_COMPLETION',
+            status: 'PENDING',
+            attempts: 0,
+            createdAt: nowTs,
+          });
+        }
+
+        // 2. Enqueue COMPLETE_WORK_ORDER referencing pendingPhotoIds (NEVER blob:/data: URL!)
+        const outboxItem: OutboxItem = {
+          clientSyncId,
+          actionType: 'COMPLETE_WORK_ORDER',
+          payload: {
+            workOrderId: activeTaskDetail.id,
+            status: 'COMPLETED',
+            actionTaken: payload.actionTaken,
+            notes: payload.notes.trim() || null,
+            completedAt: completedAtIso,
+            capturedAt: nowTs,
+            dayOfWeek: payload.stampedPhoto?.dayOfWeek || dayNames[new Date(nowTs).getDay()],
+            pendingPhotoIds,
+            latitude: payload.stampedPhoto?.latitude ?? gpsLocation?.latitude ?? lastKnownGpsRef.current?.latitude ?? null,
+            longitude: payload.stampedPhoto?.longitude ?? gpsLocation?.longitude ?? lastKnownGpsRef.current?.longitude ?? null,
+            gpsAccuracy: payload.stampedPhoto?.gpsAccuracy ?? gpsLocation?.accuracy ?? lastKnownGpsRef.current?.accuracy ?? null,
+            gpsSource: payload.stampedPhoto?.gpsSource || (gpsStatus === 'BASEMENT_CACHED' ? 'BASEMENT_CACHED' : 'LIVE'),
+          },
+          createdAt: nowTs,
+          attempts: 0,
+          status: 'PENDING',
+          technicianId: userProfile?.id,
+        };
+
         await enqueueOutboxItem(outboxItem);
         await refreshOutboxCounts();
 
-        const nextTasks = prevTasks.map((item: any) =>
-          item.id === activeTaskDetail.id
-            ? {
-                ...item,
-                status: 'COMPLETED',
-                actionTaken: payload.actionTaken,
-                notes: payload.notes.trim() || item.notes || null,
-                completedAt: completedAtIso,
-              }
-            : item
-        );
-        setTaskList(nextTasks);
-        await setLocalCache('technician_tasks', nextTasks).catch(() => {});
-
         if (!navigator.onLine) {
+          const nextTasks = prevTasks.map((item: any) =>
+            item.id === activeTaskDetail.id
+              ? {
+                  ...item,
+                  status: 'COMPLETED',
+                  actionTaken: payload.actionTaken,
+                  notes: payload.notes.trim() || item.notes || null,
+                  completedAt: completedAtIso,
+                }
+              : item
+          );
+          setTaskList(nextTasks);
+          await setLocalCache('technician_tasks', nextTasks).catch(() => {});
+          activeTaskPendingSyncIdRef.current = null;
           setShowTaskSubmitModal(false);
           triggerToast(t.offlineSavedToast);
           return true;
         }
 
+        // Online: Upload photo FIRST -> confirm https:// -> sync work order!
         const drainRes = await drainOutbox({ force: true, targetSyncId: clientSyncId });
         await refreshOutboxCounts();
 
         if (drainRes.authRequired) {
           setSessionExpiredAlert(true);
+          activeTaskPendingSyncIdRef.current = null;
           setShowTaskSubmitModal(false);
           triggerToast('Session expired — saved in outbox, please sign in to sync.');
           return true;
         }
 
+        if (drainRes.failedPhotosCount > 0) {
+          // Honest failure state: photo & work order stay safely queued; modal stays OPEN with "Upload failed — Retry"
+          const errMsg = drainRes.errors?.[0] || photoT.uploadFailedRetry;
+          setTaskPhotoUploadError(errMsg);
+          triggerToast(photoT.uploadFailedRetry);
+          return false;
+        }
+
         if (drainRes.syncedCount > 0) {
+          activeTaskPendingSyncIdRef.current = null;
+          setTaskPhotoUploadError(null);
+          const nextTasks = prevTasks.map((item: any) =>
+            item.id === activeTaskDetail.id
+              ? {
+                  ...item,
+                  status: 'COMPLETED',
+                  actionTaken: payload.actionTaken,
+                  notes: payload.notes.trim() || item.notes || null,
+                  completedAt: completedAtIso,
+                }
+              : item
+          );
+          setTaskList(nextTasks);
+          await setLocalCache('technician_tasks', nextTasks).catch(() => {});
           setShowTaskSubmitModal(false);
           triggerToast(taskT.taskSubmittedToast);
           await loadDashboardData();
@@ -1998,6 +2037,7 @@ export default function TechnicianPWA() {
         const firstErr = drainRes.errors?.[0] || '';
         const isNetworkDrop = /network|offline|fetch/i.test(firstErr);
         if (isNetworkDrop) {
+          activeTaskPendingSyncIdRef.current = null;
           setShowTaskSubmitModal(false);
           triggerToast(t.offlineSavedToast);
           return true;
@@ -2005,14 +2045,21 @@ export default function TechnicianPWA() {
 
         // Server rejected validation/state: revert optimistic UI, discard bad item, keep modal OPEN
         await discardOutboxItem(clientSyncId).catch(() => {});
+        for (const pid of pendingPhotoIds) {
+          await deleteQueuedPhoto(pid).catch(() => {});
+        }
+        activeTaskPendingSyncIdRef.current = null;
         await refreshOutboxCounts();
         setTaskList(prevTasks);
         await setLocalCache('technician_tasks', prevTasks).catch(() => {});
+        setTaskPhotoUploadError(firstErr || 'Failed to submit task. Please check inputs.');
         triggerToast(firstErr || 'Failed to submit task. Please check inputs.');
         return false;
       } catch (err: any) {
         setTaskList(prevTasks);
-        triggerToast(err?.message || 'Error saving task completion. Please try again.');
+        const errMsg = err?.message || 'Error saving task completion. Please try again.';
+        setTaskPhotoUploadError(errMsg);
+        triggerToast(errMsg);
         return false;
       } finally {
         setSubmittingTaskCompletion(false);
@@ -2023,12 +2070,14 @@ export default function TechnicianPWA() {
       submittingTaskCompletion,
       taskList,
       gpsLocation,
+      gpsStatus,
       userProfile?.id,
       refreshOutboxCounts,
       loadDashboardData,
       t.offlineSavedToast,
       taskT.actionOtherRemarksRequired,
       taskT.taskSubmittedToast,
+      photoT.uploadFailedRetry,
     ]
   );
 
@@ -2633,30 +2682,72 @@ export default function TechnicianPWA() {
             </div>
           </div>
 
-          {/* Sync Confidence Pill (Feature C.5 & Section 8.2) */}
-          <div onClick={() => setShowSyncDiagnostics(true)} className="cursor-pointer hover:bg-white active:scale-[0.99] transition-all flex items-center justify-between px-3 py-1.5 rounded-xl bg-white/80 border border-[#FED7AA] text-[11px]" title="Tap to view Sync Diagnostics">
+          {/* Sync Confidence Pill (Honest Photo + Record Sync State) */}
+          <div
+            data-testid="tech-sync-status-pill"
+            onClick={() => setShowSyncDiagnostics(true)}
+            className="cursor-pointer hover:bg-white active:scale-[0.99] motion-safe:transition-all flex items-center justify-between px-3 py-1.5 rounded-xl bg-white/85 border border-[#FED7AA] text-[11px]"
+            title="Tap to view Sync Diagnostics"
+          >
             <div className="flex items-center gap-2 truncate">
               {isOnline ? (
-                pendingSyncCount > 0 ? (
-                  <span className="text-amber-700 font-bold flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                failedPhotoCount > 0 ? (
+                  <span
+                    data-testid="sync-pill-photo-failed"
+                    className="text-[#9A3412] font-extrabold flex items-center gap-1.5"
+                  >
+                    <AlertTriangle className="w-3.5 h-3.5 text-[#C2410C] shrink-0" />
+                    <span>{photoT.uploadFailedRetry}</span>
+                  </span>
+                ) : pendingPhotoCount > 0 ? (
+                  <span
+                    data-testid="sync-pill-photos-pending"
+                    className="text-[#9A3412] font-extrabold flex items-center gap-1.5"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-[#EA580C] motion-safe:animate-pulse shrink-0" />
+                    <span>
+                      {pendingPhotoCount === 1
+                        ? photoT.photoPendingSingle
+                        : formatPhotoTemplate(photoT.photosPending, pendingPhotoCount)}
+                    </span>
+                  </span>
+                ) : pendingSyncCount > 0 ? (
+                  <span
+                    data-testid="sync-pill-records-pending"
+                    className="text-[#9A3412] font-bold flex items-center gap-1.5"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-[#EA580C] motion-safe:animate-pulse shrink-0" />
                     <span>{t.syncWaiting.replace('{n}', String(pendingSyncCount))}</span>
                   </span>
                 ) : (
-                  <span className="text-emerald-700 font-bold flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span
+                    data-testid="sync-pill-all-synced"
+                    className="text-[#047857] font-bold flex items-center gap-1.5"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-[#059669] shrink-0" />
                     <span>{t.syncAllSynced}</span>
                   </span>
                 )
               ) : (
-                <span className="text-amber-800 font-bold flex items-center gap-1">
-                  <WifiOff className="w-3.5 h-3.5 text-amber-600" />
-                  <span>{t.syncOfflineSaved.replace('{n}', String(pendingSyncCount))}</span>
+                <span
+                  data-testid="sync-pill-offline"
+                  className="text-[#9A3412] font-bold flex items-center gap-1.5"
+                >
+                  <WifiOff className="w-3.5 h-3.5 text-[#C2410C] shrink-0" />
+                  <span>
+                    {pendingPhotoCount > 0
+                      ? `${t.syncOfflineSaved.replace('{n}', String(pendingSyncCount))} · ${
+                          pendingPhotoCount === 1
+                            ? photoT.photoPendingSingle
+                            : formatPhotoTemplate(photoT.photosPending, pendingPhotoCount)
+                        }`
+                      : t.syncOfflineSaved.replace('{n}', String(pendingSyncCount))}
+                  </span>
                 </span>
               )}
 
-              {lastSyncedTime && (
-                <span className="text-[10px] text-slate-500 font-mono hidden sm:inline">
+              {lastSyncedTime && pendingPhotoCount === 0 && pendingSyncCount === 0 && failedPhotoCount === 0 && (
+                <span className="text-[10px] text-[#57534E] font-mono hidden sm:inline">
                   • {t.syncedAtTime.replace('{time}', lastSyncedTime)}
                 </span>
               )}
@@ -2722,19 +2813,94 @@ export default function TechnicianPWA() {
             </div>
           )}
 
+          {/* Honest Per-Photo Upload Failure Cards (neutral/FIRE styling — never status red #DC2626) */}
+          {queuedPhotos.some((p) => p.status === 'FAILED') && (
+            <div data-testid="tech-failed-photos-strip" className="space-y-2">
+              {queuedPhotos
+                .filter((p) => p.status === 'FAILED')
+                .map((p) => (
+                  <div
+                    key={p.clientPhotoId}
+                    data-testid={`failed-photo-card-${p.clientPhotoId}`}
+                    className="p-3 rounded-2xl bg-[#FFF8F2] border border-[#EA580C]/45 text-[#1C1917] flex items-center justify-between gap-3 shadow-xs"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-white border border-[#FED7AA] flex items-center justify-center shrink-0 text-[#C2410C]">
+                        <Camera className="w-5 h-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-extrabold text-[#9A3412] truncate">
+                          {photoT.uploadFailedRetry}
+                        </p>
+                        <p className="text-[11px] text-[#44403C] truncate">
+                          {p.caption || p.folder} · {p.lastError || 'Tap Retry'}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      data-testid={`retry-queued-photo-${p.clientPhotoId}`}
+                      disabled={isSyncing}
+                      onClick={async () => {
+                        setIsSyncing(true);
+                        try {
+                          const res = await retryQueuedPhotoUpload(p.clientPhotoId);
+                          await refreshOutboxCounts();
+                          if (res.uploadedPhotosCount > 0 && res.failedPhotosCount === 0) {
+                            triggerToast(photoT.photoUploadedConfirmed);
+                            await loadDashboardData();
+                          } else {
+                            triggerToast(res.errors?.[0] || photoT.uploadFailedRetry);
+                          }
+                        } finally {
+                          setIsSyncing(false);
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white font-extrabold text-xs shrink-0 disabled:opacity-50"
+                    >
+                      {photoT.retryUpload}
+                    </button>
+                  </div>
+                ))}
+            </div>
+          )}
+
+          {/* Honest Recovery Note for Older Completed Records Missing Photos (no local copy left) */}
+          {unrecoverablePhotosCount > 0 && !unrecoverableNoteDismissed && (
+            <div
+              data-testid="unrecoverable-photos-note"
+              className="px-3.5 py-2.5 rounded-2xl bg-[#FFF8F2] border border-[#FED7AA] text-[#1C1917] flex items-center justify-between gap-2 shadow-xs text-xs"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <Info className="w-4 h-4 text-[#C2410C] shrink-0" />
+                <span className="font-semibold text-[#44403C] leading-snug">
+                  {formatPhotoTemplate(photoT.unrecoverablePhotosNote, unrecoverablePhotosCount)}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setUnrecoverableNoteDismissed(true)}
+                aria-label={photoT.dismissNote}
+                className="p-1.5 rounded-lg text-[#57534E] hover:text-[#1C1917] hover:bg-white shrink-0"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
           {/* Section 4.5: Failed Sync Attention Strip with Expandable Error Details */}
           {failedSyncCount > 0 && (
             <div className="space-y-2">
-              <div className="px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-[11px] text-red-800 flex items-center justify-between gap-2 shadow-xs">
+              <div className="px-3 py-2 rounded-xl bg-[#FFF8F2] border border-[#EA580C]/45 text-[11px] text-[#9A3412] flex items-center justify-between gap-2 shadow-xs">
                 <span className="font-bold flex items-center gap-1.5">
-                  <AlertTriangle className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                  <AlertTriangle className="w-3.5 h-3.5 text-[#C2410C] shrink-0" />
                   <span>{t.syncFailed.replace('{n}', String(failedSyncCount))}</span>
                 </span>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setShowFailedDetails((prev) => !prev)}
-                    className="font-bold text-[10px] text-red-700 underline hover:text-red-900 flex items-center gap-0.5"
+                    className="font-bold text-[10px] text-[#9A3412] underline hover:text-[#1C1917] flex items-center gap-0.5"
                   >
                     <span>{showFailedDetails ? 'Hide' : 'Details'}</span>
                     {showFailedDetails ? (
@@ -2747,9 +2913,9 @@ export default function TechnicianPWA() {
                     type="button"
                     disabled={isSyncing}
                     onClick={() => handleTriggerSync({ force: true })}
-                    className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white font-black text-[10px] active:scale-95 transition-all"
+                    className="px-2.5 py-1 rounded-lg bg-[#C2410C] hover:bg-[#9A3412] text-white font-black text-[10px] active:scale-95 motion-safe:transition-all"
                   >
-                    {t.retry} all
+                    {t.retry}
                   </button>
                 </div>
               </div>
@@ -4458,37 +4624,78 @@ export default function TechnicianPWA() {
 
             {/* Feature E: Camera Photo with Stamped Day + Time + GPS */}
             <div className="space-y-2">
-              <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
-                {t.capturePhoto} (Day + Time + GPS Stamped)
+              <span className="text-xs font-bold text-[#44403C] uppercase tracking-wider block">
+                {t.capturePhoto} ({photoT.stampVerified})
               </span>
 
               {capturedPhotoUrl ? (
-                <div className="relative rounded-2xl overflow-hidden border border-slate-300 shadow-xs">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={capturedPhotoUrl} alt="Inspection Watermarked" className="w-full h-48 object-cover" />
-                  <div className="absolute top-2 right-2 flex items-center gap-1.5">
-                    {photoStampConfirmed && (
-                      <span className="px-2 py-1 bg-emerald-600/90 text-white rounded-lg text-[10px] font-bold">
-                        Stamped ✓
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCapturedPhotoUrl(null);
-                        setPhotoMeta(null);
-                        setPhotoStampConfirmed(false);
-                      }}
-                      className="px-2.5 py-1 bg-black/75 text-white rounded-lg text-xs font-bold"
-                    >
-                      {t.retakePhoto}
-                    </button>
+                <div
+                  data-testid="insp-photo-card"
+                  className="rounded-2xl overflow-hidden border border-[#FED7AA] bg-[#FFF8F2] shadow-xs"
+                >
+                  <div className="relative aspect-[16/10] w-full bg-[#1C1917]/5">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={capturedPhotoUrl}
+                      alt={photoT.photoEvidenceTitle}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-2 right-2 flex items-center gap-1.5">
+                      {photoStampConfirmed && (
+                        <span className="px-2 py-1 bg-[#059669]/95 text-white rounded-lg text-[10px] font-bold flex items-center gap-1">
+                          <Check className="w-3 h-3" />
+                          <span>{photoT.stampVerified}</span>
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        disabled={submittingInspection}
+                        onClick={() => {
+                          setCapturedPhotoUrl(null);
+                          setCapturedStampedPhoto(null);
+                          setInspPhotoUploadError(null);
+                          activeInspPendingSyncIdRef.current = null;
+                          setPhotoMeta(null);
+                          setPhotoStampConfirmed(false);
+                        }}
+                        className="px-2.5 py-1 bg-[#1C1917]/85 text-white rounded-lg text-xs font-bold disabled:opacity-50"
+                      >
+                        {t.retakePhoto}
+                      </button>
+                    </div>
                   </div>
+                  {inspPhotoUploadError && (
+                    <div
+                      data-testid="insp-photo-upload-failed-card"
+                      role="alert"
+                      className="px-3 py-2.5 bg-[#FFF8F2] border-t border-[#EA580C]/40 flex items-center justify-between gap-2"
+                    >
+                      <div className="min-w-0 flex items-center gap-2 text-xs text-[#9A3412] font-bold">
+                        <AlertTriangle className="w-4 h-4 text-[#C2410C] shrink-0" />
+                        <div className="min-w-0">
+                          <span className="block">{photoT.uploadFailedRetry}</span>
+                          <span className="block text-[11px] font-medium text-[#44403C] truncate">
+                            {inspPhotoUploadError}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        data-testid="insp-photo-retry-btn"
+                        disabled={submittingInspection}
+                        onClick={handleSubmitChecksheet}
+                        className="px-3 py-1.5 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white text-xs font-extrabold shrink-0 disabled:opacity-50"
+                      >
+                        {photoT.retryUpload}
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div>
                   <input
                     ref={fileInputRef}
+                    data-testid="insp-photo-file-input"
                     type="file"
                     accept="image/*"
                     capture="environment"
@@ -4497,12 +4704,13 @@ export default function TechnicianPWA() {
                   />
                   <button
                     type="button"
+                    data-testid="insp-capture-photo-btn"
                     disabled={isProcessingPhoto}
                     onClick={handleCameraTrigger}
-                    className="w-full min-h-[52px] py-4 rounded-2xl bg-[#FFF8F2] border-2 border-dashed border-[#FED7AA] hover:border-[#C2410C] text-slate-700 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs"
+                    className="w-full min-h-[52px] py-4 rounded-2xl bg-[#FFF8F2] border-2 border-dashed border-[#FED7AA] hover:border-[#C2410C] text-[#1C1917] font-bold text-xs flex items-center justify-center gap-2 motion-safe:transition-colors shadow-xs"
                   >
                     <Camera className="w-5 h-5 text-[#C2410C]" />
-                    <span>{isProcessingPhoto ? t.stampingPhoto : `📸 ${t.capturePhoto}`}</span>
+                    <span>{isProcessingPhoto ? t.stampingPhoto : t.capturePhoto}</span>
                   </button>
                 </div>
               )}
@@ -4569,7 +4777,14 @@ export default function TechnicianPWA() {
           currentLang={currentLang}
           t={t}
           submitting={submittingTaskCompletion}
-          onClose={() => !submittingTaskCompletion && setShowTaskSubmitModal(false)}
+          uploadError={taskPhotoUploadError}
+          onClose={() => {
+            if (!submittingTaskCompletion) {
+              setTaskPhotoUploadError(null);
+              activeTaskPendingSyncIdRef.current = null;
+              setShowTaskSubmitModal(false);
+            }
+          }}
           onCapturePhotoFile={(file) => stampTaskPhotoFile(file, activeTaskDetail)}
           onCapturePhotoNative={async () => {
             const nativeFile = await capturePhotoNative();
@@ -5472,11 +5687,21 @@ export default function TechnicianPWA() {
               </div>
 
               <div className="p-3.5 rounded-2xl bg-orange-50 border border-orange-200">
-                <span className="text-[10px] font-bold text-[#C2410C] uppercase block">{t.pendingOutbox || 'Outbox Queue'}</span>
+                <span className="text-[10px] font-bold text-[#9A3412] uppercase block">{t.pendingOutbox || 'Outbox Queue'}</span>
                 <span className="text-2xl font-black text-[#9A3412] block mt-1">
-                  {pendingSyncCount}
+                  {pendingSyncCount + pendingPhotoCount}
                 </span>
-                <span className="text-[10px] text-orange-700">{pendingSyncCount === 0 ? 'All synced' : 'Pending upload'}</span>
+                <span className="text-[10px] text-[#9A3412] font-semibold">
+                  {failedPhotoCount > 0
+                    ? photoT.uploadFailedRetry
+                    : pendingPhotoCount > 0
+                    ? pendingPhotoCount === 1
+                      ? photoT.photoPendingSingle
+                      : formatPhotoTemplate(photoT.photosPending, pendingPhotoCount)
+                    : pendingSyncCount === 0
+                    ? t.syncAllSynced
+                    : t.syncWaiting.replace('{n}', String(pendingSyncCount))}
+                </span>
               </div>
             </div>
 

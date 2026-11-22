@@ -1,24 +1,97 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getAuthenticatedActor } from '@/lib/techSession';
-import { ensureR2PhotoUrl } from '@/lib/r2';
 import { logAuditActivity } from '@/lib/auth';
 import { toDbDate, addCalendarMonths, toDateInputString } from '@/lib/dates';
 import { validateTaskCompletionAction } from '@/lib/i18n/taskAction';
+import {
+  EVIDENCE_NO_STORE_HEADERS,
+  parsePhotosField,
+  sanitizeIdSegment,
+  uploadLegacyDataUrlToEvidenceBucket,
+  validateStoredPhotoUrl,
+} from '@/lib/evidencePhotos';
 
 export const dynamic = 'force-dynamic';
+
+interface NormalizedPhotoInput {
+  clientPhotoId: string;
+  photoUrl: string;
+  category: string;
+  caption: string | null;
+  capturedAt: Date;
+  dayOfWeek: string;
+  latitude: number | null;
+  longitude: number | null;
+  gpsAccuracy: number | null;
+  gpsSource: string;
+}
+
+const DAY_NAMES = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
+function parseAuthoritativeDate(raw: unknown, fallback: Date): Date {
+  if (!raw) return fallback;
+  const asNum = typeof raw === 'number' ? raw : Number(raw);
+  const dt = Number.isFinite(asNum) && asNum > 1e11 ? new Date(asNum) : new Date(String(raw));
+  return isNaN(dt.getTime()) ? fallback : dt;
+}
+
+/**
+ * Resolves and validates incoming photo entries:
+ * - Already uploaded https:// URLs -> strictly validated via validateStoredPhotoUrl (rejects blob:/data:/http:/cross-org)
+ * - Legacy offline recovery `data:image/...` -> uploaded FIRST to private `evidence-photos` bucket (throws on error, NEVER swallowed!)
+ * - Any blob: or invalid URL -> throws explicit error so item fails loudly instead of silently losing evidence.
+ */
+async function resolveConfirmedPhotoUrl(params: {
+  rawUrl: string;
+  organizationId: string;
+  folder: 'inspections' | 'tasks' | 'reports';
+  clientPhotoId: string;
+}): Promise<string> {
+  const trimmed = String(params.rawUrl || '').trim();
+  if (!trimmed) {
+    throw new Error('Empty photo URL');
+  }
+
+  if (trimmed.toLowerCase().startsWith('blob:')) {
+    throw new Error('Local blob: URLs cannot be synced. Photo must be uploaded first.');
+  }
+
+  // Legacy offline recovery path: upload base64 to private bucket FIRST; throw on failure (never swallow!)
+  if (trimmed.toLowerCase().startsWith('data:image/')) {
+    const uploaded = await uploadLegacyDataUrlToEvidenceBucket({
+      dataUrl: trimmed,
+      organizationId: params.organizationId,
+      folder: params.folder,
+      clientPhotoId: params.clientPhotoId,
+    });
+    return uploaded.storageUrl;
+  }
+
+  const check = validateStoredPhotoUrl(trimmed, params.organizationId);
+  if (!check.valid) {
+    throw new Error(check.error);
+  }
+  return check.url;
+}
 
 export async function POST(request: Request) {
   try {
     // 1. Session Verification
     const auth = await getAuthenticatedActor(request);
     if (!auth || !auth.user) {
-      return NextResponse.json({ error: 'UNAUTHORIZED: Authentication required' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'UNAUTHORIZED: Authentication required' },
+        { status: 401, headers: EVIDENCE_NO_STORE_HEADERS }
+      );
     }
     const userId = auth.user.id;
     const organizationId = auth.organization?.id;
     if (!organizationId) {
-      return NextResponse.json({ error: 'No associated organization found' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'No associated organization found' },
+        { status: 403, headers: EVIDENCE_NO_STORE_HEADERS }
+      );
     }
 
     // 2. Size Guard: reject oversize request bodies (>2.5MB)
@@ -27,17 +100,20 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           status: 'FAILED',
-          error: 'Payload too large (>2.5MB limit). Please sync items individually or compress photos.',
+          error: 'Payload too large (>2.5MB limit). Please upload photos via /api/photos/upload first.',
         },
-        { status: 413 }
+        { status: 413, headers: EVIDENCE_NO_STORE_HEADERS }
       );
     }
 
     let body: any;
     try {
       body = await request.json();
-    } catch (parseErr: any) {
-      return NextResponse.json({ error: 'Malformed JSON payload' }, { status: 400 });
+    } catch {
+      return NextResponse.json(
+        { error: 'Malformed JSON payload' },
+        { status: 400, headers: EVIDENCE_NO_STORE_HEADERS }
+      );
     }
 
     // Accept either an array of items or a single item
@@ -48,7 +124,10 @@ export async function POST(request: Request) {
       : [];
 
     if (items.length === 0) {
-      return NextResponse.json({ error: 'No sync items provided' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'No sync items provided' },
+        { status: 400, headers: EVIDENCE_NO_STORE_HEADERS }
+      );
     }
 
     const results: any[] = [];
@@ -74,9 +153,16 @@ export async function POST(request: Request) {
         });
 
         if (existingQueueItem && existingQueueItem.status === 'SYNCED') {
+          let existingEntityId: string | null = null;
+          try {
+            const parsedPrev = JSON.parse(existingQueueItem.payload || '{}');
+            existingEntityId = parsedPrev?.createdEntityId || null;
+          } catch {}
           results.push({
             clientSyncId,
             status: 'SYNCED',
+            deduplicated: true,
+            entityId: existingEntityId,
             message: 'Already synced (idempotent duplicate skipped)',
             syncedAt: existingQueueItem.syncedAt,
           });
@@ -84,29 +170,31 @@ export async function POST(request: Request) {
         }
 
         // B. Upsert SyncQueue ledger entry as PENDING
-        const serializedPayload =
-          typeof rawPayload === 'string' ? rawPayload : JSON.stringify(rawPayload || {});
+        // Strip raw base64 blobs from SyncQueue storage after parsing so DB stays lean
+        const data = typeof rawPayload === 'string' ? JSON.parse(rawPayload) : rawPayload || {};
+        const ledgerPayloadForInit = { ...data };
+        if (typeof ledgerPayloadForInit.photoDataUrl === 'string' && ledgerPayloadForInit.photoDataUrl.startsWith('data:')) {
+          ledgerPayloadForInit.photoDataUrl = '[uploading]';
+        }
 
         const ledger = await (db as any).syncQueue.upsert({
           where: { clientSyncId },
           update: {
             actionType,
-            payload: serializedPayload,
+            payload: JSON.stringify(ledgerPayloadForInit),
             status: 'PENDING',
           },
           create: {
             technicianId: userId,
             clientSyncId,
             actionType,
-            payload: serializedPayload,
+            payload: JSON.stringify(ledgerPayloadForInit),
             status: 'PENDING',
             createdAt: createdAt ? new Date(createdAt) : new Date(),
           },
         });
         ledgerId = ledger.id;
 
-        // C. Parse & Normalize Payload
-        const data = typeof rawPayload === 'string' ? JSON.parse(rawPayload) : (rawPayload || {});
         let createdEntityId: string | null = null;
 
         if (actionType === 'COMPLETE_INSPECTION') {
@@ -126,6 +214,7 @@ export async function POST(request: Request) {
             photoDataUrl,
             photoUrl,
             photos,
+            photoRecords,
             latitude,
             longitude,
             gpsAccuracy,
@@ -135,11 +224,11 @@ export async function POST(request: Request) {
             technicianName,
           } = data;
 
-          // FK Safety: Verify or resolve Building
+          // FK Safety: Verify or resolve Building (scoped to organizationId!)
           let validBuildingId = buildingId;
           if (validBuildingId) {
-            const bldgExists = await (db as any).building.findUnique({
-              where: { id: validBuildingId },
+            const bldgExists = await (db as any).building.findFirst({
+              where: { id: validBuildingId, organizationId },
               select: { id: true },
             });
             if (!bldgExists) {
@@ -147,7 +236,6 @@ export async function POST(request: Request) {
             }
           }
           if (!validBuildingId) {
-            // Fallback to first building for organization so inspection is never lost
             const fallbackBldg = await (db as any).building.findFirst({
               where: { organizationId },
               select: { id: true },
@@ -159,15 +247,15 @@ export async function POST(request: Request) {
             }
           }
 
-          // FK Safety: Verify Equipment (handles both raw ID and AMC- prefixed routine IDs)
+          // FK Safety: Verify Equipment
           let validEquipmentId: string | null = null;
           let eqLookupId = equipmentId;
           if (eqLookupId && typeof eqLookupId === 'string' && eqLookupId.startsWith('AMC-')) {
             eqLookupId = eqLookupId.substring(4);
           }
           if (eqLookupId) {
-            const eqExists = await (db as any).equipment.findUnique({
-              where: { id: eqLookupId },
+            const eqExists = await (db as any).equipment.findFirst({
+              where: { id: eqLookupId, organizationId },
               select: { id: true, qrCode: true, serviceIntervalMonths: true },
             });
             if (eqExists) {
@@ -175,56 +263,101 @@ export async function POST(request: Request) {
             }
           }
 
-          // Authoritative capture time from device
-          const authoritativeDate = capturedAt
-            ? new Date(capturedAt)
-            : createdAt
-            ? new Date(createdAt)
-            : new Date();
+          const fallbackDate = createdAt ? new Date(createdAt) : new Date();
+          const authoritativeDate = parseAuthoritativeDate(capturedAt, fallbackDate);
+          const derivedDay = dayOfWeek || DAY_NAMES[authoritativeDate.getDay()];
 
-          const derivedDay =
-            dayOfWeek ||
-            ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][authoritativeDate.getDay()];
+          // Collect & confirm ALL photos BEFORE saving the inspection record (ZERO swallowed failures!)
+          const confirmedPhotos: NormalizedPhotoInput[] = [];
+          const seenClientPhotoIds = new Set<string>();
+          const seenUrls = new Set<string>();
 
-          // Resolve photos
-          const rawPhotos: string[] = [];
-          if (Array.isArray(photos)) {
-            for (const p of photos) {
-              if (typeof p === 'string' && p.trim()) rawPhotos.push(p.trim());
+          if (Array.isArray(photoRecords) && photoRecords.length > 0) {
+            for (let idx = 0; idx < photoRecords.length; idx++) {
+              const pr = photoRecords[idx];
+              const rawU = pr?.photoUrl || pr?.storageUrl || pr?.photoDataUrl;
+              if (!rawU || typeof rawU !== 'string') continue;
+              const cpid = sanitizeIdSegment(
+                pr?.clientPhotoId || pr?.client_id || `${clientSyncId}-p${idx}`,
+                `${clientSyncId}-p${idx}`
+              );
+              if (seenClientPhotoIds.has(cpid)) continue;
+              const confirmedUrl = await resolveConfirmedPhotoUrl({
+                rawUrl: rawU,
+                organizationId,
+                folder: 'inspections',
+                clientPhotoId: cpid,
+              });
+              const pDate = parseAuthoritativeDate(pr?.capturedAt, authoritativeDate);
+              seenClientPhotoIds.add(cpid);
+              seenUrls.add(confirmedUrl);
+              confirmedPhotos.push({
+                clientPhotoId: cpid,
+                photoUrl: confirmedUrl,
+                category: pr?.category || data.photoCategory || 'GAUGE',
+                caption: pr?.caption || data.caption || remarks || null,
+                capturedAt: pDate,
+                dayOfWeek: pr?.dayOfWeek || DAY_NAMES[pDate.getDay()],
+                latitude: pr?.latitude !== undefined && pr?.latitude !== null ? Number(pr.latitude) : latitude != null ? Number(latitude) : null,
+                longitude: pr?.longitude !== undefined && pr?.longitude !== null ? Number(pr.longitude) : longitude != null ? Number(longitude) : null,
+                gpsAccuracy: pr?.gpsAccuracy !== undefined && pr?.gpsAccuracy !== null ? Number(pr.gpsAccuracy) : gpsAccuracy != null ? Number(gpsAccuracy) : null,
+                gpsSource: pr?.gpsSource || gpsSource || (data.isBasementCached ? 'BASEMENT_CACHED' : 'LIVE'),
+              });
             }
           }
-          if (photoDataUrl && typeof photoDataUrl === 'string' && !rawPhotos.includes(photoDataUrl.trim())) {
-            rawPhotos.push(photoDataUrl.trim());
-          }
-          if (photoUrl && typeof photoUrl === 'string' && !rawPhotos.includes(photoUrl.trim())) {
-            rawPhotos.push(photoUrl.trim());
-          }
 
-          const uploadedPhotoUrls: string[] = [];
-          for (const raw of rawPhotos) {
-            if (raw.startsWith('data:') || raw.startsWith('http')) {
-              try {
-                const u = await ensureR2PhotoUrl({
-                  photoUrl: raw,
-                  organizationId,
-                  folder: 'inspections',
-                });
-                if (u) uploadedPhotoUrls.push(u);
-              } catch (r2Err: any) {
-                console.warn(`R2 upload warning for ${clientSyncId}:`, r2Err?.message);
-                if (raw.startsWith('http')) uploadedPhotoUrls.push(raw);
+          // Also process legacy photoUrl / photos / photoDataUrl fields (if photoRecords was not provided)
+          if (confirmedPhotos.length === 0) {
+            const rawList: string[] = [];
+            if (Array.isArray(photos)) {
+              for (const p of photos) {
+                if (typeof p === 'string' && p.trim() && !rawList.includes(p.trim())) rawList.push(p.trim());
               }
             }
+            if (typeof photoUrl === 'string' && photoUrl.trim() && !rawList.includes(photoUrl.trim())) {
+              rawList.push(photoUrl.trim());
+            }
+            if (typeof photoDataUrl === 'string' && photoDataUrl.trim() && !rawList.includes(photoDataUrl.trim())) {
+              rawList.push(photoDataUrl.trim());
+            }
+
+            for (let idx = 0; idx < rawList.length; idx++) {
+              const cpid = sanitizeIdSegment(
+                data.clientPhotoId || `${clientSyncId}-p${idx}`,
+                `${clientSyncId}-p${idx}`
+              );
+              const confirmedUrl = await resolveConfirmedPhotoUrl({
+                rawUrl: rawList[idx],
+                organizationId,
+                folder: 'inspections',
+                clientPhotoId: cpid,
+              });
+              if (seenUrls.has(confirmedUrl)) continue;
+              seenClientPhotoIds.add(cpid);
+              seenUrls.add(confirmedUrl);
+              confirmedPhotos.push({
+                clientPhotoId: cpid,
+                photoUrl: confirmedUrl,
+                category: data.photoCategory || 'GAUGE',
+                caption: data.caption || remarks || null,
+                capturedAt: authoritativeDate,
+                dayOfWeek: derivedDay,
+                latitude: latitude !== undefined && latitude !== null ? Number(latitude) : null,
+                longitude: longitude !== undefined && longitude !== null ? Number(longitude) : null,
+                gpsAccuracy: gpsAccuracy !== undefined && gpsAccuracy !== null ? Number(gpsAccuracy) : null,
+                gpsSource: gpsSource || (data.isBasementCached ? 'BASEMENT_CACHED' : 'LIVE'),
+              });
+            }
           }
 
-          const primaryPhoto = uploadedPhotoUrls[0] || (rawPhotos[0]?.startsWith('http') ? rawPhotos[0] : null);
+          const uploadedPhotoUrls = confirmedPhotos.map((p) => p.photoUrl);
+          const primaryPhoto = uploadedPhotoUrls[0] || null;
 
-          // Allowed status whitelist
           const safeStatus = ['PASSED', 'FAILED', 'SERVICE_REQUIRED', 'REPLACEMENT_REQUIRED'].includes(status)
             ? status
             : 'PASSED';
 
-          // Create Inspection
+          // Create Inspection with confirmed https:// photo URLs
           const inspection = await (db as any).inspection.create({
             data: {
               organizationId,
@@ -251,29 +384,39 @@ export async function POST(request: Request) {
 
           createdEntityId = inspection.id;
           data.createdEntityId = inspection.id;
+          data.photoUrl = primaryPhoto;
+          data.photoDataUrl = undefined;
+          data.photos = uploadedPhotoUrls;
 
-          // Create InspectionPhoto records
-          for (const u of uploadedPhotoUrls) {
-            await (db as any).inspectionPhoto
-              .create({
-                data: {
-                  inspectionId: inspection.id,
-                  equipmentId: validEquipmentId,
-                  category: data.photoCategory || 'GAUGE',
-                  photoUrl: u,
-                  caption: data.caption || remarks || null,
-                  capturedAt: authoritativeDate,
-                  dayOfWeek: derivedDay,
-                  latitude: latitude !== undefined && latitude !== null ? Number(latitude) : null,
-                  longitude: longitude !== undefined && longitude !== null ? Number(longitude) : null,
-                  gpsAccuracy: gpsAccuracy !== undefined && gpsAccuracy !== null ? Number(gpsAccuracy) : null,
-                  gpsSource: gpsSource || (data.isBasementCached ? 'BASEMENT_CACHED' : 'LIVE'),
-                },
-              })
-              .catch((err: any) => console.warn('Failed to insert inspectionPhoto record:', err));
+          // Upsert InspectionPhoto records idempotently by clientPhotoId (ZERO duplicates, ZERO swallowed errors!)
+          for (const cp of confirmedPhotos) {
+            await (db as any).inspectionPhoto.upsert({
+              where: { clientPhotoId: cp.clientPhotoId },
+              update: {
+                inspectionId: inspection.id,
+                equipmentId: validEquipmentId,
+                photoUrl: cp.photoUrl,
+                caption: cp.caption,
+                // Retain original capturedAt (never overwrite with now!)
+              },
+              create: {
+                inspectionId: inspection.id,
+                equipmentId: validEquipmentId,
+                clientPhotoId: cp.clientPhotoId,
+                category: cp.category,
+                photoUrl: cp.photoUrl,
+                caption: cp.caption,
+                capturedAt: cp.capturedAt,
+                dayOfWeek: cp.dayOfWeek,
+                latitude: cp.latitude,
+                longitude: cp.longitude,
+                gpsAccuracy: cp.gpsAccuracy,
+                gpsSource: cp.gpsSource,
+              },
+            });
           }
 
-          // Update Equipment and create ServiceLog if equipmentId exists
+          // Update Equipment & ServiceLog
           if (validEquipmentId) {
             const eq = await (db as any).equipment.findUnique({
               where: { id: validEquipmentId },
@@ -317,7 +460,7 @@ export async function POST(request: Request) {
             }
           }
 
-          // If linked to a work order, complete it
+          // If linked to a work order, complete it and persist its photo too
           if (workOrderId) {
             await (db as any).workOrder
               .update({
@@ -325,12 +468,12 @@ export async function POST(request: Request) {
                 data: {
                   status: 'COMPLETED',
                   completedAt: authoritativeDate,
+                  ...(primaryPhoto ? { photoUrl: primaryPhoto } : {}),
                 },
               })
               .catch(() => {});
           }
 
-          // Audit log
           await logAuditActivity({
             organizationId,
             userId,
@@ -342,11 +485,11 @@ export async function POST(request: Request) {
               buildingId: validBuildingId,
               equipmentId: validEquipmentId,
               status: safeStatus,
+              photoCount: uploadedPhotoUrls.length,
               syncedFromField: true,
               capturedAt: authoritativeDate.toISOString(),
             }),
           }).catch(() => {});
-
         } else if (actionType === 'UPDATE_STATUS' || actionType === 'COMPLETE_WORK_ORDER') {
           const {
             workOrderId,
@@ -355,6 +498,13 @@ export async function POST(request: Request) {
             completedAt,
             photoDataUrl,
             photoUrl,
+            photoRecords,
+            latitude,
+            longitude,
+            gpsAccuracy,
+            gpsSource,
+            capturedAt,
+            dayOfWeek,
           } = data;
           const rawActionTaken = data.actionTaken ?? data.action_taken;
           if (!workOrderId) {
@@ -362,7 +512,6 @@ export async function POST(request: Request) {
           }
 
           if (typeof workOrderId === 'string' && workOrderId.startsWith('AMC-')) {
-            // Routine AMC task status is tracked via inspections
             createdEntityId = workOrderId;
           } else {
             const existingWo = await (db as any).workOrder.findFirst({
@@ -373,6 +522,7 @@ export async function POST(request: Request) {
                 buildingId: true,
                 equipmentId: true,
                 notes: true,
+                photoUrl: true,
                 building: { select: { name: true } },
               },
             });
@@ -384,7 +534,6 @@ export async function POST(request: Request) {
             const isCompleting = woStatus === 'COMPLETED' || actionType === 'COMPLETE_WORK_ORDER';
             const updateData: any = {};
             if (woStatus) {
-              // Whitelist work order statuses
               const validWoStatuses = ['OPEN', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
               if (validWoStatuses.includes(woStatus)) {
                 updateData.status = woStatus;
@@ -418,20 +567,80 @@ export async function POST(request: Request) {
               }
             }
 
-            let uploadedPhotoUrl: string | null = null;
-            const rawTaskPhoto = photoDataUrl || photoUrl;
-            if (isCompleting && typeof rawTaskPhoto === 'string' && (rawTaskPhoto.startsWith('data:') || rawTaskPhoto.startsWith('http'))) {
-              try {
-                const u = await ensureR2PhotoUrl({
-                  photoUrl: rawTaskPhoto,
+            const fallbackDate = completedAt
+              ? new Date(completedAt)
+              : createdAt
+              ? new Date(createdAt)
+              : new Date();
+            const authoritativeDate = parseAuthoritativeDate(capturedAt, fallbackDate);
+            const derivedDay = dayOfWeek || DAY_NAMES[authoritativeDate.getDay()];
+
+            // Resolve & confirm ALL work-order photos FIRST (ZERO swallowed errors!)
+            const confirmedPhotos: NormalizedPhotoInput[] = [];
+            const seenIds = new Set<string>();
+
+            if (Array.isArray(photoRecords) && photoRecords.length > 0) {
+              for (let idx = 0; idx < photoRecords.length; idx++) {
+                const pr = photoRecords[idx];
+                const rawU = pr?.photoUrl || pr?.storageUrl || pr?.photoDataUrl;
+                if (!rawU || typeof rawU !== 'string') continue;
+                const cpid = sanitizeIdSegment(
+                  pr?.clientPhotoId || pr?.client_id || `${clientSyncId}-wo-p${idx}`,
+                  `${clientSyncId}-wo-p${idx}`
+                );
+                if (seenIds.has(cpid)) continue;
+                const confirmedUrl = await resolveConfirmedPhotoUrl({
+                  rawUrl: rawU,
                   organizationId,
-                  folder: 'inspections',
+                  folder: 'tasks',
+                  clientPhotoId: cpid,
                 });
-                if (u) uploadedPhotoUrl = u;
-              } catch (r2Err: any) {
-                console.warn(`R2 upload warning for work order ${workOrderId}:`, r2Err?.message);
-                if (rawTaskPhoto.startsWith('http')) uploadedPhotoUrl = rawTaskPhoto;
+                const pDate = parseAuthoritativeDate(pr?.capturedAt, authoritativeDate);
+                seenIds.add(cpid);
+                confirmedPhotos.push({
+                  clientPhotoId: cpid,
+                  photoUrl: confirmedUrl,
+                  category: 'TASK_COMPLETION',
+                  caption: pr?.caption || updateData.notes || existingWo.title || null,
+                  capturedAt: pDate,
+                  dayOfWeek: pr?.dayOfWeek || DAY_NAMES[pDate.getDay()],
+                  latitude: pr?.latitude != null ? Number(pr.latitude) : latitude != null ? Number(latitude) : null,
+                  longitude: pr?.longitude != null ? Number(pr.longitude) : longitude != null ? Number(longitude) : null,
+                  gpsAccuracy: pr?.gpsAccuracy != null ? Number(pr.gpsAccuracy) : gpsAccuracy != null ? Number(gpsAccuracy) : null,
+                  gpsSource: pr?.gpsSource || gpsSource || 'LIVE',
+                });
               }
+            } else {
+              const rawTaskPhoto = photoUrl || photoDataUrl;
+              if (typeof rawTaskPhoto === 'string' && rawTaskPhoto.trim()) {
+                const cpid = sanitizeIdSegment(
+                  data.clientPhotoId || `${clientSyncId}-wo-p0`,
+                  `${clientSyncId}-wo-p0`
+                );
+                const confirmedUrl = await resolveConfirmedPhotoUrl({
+                  rawUrl: rawTaskPhoto,
+                  organizationId,
+                  folder: 'tasks',
+                  clientPhotoId: cpid,
+                });
+                confirmedPhotos.push({
+                  clientPhotoId: cpid,
+                  photoUrl: confirmedUrl,
+                  category: 'TASK_COMPLETION',
+                  caption: updateData.notes || existingWo.title || null,
+                  capturedAt: authoritativeDate,
+                  dayOfWeek: derivedDay,
+                  latitude: latitude != null ? Number(latitude) : null,
+                  longitude: longitude != null ? Number(longitude) : null,
+                  gpsAccuracy: gpsAccuracy != null ? Number(gpsAccuracy) : null,
+                  gpsSource: gpsSource || 'LIVE',
+                });
+              }
+            }
+
+            const primaryPhotoUrl = confirmedPhotos[0]?.photoUrl || null;
+            if (primaryPhotoUrl) {
+              updateData.photoUrl = primaryPhotoUrl;
             }
 
             const updated = await (db as any).workOrder.update({
@@ -439,6 +648,44 @@ export async function POST(request: Request) {
               data: updateData,
             });
             createdEntityId = updated.id;
+            data.createdEntityId = updated.id;
+            data.photoUrl = primaryPhotoUrl || existingWo.photoUrl || null;
+            data.photoDataUrl = undefined;
+
+            // Persist WorkOrderPhoto rows idempotently by clientPhotoId (ZERO duplicates!)
+            for (const cp of confirmedPhotos) {
+              await (db as any).workOrderPhoto.upsert({
+                where: { clientPhotoId: cp.clientPhotoId },
+                update: {
+                  workOrderId: updated.id,
+                  photoUrl: cp.photoUrl,
+                  caption: cp.caption,
+                },
+                create: {
+                  workOrderId: updated.id,
+                  organizationId,
+                  clientPhotoId: cp.clientPhotoId,
+                  photoUrl: cp.photoUrl,
+                  caption: cp.caption,
+                  capturedAt: cp.capturedAt,
+                  dayOfWeek: cp.dayOfWeek,
+                  latitude: cp.latitude,
+                  longitude: cp.longitude,
+                  gpsAccuracy: cp.gpsAccuracy,
+                  gpsSource: cp.gpsSource,
+                },
+              });
+            }
+
+            // Update Equipment.photoUrl if linked
+            if (primaryPhotoUrl && existingWo.equipmentId) {
+              await (db as any).equipment
+                .update({
+                  where: { id: existingWo.equipmentId },
+                  data: { photoUrl: primaryPhotoUrl },
+                })
+                .catch(() => {});
+            }
 
             if (isCompleting) {
               await logAuditActivity({
@@ -457,14 +704,14 @@ export async function POST(request: Request) {
                   status: 'COMPLETED',
                   actionTaken: updated.actionTaken || 'NO_ACTION',
                   notes: updated.notes || null,
-                  photoUrl: uploadedPhotoUrl,
+                  photoUrl: primaryPhotoUrl,
+                  photoCount: confirmedPhotos.length,
                   syncedFromField: true,
                   clientSyncId,
                 }),
               }).catch(() => {});
             }
           }
-
         } else if (actionType === 'UPLOAD_PHOTO') {
           const {
             photoUrl,
@@ -472,6 +719,7 @@ export async function POST(request: Request) {
             category = 'GAUGE',
             caption,
             inspectionId,
+            workOrderId,
             parentClientSyncId,
             equipmentId,
             latitude,
@@ -480,92 +728,160 @@ export async function POST(request: Request) {
             gpsSource,
             capturedAt,
             dayOfWeek,
+            clientPhotoId: rawClientPhotoId,
           } = data;
 
-          const raw = photoDataUrl || photoUrl;
-          if (!raw) {
-            throw new Error('photoDataUrl or photoUrl is required for UPLOAD_PHOTO');
+          const raw = photoUrl || photoDataUrl;
+          if (!raw || typeof raw !== 'string') {
+            throw new Error('photoUrl or photoDataUrl is required for UPLOAD_PHOTO');
           }
 
-          const uploadedUrl = await ensureR2PhotoUrl({
-            photoUrl: raw,
+          const clientPhotoId = sanitizeIdSegment(rawClientPhotoId || clientSyncId, clientSyncId);
+          const folder: 'tasks' | 'inspections' = workOrderId ? 'tasks' : 'inspections';
+          const finalPhotoUrl = await resolveConfirmedPhotoUrl({
+            rawUrl: raw,
             organizationId,
-            folder: 'inspections',
+            folder,
+            clientPhotoId,
           });
-          const finalPhotoUrl = uploadedUrl || (raw.startsWith('http') ? raw : null);
-          if (!finalPhotoUrl) {
-            throw new Error('Failed to upload photo to storage');
-          }
 
-          const authoritativeDate = capturedAt ? new Date(capturedAt) : new Date();
-          const derivedDay =
-            dayOfWeek || ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][authoritativeDate.getDay()];
+          const authoritativeDate = parseAuthoritativeDate(
+            capturedAt,
+            createdAt ? new Date(createdAt) : new Date()
+          );
+          const derivedDay = dayOfWeek || DAY_NAMES[authoritativeDate.getDay()];
 
-          let resolvedInspectionId = inspectionId;
-          let resolvedEquipmentId = equipmentId;
-
-          // Section 2.2: Attach to inspection via parentClientSyncId
-          if (!resolvedInspectionId && parentClientSyncId) {
-            const parentQueue = await (db as any).syncQueue.findUnique({
-              where: { clientSyncId: parentClientSyncId },
-            });
-            if (parentQueue?.payload) {
-              try {
-                const parentData = JSON.parse(parentQueue.payload);
-                if (parentData.createdEntityId) {
-                  resolvedInspectionId = parentData.createdEntityId;
-                }
-                if (!resolvedEquipmentId && parentData.equipmentId) {
-                  resolvedEquipmentId = parentData.equipmentId;
-                }
-              } catch {}
-            }
-          }
-
-          // Fallback: attach to latest inspection by this technician if still unresolved
-          if (!resolvedInspectionId) {
-            const latestInsp = await (db as any).inspection.findFirst({
-              where: { organizationId, technicianId: userId },
-              orderBy: { date: 'desc' },
+          if (workOrderId) {
+            const woExists = await (db as any).workOrder.findFirst({
+              where: { id: workOrderId, organizationId },
               select: { id: true, equipmentId: true },
             });
-            if (latestInsp) {
-              resolvedInspectionId = latestInsp.id;
-              if (!resolvedEquipmentId) resolvedEquipmentId = latestInsp.equipmentId;
+            if (!woExists) {
+              throw new Error(`Work order '${workOrderId}' not found for photo attachment`);
+            }
+
+            await (db as any).workOrderPhoto.upsert({
+              where: { clientPhotoId },
+              update: {
+                workOrderId: woExists.id,
+                photoUrl: finalPhotoUrl,
+                caption: caption || null,
+              },
+              create: {
+                workOrderId: woExists.id,
+                organizationId,
+                clientPhotoId,
+                photoUrl: finalPhotoUrl,
+                caption: caption || null,
+                capturedAt: authoritativeDate,
+                dayOfWeek: derivedDay,
+                latitude: latitude != null ? Number(latitude) : null,
+                longitude: longitude != null ? Number(longitude) : null,
+                gpsAccuracy: gpsAccuracy != null ? Number(gpsAccuracy) : null,
+                gpsSource: gpsSource || 'LIVE',
+              },
+            });
+
+            await (db as any).workOrder.update({
+              where: { id: woExists.id },
+              data: { photoUrl: finalPhotoUrl },
+            });
+
+            if (woExists.equipmentId) {
+              await (db as any).equipment
+                .update({ where: { id: woExists.equipmentId }, data: { photoUrl: finalPhotoUrl } })
+                .catch(() => {});
+            }
+          } else {
+            let resolvedInspectionId = inspectionId;
+            let resolvedEquipmentId = equipmentId;
+
+            if (!resolvedInspectionId && parentClientSyncId) {
+              const parentQueue = await (db as any).syncQueue.findUnique({
+                where: { clientSyncId: parentClientSyncId },
+              });
+              if (parentQueue?.payload) {
+                try {
+                  const parentData = JSON.parse(parentQueue.payload);
+                  if (parentData.createdEntityId) {
+                    resolvedInspectionId = parentData.createdEntityId;
+                  }
+                  if (!resolvedEquipmentId && parentData.equipmentId) {
+                    resolvedEquipmentId = parentData.equipmentId;
+                  }
+                } catch {}
+              }
+            }
+
+            if (!resolvedInspectionId) {
+              const latestInsp = await (db as any).inspection.findFirst({
+                where: { organizationId, technicianId: userId },
+                orderBy: { date: 'desc' },
+                select: { id: true, equipmentId: true },
+              });
+              if (latestInsp) {
+                resolvedInspectionId = latestInsp.id;
+                if (!resolvedEquipmentId) resolvedEquipmentId = latestInsp.equipmentId;
+              }
+            }
+
+            if (!resolvedInspectionId) {
+              throw new Error('Parent inspection not yet synced; retry UPLOAD_PHOTO after inspection syncs');
+            }
+
+            await (db as any).inspectionPhoto.upsert({
+              where: { clientPhotoId },
+              update: {
+                inspectionId: resolvedInspectionId,
+                equipmentId: resolvedEquipmentId || null,
+                photoUrl: finalPhotoUrl,
+                caption: caption || null,
+              },
+              create: {
+                inspectionId: resolvedInspectionId,
+                equipmentId: resolvedEquipmentId || null,
+                clientPhotoId,
+                category,
+                photoUrl: finalPhotoUrl,
+                caption: caption || null,
+                capturedAt: authoritativeDate,
+                dayOfWeek: derivedDay,
+                latitude: latitude != null ? Number(latitude) : null,
+                longitude: longitude != null ? Number(longitude) : null,
+                gpsAccuracy: gpsAccuracy != null ? Number(gpsAccuracy) : null,
+                gpsSource: gpsSource || 'LIVE',
+              },
+            });
+
+            // Sync parent Inspection.photos column so EVERY dashboard view reads the full confirmed URL!
+            const parentInsp = await (db as any).inspection.findUnique({
+              where: { id: resolvedInspectionId },
+              select: { id: true, photos: true },
+            });
+            if (parentInsp) {
+              const existingList = parsePhotosField(parentInsp.photos);
+              if (!existingList.includes(finalPhotoUrl)) {
+                existingList.unshift(finalPhotoUrl);
+              }
+              await (db as any).inspection.update({
+                where: { id: resolvedInspectionId },
+                data: { photos: JSON.stringify(existingList) },
+              });
+            }
+
+            if (resolvedEquipmentId) {
+              await (db as any).equipment
+                .update({
+                  where: { id: resolvedEquipmentId },
+                  data: { photoUrl: finalPhotoUrl },
+                })
+                .catch(() => {});
             }
           }
 
-          if (resolvedInspectionId) {
-            await (db as any).inspectionPhoto
-              .create({
-                data: {
-                  inspectionId: resolvedInspectionId,
-                  equipmentId: resolvedEquipmentId || null,
-                  category,
-                  photoUrl: finalPhotoUrl,
-                  caption: caption || null,
-                  capturedAt: authoritativeDate,
-                  dayOfWeek: derivedDay,
-                  latitude: latitude !== undefined && latitude !== null ? Number(latitude) : null,
-                  longitude: longitude !== undefined && longitude !== null ? Number(longitude) : null,
-                  gpsAccuracy: gpsAccuracy !== undefined && gpsAccuracy !== null ? Number(gpsAccuracy) : null,
-                  gpsSource: gpsSource || 'LIVE',
-                },
-              })
-              .catch((err: any) => console.warn('Failed to insert inspectionPhoto in UPLOAD_PHOTO:', err));
-          }
-
-          if (resolvedEquipmentId) {
-            await (db as any).equipment
-              .update({
-                where: { id: resolvedEquipmentId },
-                data: { photoUrl: finalPhotoUrl },
-              })
-              .catch(() => {});
-          }
-
+          data.photoUrl = finalPhotoUrl;
+          data.photoDataUrl = undefined;
           createdEntityId = finalPhotoUrl;
-
         } else if (actionType === 'VISIT_STAMP') {
           const {
             buildingId,
@@ -588,29 +904,31 @@ export async function POST(request: Request) {
 
           const authoritativeDate = arrivedAt ? new Date(arrivedAt) : new Date();
 
-          await (db as any).activityLog.create({
-            data: {
-              organizationId,
-              userId,
-              userEmail: auth.user.email,
-              action: 'VISIT_STAMP',
-              entityType: 'Building',
-              entityId: buildingId || null,
-              details: JSON.stringify({
-                buildingName,
-                taskId: taskId || null,
-                latitude: latitude !== undefined && latitude !== null ? Number(latitude) : null,
-                longitude: longitude !== undefined && longitude !== null ? Number(longitude) : null,
-                accuracy: gpsAccuracy !== undefined && gpsAccuracy !== null ? Math.round(Number(gpsAccuracy)) : 8,
-                arrivedAt: authoritativeDate.toISOString(),
-                deviceId: deviceId || 'MOBILE_PWA',
-              }),
-              createdAt: authoritativeDate,
-            },
-          }).catch((err: any) => console.warn('Failed to insert activityLog for VISIT_STAMP:', err));
+          await (db as any).activityLog
+            .create({
+              data: {
+                organizationId,
+                userId,
+                userEmail: auth.user.email,
+                action: 'VISIT_STAMP',
+                entityType: 'Building',
+                entityId: buildingId || null,
+                details: JSON.stringify({
+                  buildingName,
+                  taskId: taskId || null,
+                  latitude: latitude !== undefined && latitude !== null ? Number(latitude) : null,
+                  longitude: longitude !== undefined && longitude !== null ? Number(longitude) : null,
+                  accuracy:
+                    gpsAccuracy !== undefined && gpsAccuracy !== null ? Math.round(Number(gpsAccuracy)) : 8,
+                  arrivedAt: authoritativeDate.toISOString(),
+                  deviceId: deviceId || 'MOBILE_PWA',
+                }),
+                createdAt: authoritativeDate,
+              },
+            })
+            .catch((err: any) => console.warn('Failed to insert activityLog for VISIT_STAMP:', err));
 
           createdEntityId = buildingId || 'VISIT_RECORDED';
-
         } else {
           throw new Error(`Unknown actionType: '${actionType}'`);
         }
@@ -661,13 +979,18 @@ export async function POST(request: Request) {
       }
     }
 
-    // Always return 200 with per-item outcomes so client gets structured results
-    return NextResponse.json({
-      success: true,
-      results,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        results,
+      },
+      { status: 200, headers: EVIDENCE_NO_STORE_HEADERS }
+    );
   } catch (error: any) {
     console.error('Fatal technician sync batch endpoint error:', error);
-    return NextResponse.json({ error: error.message || 'Sync endpoint error' }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || 'Sync endpoint error' },
+      { status: 500, headers: EVIDENCE_NO_STORE_HEADERS }
+    );
   }
 }

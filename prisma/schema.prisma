@@ -395,21 +395,22 @@ model Inspection {
 }
 
 model InspectionPhoto {
-  id           String      @id @default(cuid())
-  inspectionId String
-  inspection   Inspection  @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
-  equipmentId  String?
-  equipment    Equipment?  @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
-  category     String      @default("OTHER") // FRONT, GAUGE, SEAL, SERIAL, DAMAGE, LOCATION, OTHER
-  photoUrl     String      // Base64 data URL or remote URL
-  caption      String?
-  capturedAt   DateTime?   // device capture time (authoritative)
-  dayOfWeek    String?     // "MON".."SUN" derived at capture
-  latitude     Float?
-  longitude    Float?
-  gpsAccuracy  Float?
-  gpsSource    String?     // "LIVE" | "BASEMENT_CACHED"
-  createdAt    DateTime    @default(now())
+  id            String      @id @default(cuid())
+  inspectionId  String
+  inspection    Inspection  @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  equipmentId   String?
+  equipment     Equipment?  @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
+  clientPhotoId String?     @unique @map("client_photo_id")
+  category      String      @default("OTHER") // FRONT, GAUGE, SEAL, SERIAL, DAMAGE, LOCATION, OTHER
+  photoUrl      String      // Confirmed HTTPS storage URL (private bucket, signed on read)
+  caption       String?
+  capturedAt    DateTime?   // device capture time (authoritative)
+  dayOfWeek     String?     // "MON".."SUN" derived at capture
+  latitude      Float?
+  longitude     Float?
+  gpsAccuracy   Float?
+  gpsSource     String?     // "LIVE" | "BASEMENT_CACHED"
+  createdAt     DateTime    @default(now())
 
   @@index([inspectionId])
   @@index([equipmentId])
@@ -501,6 +502,8 @@ model WorkOrder {
   completedAt     DateTime?
   notes           String?
   actionTaken     WorkOrderActionTaken? @map("action_taken")
+  photoUrl        String?       @map("photo_url")
+  photos          WorkOrderPhoto[]
   isAutoScheduled Boolean       @default(false)
   rescheduledCount Int          @default(0)
   lastRescheduledAt DateTime?
@@ -514,6 +517,27 @@ model WorkOrder {
   @@index([status])
   @@index([organizationId, status])
   @@index([createdAt])
+}
+
+model WorkOrderPhoto {
+  id             String      @id @default(cuid())
+  workOrderId    String      @map("work_order_id")
+  workOrder      WorkOrder   @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  organizationId String      @map("organization_id")
+  clientPhotoId  String      @unique @map("client_photo_id")
+  photoUrl       String      @map("photo_url")
+  caption        String?
+  capturedAt     DateTime?   @map("captured_at")
+  dayOfWeek      String?     @map("day_of_week")
+  latitude       Float?
+  longitude      Float?
+  gpsAccuracy    Float?      @map("gps_accuracy")
+  gpsSource      String?     @map("gps_source")
+  createdAt      DateTime    @default(now()) @map("created_at")
+
+  @@index([workOrderId])
+  @@index([organizationId])
+  @@map("work_order_photos")
 }
 
 model CorrectiveAction {

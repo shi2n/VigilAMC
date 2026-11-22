@@ -6,6 +6,12 @@ import { getPlanConfig, PLAN_CONFIGS } from '@/lib/plans';
 import { computeAttentionDigest, computeTrendAnalytics } from '@/lib/dashboardAnalytics';
 import { runAutoSchedulerForOrg } from '@/lib/autoScheduler';
 import { calendarDayDiff, fromDbDate, todayCalendarDateString } from '@/lib/dates';
+import {
+  EVIDENCE_NO_STORE_HEADERS,
+  resolveSignedEvidenceUrlMap,
+  signInspectionRecords,
+  signWorkOrderRecords,
+} from '@/lib/evidencePhotos';
 
 export const dynamic = 'force-dynamic';
 
@@ -194,7 +200,21 @@ export async function GET(request: Request) {
           approvedByUserId: true,
           createdAt: true,
           inspectionPhotos: {
-            select: { id: true, photoUrl: true, category: true, caption: true },
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              clientPhotoId: true,
+              photoUrl: true,
+              category: true,
+              caption: true,
+              capturedAt: true,
+              dayOfWeek: true,
+              latitude: true,
+              longitude: true,
+              gpsAccuracy: true,
+              gpsSource: true,
+              createdAt: true,
+            },
           },
           building: { select: { id: true, name: true, address: true } },
           equipment: {
@@ -219,6 +239,22 @@ export async function GET(request: Request) {
           equipment: { select: { id: true, qrCode: true, type: true, location: true } },
           defect: { select: { id: true, description: true, severity: true } },
           assignedTo: { select: { id: true, fullName: true, email: true } },
+          photos: {
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              clientPhotoId: true,
+              photoUrl: true,
+              caption: true,
+              capturedAt: true,
+              dayOfWeek: true,
+              latitude: true,
+              longitude: true,
+              gpsAccuracy: true,
+              gpsSource: true,
+              createdAt: true,
+            },
+          },
         },
         orderBy: { createdAt: 'desc' },
       }),
@@ -658,30 +694,48 @@ export async function GET(request: Request) {
       totalAssets: evaluatedEquipments.length,
     });
 
-    return NextResponse.json({
-      authenticated: true,
-      user: auth.user,
-      profile: auth.profile,
-      company: organization,
-      isPlatformOwner: isPlatformOwner(auth),
-      summary,
-      kpis,
-      buildings: evaluatedBuildings,
-      clients,
-      equipments: evaluatedEquipments,
-      inspections: inspectionsRaw,
-      workOrders: workOrdersRaw,
-      correctiveActions: correctiveActionsRaw || [],
-      technicians: formattedTechnicians,
-      attentionDigest,
-      analytics,
-      subscription: {
-        subscription,
-        plan: planConfig,
-        usage,
-        availablePlans: Object.values(PLAN_CONFIGS),
+    // Sign all private evidence-photos URLs strictly scoped to this organization
+    const [signedInspections, signedWorkOrders, signedEqPhotoMap] = await Promise.all([
+      signInspectionRecords(inspectionsRaw, organizationId),
+      signWorkOrderRecords(workOrdersRaw, organizationId),
+      resolveSignedEvidenceUrlMap(
+        evaluatedEquipments.map((eq: any) => eq.photoUrl),
+        organizationId
+      ),
+    ]);
+
+    const equipmentsWithSignedPhotos = evaluatedEquipments.map((eq: any) => ({
+      ...eq,
+      photoUrl: eq.photoUrl ? signedEqPhotoMap.get(String(eq.photoUrl).trim()) ?? null : null,
+    }));
+
+    return NextResponse.json(
+      {
+        authenticated: true,
+        user: auth.user,
+        profile: auth.profile,
+        company: organization,
+        isPlatformOwner: isPlatformOwner(auth),
+        summary,
+        kpis,
+        buildings: evaluatedBuildings,
+        clients,
+        equipments: equipmentsWithSignedPhotos,
+        inspections: signedInspections,
+        workOrders: signedWorkOrders,
+        correctiveActions: correctiveActionsRaw || [],
+        technicians: formattedTechnicians,
+        attentionDigest,
+        analytics,
+        subscription: {
+          subscription,
+          plan: planConfig,
+          usage,
+          availablePlans: Object.values(PLAN_CONFIGS),
+        },
       },
-    });
+      { headers: EVIDENCE_NO_STORE_HEADERS }
+    );
   } catch (error: any) {
     console.error('Error in /api/dashboard/bootstrap:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

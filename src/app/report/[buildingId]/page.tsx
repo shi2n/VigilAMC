@@ -43,6 +43,12 @@ import {
 import { SITE_CONFIG } from '@/lib/siteConfig';
 import { EmailReportModal } from '@/components/admin/EmailReportModal';
 import {
+  EvidencePhotoItem,
+  EvidencePhotoLightbox,
+  extractEvidencePhotos,
+  PhotoNotReceivedSlot,
+} from '@/components/admin/EvidencePhotoGallery';
+import {
   REPORT_TYPES,
   ReportTypeCode,
   JURISDICTIONS,
@@ -122,6 +128,8 @@ export default function ComplianceReportPage() {
   const [copiedLink, setCopiedLink] = useState(false);
   const [clipboardFallbackUrl, setClipboardFallbackUrl] = useState<string | null>(null);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [lightboxPhoto, setLightboxPhoto] = useState<EvidencePhotoItem | null>(null);
+  const [brokenReportPhotoIdx, setBrokenReportPhotoIdx] = useState<Record<number, boolean>>({});
 
   const showToast = (msg: string, tone: 'success' | 'error' = 'success') => {
     setToastTone(tone);
@@ -383,26 +391,72 @@ export default function ComplianceReportPage() {
   const signatoryName =
     data?.signatoryName || company?.signatoryName || company?.contactPerson || 'Authorized Agency Representative';
 
-  // Gather labeled photo evidence across recent inspections
+  // Gather labeled photo evidence across recent inspections AND completed work orders (retaining original capture timestamp)
   const photoEvidence = useMemo(() => {
-    const list: Array<{ photoUrl: string; assetTag: string; location: string; timestamp: string; gpsVerified: boolean }> = [];
+    const list: Array<{
+      photoUrl: string;
+      assetTag: string;
+      location: string;
+      timestamp: string;
+      capturedAt?: string | Date | null;
+      dayOfWeek?: string | null;
+      latitude?: number | null;
+      longitude?: number | null;
+      gpsAccuracy?: number | null;
+      caption?: string | null;
+      gpsVerified: boolean;
+    }> = [];
+    const seenUrls = new Set<string>();
+
     for (const insp of inspections) {
-      if (Array.isArray(insp.inspectionPhotos)) {
-        for (const p of insp.inspectionPhotos) {
-          if (p.photoUrl && list.length < 12) {
-            list.push({
-              photoUrl: p.photoUrl,
-              assetTag: insp.equipment?.qrCode || 'Asset',
-              location: insp.equipment?.location || insp.location || 'Premises',
-              timestamp: formatSafeDateTime(p.createdAt || insp.date),
-              gpsVerified: Boolean(insp.latitude && insp.longitude),
-            });
-          }
+      const extracted = extractEvidencePhotos(insp);
+      for (const p of extracted) {
+        if (p.photoUrl && !seenUrls.has(p.photoUrl) && list.length < 18) {
+          seenUrls.add(p.photoUrl);
+          list.push({
+            photoUrl: p.photoUrl,
+            assetTag: insp.equipment?.qrCode || 'Asset',
+            location: insp.equipment?.location || insp.location || 'Premises',
+            timestamp: formatSafeDateTime(p.capturedAt || insp.date),
+            capturedAt: p.capturedAt || insp.date,
+            dayOfWeek: p.dayOfWeek || null,
+            latitude: p.latitude ?? insp.latitude ?? null,
+            longitude: p.longitude ?? insp.longitude ?? null,
+            gpsAccuracy: p.gpsAccuracy ?? insp.gpsAccuracy ?? null,
+            caption: p.caption || insp.remarks || null,
+            gpsVerified: Boolean((p.latitude ?? insp.latitude) && (p.longitude ?? insp.longitude)),
+          });
         }
       }
     }
+
+    const completedWOs: any[] = Array.isArray(building?.completedWorkOrders)
+      ? building.completedWorkOrders
+      : [];
+    for (const wo of completedWOs) {
+      const extracted = extractEvidencePhotos(wo);
+      for (const p of extracted) {
+        if (p.photoUrl && !seenUrls.has(p.photoUrl) && list.length < 18) {
+          seenUrls.add(p.photoUrl);
+          list.push({
+            photoUrl: p.photoUrl,
+            assetTag: wo.equipment?.qrCode || wo.title || 'Task',
+            location: wo.equipment?.location || building?.name || 'Premises',
+            timestamp: formatSafeDateTime(p.capturedAt || wo.completedAt),
+            capturedAt: p.capturedAt || wo.completedAt,
+            dayOfWeek: p.dayOfWeek || null,
+            latitude: p.latitude ?? null,
+            longitude: p.longitude ?? null,
+            gpsAccuracy: p.gpsAccuracy ?? null,
+            caption: p.caption || wo.notes || wo.title || null,
+            gpsVerified: Boolean(p.latitude && p.longitude),
+          });
+        }
+      }
+    }
+
     return list;
-  }, [inspections]);
+  }, [inspections, building?.completedWorkOrders, building?.name]);
 
   const hasPhotoAppendix = photoEvidence.length > 0;
   const totalContentPages = hasPhotoAppendix ? 4 : 3;
@@ -1314,24 +1368,49 @@ export default function ComplianceReportPage() {
               {photoEvidence.map((item, pIdx) => (
                 <div
                   key={pIdx}
+                  data-testid={`report-evidence-card-${pIdx}`}
                   className="rounded-xl border border-[#FED7AA] overflow-hidden bg-[#FFF8F2] flex flex-col justify-between text-xs"
                 >
-                  <div className="aspect-video bg-slate-100 relative overflow-hidden flex items-center justify-center">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={item.photoUrl}
-                      alt={`Evidence for ${item.assetTag}`}
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="aspect-video bg-[#FFF8F2] relative overflow-hidden flex items-center justify-center">
+                    {brokenReportPhotoIdx[pIdx] ? (
+                      <PhotoNotReceivedSlot compact />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setLightboxPhoto({
+                            photoUrl: item.photoUrl,
+                            assetTag: item.assetTag,
+                            caption: item.caption || item.location,
+                            capturedAt: item.capturedAt,
+                            dayOfWeek: item.dayOfWeek,
+                            latitude: item.latitude,
+                            longitude: item.longitude,
+                            gpsAccuracy: item.gpsAccuracy,
+                          })
+                        }
+                        className="w-full h-full block cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#C2410C]"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={item.photoUrl}
+                          alt={`Evidence for ${item.assetTag}`}
+                          onError={() =>
+                            setBrokenReportPhotoIdx((prev) => ({ ...prev, [pIdx]: true }))
+                          }
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                    )}
                   </div>
                   <div className="p-2.5 space-y-1">
                     <div className="font-mono font-bold text-[#1C1917] text-[11px]">
                       {item.assetTag}
                     </div>
-                    <div className="text-[10px] text-slate-500 truncate" title={item.location}>
+                    <div className="text-[10px] text-[#44403C] truncate" title={item.location}>
                       {item.location}
                     </div>
-                    <div className="flex items-center justify-between text-[9px] text-slate-400 pt-0.5">
+                    <div className="flex items-center justify-between text-[9px] text-[#57534E] pt-0.5">
                       <span>{item.timestamp}</span>
                       {item.gpsVerified && (
                         <span className="text-[#059669] font-bold">GPS Verified</span>
@@ -1399,6 +1478,12 @@ export default function ComplianceReportPage() {
           }}
         />
       )}
+      <div className="no-print">
+        <EvidencePhotoLightbox
+          photo={lightboxPhoto}
+          onClose={() => setLightboxPhoto(null)}
+        />
+      </div>
     </div>
   );
 }

@@ -2434,6 +2434,7 @@ export default function AdminDashboardPage() {
                     equipments={equipmentsList}
                     onRefreshDashboard={() => refreshDashboard({ silent: true })}
                     t={t}
+                    lang={currentLanguage}
                   />
                 )}
 
@@ -2443,6 +2444,7 @@ export default function AdminDashboardPage() {
                     onRefreshDashboard={() => refreshDashboard({ silent: true })}
                     showToast={showToast}
                     t={t}
+                    lang={currentLanguage}
                   />
                 )}
 

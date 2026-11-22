@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getAuthenticatedActor } from '@/lib/techSession';
 import { addCalendarDays, addCalendarMonths, toDbDate, todayCalendarDateString } from '@/lib/dates';
+import {
+  EVIDENCE_NO_STORE_HEADERS,
+  signInspectionRecords,
+  signWorkOrderRecords,
+} from '@/lib/evidencePhotos';
 
 export const dynamic = 'force-dynamic';
 
@@ -105,7 +110,7 @@ export async function GET(request: Request) {
       woWhere.buildingId = buildingFilter;
     }
 
-    const completedWorkOrders = await (db as any).workOrder.findMany({
+    const completedWorkOrdersRaw = await (db as any).workOrder.findMany({
       where: woWhere,
       include: {
         building: {
@@ -128,15 +133,35 @@ export async function GET(request: Request) {
             status: true,
           },
         },
+        photos: {
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            clientPhotoId: true,
+            photoUrl: true,
+            caption: true,
+            capturedAt: true,
+            dayOfWeek: true,
+            latitude: true,
+            longitude: true,
+            gpsAccuracy: true,
+            gpsSource: true,
+          },
+        },
       },
       orderBy: { completedAt: 'desc' },
       take: 50,
     });
 
+    const [signedInspections, completedWorkOrders] = await Promise.all([
+      signInspectionRecords(inspections, organizationId),
+      signWorkOrderRecords(completedWorkOrdersRaw, organizationId),
+    ]);
+
     // Unify into history list
     const history: any[] = [];
 
-    for (const insp of inspections) {
+    for (const insp of signedInspections) {
       let floorZone = insp.equipment?.floor || '';
       if (!floorZone && insp.equipment?.location) {
         const m = insp.equipment.location.match(/^(B\d|Basement\s*\d?|Ground(?:\s*Floor)?|GF|Floor\s*\d+|Level\s*\d+|Terrace|Pump\s*Room|Lobby|Gate)/i);
@@ -201,6 +226,27 @@ export async function GET(request: Request) {
       }
       if (!floorZone) floorZone = 'General';
 
+      const woPhotos =
+        Array.isArray(wo.photos) && wo.photos.length > 0
+          ? wo.photos.filter((p: any) => Boolean(p?.photoUrl))
+          : wo.photoUrl
+          ? [
+              {
+                id: `wo-photo-${wo.id}`,
+                photoUrl: wo.photoUrl,
+                caption: wo.notes || wo.title || null,
+                capturedAt: wo.completedAt || wo.updatedAt,
+                dayOfWeek: ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][
+                  new Date(wo.completedAt || wo.updatedAt).getDay()
+                ],
+                latitude: wo.building?.latitude || null,
+                longitude: wo.building?.longitude || null,
+                gpsAccuracy: null,
+                gpsSource: 'LIVE',
+              },
+            ]
+          : [];
+
       history.push({
         id: wo.id,
         source: 'WORK_ORDER',
@@ -218,7 +264,7 @@ export async function GET(request: Request) {
         result: 'COMPLETED',
         actionTaken: wo.actionTaken || null,
         remarks: wo.description + (wo.notes ? `\nNotes: ${wo.notes}` : ''),
-        photos: [],
+        photos: woPhotos,
         syncStatus: 'SYNCED',
         latitude: wo.building?.latitude,
         longitude: wo.building?.longitude,
@@ -239,11 +285,14 @@ export async function GET(request: Request) {
         })
       : history;
 
-    return NextResponse.json({
-      success: true,
-      history: filteredHistory,
-      totalCount: filteredHistory.length,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        history: filteredHistory,
+        totalCount: filteredHistory.length,
+      },
+      { headers: EVIDENCE_NO_STORE_HEADERS }
+    );
   } catch (error: any) {
     console.error('Error fetching technician history:', error);
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });

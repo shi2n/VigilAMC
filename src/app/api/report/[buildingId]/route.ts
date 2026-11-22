@@ -19,6 +19,12 @@ import {
   DEFAULT_LEGAL_REFERENCES,
 } from '@/lib/compliance-engine';
 import { todayCalendarDateString, addCalendarMonths, parseCalendarDate } from '@/lib/dates';
+import {
+  EVIDENCE_NO_STORE_HEADERS,
+  resolveSignedEvidenceUrlMap,
+  signInspectionRecords,
+  signWorkOrderRecords,
+} from '@/lib/evidencePhotos';
 
 export const dynamic = 'force-dynamic';
 
@@ -222,7 +228,7 @@ export async function GET(
       reportFooterText: orgRecord?.reportFooterText || null,
     };
 
-    const [correctiveActions, buildingInspections] = await Promise.all([
+    const [correctiveActions, buildingInspectionsRaw, completedWorkOrdersRaw] = await Promise.all([
       (db as any).correctiveAction
         .findMany({
           where: { buildingId: building.id },
@@ -268,7 +274,34 @@ export async function GET(
           },
         })
         .catch(() => []),
+      (db as any).workOrder
+        .findMany({
+          where: {
+            buildingId: building.id,
+            status: 'COMPLETED',
+          },
+          orderBy: { completedAt: 'desc' },
+          take: 25,
+          include: {
+            equipment: {
+              select: { id: true, qrCode: true, type: true, location: true },
+            },
+            photos: {
+              orderBy: { createdAt: 'desc' },
+              take: 4,
+            },
+          },
+        })
+        .catch(() => []),
     ]);
+
+    const reportOrgId = building.organizationId || '';
+    const [buildingInspections, signedCompletedWorkOrders] = reportOrgId
+      ? await Promise.all([
+          signInspectionRecords(buildingInspectionsRaw || [], reportOrgId),
+          signWorkOrderRecords(completedWorkOrdersRaw || [], reportOrgId),
+        ])
+      : [buildingInspectionsRaw || [], completedWorkOrdersRaw || []];
 
     const now = new Date();
     const rawEquipments = Array.isArray(building.equipments) ? building.equipments : [];
@@ -316,12 +349,21 @@ export async function GET(
             (r) => r.jurisdictionCode === activeJurisdictionCode || r.jurisdictionCode === 'GENERAL'
           );
 
+    // Sign equipment-level photoUrls scoped strictly to building.organizationId
+    const eqRawPhotoUrls = rawEquipments.map((eq: any) => extractPhotoUrl(eq, eq.inspections?.[0] || null));
+    const eqSignedPhotoMap = reportOrgId
+      ? await resolveSignedEvidenceUrlMap(eqRawPhotoUrls, reportOrgId)
+      : new Map<string, string | null>();
+
     // Map equipment items for backward compatibility + new 5-page report fields
     const evaluatedEquipments = rawEquipments.map((eq: any, idx: number) => {
       const calcItem = complianceResult.evaluatedEquipments[idx];
       const latestInspection = eq.inspections?.[0] || null;
       const latestLog = eq.serviceLogs?.[0] || null;
-      const resolvedPhotoUrl = extractPhotoUrl(eq, latestInspection);
+      const rawResolvedPhoto = extractPhotoUrl(eq, latestInspection);
+      const resolvedPhotoUrl = rawResolvedPhoto
+        ? eqSignedPhotoMap.get(rawResolvedPhoto.trim()) ?? rawResolvedPhoto
+        : null;
 
       // Step 1 & 6: Never invent "Routine IS 2190 physical & pressure verification" when no inspection exists
       const inspectionNotes = calcItem.hasActualInspectionRecord
@@ -594,6 +636,7 @@ export async function GET(
         jurisdictionCode: activeJurisdictionCode,
         equipments: evaluatedEquipments,
         inspections: sanitizedBuildingInspections,
+        completedWorkOrders: signedCompletedWorkOrders,
         correctiveActions,
         defects: rawDefects,
       },
@@ -624,7 +667,8 @@ export async function GET(
         overallStatus: complianceResult.reportStatus,
         statusBannerMessage: complianceResult.statusBannerMessage,
       },
-    });
+    },
+    { headers: EVIDENCE_NO_STORE_HEADERS });
   } catch (error: any) {
     console.error('Error generating compliance report:', error);
     return NextResponse.json({ error: error.message || 'Failed to generate report' }, { status: 500 });

@@ -14,6 +14,13 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import type { AdminDictionary } from '@/lib/i18n/admin';
+import {
+  EvidencePhotoItem,
+  EvidencePhotoLightbox,
+  EvidencePhotoThumb,
+  extractEvidencePhotos,
+  PhotoNotReceivedSlot,
+} from './EvidencePhotoGallery';
 
 interface ApprovalsQueueViewProps {
   inspections: any[];
@@ -29,6 +36,7 @@ interface ApprovalsQueueViewProps {
     description: string;
   }) => void;
   t: AdminDictionary;
+  lang?: string;
 }
 
 function getAllPhotoUrls(ins: any): string[] {
@@ -70,8 +78,10 @@ export function ApprovalsQueueView({
   showToast,
   onFlagFinding,
   t,
+  lang = 'en',
 }: ApprovalsQueueViewProps) {
   const [items, setItems] = useState<any[]>(initialInspections || []);
+  const [lightboxPhoto, setLightboxPhoto] = useState<EvidencePhotoItem | null>(null);
   const [filter, setFilter] = useState<'PENDING' | 'APPROVED' | 'RETURNED' | 'ALL'>('PENDING');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -322,8 +332,8 @@ export function ApprovalsQueueView({
               </thead>
               <tbody className="divide-y divide-[#FED7AA]/60 text-[#1C1917]">
                 {visibleItems.map((ins) => {
-                  const photos = getAllPhotoUrls(ins);
-                  const thumb = photos[0] || null;
+                  const evidencePhotos = extractEvidencePhotos(ins);
+                  const firstPhoto = evidencePhotos[0] || null;
                   const approvalSt = ins.approvalStatus || 'PENDING';
                   const isPending = approvalSt === 'PENDING';
 
@@ -377,27 +387,16 @@ export function ApprovalsQueueView({
                       </td>
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-2">
-                          {thumb ? (
-                            <a
-                              href={thumb}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 text-[#C2410C] hover:underline font-bold"
-                            >
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={thumb}
-                                alt="Inspection proof"
-                                className="w-9 h-9 rounded-lg object-cover border border-[#FED7AA]"
-                              />
-                              <span className="text-[11px]">
-                                {photos.length} photo{photos.length === 1 ? '' : 's'}
-                              </span>
-                            </a>
+                          {firstPhoto ? (
+                            <EvidencePhotoThumb
+                              photo={firstPhoto}
+                              lang={lang}
+                              size="sm"
+                              countBadge={evidencePhotos.length}
+                              onOpen={(p) => setLightboxPhoto(p)}
+                            />
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-[11px] text-[#44403C]">
-                              <Camera className="w-3.5 h-3.5 text-[#44403C]" />0 photos
-                            </span>
+                            <PhotoNotReceivedSlot lang={lang} compact />
                           )}
                         </div>
                       </td>
@@ -566,6 +565,12 @@ export function ApprovalsQueueView({
           </div>
         </div>
       )}
+      {/* Full-size Evidence Photo Lightbox */}
+      <EvidencePhotoLightbox
+        photo={lightboxPhoto}
+        lang={lang}
+        onClose={() => setLightboxPhoto(null)}
+      />
     </div>
   );
 }

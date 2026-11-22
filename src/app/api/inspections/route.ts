@@ -2,8 +2,13 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { logAuditActivity } from '@/lib/auth';
 import { getAuthenticatedActor } from '@/lib/techSession';
-import { ensureR2PhotoUrl } from '@/lib/r2';
 import { addCalendarMonths, addCalendarDays, todayCalendarDateString, toDbDate } from '@/lib/dates';
+import {
+  EVIDENCE_NO_STORE_HEADERS,
+  sanitizeIdSegment,
+  signInspectionRecords,
+  validateStoredPhotoUrl,
+} from '@/lib/evidencePhotos';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +16,7 @@ export async function GET(request: Request) {
   try {
     const auth = await getAuthenticatedActor(request);
     if (!auth || !auth.organization) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: EVIDENCE_NO_STORE_HEADERS });
     }
 
     const { searchParams } = new URL(request.url);
@@ -24,7 +29,7 @@ export async function GET(request: Request) {
       where.buildingId = buildingId;
     }
 
-    const inspections = await (db as any).inspection.findMany({
+    const inspectionsRaw = await (db as any).inspection.findMany({
       where,
       include: {
         building: { select: { id: true, name: true, address: true } },
@@ -33,7 +38,9 @@ export async function GET(request: Request) {
         },
         issues: true,
         partsUsed: true,
-        inspectionPhotos: true,
+        inspectionPhotos: {
+          orderBy: { createdAt: 'desc' },
+        },
         job: { select: { id: true, jobNumber: true, title: true } },
         defects: true,
       },
@@ -41,10 +48,12 @@ export async function GET(request: Request) {
       take: 50,
     });
 
-    return NextResponse.json({ inspections });
+    const inspections = await signInspectionRecords(inspectionsRaw, auth.organization.id);
+
+    return NextResponse.json({ inspections }, { headers: EVIDENCE_NO_STORE_HEADERS });
   } catch (error: any) {
     console.error('Error fetching inspections:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500, headers: EVIDENCE_NO_STORE_HEADERS });
   }
 }
 
@@ -81,44 +90,42 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Building ID is required' }, { status: 400 });
     }
 
-    let resolvedPhotoArray: string[] = [];
+    // Strictly validate every photo URL: reject blob:/data:/non-https/cross-org URLs!
+    const rawCandidateUrls: string[] = [];
     if (Array.isArray(photos)) {
       for (const p of photos) {
-        const u = await ensureR2PhotoUrl({
-          photoUrl: p,
-          organizationId: auth.organization.id,
-          folder: 'inspections',
-        });
-        if (u) resolvedPhotoArray.push(u);
+        if (typeof p === 'string' && p.trim()) rawCandidateUrls.push(p.trim());
       }
     } else if (typeof photos === 'string' && photos.trim()) {
       try {
         const parsed = JSON.parse(photos);
         if (Array.isArray(parsed)) {
           for (const p of parsed) {
-            const u = await ensureR2PhotoUrl({
-              photoUrl: p,
-              organizationId: auth.organization.id,
-              folder: 'inspections',
-            });
-            if (u) resolvedPhotoArray.push(u);
+            if (typeof p === 'string' && p.trim()) rawCandidateUrls.push(p.trim());
           }
+        } else {
+          rawCandidateUrls.push(photos.trim());
         }
       } catch {
-        const u = await ensureR2PhotoUrl({
-          photoUrl: photos,
-          organizationId: auth.organization.id,
-          folder: 'inspections',
-        });
-        if (u) resolvedPhotoArray.push(u);
+        rawCandidateUrls.push(photos.trim());
       }
-    } else if (photoUrl) {
-      const u = await ensureR2PhotoUrl({
-        photoUrl,
-        organizationId: auth.organization.id,
-        folder: 'inspections',
-      });
-      if (u) resolvedPhotoArray.push(u);
+    }
+    if (typeof photoUrl === 'string' && photoUrl.trim() && !rawCandidateUrls.includes(photoUrl.trim())) {
+      rawCandidateUrls.push(photoUrl.trim());
+    }
+
+    const resolvedPhotoArray: string[] = [];
+    for (const candidate of rawCandidateUrls) {
+      const check = validateStoredPhotoUrl(candidate, auth.organization.id);
+      if (!check.valid) {
+        return NextResponse.json(
+          { error: check.error },
+          { status: check.status, headers: EVIDENCE_NO_STORE_HEADERS }
+        );
+      }
+      if (!resolvedPhotoArray.includes(check.url)) {
+        resolvedPhotoArray.push(check.url);
+      }
     }
 
     const normalizedPhotos =
@@ -168,30 +175,40 @@ export async function POST(request: Request) {
       },
     });
 
-    // Persist InspectionPhoto records with full geo/time metadata (Section 6.2)
+    // Persist InspectionPhoto records with full geo/time metadata & idempotency (ZERO swallowed failures)
     if (resolvedPhotoArray.length > 0) {
       const captureTime = body.capturedAt ? new Date(body.capturedAt) : inspection.date;
       const dayStr =
         body.dayOfWeek ||
         ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][captureTime.getDay()];
-      for (const pUrl of resolvedPhotoArray) {
-        await (db as any).inspectionPhoto
-          .create({
-            data: {
-              inspectionId: inspection.id,
-              equipmentId: equipmentId || null,
-              category: body.photoCategory || 'GAUGE',
-              photoUrl: pUrl,
-              caption: body.caption || remarks || null,
-              capturedAt: captureTime,
-              dayOfWeek: dayStr,
-              latitude: latitude !== undefined && latitude !== null ? Number(latitude) : null,
-              longitude: longitude !== undefined && longitude !== null ? Number(longitude) : null,
-              gpsAccuracy: gpsAccuracy !== undefined && gpsAccuracy !== null ? Number(gpsAccuracy) : null,
-              gpsSource: body.gpsSource || (body.isBasementCached ? 'BASEMENT_CACHED' : 'LIVE'),
-            },
-          })
-          .catch((err: any) => console.warn('Failed to save inspectionPhoto:', err));
+      for (let i = 0; i < resolvedPhotoArray.length; i++) {
+        const pUrl = resolvedPhotoArray[i];
+        const cpid = body.clientPhotoId
+          ? sanitizeIdSegment(`${body.clientPhotoId}-${i}`, `insp-${inspection.id}-${i}`)
+          : sanitizeIdSegment(`insp-${inspection.id}-${i}`, `insp-${inspection.id}-${i}`);
+        await (db as any).inspectionPhoto.upsert({
+          where: { clientPhotoId: cpid },
+          update: {
+            inspectionId: inspection.id,
+            equipmentId: equipmentId || null,
+            photoUrl: pUrl,
+            caption: body.caption || remarks || null,
+          },
+          create: {
+            inspectionId: inspection.id,
+            equipmentId: equipmentId || null,
+            clientPhotoId: cpid,
+            category: body.photoCategory || 'GAUGE',
+            photoUrl: pUrl,
+            caption: body.caption || remarks || null,
+            capturedAt: captureTime,
+            dayOfWeek: dayStr,
+            latitude: latitude !== undefined && latitude !== null ? Number(latitude) : null,
+            longitude: longitude !== undefined && longitude !== null ? Number(longitude) : null,
+            gpsAccuracy: gpsAccuracy !== undefined && gpsAccuracy !== null ? Number(gpsAccuracy) : null,
+            gpsSource: body.gpsSource || (body.isBasementCached ? 'BASEMENT_CACHED' : 'LIVE'),
+          },
+        });
       }
     }
 

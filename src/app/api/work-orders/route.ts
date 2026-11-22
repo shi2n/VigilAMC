@@ -6,6 +6,12 @@ import { notifyOnAssignment } from '@/lib/notify';
 import { toDateInputString, toDbDate } from '@/lib/dates';
 import { logEquipmentHistory } from '@/lib/equipmentHistory';
 import { validateTaskCompletionAction } from '@/lib/i18n/taskAction';
+import {
+  EVIDENCE_NO_STORE_HEADERS,
+  sanitizeIdSegment,
+  signWorkOrderRecords,
+  validateStoredPhotoUrl,
+} from '@/lib/evidencePhotos';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,13 +22,29 @@ const WORK_ORDER_INCLUDE = {
   equipment: { select: { id: true, qrCode: true, type: true, location: true } },
   defect: { select: { id: true, description: true, severity: true } },
   assignedTo: { select: { id: true, fullName: true, email: true } },
+  photos: {
+    orderBy: { createdAt: 'desc' as const },
+    select: {
+      id: true,
+      clientPhotoId: true,
+      photoUrl: true,
+      caption: true,
+      capturedAt: true,
+      dayOfWeek: true,
+      latitude: true,
+      longitude: true,
+      gpsAccuracy: true,
+      gpsSource: true,
+      createdAt: true,
+    },
+  },
 };
 
 export async function GET(request: Request) {
   try {
     const auth = (await getCurrentUser(request)) || (await getAuthenticatedActor(request));
     if (!auth || !auth.organization) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: EVIDENCE_NO_STORE_HEADERS });
     }
 
     const { searchParams } = new URL(request.url);
@@ -35,16 +57,18 @@ export async function GET(request: Request) {
       where.status = status;
     }
 
-    const workOrders = await (db as any).workOrder.findMany({
+    const workOrdersRaw = await (db as any).workOrder.findMany({
       where,
       include: WORK_ORDER_INCLUDE,
       orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json({ workOrders });
+    const workOrders = await signWorkOrderRecords(workOrdersRaw, auth.organization.id);
+
+    return NextResponse.json({ workOrders }, { headers: EVIDENCE_NO_STORE_HEADERS });
   } catch (error: any) {
     console.error('Error fetching work orders:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500, headers: EVIDENCE_NO_STORE_HEADERS });
   }
 }
 
@@ -177,7 +201,7 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const { id, status, assignedToId, dueDate, isReschedule, notes } = body;
+    const { id, status, assignedToId, dueDate, isReschedule, notes, photoUrl, photoRecords } = body;
     const rawActionTaken = body.actionTaken ?? body.action_taken;
 
     if (!id || typeof id !== 'string') {
@@ -186,6 +210,55 @@ export async function PATCH(request: Request) {
 
     if (status && !VALID_WORK_ORDER_STATUSES.includes(status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+    }
+
+    // Strict server-side validation: reject any non-https (blob:/data:) photo URLs
+    let validatedPrimaryPhotoUrl: string | undefined;
+    if (photoUrl !== undefined && photoUrl !== null && String(photoUrl).trim() !== '') {
+      const check = validateStoredPhotoUrl(photoUrl, auth.organization.id);
+      if (!check.valid) {
+        return NextResponse.json({ error: check.error }, { status: check.status });
+      }
+      validatedPrimaryPhotoUrl = check.url;
+    }
+
+    const validatedPhotoRows: Array<{
+      clientPhotoId: string;
+      photoUrl: string;
+      caption: string | null;
+      capturedAt: Date;
+      dayOfWeek: string | null;
+      latitude: number | null;
+      longitude: number | null;
+      gpsAccuracy: number | null;
+      gpsSource: string | null;
+    }> = [];
+    if (Array.isArray(photoRecords)) {
+      for (let i = 0; i < photoRecords.length; i++) {
+        const pr = photoRecords[i];
+        const rawU = pr?.photoUrl || pr?.storageUrl;
+        if (!rawU) continue;
+        const check = validateStoredPhotoUrl(rawU, auth.organization.id);
+        if (!check.valid) {
+          return NextResponse.json({ error: check.error }, { status: check.status });
+        }
+        const cpid = sanitizeIdSegment(pr?.clientPhotoId || `wo-${id}-${i}`, `wo-${id}-${i}`);
+        const capDate = pr?.capturedAt ? new Date(pr.capturedAt) : new Date();
+        validatedPhotoRows.push({
+          clientPhotoId: cpid,
+          photoUrl: check.url,
+          caption: pr?.caption || null,
+          capturedAt: isNaN(capDate.getTime()) ? new Date() : capDate,
+          dayOfWeek: pr?.dayOfWeek || null,
+          latitude: pr?.latitude != null ? Number(pr.latitude) : null,
+          longitude: pr?.longitude != null ? Number(pr.longitude) : null,
+          gpsAccuracy: pr?.gpsAccuracy != null ? Number(pr.gpsAccuracy) : null,
+          gpsSource: pr?.gpsSource || null,
+        });
+      }
+      if (!validatedPrimaryPhotoUrl && validatedPhotoRows[0]) {
+        validatedPrimaryPhotoUrl = validatedPhotoRows[0].photoUrl;
+      }
     }
 
     const existing = await (db as any).workOrder.findFirst({
@@ -265,7 +338,35 @@ export async function PATCH(request: Request) {
       }
     }
 
-    const workOrder = await (db as any).workOrder.update({
+    if (validatedPrimaryPhotoUrl) {
+      updateData.photoUrl = validatedPrimaryPhotoUrl;
+    }
+
+    for (const pr of validatedPhotoRows) {
+      await (db as any).workOrderPhoto.upsert({
+        where: { clientPhotoId: pr.clientPhotoId },
+        update: {
+          workOrderId: existing.id,
+          photoUrl: pr.photoUrl,
+          caption: pr.caption,
+        },
+        create: {
+          workOrderId: existing.id,
+          organizationId: auth.organization.id,
+          clientPhotoId: pr.clientPhotoId,
+          photoUrl: pr.photoUrl,
+          caption: pr.caption,
+          capturedAt: pr.capturedAt,
+          dayOfWeek: pr.dayOfWeek,
+          latitude: pr.latitude,
+          longitude: pr.longitude,
+          gpsAccuracy: pr.gpsAccuracy,
+          gpsSource: pr.gpsSource,
+        },
+      });
+    }
+
+    const workOrderRaw = await (db as any).workOrder.update({
       where: {
         id: existing.id,
         organizationId: auth.organization.id,
@@ -273,6 +374,7 @@ export async function PATCH(request: Request) {
       data: updateData,
       include: WORK_ORDER_INCLUDE,
     });
+    const [workOrder] = await signWorkOrderRecords([workOrderRaw], auth.organization.id);
 
     if (existing.defectId && status) {
       const defectStatus =

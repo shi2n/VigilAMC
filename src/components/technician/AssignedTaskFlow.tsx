@@ -37,6 +37,8 @@ import {
   SupportedLanguage,
   TranslationDictionary,
 } from '@/lib/i18n/technician';
+import { getPhotoEvidenceDictionary } from '@/lib/i18n/photoEvidence';
+import type { StampedEvidencePhoto } from '@/lib/photoPipeline';
 
 export interface TaskEquipmentItem {
   id: string;
@@ -59,7 +61,7 @@ export interface TaskEquipmentItem {
 export interface TaskSubmitPayload {
   actionTaken: WorkOrderActionTakenValue;
   notes: string;
-  photoDataUrl: string | null;
+  stampedPhoto: StampedEvidencePhoto | null;
 }
 
 interface AssignedTaskDetailViewProps {
@@ -310,6 +312,50 @@ export function AssignedTaskDetailView({
               <p className="whitespace-pre-wrap break-words">{task.notes}</p>
             </div>
           )}
+          {(() => {
+            const photoT = getPhotoEvidenceDictionary(currentLang);
+            const taskPhotos = Array.isArray(task?.photos)
+              ? task.photos.filter((p: any) => Boolean(p?.photoUrl))
+              : task?.photoUrl
+              ? [{ id: `wo-primary-${task.id}`, photoUrl: task.photoUrl }]
+              : [];
+            if (taskPhotos.length > 0) {
+              return (
+                <div className="pt-1 space-y-1.5">
+                  <span className="text-[11px] font-bold text-[#44403C] block">
+                    {photoT.photoEvidenceTitle}
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {taskPhotos.map((p: any, idx: number) => (
+                      <a
+                        key={p.id || idx}
+                        href={p.photoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block w-20 h-20 rounded-xl overflow-hidden border border-[#FED7AA] bg-[#FFF8F2]"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={p.photoUrl}
+                          alt={photoT.photoEvidenceTitle}
+                          className="w-full h-full object-cover"
+                        />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+            return (
+              <div
+                data-testid="assigned-task-photo-not-received"
+                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#FFF8F2] border border-dashed border-[#FED7AA] text-[11px] font-semibold text-[#44403C]"
+              >
+                <Camera className="w-3.5 h-3.5 text-[#9A3412] shrink-0" />
+                <span>{photoT.photoNotReceived}</span>
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -458,9 +504,10 @@ interface TaskCompleteSubmitModalProps {
   currentLang: SupportedLanguage;
   t: TranslationDictionary;
   submitting: boolean;
+  uploadError?: string | null;
   onClose: () => void;
-  onCapturePhotoFile: (file: File) => Promise<string | null>;
-  onCapturePhotoNative?: () => Promise<string | null>;
+  onCapturePhotoFile: (file: File) => Promise<StampedEvidencePhoto | null>;
+  onCapturePhotoNative?: () => Promise<StampedEvidencePhoto | null>;
   isNativePlatform: boolean;
   onSubmit: (payload: TaskSubmitPayload) => Promise<boolean>;
 }
@@ -479,6 +526,7 @@ export function TaskCompleteSubmitModal({
   currentLang,
   t,
   submitting,
+  uploadError,
   onClose,
   onCapturePhotoFile,
   onCapturePhotoNative,
@@ -486,17 +534,28 @@ export function TaskCompleteSubmitModal({
   onSubmit,
 }: TaskCompleteSubmitModalProps) {
   const taskT = useMemo(() => getTaskActionDictionary(currentLang), [currentLang]);
+  const photoT = useMemo(() => getPhotoEvidenceDictionary(currentLang), [currentLang]);
 
   // Default selected = "No action needed" (ALWAYS visible)
   const [actionTaken, setActionTaken] = useState<WorkOrderActionTakenValue>('NO_ACTION');
   const [remarks, setRemarks] = useState<string>(task?.notes || '');
-  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
+  const [stampedPhoto, setStampedPhoto] = useState<StampedEvidencePhoto | null>(null);
   const [processingPhoto, setProcessingPhoto] = useState(false);
   const [isListeningMic, setIsListeningMic] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const remarksInputRef = useRef<HTMLTextAreaElement | null>(null);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (stampedPhoto?.previewUrl?.startsWith('blob:')) {
+        try {
+          URL.revokeObjectURL(stampedPhoto.previewUrl);
+        } catch {}
+      }
+    };
+  }, [stampedPhoto]);
 
   // When "Other" is selected, activate & focus remarks field
   useEffect(() => {
@@ -547,7 +606,7 @@ export function TaskCompleteSubmitModal({
       setProcessingPhoto(true);
       try {
         const result = await onCapturePhotoNative();
-        if (result) setPhotoDataUrl(result);
+        if (result) setStampedPhoto(result);
       } finally {
         setProcessingPhoto(false);
       }
@@ -562,9 +621,10 @@ export function TaskCompleteSubmitModal({
     setProcessingPhoto(true);
     try {
       const result = await onCapturePhotoFile(file);
-      if (result) setPhotoDataUrl(result);
+      if (result) setStampedPhoto(result);
     } finally {
       setProcessingPhoto(false);
+      e.target.value = '';
     }
   };
 
@@ -578,7 +638,7 @@ export function TaskCompleteSubmitModal({
     await onSubmit({
       actionTaken,
       notes: remarks.trim(),
-      photoDataUrl,
+      stampedPhoto,
     });
   };
 
@@ -655,22 +715,62 @@ export function TaskCompleteSubmitModal({
             {t.capturePhoto}
           </span>
 
-          {photoDataUrl ? (
-            <div className="relative rounded-2xl overflow-hidden border border-[#D6D3D1] shadow-xs">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={photoDataUrl} alt="Task photo proof" className="w-full h-40 object-cover" />
-              <button
-                type="button"
-                onClick={() => setPhotoDataUrl(null)}
-                className="absolute top-2 right-2 px-2.5 py-1.5 rounded-lg bg-[#1C1917]/85 text-white text-xs font-bold"
-              >
-                {t.retakePhoto}
-              </button>
+          {stampedPhoto ? (
+            <div
+              data-testid="task-photo-card"
+              className="rounded-2xl overflow-hidden border border-[#FED7AA] bg-[#FFF8F2] shadow-xs"
+            >
+              <div className="relative aspect-[16/10] w-full bg-[#1C1917]/5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={stampedPhoto.previewUrl}
+                  alt={photoT.photoEvidenceTitle}
+                  className="w-full h-full object-cover"
+                />
+                <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-[#1C1917]/85 text-white text-[10px] font-bold">
+                  {photoT.stampVerified} · {Math.max(1, Math.round(stampedPhoto.sizeBytes / 1024))} KB
+                </span>
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => setStampedPhoto(null)}
+                  className="absolute top-2 right-2 px-2.5 py-1.5 rounded-lg bg-[#1C1917]/85 text-white text-xs font-bold disabled:opacity-50"
+                >
+                  {t.retakePhoto}
+                </button>
+              </div>
+              {uploadError && (
+                <div
+                  data-testid="task-photo-upload-failed-card"
+                  role="alert"
+                  className="px-3 py-2.5 bg-[#FFF8F2] border-t border-[#EA580C]/40 flex items-center justify-between gap-2"
+                >
+                  <div className="min-w-0 flex items-center gap-2 text-xs text-[#9A3412] font-bold">
+                    <AlertTriangle className="w-4 h-4 text-[#C2410C] shrink-0" />
+                    <div className="min-w-0">
+                      <span className="block">{photoT.uploadFailedRetry}</span>
+                      <span className="block text-[11px] font-medium text-[#44403C] truncate">
+                        {uploadError}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    data-testid="task-photo-retry-btn"
+                    disabled={submitting}
+                    onClick={handleConfirm}
+                    className="px-3 py-1.5 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] text-white text-xs font-extrabold shrink-0 disabled:opacity-50"
+                  >
+                    {photoT.retryUpload}
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div>
               <input
                 ref={photoInputRef}
+                data-testid="task-photo-file-input"
                 type="file"
                 accept="image/*"
                 capture="environment"
@@ -679,6 +779,7 @@ export function TaskCompleteSubmitModal({
               />
               <button
                 type="button"
+                data-testid="task-capture-photo-btn"
                 disabled={processingPhoto}
                 onClick={handleCameraClick}
                 className="w-full min-h-[48px] py-3 px-4 rounded-2xl bg-[#FFF8F2] border-2 border-dashed border-[#FED7AA] hover:border-[#C2410C] text-[#1C1917] font-bold text-xs flex items-center justify-center gap-2 motion-safe:transition-colors motion-safe:duration-150"

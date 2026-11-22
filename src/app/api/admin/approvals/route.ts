@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { getAuthenticatedActor } from '@/lib/techSession';
 import { logAuditActivity } from '@/lib/auth';
 import { notifyOnAssignment } from '@/lib/notify';
+import { EVIDENCE_NO_STORE_HEADERS, signInspectionRecords } from '@/lib/evidencePhotos';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,7 +11,7 @@ export async function GET(request: Request) {
   try {
     const auth = await getAuthenticatedActor(request);
     if (!auth || !auth.organization) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: EVIDENCE_NO_STORE_HEADERS });
     }
 
     const { searchParams } = new URL(request.url);
@@ -23,21 +24,25 @@ export async function GET(request: Request) {
       where.approvalStatus = statusFilter;
     }
 
-    const inspections = await (db as any).inspection.findMany({
+    const inspectionsRaw = await (db as any).inspection.findMany({
       where,
       include: {
         building: { select: { id: true, name: true, address: true } },
         equipment: {
           select: { id: true, qrCode: true, type: true, capacity: true, location: true },
         },
-        inspectionPhotos: true,
+        inspectionPhotos: {
+          orderBy: { createdAt: 'desc' },
+        },
         technician: { select: { id: true, fullName: true, email: true, employeeId: true } },
       },
       orderBy: { date: 'desc' },
       take: 100,
     });
 
-    return NextResponse.json({ inspections });
+    const inspections = await signInspectionRecords(inspectionsRaw, auth.organization.id);
+
+    return NextResponse.json({ inspections }, { headers: EVIDENCE_NO_STORE_HEADERS });
   } catch (error: any) {
     console.error('Error fetching approval queue:', error);
     return NextResponse.json({ error: error.message || 'Server error' }, { status: 500 });

@@ -16,6 +16,13 @@ import Link from 'next/link';
 import { compressImageToDataUrl, uploadCompressedPhoto } from '@/lib/compressImage';
 import { AdminDictionary } from '@/lib/i18n/admin';
 import { formatBuildingPickerLabel } from '@/lib/buildingUtils';
+import {
+  EvidencePhotoItem,
+  EvidencePhotoLightbox,
+  EvidencePhotoThumb,
+  extractEvidencePhotos,
+  PhotoNotReceivedSlot,
+} from './EvidencePhotoGallery';
 
 interface InspectionsViewProps {
   showToast: (msg: string) => void;
@@ -26,6 +33,7 @@ interface InspectionsViewProps {
   equipments?: any[];
   onRefreshDashboard?: () => Promise<void> | void;
   t?: AdminDictionary;
+  lang?: string;
 }
 
 export function InspectionsView({
@@ -37,9 +45,11 @@ export function InspectionsView({
   equipments = [],
   onRefreshDashboard,
   t,
+  lang = 'en',
 }: InspectionsViewProps) {
   const [inspections, setInspections] = useState<any[]>(initialInspections || []);
   const [technicians, setTechnicians] = useState<any[]>(initialTechnicians || []);
+  const [lightboxPhoto, setLightboxPhoto] = useState<EvidencePhotoItem | null>(null);
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PASSED' | 'FAILED' | 'SERVICE_REQUIRED'>('ALL');
   const [search, setSearch] = useState('');
@@ -129,22 +139,19 @@ export function InspectionsView({
     if (!file) return;
     try {
       setUploadingPhoto(true);
-      const previewUrl = await compressImageToDataUrl(file, {
-        maxDimension: 1280,
-        quality: 0.75,
-        mimeType: 'image/webp',
-      });
-      setInspectionForm((prev) => ({ ...prev, photoUrl: previewUrl }));
-
       const uploaded = await uploadCompressedPhoto(file, 'inspections', {
-        maxDimension: 1280,
-        quality: 0.75,
-        mimeType: 'image/webp',
+        maxDimension: 1600,
+        quality: 0.82,
+        mimeType: 'image/jpeg',
       });
+      if (!uploaded?.url || !uploaded.url.startsWith('https://')) {
+        throw new Error('Server did not return a confirmed photo URL');
+      }
       setInspectionForm((prev) => ({ ...prev, photoUrl: uploaded.url }));
       showToast('Inspection photo uploaded successfully!');
     } catch (err: any) {
       console.error(err);
+      setInspectionForm((prev) => ({ ...prev, photoUrl: '' }));
       showToast(err?.message || 'Failed to upload inspection photo');
     } finally {
       setUploadingPhoto(false);
@@ -343,7 +350,8 @@ export function InspectionsView({
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
                 {filteredInspections.map((ins) => {
-                  const thumb = parseFirstPhotoUrl(ins);
+                  const evidencePhotos = extractEvidencePhotos(ins);
+                  const firstPhoto = evidencePhotos[0] || null;
                   return (
                     <tr key={ins.id} className="hover:bg-[#FFF0E6]/80 transition-colors">
                       <td className="py-3.5 px-4 text-slate-500 tabular-nums">
@@ -376,28 +384,21 @@ export function InspectionsView({
                           </span>
                         )}
                       </td>
-                      <td className="py-3.5 px-4">
-                        {thumb ? (
-                          <a
-                            href={thumb}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 text-[#C2410C] hover:underline font-semibold"
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={thumb}
-                              alt="Inspection evidence"
-                              className="w-7 h-7 rounded object-cover border border-slate-200"
-                              onError={(e) => {
-                                e.currentTarget.onerror = null;
-                                e.currentTarget.src = '/brand/logo-tile-192.png';
-                              }}
-                            />
-                            <span className="text-[10px]">R2 Proof</span>
-                          </a>
+                      <td className="py-3.5 px-4" data-testid={`inspection-photo-cell-${ins.id}`}>
+                        {firstPhoto ? (
+                          <EvidencePhotoThumb
+                            photo={firstPhoto}
+                            lang={lang}
+                            size="sm"
+                            countBadge={evidencePhotos.length}
+                            onOpen={(p) => setLightboxPhoto(p)}
+                          />
                         ) : (
-                          <span className="text-slate-400 text-[11px]">{ins.overallCondition || 'GOOD'}</span>
+                          <PhotoNotReceivedSlot
+                            lang={lang}
+                            compact
+                            testId={`inspection-photo-missing-${ins.id}`}
+                          />
                         )}
                       </td>
                       <td className="py-3.5 px-4 text-right">
@@ -676,6 +677,12 @@ export function InspectionsView({
           </div>
         </div>
       )}
+      {/* Full-size Evidence Photo Lightbox */}
+      <EvidencePhotoLightbox
+        photo={lightboxPhoto}
+        lang={lang}
+        onClose={() => setLightboxPhoto(null)}
+      />
     </div>
   );
 }

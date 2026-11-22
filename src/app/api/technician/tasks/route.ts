@@ -4,6 +4,12 @@ import { getAuthenticatedActor } from '@/lib/techSession';
 import { addCalendarDays, calendarDayDiff, dueChip, toDbDate } from '@/lib/dates';
 import { validateTaskCompletionAction } from '@/lib/i18n/taskAction';
 import { logAuditActivity } from '@/lib/auth';
+import {
+  EVIDENCE_NO_STORE_HEADERS,
+  sanitizeIdSegment,
+  signWorkOrderRecords,
+  validateStoredPhotoUrl,
+} from '@/lib/evidencePhotos';
 
 export const dynamic = 'force-dynamic';
 
@@ -87,12 +93,30 @@ export async function GET(request: Request) {
             lastServiceDate: true,
           },
         },
+        photos: {
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            clientPhotoId: true,
+            photoUrl: true,
+            caption: true,
+            capturedAt: true,
+            dayOfWeek: true,
+            latitude: true,
+            longitude: true,
+            gpsAccuracy: true,
+            gpsSource: true,
+            createdAt: true,
+          },
+        },
       },
       orderBy: [
         { priority: 'desc' },
         { dueDate: 'asc' },
       ],
     });
+
+    const signedWorkOrders = await signWorkOrderRecords(workOrders, organizationId);
 
     // 2. Derive Routine AMC Inspection Tasks from due/overdue equipment in assigned buildings
     const buildingsWithDueEquip = await (db as any).building.findMany({
@@ -194,7 +218,7 @@ export async function GET(request: Request) {
     }
 
     // Map Work Orders
-    for (const wo of workOrders) {
+    for (const wo of signedWorkOrders) {
       let floorZone = wo.equipment?.floor || '';
       if (!floorZone && wo.equipment?.location) {
         const m = wo.equipment.location.match(/^(B\d|Basement\s*\d?|Ground(?:\s*Floor)?|GF|Floor\s*\d+|Level\s*\d+|Terrace|Pump\s*Room|Lobby|Gate)/i);
@@ -286,6 +310,8 @@ export async function GET(request: Request) {
         completedAt: wo.completedAt,
         actionTaken: wo.actionTaken || null,
         notes: wo.notes || null,
+        photoUrl: wo.photoUrl || null,
+        photos: Array.isArray(wo.photos) ? wo.photos : [],
         dueState,
         diffDays,
         buildingId: wo.buildingId,
@@ -397,16 +423,19 @@ export async function GET(request: Request) {
     const dueSoonCount = activeTasks.filter((t) => t.dueState === 'DUE_SOON').length;
     const okCount = activeTasks.filter((t) => t.dueState === 'OK').length;
 
-    return NextResponse.json({
-      success: true,
-      tasks,
-      todayCounters: {
-        overdueCount,
-        dueSoonCount,
-        okCount,
-        totalActive: activeTasks.length,
+    return NextResponse.json(
+      {
+        success: true,
+        tasks,
+        todayCounters: {
+          overdueCount,
+          dueSoonCount,
+          okCount,
+          totalActive: activeTasks.length,
+        },
       },
-    });
+      { headers: EVIDENCE_NO_STORE_HEADERS }
+    );
   } catch (error: any) {
     console.error('Error fetching technician tasks:', error);
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
@@ -427,11 +456,58 @@ export async function PATCH(request: Request) {
 
     const body = await request.json();
     const taskId = body.taskId || body.workOrderId;
-    const { status, notes } = body;
+    const { status, notes, photoUrl, photoRecords } = body;
     const rawActionTaken = body.actionTaken ?? body.action_taken;
 
     if (!taskId || !status) {
       return NextResponse.json({ error: 'taskId and status are required' }, { status: 400 });
+    }
+
+    // Strict server-side photo URL validation (rejects blob:/data:/non-https/cross-org)
+    let validatedPhotoUrl: string | undefined;
+    if (photoUrl !== undefined && photoUrl !== null && String(photoUrl).trim() !== '') {
+      const check = validateStoredPhotoUrl(photoUrl, organizationId);
+      if (!check.valid) {
+        return NextResponse.json({ error: check.error }, { status: check.status });
+      }
+      validatedPhotoUrl = check.url;
+    }
+    const validatedPhotos: Array<{
+      clientPhotoId: string;
+      photoUrl: string;
+      caption: string | null;
+      capturedAt: Date;
+      dayOfWeek: string | null;
+      latitude: number | null;
+      longitude: number | null;
+      gpsAccuracy: number | null;
+      gpsSource: string | null;
+    }> = [];
+    if (Array.isArray(photoRecords)) {
+      for (let i = 0; i < photoRecords.length; i++) {
+        const pr = photoRecords[i];
+        const rawU = pr?.photoUrl || pr?.storageUrl;
+        if (!rawU) continue;
+        const check = validateStoredPhotoUrl(rawU, organizationId);
+        if (!check.valid) {
+          return NextResponse.json({ error: check.error }, { status: check.status });
+        }
+        const dt = pr?.capturedAt ? new Date(pr.capturedAt) : new Date();
+        validatedPhotos.push({
+          clientPhotoId: sanitizeIdSegment(pr?.clientPhotoId || `task-${taskId}-${i}`, `task-${taskId}-${i}`),
+          photoUrl: check.url,
+          caption: pr?.caption || null,
+          capturedAt: isNaN(dt.getTime()) ? new Date() : dt,
+          dayOfWeek: pr?.dayOfWeek || null,
+          latitude: pr?.latitude != null ? Number(pr.latitude) : null,
+          longitude: pr?.longitude != null ? Number(pr.longitude) : null,
+          gpsAccuracy: pr?.gpsAccuracy != null ? Number(pr.gpsAccuracy) : null,
+          gpsSource: pr?.gpsSource || null,
+        });
+      }
+      if (!validatedPhotoUrl && validatedPhotos[0]) {
+        validatedPhotoUrl = validatedPhotos[0].photoUrl;
+      }
     }
 
     // Valid statuses: OPEN, ASSIGNED, IN_PROGRESS, COMPLETED, CANCELLED
@@ -478,15 +554,40 @@ export async function PATCH(request: Request) {
     if (status === 'COMPLETED') {
       updateData.completedAt = new Date();
     }
+    if (validatedPhotoUrl) {
+      updateData.photoUrl = validatedPhotoUrl;
+    }
 
-    const updated = await (db as any).workOrder.update({
+    for (const pr of validatedPhotos) {
+      await (db as any).workOrderPhoto.upsert({
+        where: { clientPhotoId: pr.clientPhotoId },
+        update: { workOrderId: existing.id, photoUrl: pr.photoUrl, caption: pr.caption },
+        create: {
+          workOrderId: existing.id,
+          organizationId,
+          clientPhotoId: pr.clientPhotoId,
+          photoUrl: pr.photoUrl,
+          caption: pr.caption,
+          capturedAt: pr.capturedAt,
+          dayOfWeek: pr.dayOfWeek,
+          latitude: pr.latitude,
+          longitude: pr.longitude,
+          gpsAccuracy: pr.gpsAccuracy,
+          gpsSource: pr.gpsSource,
+        },
+      });
+    }
+
+    const updatedRaw = await (db as any).workOrder.update({
       where: { id: existing.id },
       data: updateData,
       include: {
         building: true,
         equipment: true,
+        photos: { orderBy: { createdAt: 'desc' } },
       },
     });
+    const [updated] = await signWorkOrderRecords([updatedRaw], organizationId);
 
     if (status === 'COMPLETED') {
       await logAuditActivity({

@@ -21,6 +21,14 @@ import { HelpCircle, MessageCircle, Eye, CheckCircle2 } from 'lucide-react';
 import { isDuplicateSubmission } from '@/lib/submissionGuard';
 import { Ripple } from '@/components/ui/ripple';
 import { getActionTakenLabel, getTaskActionDictionary } from '@/lib/i18n/taskAction';
+import {
+  EvidencePhotoGallery,
+  EvidencePhotoItem,
+  EvidencePhotoLightbox,
+  EvidencePhotoThumb,
+  extractEvidencePhotos,
+  PhotoNotReceivedSlot,
+} from './EvidencePhotoGallery';
 
 interface WorkOrdersViewProps {
   showToast: (msg: string) => void;
@@ -63,6 +71,7 @@ export function WorkOrdersView({
   const prefersReducedMotion = useReducedMotion();
   const taskT = getTaskActionDictionary(lang);
   const [detailModalWO, setDetailModalWO] = useState<any | null>(null);
+  const [lightboxPhoto, setLightboxPhoto] = useState<EvidencePhotoItem | null>(null);
   const [workOrders, setWorkOrders] = useState<any[]>(initialWorkOrders || []);
   const [technicians, setTechnicians] = useState<any[]>(initialTechnicians || []);
   const [buildings, setBuildings] = useState<any[]>(initialBuildings || []);
@@ -640,6 +649,34 @@ export function WorkOrdersView({
                         )}
                       </div>
                     )}
+                    {(() => {
+                      const woPhotos = extractEvidencePhotos(wo);
+                      if (woPhotos.length > 0) {
+                        return (
+                          <div className="pt-1.5" data-testid={`workorder-photo-strip-${wo.id}`}>
+                            <EvidencePhotoThumb
+                              photo={woPhotos[0]}
+                              lang={lang}
+                              size="sm"
+                              countBadge={woPhotos.length}
+                              onOpen={(p) => setLightboxPhoto(p)}
+                            />
+                          </div>
+                        );
+                      }
+                      if (wo.status === 'COMPLETED') {
+                        return (
+                          <div className="pt-1.5">
+                            <PhotoNotReceivedSlot
+                              lang={lang}
+                              compact
+                              testId={`workorder-photo-missing-${wo.id}`}
+                            />
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                     <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 pt-1">
                       <span className="flex items-center gap-1 text-slate-600">
                         <Building2 className="w-3.5 h-3.5 text-[#C2410C]" />
@@ -864,6 +901,15 @@ export function WorkOrdersView({
                       {detailModalWO.completedAt ? formatCalendarDate(detailModalWO.completedAt) : '—'}
                     </span>
                   </div>
+                </div>
+
+                {/* Stamped Photo Evidence Gallery (click -> full-size lightbox; honest placeholder when missing) */}
+                <div className="pt-1">
+                  <EvidencePhotoGallery
+                    photos={extractEvidencePhotos(detailModalWO)}
+                    lang={lang}
+                    onSelectPhoto={(p) => setLightboxPhoto(p)}
+                  />
                 </div>
               </div>
 
@@ -1098,6 +1144,12 @@ export function WorkOrdersView({
           </div>
         )}
       </AnimatePresence>
+      {/* Full-size Evidence Photo Lightbox */}
+      <EvidencePhotoLightbox
+        photo={lightboxPhoto}
+        lang={lang}
+        onClose={() => setLightboxPhoto(null)}
+      />
     </div>
   );
 }
