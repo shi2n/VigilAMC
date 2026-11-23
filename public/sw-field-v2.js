@@ -10,7 +10,7 @@
  * 5. skipWaiting on install, clientsClaim on activate
  */
 
-const CACHE_VERSION = 'v2-20261115-2';
+const CACHE_VERSION = 'v2-20261123-1';
 const SHELL_CACHE = `vigilamc-field-shell-${CACHE_VERSION}`;
 const STATIC_CACHE = `vigilamc-field-static-${CACHE_VERSION}`;
 const CURRENT_CACHES = [SHELL_CACHE, STATIC_CACHE];
@@ -142,25 +142,27 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3. HTML Navigations (/technician): STALE-WHILE-REVALIDATE
-  // Never serve HTML for Next.js RSC flight fetches (? _rsc= or RSC: 1 header).
+  // 3. HTML Navigations (/technician and /technician/* only): STALE-WHILE-REVALIDATE
+  // Never intercept marketing/admin/public routes, and never serve HTML for Next.js RSC flight fetches (?_rsc= or RSC: 1).
+  const isTechnicianRoute = url.pathname === '/technician' || url.pathname.startsWith('/technician/');
   const isRscRequest = request.headers.get('RSC') === '1' || url.searchParams.has('_rsc');
-  if (!isRscRequest && (request.mode === 'navigate' || url.pathname === '/technician' || url.pathname.startsWith('/technician/'))) {
+  if (!isRscRequest && isTechnicianRoute && request.mode === 'navigate') {
     event.respondWith(
       (async () => {
-        const cached =
-          (await caches.match(request, { cacheName: SHELL_CACHE, ignoreVary: true })) ||
-          (await caches.match('/technician', { cacheName: SHELL_CACHE, ignoreVary: true, ignoreSearch: true }));
+        const isRootTech = url.pathname === '/technician';
+        const cacheKey = isRootTech ? '/technician' : request;
+        const cached = await caches.match(cacheKey, {
+          cacheName: SHELL_CACHE,
+          ignoreVary: true,
+          ignoreSearch: isRootTech,
+        });
 
         const networkPromise = fetch(request)
           .then(async (response) => {
             // Only real HTML may become the offline shell; RSC payloads on the same path would poison it.
             if (response && response.status === 200 && isHtmlResponse(response)) {
               const shellCache = await caches.open(SHELL_CACHE);
-              await Promise.all([
-                shellCache.put(request, response.clone()),
-                shellCache.put('/technician', response.clone()),
-              ]);
+              await shellCache.put(cacheKey, response.clone());
               // Pre-warm any hashed _next/static assets referenced in fresh HTML
               try {
                 const html = await response.clone().text();
@@ -190,6 +192,13 @@ self.addEventListener('fetch', (event) => {
 
         const networkResponse = await networkPromise;
         if (networkResponse) return networkResponse;
+
+        const fallbackShell = await caches.match('/technician', {
+          cacheName: SHELL_CACHE,
+          ignoreVary: true,
+          ignoreSearch: true,
+        });
+        if (fallbackShell) return fallbackShell;
 
         return new Response(
           '<!DOCTYPE html><html><head><meta charset="utf-8"><title>VigilAMC Offline</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font-family:sans-serif;padding:24px;text-align:center;background:#FFF8F2;color:#1C1917;"><h2>VigilAMC Field App</h2><p>You are offline. Please reconnect to load the app shell for the first time.</p></body></html>',
