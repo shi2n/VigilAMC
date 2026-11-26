@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Allow: /llms.txt
+Disallow: /api/
+Disallow: /admin/
+Disallow: /dashboard/
+
+Sitemap: https://vigilamc.com/sitemap.xml
+LLMs-Txt: https://www.vigilamc.com/llms.txt
