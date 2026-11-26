@@ -2,16 +2,16 @@ import type { Metadata } from 'next';
 import { SITE_CONFIG } from '@/lib/siteConfig';
 
 export const metadata: Metadata = {
-  title: 'How It Works — Fire Safety Compliance Software for Agencies | VigilAMC',
+  title: 'How VigilAMC Works | End-to-End Fire Safety AMC Workflow',
   description:
-    'Fire safety compliance software for agencies that goes live in a day: import your Excel register, inspect offline with GPS proof, and automate 5-page Form B reports.',
+    'See how fire safety agencies onboard client sites, tag extinguishers, log field inspections, and generate audit-ready compliance reports.',
   alternates: {
     canonical: '/how-it-works',
   },
   openGraph: {
-    title: 'How It Works — Fire Safety Compliance Software for Agencies | VigilAMC',
+    title: 'How VigilAMC Works | End-to-End Fire Safety AMC Workflow',
     description:
-      'Live in a day. Not a quarter. Step 1 Set up, Step 2 Inspect offline with GPS, Step 3 Form B reports & alerts.',
+      'See how fire safety agencies onboard client sites, tag extinguishers, log field inspections, and generate audit-ready compliance reports.',
     url: `${SITE_CONFIG.SITE_URL}/how-it-works`,
     siteName: SITE_CONFIG.COMPANY_NAME,
     locale: 'en_IN',

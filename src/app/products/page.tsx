@@ -11,16 +11,16 @@ import { ClientPortalSection } from '@/components/home/ClientPortalSection';
 import { FinalCtaSection } from '@/components/home/FinalCtaSection';
 
 export const metadata: Metadata = {
-  title: 'Products — Fire Safety Compliance Software for Agencies | VigilAMC',
+  title: 'Fire Safety AMC Software Modules & Products | VigilAMC',
   description:
-    'Fire safety compliance software for agencies: the offline Android Technician App, the Admin Dashboard with Form B reports, and the white-label Client Portal.',
+    "Explore VigilAMC's suite of tools for fire safety agencies: Asset Tag ID registers, mobile field inspection logs, and client compliance portals.",
   alternates: {
     canonical: '/products',
   },
   openGraph: {
-    title: 'Products — Fire Safety Compliance Software for Agencies | VigilAMC',
+    title: 'Fire Safety AMC Software Modules & Products | VigilAMC',
     description:
-      'Everything your agency needs — the field app, the office dashboard, and your clients window into it all.',
+      "Explore VigilAMC's suite of tools for fire safety agencies: Asset Tag ID registers, mobile field inspection logs, and client compliance portals.",
     url: `${SITE_CONFIG.SITE_URL}/products`,
     siteName: SITE_CONFIG.COMPANY_NAME,
     locale: 'en_IN',

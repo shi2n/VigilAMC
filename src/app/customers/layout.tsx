@@ -2,16 +2,16 @@ import type { Metadata } from 'next';
 import { SITE_CONFIG } from '@/lib/siteConfig';
 
 export const metadata: Metadata = {
-  title: 'Customer Stories & AMC Agencies | VigilAMC',
+  title: 'Customers & Use Cases | VigilAMC Fire Safety Platform',
   description:
-    'Discover how fire-safety maintenance companies across India trust VigilAMC to safeguard commercial towers, hospitals, and industrial plants.',
+    'Discover how fire safety contractors and facility maintenance teams use VigilAMC to eliminate paperwork and retain AMC clients.',
   alternates: {
     canonical: '/customers',
   },
   openGraph: {
-    title: 'Customer Stories & AMC Agencies | VigilAMC',
+    title: 'Customers & Use Cases | VigilAMC Fire Safety Platform',
     description:
-      'Discover how fire-safety maintenance companies across India trust VigilAMC.',
+      'Discover how fire safety contractors and facility maintenance teams use VigilAMC to eliminate paperwork and retain AMC clients.',
     url: `${SITE_CONFIG.SITE_URL}/customers`,
     siteName: SITE_CONFIG.COMPANY_NAME,
     locale: 'en_IN',

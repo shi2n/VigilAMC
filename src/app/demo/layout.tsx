@@ -2,16 +2,16 @@ import type { Metadata } from 'next';
 import { SITE_CONFIG } from '@/lib/siteConfig';
 
 export const metadata: Metadata = {
-  title: 'Interactive Live Demo | VigilAMC — Fire Safety AMC Software',
+  title: 'Book a Live Demo | VigilAMC Fire Safety Software',
   description:
-    'Experience VigilAMC live in your browser: explore fire safety asset management, Form-B statutory compliance, and mobile technician workflows.',
+    'Schedule a personalized walkthrough of VigilAMC to see how your agency can digitize field inspections and compliance reporting.',
   alternates: {
     canonical: '/demo',
   },
   openGraph: {
-    title: 'Interactive Live Demo | VigilAMC — Fire Safety AMC Software',
+    title: 'Book a Live Demo | VigilAMC Fire Safety Software',
     description:
-      'Experience VigilAMC live in your browser: explore fire safety asset management, Form-B statutory compliance, and mobile technician workflows.',
+      'Schedule a personalized walkthrough of VigilAMC to see how your agency can digitize field inspections and compliance reporting.',
     url: `${SITE_CONFIG.SITE_URL}/demo`,
     siteName: SITE_CONFIG.COMPANY_NAME,
     locale: 'en_IN',
@@ -19,9 +19,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Interactive Live Demo | VigilAMC',
+    title: 'Book a Live Demo | VigilAMC Fire Safety Software',
     description:
-      'Experience VigilAMC live in your browser: explore fire safety asset management and compliance.',
+      'Schedule a personalized walkthrough of VigilAMC to see how your agency can digitize field inspections and compliance reporting.',
     creator: '@vigilamc',
   },
 };

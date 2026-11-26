@@ -2,16 +2,16 @@ import type { Metadata } from 'next';
 import { SITE_CONFIG } from '@/lib/siteConfig';
 
 export const metadata: Metadata = {
-  title: 'Features — Fire Safety Compliance Software for Agencies | VigilAMC',
+  title: 'Features: GPS & Asset Tag Tracking, Inspections & Alerts | VigilAMC',
   description:
-    'Fire safety compliance software for agencies: offline mobile inspections, GPS-stamped photos, Excel bulk import, white-label 5-page Form B reports, and 22 Indian languages.',
+    'Automate fire safety inspections with Asset Tag ID tracking, floor/zone checklists, GPS-verified technician check-ins, digital signatures, and automated renewal alerts.',
   alternates: {
     canonical: '/features',
   },
   openGraph: {
-    title: 'Features — Fire Safety Compliance Software for Agencies | VigilAMC',
+    title: 'Features: GPS & Asset Tag Tracking, Inspections & Alerts | VigilAMC',
     description:
-      'Everything else your agency runs on — grouped across Field Tools, Office Tools, Reports & Compliance, and Platform.',
+      'Automate fire safety inspections with Asset Tag ID tracking, floor/zone checklists, GPS-verified technician check-ins, digital signatures, and automated renewal alerts.',
     url: `${SITE_CONFIG.SITE_URL}/features`,
     siteName: SITE_CONFIG.COMPANY_NAME,
     locale: 'en_IN',

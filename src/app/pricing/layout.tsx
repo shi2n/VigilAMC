@@ -2,16 +2,16 @@ import type { Metadata } from 'next';
 import { SITE_CONFIG } from '@/lib/siteConfig';
 
 export const metadata: Metadata = {
-  title: 'Pricing & Pilot Program | VigilAMC — Fire Safety AMC Software',
+  title: 'VigilAMC Pricing | Plans for Fire Safety AMC Agencies',
   description:
-    'Simple, transparent pricing for Indian fire-safety service agencies. Free pilot onboarding for your first building.',
+    'Transparent subscription plans built for growing fire safety contractors and enterprise AMC service providers.',
   alternates: {
     canonical: '/pricing',
   },
   openGraph: {
-    title: 'Pricing & Pilot Program | VigilAMC',
+    title: 'VigilAMC Pricing | Plans for Fire Safety AMC Agencies',
     description:
-      'Simple, transparent pricing for Indian fire-safety service agencies.',
+      'Transparent subscription plans built for growing fire safety contractors and enterprise AMC service providers.',
     url: `${SITE_CONFIG.SITE_URL}/pricing`,
     siteName: SITE_CONFIG.COMPANY_NAME,
     locale: 'en_IN',

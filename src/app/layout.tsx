@@ -18,7 +18,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(SITE_CONFIG.SITE_URL),
+  metadataBase: new URL("https://vigilamc.com"),
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -28,9 +28,9 @@ export const metadata: Metadata = {
   other: {
     "mobile-web-app-capable": "yes",
   },
-  title: "VigilAMC - Fire Safety AMC & Compliance Software | India",
+  title: "VigilAMC | Fire Safety AMC & Compliance Software",
   description:
-    "VigilAMC is the simple software that fire-safety service companies across India use to track every extinguisher, pump and alarm, record visits with live GPS, photos and client signatures, and send compliance-ready Form-B reports in minutes.",
+    "Manage fire safety Annual Maintenance Contracts, GPS & Asset Tag ID tracking, technician inspections, and NOC renewal alerts on one platform.",
   keywords: [
     "Fire Safety AMC Software India",
     "Fire NOC Compliance India",
