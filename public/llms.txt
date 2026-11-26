@@ -1,0 +1,29 @@
+# VigilAMC
+
+> VigilAMC is a B2B SaaS platform for fire safety Annual Maintenance Contract (AMC) agencies to manage client assets, field technician inspections, compliance reporting, and renewal workflows.
+
+## Core Product
+- [Home](https://vigilamc.com): Overview of VigilAMC fire safety AMC management software.
+- [Products](https://vigilamc.com/products): Full breakdown of VigilAMC software modules and solutions.
+- [Features](https://vigilamc.com/features): Key capabilities including GPS and Asset Tag ID tracking, floor/zone checklists, camera photo proof, inspection logging, and compliance alerts.
+- [How It Works](https://vigilamc.com/how-it-works): Step-by-step workflow for agencies, technicians, and clients.
+- [AMC Solutions](https://vigilamc.com/amc): Details on fire safety Annual Maintenance Contract management.
+- [Pricing](https://vigilamc.com/pricing): Subscription plans and pricing details.
+- [Book a Demo](https://vigilamc.com/demo): Schedule a live product walkthrough.
+
+## Tools & Resources
+- [Extinguisher Calculator](https://vigilamc.com/tools/extinguisher-calculator): Interactive fire extinguisher requirement calculator.
+- [Sample Report](https://vigilamc.com/sample-report): Example fire safety inspection and compliance report.
+- [Verify Certificate](https://vigilamc.com/verify): Public verification page for VigilAMC inspection records and reports.
+
+## Company & Trust
+- [Customers](https://vigilamc.com/customers): Who uses VigilAMC and customer use cases.
+- [About](https://vigilamc.com/about): Company mission and background.
+- [Founder](https://vigilamc.com/founder): Information about the founder of VigilAMC.
+- [Security](https://vigilamc.com/security): Data security and platform protection practices.
+- [Contact](https://vigilamc.com/contact): Sales and support contact details.
+
+## Legal
+- [Privacy Policy](https://vigilamc.com/privacy)
+- [Terms of Service](https://vigilamc.com/terms)
+- [Cookie Policy](https://vigilamc.com/cookies)

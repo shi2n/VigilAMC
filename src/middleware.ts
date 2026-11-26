@@ -27,7 +27,8 @@ function isExemptPath(pathname: string): boolean {
     pathname === '/manifest.json' ||
     pathname === '/icon.svg' ||
     pathname === '/robots.txt' ||
-    pathname === '/sitemap.xml'
+    pathname === '/sitemap.xml' ||
+    pathname === '/llms.txt'
   ) {
     return true;
   }
