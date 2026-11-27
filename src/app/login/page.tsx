@@ -87,6 +87,23 @@ export default function LoginPage() {
   }, [forgotResendCooldown]);
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash || '';
+      const search = window.location.search || '';
+      if (hash.includes('type=recovery') || search.includes('type=recovery')) {
+        window.location.replace(`/reset-password${search}${hash}`);
+        return;
+      }
+    }
+
+    const {
+      data: { subscription: recoverySub },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        router.replace('/reset-password');
+      }
+    });
+
     router.prefetch('/dashboard');
     const urlParams =
       typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
@@ -185,6 +202,9 @@ export default function LoginPage() {
       }
     }
     checkUser();
+    return () => {
+      recoverySub.unsubscribe();
+    };
   }, [supabase, router]);
 
   const handleGoogleSignIn = async () => {

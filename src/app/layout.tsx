@@ -90,6 +90,23 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${sora.variable} ${inter.variable} scroll-smooth`}>
       <head>
+        <Script id="recovery-redirect-guard" strategy="beforeInteractive">
+          {`
+            (function() {
+              try {
+                var path = window.location.pathname || '';
+                var hash = window.location.hash || '';
+                var search = window.location.search || '';
+                var isRecovery =
+                  hash.indexOf('type=recovery') !== -1 ||
+                  search.indexOf('type=recovery') !== -1;
+                if (isRecovery && path !== '/reset-password') {
+                  window.location.replace('/reset-password' + search + hash);
+                }
+              } catch (e) {}
+            })();
+          `}
+        </Script>
         {/* Google Tag Manager / Google tag */}
         <Script
           src={`https://www.googletagmanager.com/gtm.js?id=${SITE_CONFIG.GTM_ID}`}
