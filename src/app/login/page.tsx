@@ -12,12 +12,15 @@ import {
   User,
   Phone,
   ArrowRight,
+  ArrowLeft,
   CheckCircle2,
   AlertCircle,
   LogOut,
   RefreshCw,
   Eye,
   EyeOff,
+  KeyRound,
+  Clock,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { supabase as otpSupabase } from '@/lib/supabase';
@@ -46,6 +49,21 @@ export default function LoginPage() {
   const [phone, setPhone] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Two-step Email OTP verification state for new account creation (SIGN_UP)
+  const [signupStep, setSignupStep] = useState<'details' | 'verify_otp'>('details');
+  const [signupNormalizedEmail, setSignupNormalizedEmail] = useState('');
+  const [signupOtpCode, setSignupOtpCode] = useState('');
+  const [signupResendCooldown, setSignupResendCooldown] = useState(0);
+  const [resendingSignupOtp, setResendingSignupOtp] = useState(false);
+
+  useEffect(() => {
+    if (signupResendCooldown <= 0) return;
+    const timer = window.setInterval(() => {
+      setSignupResendCooldown((prev) => (prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [signupResendCooldown]);
 
   useEffect(() => {
     router.prefetch('/dashboard');
@@ -181,9 +199,16 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+
       const regRes = await fetch('/api/auth/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           userId: currentUser?.id,
           email: currentUser?.email || email.trim().toLowerCase(),
@@ -270,10 +295,14 @@ export default function LoginPage() {
 
       if (data.user) {
         const accessToken = data.session?.access_token;
+        const regHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (accessToken) {
+          regHeaders['Authorization'] = `Bearer ${accessToken}`;
+        }
         const [regRes] = await Promise.all([
           fetch('/api/auth/register', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: regHeaders,
             body: JSON.stringify({
               userId: data.user.id,
               email: data.user.email,
@@ -336,20 +365,178 @@ export default function LoginPage() {
     setErrorMsg(null);
     setSuccessMsg(null);
 
+    const cleanEmail = email.trim().toLowerCase();
+    if (!companyName.trim() || !fullName.trim() || !phone.trim()) {
+      const msg = 'Agency name, full name, and mobile number are required.';
+      setErrorMsg(msg);
+      toast.error(msg);
+      return;
+    }
+
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      const msg = 'Please enter a valid official email address.';
+      setErrorMsg(msg);
+      toast.error(msg);
+      return;
+    }
+
     if (password.length < 6) {
-      setErrorMsg('Password must be at least 6 characters long.');
+      const msg = 'Password must be at least 6 characters long.';
+      setErrorMsg(msg);
+      toast.error(msg);
       return;
     }
 
     setLoading(true);
+    try {
+      const { error } = await otpSupabase.auth.signInWithOtp({
+        email: cleanEmail,
+        options: {
+          shouldCreateUser: true,
+          data: {
+            full_name: fullName.trim(),
+            agency_name: companyName.trim(),
+            company_name: companyName.trim(),
+            phone: phone.trim(),
+          },
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      setEmail(cleanEmail);
+      setSignupNormalizedEmail(cleanEmail);
+      setSignupOtpCode('');
+      setSignupStep('verify_otp');
+      setSignupResendCooldown(60);
+      const sentMsg = `Verification OTP sent to ${cleanEmail}. Enter the code from your inbox to complete registration.`;
+      setSuccessMsg(sentMsg);
+      toast.success(sentMsg);
+    } catch (err: any) {
+      const msg = err?.message || 'Could not send verification OTP. Please check your email and try again.';
+      setErrorMsg(msg);
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendSignupOtp = async () => {
+    if (signupResendCooldown > 0 || resendingSignupOtp || loading || !signupNormalizedEmail) {
+      return;
+    }
+    setErrorMsg(null);
+    setSuccessMsg(null);
+    setResendingSignupOtp(true);
 
     try {
+      const cleanEmail = signupNormalizedEmail.trim().toLowerCase();
+      const { error } = await otpSupabase.auth.signInWithOtp({
+        email: cleanEmail,
+        options: {
+          shouldCreateUser: true,
+          data: {
+            full_name: fullName.trim(),
+            agency_name: companyName.trim(),
+            company_name: companyName.trim(),
+            phone: phone.trim(),
+          },
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      setSignupOtpCode('');
+      setSignupResendCooldown(60);
+      const resentMsg = `A new verification code has been sent to ${cleanEmail}. Use this latest code only.`;
+      setSuccessMsg(resentMsg);
+      toast.success(resentMsg);
+    } catch (err: any) {
+      const msg = err?.message || 'Could not resend verification code. Please try again.';
+      setErrorMsg(msg);
+      toast.error(msg);
+    } finally {
+      setResendingSignupOtp(false);
+    }
+  };
+
+  const handleVerifySignupOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    const cleanCode = signupOtpCode.replace(/\D/g, '').slice(0, 8);
+    if (cleanCode.length < 6 || cleanCode.length > 8) {
+      const msg = 'Please enter the complete verification code (6 to 8 digits) sent to your email.';
+      setErrorMsg(msg);
+      toast.error(msg);
+      return;
+    }
+
+    const cleanEmail = signupNormalizedEmail.trim().toLowerCase();
+    if (!cleanEmail) {
+      setSignupStep('details');
+      const msg = 'Email address missing. Please re-enter your details.';
+      setErrorMsg(msg);
+      toast.error(msg);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      let verifyResult = await otpSupabase.auth.verifyOtp({
+        email: cleanEmail,
+        token: cleanCode,
+        type: 'email',
+      });
+
+      if (verifyResult.error) {
+        const lowerErr = (verifyResult.error.message || '').toLowerCase();
+        if (lowerErr.includes('expired') || lowerErr.includes('invalid')) {
+          const signupRetry = await otpSupabase.auth.verifyOtp({
+            email: cleanEmail,
+            token: cleanCode,
+            type: 'signup',
+          });
+          if (!signupRetry.error && signupRetry.data?.session) {
+            verifyResult = signupRetry;
+          }
+        }
+      }
+
+      if (verifyResult.error) {
+        throw verifyResult.error;
+      }
+
+      const verifiedSession = verifyResult.data.session;
+      const verifiedUser = verifyResult.data.user ?? verifiedSession?.user ?? null;
+      if (!verifiedSession || !verifiedUser) {
+        throw new Error('Email verified, but no active session was returned. Please request a new code.');
+      }
+
+      // Sync verified session into the Next.js SSR cookie client
+      try {
+        await supabase.auth.setSession({
+          access_token: verifiedSession.access_token,
+          refresh_token: verifiedSession.refresh_token,
+        });
+      } catch {
+        // Bearer token auth continues below
+      }
+
       const regRes = await fetch('/api/auth/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${verifiedSession.access_token}`,
+        },
         body: JSON.stringify({
-          email: email.trim().toLowerCase(),
-          password,
+          userId: verifiedUser.id,
+          email: cleanEmail,
           fullName: fullName.trim(),
           agencyName: companyName.trim(),
           companyName: companyName.trim(),
@@ -357,24 +544,38 @@ export default function LoginPage() {
         }),
       });
 
-      const regData = await regRes.json();
+      const regData = await regRes.json().catch(() => ({}));
       if (!regRes.ok || !regData.success) {
-        throw new Error(regData.error || 'Registration failed');
+        await Promise.allSettled([supabase.auth.signOut(), otpSupabase.auth.signOut()]);
+        throw new Error(regData.error || 'Could not finalize your agency account.');
       }
 
-      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
-      });
-
-      if (loginError) {
-        setSuccessMsg('Agency account created successfully! Please sign in with your credentials.');
-        setMode('SIGN_IN');
-      } else if (loginData.session) {
-        router.push('/dashboard');
+      // Set chosen password on brand-new verified accounts so password login also works
+      if (!regData.alreadyExists && password.length >= 6) {
+        const { error: pwError } = await otpSupabase.auth.updateUser({
+          password,
+          data: {
+            full_name: fullName.trim(),
+            agency_name: companyName.trim(),
+            company_name: companyName.trim(),
+            phone: phone.trim(),
+          },
+        });
+        if (pwError) {
+          toast.error(`Account verified, but password could not be saved: ${pwError.message}`);
+        }
       }
+
+      toast.success(
+        regData.alreadyExists
+          ? 'Email verified! Signing you in to your existing agency workspace.'
+          : 'Email verified! Your VigilAMC agency account has been created.'
+      );
+      router.push('/dashboard');
     } catch (err: any) {
-      setErrorMsg(err.message || 'Registration failed. Please check your information.');
+      const msg = err?.message || 'Invalid or expired verification code. Please check the latest code or resend.';
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -419,10 +620,14 @@ export default function LoginPage() {
     }
 
     const accessToken = session.access_token;
+    const otpRegHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (accessToken) {
+      otpRegHeaders['Authorization'] = `Bearer ${accessToken}`;
+    }
     const [regRes] = await Promise.all([
       fetch('/api/auth/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: otpRegHeaders,
         body: JSON.stringify({
           userId: activeUser.id,
           email: (activeUser.email || '').trim().toLowerCase(),
@@ -643,6 +848,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => {
                   setMode('SIGN_IN');
+                  setSignupStep('details');
                   setErrorMsg(null);
                   setSuccessMsg(null);
                 }}
@@ -657,6 +863,7 @@ export default function LoginPage() {
                 data-testid="email-otp-tab-btn"
                 onClick={() => {
                   setMode('EMAIL_OTP');
+                  setSignupStep('details');
                   setErrorMsg(null);
                   setSuccessMsg(null);
                 }}
@@ -668,8 +875,10 @@ export default function LoginPage() {
               </button>
               <button
                 type="button"
+                data-testid="register-agency-tab-btn"
                 onClick={() => {
                   setMode('SIGN_UP');
+                  setSignupStep('details');
                   setErrorMsg(null);
                   setSuccessMsg(null);
                 }}
@@ -687,7 +896,7 @@ export default function LoginPage() {
             <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#FFF0E6] border border-[#FED7AA] text-[#C2410C] text-[11px] font-bold tracking-wider uppercase">
               {mode === 'SIGN_IN' && 'AGENCY WORKSPACE'}
               {mode === 'EMAIL_OTP' && 'PASSWORDLESS EMAIL OTP'}
-              {mode === 'SIGN_UP' && 'FREE TESTING ACCESS'}
+              {mode === 'SIGN_UP' && (signupStep === 'verify_otp' ? 'STEP 2 OF 2 · VERIFY EMAIL' : 'FREE TESTING ACCESS')}
               {mode === 'FORGOT_PASSWORD' && 'PASSWORD RECOVERY'}
               {mode === 'COMPLETE_PROFILE' && 'SETUP WORKSPACE'}
             </div>
@@ -698,18 +907,26 @@ export default function LoginPage() {
                   Sign in with Email OTP<span className="text-[#EA580C]">.</span>
                 </>
               )}
-              {mode === 'SIGN_UP' && (
-                <>
-                  Create your agency account<span className="text-[#EA580C]">.</span>
-                </>
-              )}
+              {mode === 'SIGN_UP' &&
+                (signupStep === 'verify_otp' ? (
+                  <>
+                    Verify your email<span className="text-[#EA580C]">.</span>
+                  </>
+                ) : (
+                  <>
+                    Create your agency account<span className="text-[#EA580C]">.</span>
+                  </>
+                ))}
               {mode === 'FORGOT_PASSWORD' && 'Reset your password.'}
               {mode === 'COMPLETE_PROFILE' && 'Complete agency setup.'}
             </h1>
             <p className="text-xs sm:text-sm text-[#44403C] leading-snug">
               {mode === 'SIGN_IN' && 'Log in to your VigilAMC workspace.'}
-              {mode === 'EMAIL_OTP' && 'Enter your email for a one-time 6-digit login or signup code.'}
-              {mode === 'SIGN_UP' && 'VigilAMC is in active testing — full free access during the testing period.'}
+              {mode === 'EMAIL_OTP' && 'Enter your email for a one-time login or signup verification code.'}
+              {mode === 'SIGN_UP' &&
+                (signupStep === 'verify_otp'
+                  ? `Enter the OTP sent to ${signupNormalizedEmail} to activate your agency account.`
+                  : 'Enter your details and verify your email with an OTP to start free testing access.')}
               {mode === 'FORGOT_PASSWORD' && "Enter your registered email and we'll send a password reset link."}
               {mode === 'COMPLETE_PROFILE' && 'Specify your agency name and phone to initialize your workspace.'}
             </p>
@@ -771,7 +988,7 @@ export default function LoginPage() {
               )}
 
               {/* 1. Continue with Google Button */}
-              {(mode === 'SIGN_IN' || mode === 'SIGN_UP') && (
+              {(mode === 'SIGN_IN' || (mode === 'SIGN_UP' && signupStep === 'details')) && (
                 <div className="space-y-4">
                   <button
                     type="button"
@@ -1013,8 +1230,8 @@ export default function LoginPage() {
                 </form>
               )}
 
-              {/* SIGN_UP Form */}
-              {mode === 'SIGN_UP' && (
+              {/* SIGN_UP Form — Step 1 (Details) & Step 2 (Mandatory Email OTP Verification) */}
+              {mode === 'SIGN_UP' && signupStep === 'details' && (
                 <form onSubmit={handleSignUp} className="space-y-3.5">
                   {/* Agency Name */}
                   <div className="relative">
@@ -1073,7 +1290,7 @@ export default function LoginPage() {
                       htmlFor="signup-email"
                       className="pointer-events-none absolute left-4 top-3.5 text-xs font-semibold text-[#57534E] transition-all duration-150 origin-[0] -translate-y-2.5 scale-90 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:text-sm peer-placeholder-shown:text-[#57534E] peer-focus:-translate-y-2.5 peer-focus:scale-90 peer-focus:text-xs peer-focus:text-[#EA580C]"
                     >
-                      Official Email *
+                      Official Email (OTP verified) *
                     </label>
                     <Mail className="w-4 h-4 text-stone-400 peer-focus:text-[#EA580C] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors" />
                   </div>
@@ -1131,20 +1348,25 @@ export default function LoginPage() {
                     </div>
                   </div>
 
+                  <p className="text-[11px] text-[#57534E] leading-snug">
+                    We will send an OTP to your official email to verify ownership before activating your account.
+                  </p>
+
                   {/* CTA: Full-width rounded-full #EA580C button */}
                   <button
                     type="submit"
                     disabled={loading}
+                    data-testid="signup-send-otp-btn"
                     className="w-full min-h-[46px] h-12 bg-[#EA580C] hover:bg-[#C2410C] active:bg-[#9A3412] disabled:opacity-60 text-white font-bold text-sm rounded-full shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#EA580C]"
                   >
                     {loading ? (
                       <>
                         <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Creating account...</span>
+                        <span>Sending verification OTP...</span>
                       </>
                     ) : (
                       <>
-                        <span>Create free account</span>
+                        <span>Send Verification OTP</span>
                         <ArrowRight className="w-4 h-4" />
                       </>
                     )}
@@ -1157,12 +1379,133 @@ export default function LoginPage() {
                       type="button"
                       onClick={() => {
                         setMode('SIGN_IN');
+                        setSignupStep('details');
                         setErrorMsg(null);
                         setSuccessMsg(null);
                       }}
                       className="font-bold text-[#EA580C] hover:text-[#C2410C] hover:underline focus:outline-none"
                     >
                       Log in
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* SIGN_UP Step 2 — Mandatory Email OTP Verification */}
+              {mode === 'SIGN_UP' && signupStep === 'verify_otp' && (
+                <form onSubmit={handleVerifySignupOtp} className="space-y-4" data-testid="signup-otp-form" noValidate>
+                  {/* Confirmed email pill + Edit details button */}
+                  <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-[#FFF8F2] border border-[#FED7AA]">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Mail className="w-4 h-4 text-[#EA580C] shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-[#57534E]">
+                          Verifying email for {companyName.trim() || 'your agency'}
+                        </div>
+                        <span
+                          className="text-xs font-semibold text-[#1C1917] truncate block"
+                          title={signupNormalizedEmail}
+                        >
+                          {signupNormalizedEmail}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSignupStep('details');
+                        setSignupOtpCode('');
+                        setSignupResendCooldown(0);
+                        setErrorMsg(null);
+                        setSuccessMsg(null);
+                      }}
+                      disabled={loading}
+                      data-testid="signup-edit-details-btn"
+                      className="shrink-0 inline-flex items-center gap-1 text-xs font-bold text-[#C2410C] hover:text-[#9A3412] hover:underline disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#EA580C] rounded px-1 py-0.5 cursor-pointer"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5" />
+                      <span>Change email</span>
+                    </button>
+                  </div>
+
+                  {/* Numeric OTP input */}
+                  <div>
+                    <label
+                      htmlFor="signup-otp-code"
+                      className="block text-xs font-bold text-[#1C1917] uppercase tracking-wider mb-1.5"
+                    >
+                      Email Verification Code
+                    </label>
+                    <div className="relative">
+                      <KeyRound className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        id="signup-otp-code"
+                        name="otp"
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        maxLength={8}
+                        pattern="[0-9]{6,8}"
+                        required
+                        autoFocus
+                        disabled={loading}
+                        placeholder="Enter code"
+                        value={signupOtpCode}
+                        onChange={(e) => {
+                          setSignupOtpCode(e.target.value.replace(/\D/g, '').slice(0, 8));
+                          if (errorMsg) setErrorMsg(null);
+                        }}
+                        className="w-full min-h-[48px] pl-10 pr-4 py-2.5 text-center font-mono text-lg font-bold tracking-[0.35em] text-[#1C1917] bg-white rounded-xl border border-[#DCE7F2] focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-transparent disabled:opacity-60 transition-all placeholder:text-stone-300 placeholder:tracking-normal"
+                      />
+                    </div>
+                    <p className="mt-1.5 text-[11px] text-[#57534E]">
+                      Enter the latest 6 or 8-digit code from VigilAMC to verify your email and finish signup.
+                    </p>
+                  </div>
+
+                  {/* Verify & Create Account CTA */}
+                  <button
+                    type="submit"
+                    disabled={loading || signupOtpCode.length < 6 || signupOtpCode.length > 8}
+                    data-testid="signup-verify-otp-btn"
+                    className="w-full min-h-[46px] h-12 bg-[#EA580C] hover:bg-[#C2410C] active:bg-[#9A3412] disabled:opacity-60 text-white font-bold text-sm rounded-full shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#EA580C]"
+                  >
+                    {loading ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Verifying &amp; Creating Account...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Verify &amp; Create Account</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+
+                  {/* 60-second Resend Cooldown Row */}
+                  <div className="flex items-center justify-between pt-1 text-xs">
+                    <span className="text-[#57534E]">Didn&apos;t receive the code?</span>
+                    <button
+                      type="button"
+                      onClick={handleResendSignupOtp}
+                      disabled={signupResendCooldown > 0 || resendingSignupOtp || loading}
+                      data-testid="signup-resend-otp-btn"
+                      className="inline-flex items-center gap-1.5 font-bold text-[#C2410C] hover:text-[#9A3412] hover:underline disabled:text-stone-400 disabled:no-underline disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-[#EA580C] rounded px-1 py-0.5 cursor-pointer"
+                    >
+                      {resendingSignupOtp ? (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          <span>Resending...</span>
+                        </>
+                      ) : signupResendCooldown > 0 ? (
+                        <>
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>Resend in {signupResendCooldown}s</span>
+                        </>
+                      ) : (
+                        <span>Resend OTP</span>
+                      )}
                     </button>
                   </div>
                 </form>

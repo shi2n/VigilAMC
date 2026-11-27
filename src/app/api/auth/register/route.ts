@@ -1,75 +1,88 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { createClient } from '@supabase/supabase-js';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { extractSupabaseTokenFromCookies } from '@/lib/techSession';
 
 export const dynamic = 'force-dynamic';
 
-function getSupabaseAdmin() {
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const secretKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-  if (!supabaseUrl || !secretKey) {
-    throw new Error('Supabase admin credentials not configured in environment variables');
+async function resolveVerifiedAuthUser(request: Request) {
+  const supabase = createServerSupabaseClient();
+
+  const authHeader =
+    request.headers.get('authorization') || request.headers.get('Authorization') || '';
+  if (authHeader.startsWith('Bearer ')) {
+    const token = authHeader.slice(7).trim();
+    if (token) {
+      const { data, error } = await supabase.auth.getUser(token);
+      if (!error && data?.user) {
+        return data.user;
+      }
+    }
   }
-  return createClient(supabaseUrl, secretKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+
+  const cookieToken = extractSupabaseTokenFromCookies(request);
+  if (cookieToken) {
+    const { data, error } = await supabase.auth.getUser(cookieToken);
+    if (!error && data?.user) {
+      return data.user;
+    }
+  }
+
+  const { data, error } = await supabase.auth.getUser();
+  if (!error && data?.user) {
+    return data.user;
+  }
+
+  return null;
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { userId: explicitUserId, email, password, fullName, agencyName, companyName, phone, city, state, licenseNumber } = body;
+    const authUser = await resolveVerifiedAuthUser(request);
+    if (!authUser) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
 
-    const normalizedEmail = (email || '').trim().toLowerCase();
+    const isEmailVerified = Boolean(
+      authUser.email_confirmed_at ||
+        authUser.confirmed_at ||
+        authUser.app_metadata?.provider === 'google'
+    );
+    if (!isEmailVerified) {
+      return NextResponse.json(
+        { error: 'Please verify your email address with the OTP code before creating an account.' },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const { fullName, agencyName, companyName, phone, city, state, licenseNumber } = body;
+
+    const normalizedEmail = (authUser.email || body.email || '').trim().toLowerCase();
     if (!normalizedEmail) {
       return NextResponse.json({ error: 'Email address is required' }, { status: 400 });
     }
 
-    const rawName = (fullName || '').trim();
+    const resolvedUserId = authUser.id;
+    const rawName = (fullName || authUser.user_metadata?.full_name || '').trim();
     const cleanFullName =
       rawName && rawName.toLowerCase() !== 'jordan michael'
         ? rawName
         : normalizedEmail === 'vigilamc@gmail.com'
-        ? 'Shaizan'
-        : normalizedEmail.split('@')[0];
+          ? 'Shaizan'
+          : normalizedEmail.split('@')[0];
 
-    let resolvedUserId = explicitUserId;
-
-    // If password provided and no userId yet, create/confirm user via Supabase Admin API
-    if (password && !resolvedUserId) {
-      const supabaseAdmin = getSupabaseAdmin();
-      const { data: createData, error: createError } = await supabaseAdmin.auth.admin.createUser({
-        email: normalizedEmail,
-        password,
-        email_confirm: true,
-        user_metadata: {
-          full_name: cleanFullName,
-          agency_name: agencyName || companyName || '',
-          phone: phone || '',
-        },
-      });
-
-      if (createError) {
-        // If user already exists in auth, find their ID
-        if (createError.message?.toLowerCase().includes('already')) {
-          const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
-          const existingAuth = listData?.users?.find((u) => u.email?.toLowerCase() === normalizedEmail);
-          if (existingAuth) {
-            resolvedUserId = existingAuth.id;
-          } else {
-            return NextResponse.json({ error: createError.message }, { status: 400 });
-          }
-        } else {
-          return NextResponse.json({ error: createError.message }, { status: 400 });
-        }
-      } else if (createData?.user) {
-        resolvedUserId = createData.user.id;
-      }
-    }
-
-    if (!resolvedUserId) {
-      return NextResponse.json({ error: 'User ID could not be resolved.' }, { status: 400 });
-    }
+    const cleanPhone = (phone || authUser.user_metadata?.phone || '').trim();
+    const cleanOrgName = (
+      agencyName ||
+      companyName ||
+      authUser.user_metadata?.agency_name ||
+      authUser.user_metadata?.company_name ||
+      ''
+    ).trim();
 
     // Check if user profile already exists
     let profile = await (db as any).userProfile.findUnique({
@@ -91,26 +104,60 @@ export async function POST(request: Request) {
           { status: 403 }
         );
       }
+
+      const updateData: Record<string, any> = {};
       if (profile.fullName?.trim().toLowerCase() === 'jordan michael') {
+        updateData.fullName = cleanFullName;
+      } else if (!profile.fullName && cleanFullName) {
+        updateData.fullName = cleanFullName;
+      }
+      if (!profile.phone && cleanPhone) {
+        updateData.phone = cleanPhone;
+      }
+
+      let organization = profile.organization;
+      if (!profile.organizationId && cleanOrgName) {
+        organization = await (db as any).organization.create({
+          data: {
+            name: cleanOrgName,
+            phone: cleanPhone,
+            email: normalizedEmail,
+            city: (city || '').trim(),
+            state: (state || '').trim(),
+            licenseNumber: (licenseNumber || '').trim(),
+          },
+        });
+        updateData.organizationId = organization.id;
+      }
+
+      if (Object.keys(updateData).length > 0) {
         profile = await (db as any).userProfile.update({
           where: { id: profile.id },
-          data: { fullName: cleanFullName },
+          data: updateData,
           include: { organization: true },
         });
+        organization = profile.organization;
       }
-      return NextResponse.json({ success: true, profile, organization: profile.organization });
+
+      return NextResponse.json({
+        success: true,
+        alreadyExists: true,
+        profile,
+        organization,
+        userId: profile.id,
+      });
     }
 
-    // 1. Create a dedicated Organization for this user / agency
-    const orgName = (agencyName || companyName || `${cleanFullName || 'My'}'s Fire Safety AMC`).trim();
+    // 1. Create a dedicated Organization for this verified user / agency
+    const orgName = cleanOrgName || `${cleanFullName || 'My'}'s Fire Safety AMC`;
     const org = await (db as any).organization.create({
       data: {
         name: orgName,
-        phone: phone || '',
+        phone: cleanPhone,
         email: normalizedEmail,
-        city: city || '',
-        state: state || '',
-        licenseNumber: licenseNumber || '',
+        city: (city || '').trim(),
+        state: (state || '').trim(),
+        licenseNumber: (licenseNumber || '').trim(),
       },
     });
 
@@ -120,7 +167,7 @@ export async function POST(request: Request) {
         id: resolvedUserId,
         email: normalizedEmail,
         fullName: cleanFullName,
-        phone: phone || '',
+        phone: cleanPhone,
         role: 'ORG_ADMIN',
         organizationId: org.id,
       },
@@ -138,13 +185,19 @@ export async function POST(request: Request) {
         action: 'ORGANIZATION_CREATED',
         entityType: 'Organization',
         entityId: org.id,
-        details: `Organization "${org.name}" registered by ${profile.email}`,
+        details: `Organization "${org.name}" registered by verified email ${profile.email}`,
       },
     });
 
-    return NextResponse.json({ success: true, profile, organization: org, userId: resolvedUserId });
+    return NextResponse.json({
+      success: true,
+      alreadyExists: false,
+      profile,
+      organization: org,
+      userId: resolvedUserId,
+    });
   } catch (error: any) {
     console.error('Error in user registration synchronization:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Registration failed' }, { status: 500 });
   }
 }
