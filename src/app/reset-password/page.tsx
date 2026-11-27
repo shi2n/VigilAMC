@@ -243,13 +243,48 @@ function ResetPasswordContent() {
     setLoading(true);
 
     try {
+      const cleanPassword = password.trim();
       const targetClient = activeClientType === 'implicit' ? implicitSupabase : createClient();
-      const { error } = await targetClient.auth.updateUser({
-        password,
-      });
+      const { data: sessionData } = await targetClient.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
 
-      if (error) {
-        throw error;
+      let passwordUpdated = false;
+      let lastErr = '';
+
+      if (accessToken) {
+        try {
+          const setPwRes = await fetch('/api/auth/set-password', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({ password: cleanPassword }),
+          });
+          const setPwJson = await setPwRes.json().catch(() => ({}));
+          if (setPwRes.ok && setPwJson?.success) {
+            passwordUpdated = true;
+          } else {
+            lastErr = setPwJson?.error || 'Server password update failed.';
+          }
+        } catch (fetchErr: any) {
+          lastErr = fetchErr?.message || 'Network error while updating password.';
+        }
+      }
+
+      if (!passwordUpdated) {
+        const { error } = await targetClient.auth.updateUser({
+          password: cleanPassword,
+        });
+        if (!error) {
+          passwordUpdated = true;
+        } else {
+          lastErr = error.message || lastErr;
+        }
+      }
+
+      if (!passwordUpdated) {
+        throw new Error(lastErr || 'Failed to update password.');
       }
 
       // Sign out temporary recovery session so user signs in cleanly with new password

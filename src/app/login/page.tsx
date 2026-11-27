@@ -710,25 +710,74 @@ export default function LoginPage() {
         throw new Error(regData.error || 'Could not finalize your agency account.');
       }
 
-      // Set chosen password on brand-new verified accounts so password login also works
-      if (!regData.alreadyExists && password.length >= 6) {
-        const { error: pwError } = await otpSupabase.auth.updateUser({
-          password,
-          data: {
-            full_name: fullName.trim(),
-            agency_name: companyName.trim(),
-            company_name: companyName.trim(),
-            phone: phone.trim(),
-          },
-        });
-        if (pwError) {
-          toast.error(`Account verified, but password could not be saved: ${pwError.message}`);
+      // Persist the user's chosen password reliably via server-side Supabase Admin API
+      // (with client updateUser fallback) so Email + Password login ALWAYS works afterwards,
+      // including for users who previously had a passwordless OTP or Google account.
+      const cleanSignupPassword = password.trim();
+      if (cleanSignupPassword.length >= 6) {
+        let passwordSaved = false;
+        let lastPwError = '';
+
+        try {
+          const setPwRes = await fetch('/api/auth/set-password', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${verifiedSession.access_token}`,
+            },
+            body: JSON.stringify({
+              password: cleanSignupPassword,
+              fullName: fullName.trim(),
+              agencyName: companyName.trim(),
+              companyName: companyName.trim(),
+              phone: phone.trim(),
+            }),
+          });
+          const setPwJson = await setPwRes.json().catch(() => ({}));
+          if (setPwRes.ok && setPwJson?.success) {
+            passwordSaved = true;
+          } else {
+            lastPwError = setPwJson?.error || 'Server password save failed.';
+          }
+        } catch (pwFetchErr: any) {
+          lastPwError = pwFetchErr?.message || 'Network error while saving password.';
         }
+
+        if (!passwordSaved) {
+          const { error: pwError } = await otpSupabase.auth.updateUser({
+            password: cleanSignupPassword,
+            data: {
+              full_name: fullName.trim(),
+              agency_name: companyName.trim(),
+              company_name: companyName.trim(),
+              phone: phone.trim(),
+            },
+          });
+          if (!pwError) {
+            passwordSaved = true;
+          } else {
+            lastPwError = pwError.message || lastPwError;
+          }
+        }
+
+        if (!passwordSaved) {
+          throw new Error(
+            `Your email was verified, but we could not save your password (${lastPwError}). Please try again.`
+          );
+        }
+
+        // Refresh the browser session with the newly saved password so cookies stay valid
+        await supabase.auth
+          .signInWithPassword({
+            email: cleanEmail,
+            password: cleanSignupPassword,
+          })
+          .catch(() => null);
       }
 
       toast.success(
         regData.alreadyExists
-          ? 'Email verified! Signing you in to your existing agency workspace.'
+          ? 'Email verified & password saved! Entering your agency workspace.'
           : 'Email verified! Your VigilAMC agency account has been created.'
       );
       router.push('/dashboard');
@@ -892,12 +941,44 @@ export default function LoginPage() {
         throw new Error('Code verified, but no session was created. Please request a new reset OTP.');
       }
 
-      const { error: updateErr } = await otpSupabase.auth.updateUser({
-        password: forgotNewPassword,
-      });
+      const cleanNewPassword = forgotNewPassword.trim();
+      let passwordUpdated = false;
+      let lastUpdateErr = '';
 
-      if (updateErr) {
-        throw updateErr;
+      try {
+        const setPwRes = await fetch('/api/auth/set-password', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${verifyRes.data.session.access_token}`,
+          },
+          body: JSON.stringify({
+            password: cleanNewPassword,
+          }),
+        });
+        const setPwJson = await setPwRes.json().catch(() => ({}));
+        if (setPwRes.ok && setPwJson?.success) {
+          passwordUpdated = true;
+        } else {
+          lastUpdateErr = setPwJson?.error || 'Could not save new password on server.';
+        }
+      } catch (pwFetchErr: any) {
+        lastUpdateErr = pwFetchErr?.message || 'Network error while updating password.';
+      }
+
+      if (!passwordUpdated) {
+        const { error: updateErr } = await otpSupabase.auth.updateUser({
+          password: cleanNewPassword,
+        });
+        if (!updateErr) {
+          passwordUpdated = true;
+        } else {
+          lastUpdateErr = updateErr.message || lastUpdateErr;
+        }
+      }
+
+      if (!passwordUpdated) {
+        throw new Error(lastUpdateErr || 'Failed to update password. Please try again.');
       }
 
       await Promise.allSettled([supabase.auth.signOut(), otpSupabase.auth.signOut()]);
@@ -906,6 +987,7 @@ export default function LoginPage() {
       setForgotOtpCode('');
       setForgotNewPassword('');
       setForgotConfirmPassword('');
+      setEmail(cleanEmail);
       setPassword('');
       setMode('SIGN_IN');
       setSignInMethod('PASSWORD');
