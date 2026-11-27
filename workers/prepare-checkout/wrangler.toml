@@ -1,0 +1,11 @@
+name = "vigilamc-prepare-checkout"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Set secrets via:
+#   wrangler secret put SUPABASE_URL
+#   wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+# Optional comma-separated extra CORS origins:
+# [vars]
+# ALLOWED_ORIGINS = "https://www.vigilamc.com,https://vigilamc.com"

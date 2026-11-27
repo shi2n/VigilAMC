@@ -23,6 +23,8 @@ export interface EmailOtpAuthProps {
   onSuccess?: (session: Session, user: User | null) => void | Promise<void>;
   /** Optional prefilled email address */
   initialEmail?: string;
+  /** Optional status message shown upon successful OTP verification */
+  successMessage?: string;
   /** Render without outer card chrome when embedded inside another card */
   embedded?: boolean;
   /** Optional container className */
@@ -41,6 +43,7 @@ function normalizeEmail(raw: string): string {
 export function EmailOtpAuth({
   onSuccess,
   initialEmail = '',
+  successMessage,
   embedded = false,
   className = '',
 }: EmailOtpAuthProps) {
@@ -233,7 +236,12 @@ export function EmailOtpAuth({
         );
       }
 
-      setStatusMessage('Email verified! Redirecting to your dashboard...');
+      setStatusMessage(
+        successMessage ??
+          (onSuccess
+            ? 'Email verified! Continuing...'
+            : 'Email verified! Redirecting to your dashboard...')
+      );
       toast.success('Email verified successfully.');
 
       if (onSuccess) {

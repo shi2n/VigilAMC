@@ -20,6 +20,7 @@ export function CorporateHeader({ onOpenDemoModal }: CorporateHeaderProps) {
   const navLinks: Array<{ name: string; href: string; badge?: string }> = [
     { name: 'Products', href: '/products' },
     { name: 'Features', href: '/features' },
+    { name: 'Pricing', href: '/pricing' },
     { name: 'How it works', href: '/how-it-works' },
     { name: 'Contact', href: '/contact' },
   ];
