@@ -1,5 +1,5 @@
 import { createClient as createSupabaseJsClient, type SupabaseClient } from '@supabase/supabase-js';
-import { createClient as createBrowserSupabaseClient } from '@/lib/supabase/client';
+import { getSupabasePublicConfig } from '@/lib/supabase/client';
 
 interface ImportMetaWithEnv {
   env?: {
@@ -30,23 +30,29 @@ function getViteEnv(): { url: string; anonKey: string } {
 }
 
 const { url: viteUrl, anonKey: viteAnonKey } = getViteEnv();
+const { supabaseUrl: fallbackUrl, supabaseKey: fallbackKey } = getSupabasePublicConfig();
 
-const hasViteConfig = Boolean(viteUrl && viteAnonKey);
-const hasNextConfig = Boolean(
-  (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_URL) ||
-    true // src/lib/supabase/client.ts provides the active VigilAMC publishable project config
-);
+const resolvedUrl = viteUrl && viteAnonKey ? viteUrl : fallbackUrl;
+const resolvedAnonKey = viteUrl && viteAnonKey ? viteAnonKey : fallbackKey;
 
-export const isSupabaseConfigured: boolean = hasViteConfig || hasNextConfig;
+export const isSupabaseConfigured: boolean = Boolean(resolvedUrl && resolvedAnonKey);
 
-export const supabase: SupabaseClient = hasViteConfig
-  ? createSupabaseJsClient(viteUrl, viteAnonKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-      },
-    })
-  : createBrowserSupabaseClient();
+/**
+ * Shared @supabase/supabase-js client configured with `flowType: 'implicit'`.
+ *
+ * Important: `@supabase/ssr`'s `createBrowserClient` forces `flowType: 'pkce'`,
+ * which attaches `code_challenge` to `signInWithOtp` requests and stores a
+ * `pkce_`-prefixed token hash that fails numeric `verifyOtp({ email, token, type: 'email' })`
+ * with "Token has expired or is invalid". Using `flowType: 'implicit'` keeps numeric
+ * Email OTP verification working reliably.
+ */
+export const supabase: SupabaseClient = createSupabaseJsClient(resolvedUrl, resolvedAnonKey, {
+  auth: {
+    flowType: 'implicit',
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: false,
+  },
+});
 
 export default supabase;

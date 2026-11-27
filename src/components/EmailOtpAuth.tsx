@@ -29,7 +29,8 @@ export interface EmailOtpAuthProps {
   className?: string;
 }
 
-const OTP_LENGTH = 6;
+const MIN_OTP_LENGTH = 6;
+const MAX_OTP_LENGTH = 8;
 const RESEND_COOLDOWN_SECONDS = 60;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -116,7 +117,7 @@ export function EmailOtpAuth({
       setToken('');
       setStep('otp');
       setCooldownSeconds(RESEND_COOLDOWN_SECONDS);
-      const sentMsg = `A 6-digit verification code has been sent to ${cleanEmail}.`;
+      const sentMsg = `A verification code has been sent to ${cleanEmail}. Enter the latest code from your inbox.`;
       setStatusMessage(sentMsg);
       toast.success(sentMsg);
     } catch (err: unknown) {
@@ -159,7 +160,7 @@ export function EmailOtpAuth({
 
       setToken('');
       setCooldownSeconds(RESEND_COOLDOWN_SECONDS);
-      const resentMsg = `A new 6-digit code has been sent to ${normalizedEmail}.`;
+      const resentMsg = `A new verification code has been sent to ${cleanEmail}. Use this latest code only.`;
       setStatusMessage(resentMsg);
       toast.success(resentMsg);
       otpInputRef.current?.focus();
@@ -180,9 +181,9 @@ export function EmailOtpAuth({
     setErrorMessage(null);
     setStatusMessage(null);
 
-    const cleanToken = token.replace(/\D/g, '').slice(0, OTP_LENGTH);
-    if (cleanToken.length !== OTP_LENGTH) {
-      const msg = 'Please enter the complete 6-digit verification code.';
+    const cleanToken = token.replace(/\D/g, '').slice(0, MAX_OTP_LENGTH);
+    if (cleanToken.length < MIN_OTP_LENGTH || cleanToken.length > MAX_OTP_LENGTH) {
+      const msg = 'Please enter the complete verification code (6 to 8 digits) from your email.';
       setErrorMessage(msg);
       toast.error(msg);
       return;
@@ -199,11 +200,28 @@ export function EmailOtpAuth({
 
     setVerifyingOtp(true);
     try {
-      const { data, error } = await supabase.auth.verifyOtp({
+      let verifyResult = await supabase.auth.verifyOtp({
         email: cleanEmail,
         token: cleanToken,
         type: 'email',
       });
+
+      // Fallback for previously unconfirmed signup accounts where GoTrue expects type: 'signup'
+      if (verifyResult.error) {
+        const lowerErr = (verifyResult.error.message || '').toLowerCase();
+        if (lowerErr.includes('expired') || lowerErr.includes('invalid')) {
+          const signupRetry = await supabase.auth.verifyOtp({
+            email: cleanEmail,
+            token: cleanToken,
+            type: 'signup',
+          });
+          if (!signupRetry.error && signupRetry.data?.session) {
+            verifyResult = signupRetry;
+          }
+        }
+      }
+
+      const { data, error } = verifyResult;
 
       if (error) {
         throw error;
@@ -247,7 +265,7 @@ export function EmailOtpAuth({
   };
 
   const handleTokenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, OTP_LENGTH);
+    const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, MAX_OTP_LENGTH);
     setToken(digitsOnly);
     if (errorMessage) setErrorMessage(null);
   };
@@ -381,7 +399,7 @@ export function EmailOtpAuth({
               htmlFor="email-otp-code"
               className="block text-xs font-bold text-[#1C1917] uppercase tracking-wider mb-1.5"
             >
-              6-Digit Email Code
+              Email Verification Code
             </label>
             <div className="relative">
               <KeyRound className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -392,25 +410,25 @@ export function EmailOtpAuth({
                 type="text"
                 inputMode="numeric"
                 autoComplete="one-time-code"
-                maxLength={OTP_LENGTH}
-                pattern="[0-9]{6}"
+                maxLength={MAX_OTP_LENGTH}
+                pattern="[0-9]{6,8}"
                 required
                 disabled={verifyingOtp}
-                placeholder="000000"
+                placeholder="Enter code"
                 value={token}
                 onChange={handleTokenChange}
-                className="w-full min-h-[48px] pl-10 pr-4 py-2.5 text-center font-mono text-lg font-bold tracking-[0.45em] text-[#1C1917] bg-white rounded-xl border border-[#DCE7F2] focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-transparent disabled:opacity-60 transition-all placeholder:text-stone-300 placeholder:tracking-[0.45em]"
+                className="w-full min-h-[48px] pl-10 pr-4 py-2.5 text-center font-mono text-lg font-bold tracking-[0.35em] text-[#1C1917] bg-white rounded-xl border border-[#DCE7F2] focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-transparent disabled:opacity-60 transition-all placeholder:text-stone-300 placeholder:tracking-normal"
               />
             </div>
             <p className="mt-1.5 text-[11px] text-[#57534E]">
-              Check your inbox or spam folder for the 6-digit code from VigilAMC.
+              Enter the latest 6 or 8-digit code from VigilAMC (check spam if not in inbox).
             </p>
           </div>
 
           {/* Verify OTP CTA */}
           <button
             type="submit"
-            disabled={isBusy || token.length !== OTP_LENGTH}
+            disabled={isBusy || token.length < MIN_OTP_LENGTH || token.length > MAX_OTP_LENGTH}
             data-testid="verify-email-otp-btn"
             className="w-full min-h-[44px] h-11 sm:h-12 bg-[#EA580C] hover:bg-[#C2410C] active:bg-[#9A3412] disabled:opacity-60 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#EA580C]"
           >
