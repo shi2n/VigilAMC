@@ -22,7 +22,6 @@ import {
 import { createClient } from '@/lib/supabase/client';
 import { supabase as otpSupabase } from '@/lib/supabase';
 import { EmailOtpAuth } from '@/components/EmailOtpAuth';
-import { PhoneOtpAuth } from '@/components/PhoneOtpAuth';
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { getResetPasswordRedirectUrl } from '@/lib/auth-helpers';
 import { SITE_CONFIG } from '@/lib/siteConfig';
@@ -32,7 +31,7 @@ export default function LoginPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  const [mode, setMode] = useState<'SIGN_IN' | 'EMAIL_OTP' | 'PHONE_OTP' | 'SIGN_UP' | 'FORGOT_PASSWORD' | 'COMPLETE_PROFILE'>('SIGN_IN');
+  const [mode, setMode] = useState<'SIGN_IN' | 'EMAIL_OTP' | 'SIGN_UP' | 'FORGOT_PASSWORD' | 'COMPLETE_PROFILE'>('SIGN_IN');
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
@@ -96,8 +95,6 @@ export default function LoginPage() {
         setMode('SIGN_UP');
       } else if (params.get('mode') === 'otp') {
         setMode('EMAIL_OTP');
-      } else if (params.get('mode') === 'phone' || params.get('mode') === 'phone-otp') {
-        setMode('PHONE_OTP');
       }
     }
   }, [supabase, router]);
@@ -428,8 +425,7 @@ export default function LoginPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: activeUser.id,
-          email: activeUser.email || '',
-          phone: activeUser.phone || activeUser.user_metadata?.phone || '',
+          email: activeUser.email,
           fullName: activeUser.user_metadata?.full_name || '',
           companyName: activeUser.user_metadata?.company_name || '',
         }),
@@ -642,7 +638,7 @@ export default function LoginPage() {
         >
           {/* Mode Switch Tabs at top of card so login option is immediately accessible */}
           {mode !== 'FORGOT_PASSWORD' && mode !== 'COMPLETE_PROFILE' && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 rounded-xl bg-[#FFF0E6] p-1 border border-[#FED7AA] text-xs font-bold gap-1">
+            <div className="flex rounded-xl bg-[#FFF0E6] p-1 border border-[#FED7AA] text-xs font-bold gap-1">
               <button
                 type="button"
                 onClick={() => {
@@ -650,25 +646,11 @@ export default function LoginPage() {
                   setErrorMsg(null);
                   setSuccessMsg(null);
                 }}
-                className={`py-2 px-1.5 rounded-lg transition-all min-h-[36px] ${
+                className={`flex-1 py-2 rounded-lg transition-all min-h-[36px] ${
                   mode === 'SIGN_IN' ? 'bg-white text-[#1C1917] shadow-xs' : 'text-[#57534E] hover:text-[#1C1917]'
                 }`}
               >
                 Sign In
-              </button>
-              <button
-                type="button"
-                data-testid="phone-otp-tab-btn"
-                onClick={() => {
-                  setMode('PHONE_OTP');
-                  setErrorMsg(null);
-                  setSuccessMsg(null);
-                }}
-                className={`py-2 px-1.5 rounded-lg transition-all min-h-[36px] ${
-                  mode === 'PHONE_OTP' ? 'bg-white text-[#1C1917] shadow-xs' : 'text-[#57534E] hover:text-[#1C1917]'
-                }`}
-              >
-                Phone OTP
               </button>
               <button
                 type="button"
@@ -678,7 +660,7 @@ export default function LoginPage() {
                   setErrorMsg(null);
                   setSuccessMsg(null);
                 }}
-                className={`py-2 px-1.5 rounded-lg transition-all min-h-[36px] ${
+                className={`flex-1 py-2 rounded-lg transition-all min-h-[36px] ${
                   mode === 'EMAIL_OTP' ? 'bg-white text-[#1C1917] shadow-xs' : 'text-[#57534E] hover:text-[#1C1917]'
                 }`}
               >
@@ -691,11 +673,11 @@ export default function LoginPage() {
                   setErrorMsg(null);
                   setSuccessMsg(null);
                 }}
-                className={`py-2 px-1.5 rounded-lg transition-all min-h-[36px] ${
+                className={`flex-1 py-2 rounded-lg transition-all min-h-[36px] ${
                   mode === 'SIGN_UP' ? 'bg-white text-[#1C1917] shadow-xs' : 'text-[#57534E] hover:text-[#1C1917]'
                 }`}
               >
-                Register
+                Register Agency
               </button>
             </div>
           )}
@@ -704,7 +686,6 @@ export default function LoginPage() {
           <div className="space-y-1">
             <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#FFF0E6] border border-[#FED7AA] text-[#C2410C] text-[11px] font-bold tracking-wider uppercase">
               {mode === 'SIGN_IN' && 'AGENCY WORKSPACE'}
-              {mode === 'PHONE_OTP' && 'SMS PHONE OTP'}
               {mode === 'EMAIL_OTP' && 'PASSWORDLESS EMAIL OTP'}
               {mode === 'SIGN_UP' && 'FREE TESTING ACCESS'}
               {mode === 'FORGOT_PASSWORD' && 'PASSWORD RECOVERY'}
@@ -712,11 +693,6 @@ export default function LoginPage() {
             </div>
             <h1 className="text-xl sm:text-2xl font-extrabold text-[#1C1917] tracking-tight">
               {mode === 'SIGN_IN' && 'Welcome back.'}
-              {mode === 'PHONE_OTP' && (
-                <>
-                  Sign in with Phone OTP<span className="text-[#EA580C]">.</span>
-                </>
-              )}
               {mode === 'EMAIL_OTP' && (
                 <>
                   Sign in with Email OTP<span className="text-[#EA580C]">.</span>
@@ -732,7 +708,6 @@ export default function LoginPage() {
             </h1>
             <p className="text-xs sm:text-sm text-[#44403C] leading-snug">
               {mode === 'SIGN_IN' && 'Log in to your VigilAMC workspace.'}
-              {mode === 'PHONE_OTP' && 'Enter your mobile number for a one-time 6-digit SMS login or signup code.'}
               {mode === 'EMAIL_OTP' && 'Enter your email for a one-time 6-digit login or signup code.'}
               {mode === 'SIGN_UP' && 'VigilAMC is in active testing — full free access during the testing period.'}
               {mode === 'FORGOT_PASSWORD' && "Enter your registered email and we'll send a password reset link."}
@@ -745,13 +720,11 @@ export default function LoginPage() {
             <div className="p-4 bg-[#FFF0E6] border border-[#FED7AA] rounded-2xl space-y-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-[#C2410C] text-white flex items-center justify-center font-bold text-sm shadow-sm">
-                  {(currentUser.email?.[0] || currentUser.phone?.slice(-1) || 'U').toUpperCase()}
+                  {currentUser.email?.[0]?.toUpperCase() || 'U'}
                 </div>
                 <div className="text-left flex-1 min-w-0">
                   <div className="text-xs text-[#57534E]">Logged in as</div>
-                  <div className="text-sm font-bold text-[#1C1917] truncate">
-                    {currentUser.email || currentUser.phone || 'Authenticated User'}
-                  </div>
+                  <div className="text-sm font-bold text-[#1C1917] truncate">{currentUser.email}</div>
                 </div>
               </div>
               <div className="flex gap-2 pt-2">
@@ -925,14 +898,6 @@ export default function LoginPage() {
                     )}
                   </button>
                 </form>
-              )}
-
-              {/* PHONE_OTP Two-Step SMS Login & Signup */}
-              {mode === 'PHONE_OTP' && (
-                <PhoneOtpAuth
-                  embedded
-                  onSuccess={handleOtpSuccess}
-                />
               )}
 
               {/* EMAIL_OTP Two-Step Passwordless Login & Signup */}

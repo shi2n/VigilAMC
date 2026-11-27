@@ -428,62 +428,16 @@ export async function getAuthenticatedActor(req?: Request): Promise<Authenticate
       });
     }
 
-    // If profile still not found and user authenticated via Phone OTP, look up by phone digits
-    if (!profile && authUser.phone) {
-      const phoneDigits = String(authUser.phone).replace(/\D/g, '');
-      const last10 = phoneDigits.length >= 10 ? phoneDigits.slice(-10) : phoneDigits;
-      if (last10) {
-        const phoneCandidates = await (db as any).userProfile.findMany({
-          where: {
-            OR: [
-              { phone: authUser.phone },
-              { phone: `+${phoneDigits}` },
-              { phone: { contains: last10 } },
-              { email: `${phoneDigits}@phone.vigilamc.app` },
-            ],
-          },
-          include: {
-            organization: {
-              include: {
-                subscription: true,
-              },
-            },
-            assignedBuildings: {
-              include: {
-                building: true,
-              },
-            },
-          },
-          orderBy: { createdAt: 'desc' },
-        });
-        profile =
-          phoneCandidates.find(
-            (c: any) => String(c.phone || '').replace(/\D/g, '').slice(-10) === last10
-          ) || phoneCandidates[0] || null;
-      }
-    }
-
     if (!profile) {
       const explicitRole = authUser.user_metadata?.role === 'TECHNICIAN' ? 'TECHNICIAN' : 'ORG_ADMIN';
       const explicitOrgId = authUser.user_metadata?.organizationId;
       let orgId = explicitOrgId;
 
-      const rawPhone = String(authUser.phone || authUser.user_metadata?.phone || '').trim();
-      const phoneDigits = rawPhone.replace(/\D/g, '');
-      const normalizedPhone = rawPhone
-        ? rawPhone.startsWith('+')
-          ? rawPhone
-          : `+${phoneDigits}`
-        : '';
-      const resolvedEmail =
-        (authUser.email || '').trim().toLowerCase() ||
-        (phoneDigits ? `${phoneDigits}@phone.vigilamc.app` : `${authUser.id}@phone.vigilamc.app`);
-
       const rawMetaName = (authUser.user_metadata?.full_name as string)?.trim();
       const safeFullName =
         rawMetaName && rawMetaName.toLowerCase() !== 'jordan michael'
           ? rawMetaName
-          : authUser.email?.split('@')[0] || (normalizedPhone ? `Agency User (${normalizedPhone.slice(-4)})` : 'User');
+          : authUser.email?.split('@')[0] || 'User';
 
       if (!orgId && explicitRole === 'ORG_ADMIN') {
         const agencyName =
@@ -492,8 +446,8 @@ export async function getAuthenticatedActor(req?: Request): Promise<Authenticate
         const org = await (db as any).organization.create({
           data: {
             name: agencyName,
-            email: resolvedEmail,
-            phone: normalizedPhone,
+            email: authUser.email || '',
+            phone: (authUser.user_metadata?.phone as string) || '',
           },
         });
         orgId = org.id;
@@ -502,11 +456,11 @@ export async function getAuthenticatedActor(req?: Request): Promise<Authenticate
       profile = await (db as any).userProfile.create({
         data: {
           id: authUser.id,
-          email: resolvedEmail,
+          email: authUser.email || '',
           fullName: safeFullName,
           role: explicitRole,
           status: 'ACTIVE',
-          phone: normalizedPhone,
+          phone: authUser.user_metadata?.phone || '',
           employeeId: authUser.user_metadata?.employeeId || null,
           organizationId: orgId || null,
           lastLoginAt: new Date(),

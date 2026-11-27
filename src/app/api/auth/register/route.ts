@@ -20,14 +20,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { userId: explicitUserId, email, password, fullName, agencyName, companyName, phone, city, state, licenseNumber } = body;
 
-    const rawPhone = (phone || '').trim();
-    const phoneDigits = rawPhone.replace(/\D/g, '');
-    const normalizedEmail =
-      (email || '').trim().toLowerCase() ||
-      (explicitUserId && phoneDigits ? `${phoneDigits}@phone.vigilamc.app` : '');
-
+    const normalizedEmail = (email || '').trim().toLowerCase();
     if (!normalizedEmail) {
-      return NextResponse.json({ error: 'Email address or mobile number is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Email address is required' }, { status: 400 });
     }
 
     const rawName = (fullName || '').trim();
@@ -87,25 +82,6 @@ export async function POST(request: Request) {
         where: { email: normalizedEmail },
         include: { organization: true },
       });
-    }
-
-    if (!profile && phoneDigits.length >= 10) {
-      const last10 = phoneDigits.slice(-10);
-      const phoneCandidates = await (db as any).userProfile.findMany({
-        where: {
-          OR: [
-            { phone: rawPhone },
-            { phone: `+${phoneDigits}` },
-            { phone: { contains: last10 } },
-          ],
-        },
-        include: { organization: true },
-        orderBy: { createdAt: 'desc' },
-      });
-      profile =
-        phoneCandidates.find(
-          (c: any) => String(c.phone || '').replace(/\D/g, '').slice(-10) === last10
-        ) || null;
     }
 
     if (profile) {
