@@ -41,7 +41,7 @@ export function CorporateHeader({ onOpenDemoModal: _onOpenDemoModal }: Corporate
 
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const closeTimeoutRef = useRef<number | null>(null);
-  const openedByHoverAtRef = useRef<number>(0);
+  const openedByRef = useRef<'hover' | 'click' | null>(null);
 
   const isFeaturesActive =
     pathname === '/features' || pathname === '/how-it-works';
@@ -49,6 +49,7 @@ export function CorporateHeader({ onOpenDemoModal: _onOpenDemoModal }: Corporate
   // Close menus on navigation; auto-open mobile accordion when viewing a Features child page
   useEffect(() => {
     setMobileMenuOpen(false);
+    openedByRef.current = null;
     setFeaturesOpen(false);
     setMobileFeaturesOpen(
       pathname === '/features' || pathname === '/how-it-works'
@@ -62,12 +63,14 @@ export function CorporateHeader({ onOpenDemoModal: _onOpenDemoModal }: Corporate
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node)
       ) {
+        openedByRef.current = null;
         setFeaturesOpen(false);
       }
     }
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
+        openedByRef.current = null;
         setFeaturesOpen(false);
         setMobileMenuOpen(false);
       }
@@ -91,27 +94,38 @@ export function CorporateHeader({ onOpenDemoModal: _onOpenDemoModal }: Corporate
     }
     setFeaturesOpen((wasOpen) => {
       if (!wasOpen) {
-        openedByHoverAtRef.current = Date.now();
+        openedByRef.current = 'hover';
       }
       return true;
     });
   };
 
   const handleFeaturesTriggerClick = () => {
-    // Prevent hover-then-click race where mouseenter opens the menu and click immediately closes it
-    if (featuresOpen && Date.now() - openedByHoverAtRef.current < 400) {
-      openedByHoverAtRef.current = 0;
+    if (closeTimeoutRef.current !== null) {
+      window.clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+    // If hover just opened the dropdown, clicking pins it open instead of closing it
+    if (featuresOpen && openedByRef.current === 'hover') {
+      openedByRef.current = 'click';
       return;
     }
-    openedByHoverAtRef.current = 0;
-    setFeaturesOpen((prev) => !prev);
+    setFeaturesOpen((prev) => {
+      const next = !prev;
+      openedByRef.current = next ? 'click' : null;
+      return next;
+    });
   };
 
   const scheduleCloseFeaturesDropdown = () => {
+    if (openedByRef.current === 'click') {
+      return;
+    }
     if (closeTimeoutRef.current !== null) {
       window.clearTimeout(closeTimeoutRef.current);
     }
     closeTimeoutRef.current = window.setTimeout(() => {
+      openedByRef.current = null;
       setFeaturesOpen(false);
       closeTimeoutRef.current = null;
     }, 120);
