@@ -92,12 +92,10 @@ export function CorporateHeader({ onOpenDemoModal: _onOpenDemoModal }: Corporate
       window.clearTimeout(closeTimeoutRef.current);
       closeTimeoutRef.current = null;
     }
-    setFeaturesOpen((wasOpen) => {
-      if (!wasOpen) {
-        openedByRef.current = 'hover';
-      }
-      return true;
-    });
+    if (openedByRef.current === null) {
+      openedByRef.current = 'hover';
+    }
+    setFeaturesOpen(true);
   };
 
   const handleFeaturesTriggerClick = () => {
@@ -105,16 +103,13 @@ export function CorporateHeader({ onOpenDemoModal: _onOpenDemoModal }: Corporate
       window.clearTimeout(closeTimeoutRef.current);
       closeTimeoutRef.current = null;
     }
-    // If hover just opened the dropdown, clicking pins it open instead of closing it
-    if (featuresOpen && openedByRef.current === 'hover') {
+    if (openedByRef.current === 'click') {
+      openedByRef.current = null;
+      setFeaturesOpen(false);
+    } else {
       openedByRef.current = 'click';
-      return;
+      setFeaturesOpen(true);
     }
-    setFeaturesOpen((prev) => {
-      const next = !prev;
-      openedByRef.current = next ? 'click' : null;
-      return next;
-    });
   };
 
   const scheduleCloseFeaturesDropdown = () => {
