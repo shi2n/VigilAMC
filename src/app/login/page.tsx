@@ -26,7 +26,6 @@ import { createClient } from '@/lib/supabase/client';
 import { supabase as otpSupabase } from '@/lib/supabase';
 import { EmailOtpAuth } from '@/components/EmailOtpAuth';
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
-import { getResetPasswordRedirectUrl } from '@/lib/auth-helpers';
 import { SITE_CONFIG } from '@/lib/siteConfig';
 import { toast } from 'sonner';
 
@@ -115,6 +114,9 @@ export default function LoginPage() {
         setMode('SIGN_IN');
       } else if (urlParams.get('error') === 'technician_app_required') {
         setErrorMsg('Technicians: get VigilAMC Field on Google Play (Apple App Store coming soon) to sign in.');
+        setMode('SIGN_IN');
+      } else if (urlParams.get('error')?.startsWith('google_')) {
+        setErrorMsg('Google sign-in could not be completed. Please try again.');
         setMode('SIGN_IN');
       } else if (requestedMode === 'signup') {
         setMode('SIGN_UP');
@@ -215,6 +217,22 @@ export default function LoginPage() {
         typeof window !== 'undefined'
           ? window.location.origin
           : SITE_CONFIG.SITE_URL;
+
+      // Prefer branded vigilamc.com direct Google OAuth (so Google displays "VigilAMC" / "vigilamc.com"
+      // instead of "<project>.supabase.co") whenever GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET are configured.
+      try {
+        const checkRes = await fetch('/api/auth/google/start?check=1', { cache: 'no-store' });
+        if (checkRes.ok) {
+          const checkJson = await checkRes.json().catch(() => null);
+          if (checkJson?.configured) {
+            window.location.href = '/api/auth/google/start?next=/dashboard';
+            return;
+          }
+        }
+      } catch {
+        // Fall through to Supabase OAuth below
+      }
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -738,14 +756,22 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const redirectUrl = getResetPasswordRedirectUrl();
-      // Use implicit-flow client so recovery links (#access_token) work across browsers/domains
-      // AND recovery OTP codes ({{ .Token }}) work inline without PKCE verifier mismatch.
-      const { error } = await otpSupabase.auth.resetPasswordForEmail(cleanEmail, {
-        redirectTo: redirectUrl,
+      // Send a numeric Email OTP (using the working OTP template, shouldCreateUser: false)
+      // so the user receives a verification code directly instead of a redirect link.
+      const { error } = await otpSupabase.auth.signInWithOtp({
+        email: cleanEmail,
+        options: {
+          shouldCreateUser: false,
+        },
       });
 
-      if (error) throw error;
+      if (error) {
+        const lower = (error.message || '').toLowerCase();
+        if (lower.includes('signups not allowed') || lower.includes('user not found')) {
+          throw new Error('No registered VigilAMC account was found for this email address.');
+        }
+        throw error;
+      }
 
       setEmail(cleanEmail);
       setForgotNormalizedEmail(cleanEmail);
@@ -755,11 +781,11 @@ export default function LoginPage() {
       setForgotStep('verify_reset');
       setForgotResendCooldown(60);
 
-      const sentMsg = `Reset instructions sent to ${cleanEmail}. Enter the verification code below to set a new password right here, or click the reset link in your email.`;
+      const sentMsg = `Password reset OTP sent to ${cleanEmail}. Enter the verification code and your new password below.`;
       setSuccessMsg(sentMsg);
-      toast.success(`Password reset email sent to ${cleanEmail}.`);
+      toast.success(`Reset OTP sent to ${cleanEmail}.`);
     } catch (err: any) {
-      const msg = err?.message || 'Failed to send password reset email. Please try again.';
+      const msg = err?.message || 'Failed to send password reset OTP. Please try again.';
       setErrorMsg(msg);
       toast.error(msg);
     } finally {
@@ -777,20 +803,22 @@ export default function LoginPage() {
 
     try {
       const cleanEmail = forgotNormalizedEmail.trim().toLowerCase();
-      const redirectUrl = getResetPasswordRedirectUrl();
-      const { error } = await otpSupabase.auth.resetPasswordForEmail(cleanEmail, {
-        redirectTo: redirectUrl,
+      const { error } = await otpSupabase.auth.signInWithOtp({
+        email: cleanEmail,
+        options: {
+          shouldCreateUser: false,
+        },
       });
 
       if (error) throw error;
 
       setForgotOtpCode('');
       setForgotResendCooldown(60);
-      const resentMsg = `A new reset email has been sent to ${cleanEmail}. Use the latest code or link only.`;
+      const resentMsg = `A new reset OTP has been sent to ${cleanEmail}. Use this latest code only.`;
       setSuccessMsg(resentMsg);
-      toast.success('New password reset email sent.');
+      toast.success('New reset OTP sent.');
     } catch (err: any) {
-      const msg = err?.message || 'Could not resend password reset email. Please try again.';
+      const msg = err?.message || 'Could not resend reset OTP. Please try again.';
       setErrorMsg(msg);
       toast.error(msg);
     } finally {
@@ -805,7 +833,7 @@ export default function LoginPage() {
 
     const cleanCode = forgotOtpCode.replace(/\D/g, '').slice(0, 8);
     if (cleanCode.length < 6 || cleanCode.length > 8) {
-      const msg = 'Please enter the 6 or 8-digit verification code from your reset email.';
+      const msg = 'Please enter the 6 or 8-digit verification code from your email.';
       setErrorMsg(msg);
       toast.error(msg);
       return;
@@ -839,19 +867,19 @@ export default function LoginPage() {
       let verifyRes = await otpSupabase.auth.verifyOtp({
         email: cleanEmail,
         token: cleanCode,
-        type: 'recovery',
+        type: 'email',
       });
 
       if (verifyRes.error) {
         const lowerErr = (verifyRes.error.message || '').toLowerCase();
         if (lowerErr.includes('expired') || lowerErr.includes('invalid')) {
-          const emailRetry = await otpSupabase.auth.verifyOtp({
+          const recoveryRetry = await otpSupabase.auth.verifyOtp({
             email: cleanEmail,
             token: cleanCode,
-            type: 'email',
+            type: 'recovery',
           });
-          if (!emailRetry.error && emailRetry.data?.session) {
-            verifyRes = emailRetry;
+          if (!recoveryRetry.error && recoveryRetry.data?.session) {
+            verifyRes = recoveryRetry;
           }
         }
       }
@@ -861,7 +889,7 @@ export default function LoginPage() {
       }
 
       if (!verifyRes.data?.session) {
-        throw new Error('Code verified, but no recovery session was created. Please request a new reset email.');
+        throw new Error('Code verified, but no session was created. Please request a new reset OTP.');
       }
 
       const { error: updateErr } = await otpSupabase.auth.updateUser({
@@ -885,7 +913,7 @@ export default function LoginPage() {
       setSuccessMsg(doneMsg);
       toast.success('Password updated successfully!');
     } catch (err: any) {
-      const msg = err?.message || 'Invalid or expired reset code. Please check the latest email or resend.';
+      const msg = err?.message || 'Invalid or expired reset OTP. Please check the latest email or resend.';
       setErrorMsg(msg);
       toast.error(msg);
     } finally {
@@ -1220,7 +1248,10 @@ export default function LoginPage() {
                 (signupStep === 'verify_otp'
                   ? `Enter the OTP sent to ${signupNormalizedEmail} to activate your agency account.`
                   : 'Enter your details and verify your email with an OTP to start free testing access.')}
-              {mode === 'FORGOT_PASSWORD' && "Enter your registered email and we'll send a password reset link."}
+              {mode === 'FORGOT_PASSWORD' &&
+                (forgotStep === 'verify_reset'
+                  ? `Enter the OTP sent to ${forgotNormalizedEmail} and choose a new password.`
+                  : "Enter your registered email and we'll send a verification OTP to reset your password.")}
               {mode === 'COMPLETE_PROFILE' && 'Specify your agency name and phone to initialize your workspace.'}
             </p>
           </div>
@@ -1975,10 +2006,10 @@ export default function LoginPage() {
                       {loading ? (
                         <>
                           <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                          <span>Sending Reset Email...</span>
+                          <span>Sending Reset OTP...</span>
                         </>
                       ) : (
-                        <span>Send Reset Code / Link</span>
+                        <span>Send Reset OTP</span>
                       )}
                     </button>
                   </div>
@@ -2169,7 +2200,7 @@ export default function LoginPage() {
                           <span>Resend in {forgotResendCooldown}s</span>
                         </>
                       ) : (
-                        <span>Resend Reset Email</span>
+                        <span>Resend Reset OTP</span>
                       )}
                     </button>
                   </div>
