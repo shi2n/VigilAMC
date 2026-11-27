@@ -29,6 +29,7 @@ import {
 import { AppleReveal } from '@/components/home/AppleReveal';
 import { GooglePlayBadge } from '@/components/GooglePlayBadge';
 import { FinalCtaSection } from '@/components/home/FinalCtaSection';
+import { HowItWorksContent } from '@/components/features/HowItWorksContent';
 
 interface FeatureTile {
   icon: typeof Award;
@@ -211,6 +212,12 @@ export default function FeaturesPage() {
                 {cluster.title}
               </a>
             ))}
+            <a
+              href="#how-it-works"
+              className="px-4 py-2 rounded-full bg-[#FFF0E6] border border-[#EA580C]/40 text-xs font-bold text-[#C2410C] hover:bg-[#EA580C] hover:text-white transition-colors"
+            >
+              How It Works
+            </a>
           </div>
 
           <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3.5">
@@ -273,6 +280,9 @@ export default function FeaturesPage() {
       {FEATURE_CLUSTERS.slice(2, 4).map((cluster) => (
         <ClusterSection key={cluster.id} cluster={cluster} />
       ))}
+
+      {/* Combined How It Works Section (Step 01–03 + First Week Timeline) */}
+      <HowItWorksContent embedded />
 
       {/* Field App Availability & Statutory Scope Clarification */}
       <section className="py-14 sm:py-16 bg-white border-t border-[#E7E5E4]">

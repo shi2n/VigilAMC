@@ -16,7 +16,8 @@ export function SiteLayout({ children }: SiteLayoutProps) {
   // bypass the public marketing header & footer and keep their product layout.
   const isProductOrStandaloneSurface =
     pathname?.startsWith('/dashboard') ||
-    pathname?.startsWith('/technician') ||
+    pathname === '/technician' ||
+    pathname?.startsWith('/technician/') ||
     pathname?.startsWith('/report') ||
     pathname?.startsWith('/verify') ||
     pathname?.startsWith('/login');
