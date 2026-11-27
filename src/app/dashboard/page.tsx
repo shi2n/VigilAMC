@@ -714,6 +714,30 @@ export default function AdminDashboardPage() {
           return;
         }
 
+        // Enforce agency profile completion for first-time Google / OAuth / OTP sign-ins
+        const isSuperOrFounder =
+          Boolean(json.isPlatformOwner) || json.profile?.role === 'SUPER_ADMIN';
+        const isProfileIncomplete =
+          !isSuperOrFounder &&
+          (!json.company?.id ||
+            !String(json.company?.name || '').trim() ||
+            !String(json.profile?.phone || '').trim());
+
+        if (isProfileIncomplete) {
+          try {
+            const lastOrg = sessionStorage.getItem(LAST_ORG_CACHE_KEY);
+            if (lastOrg) {
+              sessionStorage.removeItem(`vigilamc_dash_cache_${lastOrg}`);
+              sessionStorage.removeItem(`vigilamc_dash_cache_ts_${lastOrg}`);
+            }
+            sessionStorage.removeItem(LAST_ORG_CACHE_KEY);
+          } catch {
+            // Ignore storage errors
+          }
+          window.location.href = '/login?mode=complete-profile';
+          return;
+        }
+
         applyBootstrapPayload(json);
 
         const hasSeenLocal = typeof window !== 'undefined' && localStorage.getItem('vigilamc_welcome_seen') === 'true';

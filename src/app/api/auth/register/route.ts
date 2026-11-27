@@ -59,7 +59,17 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const { fullName, agencyName, companyName, phone, city, state, licenseNumber } = body;
+    const {
+      fullName,
+      agencyName,
+      companyName,
+      phone,
+      city,
+      state,
+      licenseNumber,
+      completeProfile,
+    } = body;
+    const isProfileCompletion = Boolean(completeProfile);
 
     const normalizedEmail = (authUser.email || body.email || '').trim().toLowerCase();
     if (!normalizedEmail) {
@@ -106,14 +116,20 @@ export async function POST(request: Request) {
       }
 
       const updateData: Record<string, any> = {};
-      if (profile.fullName?.trim().toLowerCase() === 'jordan michael') {
+      if (isProfileCompletion && fullName && String(fullName).trim()) {
+        updateData.fullName = String(fullName).trim();
+      } else if (profile.fullName?.trim().toLowerCase() === 'jordan michael') {
         updateData.fullName = cleanFullName;
       } else if (!profile.fullName && cleanFullName) {
         updateData.fullName = cleanFullName;
       }
-      if (!profile.phone && cleanPhone) {
+      if ((isProfileCompletion || !profile.phone) && cleanPhone) {
         updateData.phone = cleanPhone;
       }
+
+      const cleanCity = typeof city === 'string' ? city.trim() : '';
+      const cleanState = typeof state === 'string' ? state.trim() : '';
+      const cleanLicense = typeof licenseNumber === 'string' ? licenseNumber.trim() : '';
 
       let organization = profile.organization;
       if (!profile.organizationId && cleanOrgName) {
@@ -122,12 +138,26 @@ export async function POST(request: Request) {
             name: cleanOrgName,
             phone: cleanPhone,
             email: normalizedEmail,
-            city: (city || '').trim(),
-            state: (state || '').trim(),
-            licenseNumber: (licenseNumber || '').trim(),
+            city: cleanCity,
+            state: cleanState,
+            licenseNumber: cleanLicense,
           },
         });
         updateData.organizationId = organization.id;
+      } else if (profile.organizationId && isProfileCompletion) {
+        const orgUpdate: Record<string, any> = {};
+        if (cleanOrgName) orgUpdate.name = cleanOrgName;
+        if (cleanPhone) orgUpdate.phone = cleanPhone;
+        if (cleanCity) orgUpdate.city = cleanCity;
+        if (cleanState) orgUpdate.state = cleanState;
+        if (cleanLicense) orgUpdate.licenseNumber = cleanLicense;
+
+        if (Object.keys(orgUpdate).length > 0) {
+          organization = await (db as any).organization.update({
+            where: { id: profile.organizationId },
+            data: orgUpdate,
+          });
+        }
       }
 
       if (Object.keys(updateData).length > 0) {
