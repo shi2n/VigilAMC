@@ -77,7 +77,7 @@ export function TechnicianAppSection({ showDemoCta = false }: { showDemoCta?: bo
     <section
       id="technician-app"
       aria-labelledby="technician-app-heading"
-      className="relative py-20 sm:py-28 bg-[#FFF8F2] border-t border-[#FED7AA]/70 overflow-hidden"
+      className="relative scroll-mt-20 py-20 sm:py-28 bg-[#FFF8F2] border-t border-[#FED7AA]/70 overflow-hidden"
     >
       {/* Alias anchor for existing #field-app links */}
       <span id="field-app" className="sr-only" aria-hidden="true" />
