@@ -20,6 +20,10 @@ import {
   EyeOff,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { supabase as otpSupabase } from '@/lib/supabase';
+import { EmailOtpAuth } from '@/components/EmailOtpAuth';
+import { PhoneOtpAuth } from '@/components/PhoneOtpAuth';
+import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { getResetPasswordRedirectUrl } from '@/lib/auth-helpers';
 import { SITE_CONFIG } from '@/lib/siteConfig';
 import { toast } from 'sonner';
@@ -28,7 +32,7 @@ export default function LoginPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  const [mode, setMode] = useState<'SIGN_IN' | 'SIGN_UP' | 'FORGOT_PASSWORD' | 'COMPLETE_PROFILE'>('SIGN_IN');
+  const [mode, setMode] = useState<'SIGN_IN' | 'EMAIL_OTP' | 'PHONE_OTP' | 'SIGN_UP' | 'FORGOT_PASSWORD' | 'COMPLETE_PROFILE'>('SIGN_IN');
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
@@ -90,6 +94,10 @@ export default function LoginPage() {
         setMode('SIGN_IN');
       } else if (params.get('mode') === 'signup') {
         setMode('SIGN_UP');
+      } else if (params.get('mode') === 'otp') {
+        setMode('EMAIL_OTP');
+      } else if (params.get('mode') === 'phone' || params.get('mode') === 'phone-otp') {
+        setMode('PHONE_OTP');
       }
     }
   }, [supabase, router]);
@@ -397,11 +405,91 @@ export default function LoginPage() {
     }
   };
 
+  const handleOtpSuccess = async (session: Session, authUser: SupabaseUser | null) => {
+    const activeUser = authUser ?? session.user;
+    if (!activeUser) {
+      throw new Error('Verified session did not include a user account.');
+    }
+
+    // Sync the verified OTP session into the SSR cookie client so server routes & /dashboard stay authenticated
+    try {
+      await supabase.auth.setSession({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+      });
+    } catch {
+      // Non-blocking: Bearer token authentication continues below
+    }
+
+    const accessToken = session.access_token;
+    const [regRes] = await Promise.all([
+      fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: activeUser.id,
+          email: activeUser.email || '',
+          phone: activeUser.phone || activeUser.user_metadata?.phone || '',
+          fullName: activeUser.user_metadata?.full_name || '',
+          companyName: activeUser.user_metadata?.company_name || '',
+        }),
+      }),
+      accessToken
+        ? fetch('/api/dashboard/bootstrap', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          })
+            .then((r) => (r.ok ? r.json() : null))
+            .then((bootJson) => {
+              if (bootJson?.authenticated && typeof window !== 'undefined') {
+                try {
+                  const orgKey = bootJson.company?.id || bootJson.user?.id || 'default';
+                  sessionStorage.setItem('vigilamc_dash_last_org', orgKey);
+                  sessionStorage.setItem(`vigilamc_dash_cache_${orgKey}`, JSON.stringify(bootJson));
+                  sessionStorage.setItem(`vigilamc_dash_cache_ts_${orgKey}`, String(Date.now()));
+                } catch {
+                  // Ignore storage quota errors
+                }
+              }
+            })
+            .catch(() => null)
+        : Promise.resolve(null),
+    ]);
+
+    const regData = await regRes.json().catch(() => ({}));
+    if (!regRes.ok) {
+      await Promise.allSettled([supabase.auth.signOut(), otpSupabase.auth.signOut()]);
+      throw new Error(regData.error || 'Failed to synchronize your workspace profile.');
+    }
+
+    if (regData.profile?.role === 'TECHNICIAN') {
+      await Promise.allSettled([supabase.auth.signOut(), otpSupabase.auth.signOut()]);
+      throw new Error('Technicians: get VigilAMC Field on Google Play (Apple App Store coming soon) to sign in.');
+    }
+
+    const redirectParam =
+      typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search).get('redirect')
+        : null;
+    const safeRedirect =
+      redirectParam && redirectParam.startsWith('/') && !redirectParam.startsWith('//')
+        ? redirectParam
+        : null;
+
+    router.push(safeRedirect || '/dashboard');
+  };
+
   const handleSignOut = async () => {
     setLoading(true);
-    await supabase.auth.signOut();
-    setCurrentUser(null);
-    setLoading(false);
+    try {
+      await Promise.allSettled([supabase.auth.signOut(), otpSupabase.auth.signOut()]);
+      setCurrentUser(null);
+    } catch (err: any) {
+      const msg = err?.message || 'Failed to sign out. Please try again.';
+      setErrorMsg(msg);
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -554,7 +642,7 @@ export default function LoginPage() {
         >
           {/* Mode Switch Tabs at top of card so login option is immediately accessible */}
           {mode !== 'FORGOT_PASSWORD' && mode !== 'COMPLETE_PROFILE' && (
-            <div className="flex rounded-xl bg-[#FFF0E6] p-1 border border-[#FED7AA] text-xs font-bold">
+            <div className="grid grid-cols-2 sm:grid-cols-4 rounded-xl bg-[#FFF0E6] p-1 border border-[#FED7AA] text-xs font-bold gap-1">
               <button
                 type="button"
                 onClick={() => {
@@ -562,11 +650,39 @@ export default function LoginPage() {
                   setErrorMsg(null);
                   setSuccessMsg(null);
                 }}
-                className={`flex-1 py-2 rounded-lg transition-all min-h-[36px] ${
+                className={`py-2 px-1.5 rounded-lg transition-all min-h-[36px] ${
                   mode === 'SIGN_IN' ? 'bg-white text-[#1C1917] shadow-xs' : 'text-[#57534E] hover:text-[#1C1917]'
                 }`}
               >
                 Sign In
+              </button>
+              <button
+                type="button"
+                data-testid="phone-otp-tab-btn"
+                onClick={() => {
+                  setMode('PHONE_OTP');
+                  setErrorMsg(null);
+                  setSuccessMsg(null);
+                }}
+                className={`py-2 px-1.5 rounded-lg transition-all min-h-[36px] ${
+                  mode === 'PHONE_OTP' ? 'bg-white text-[#1C1917] shadow-xs' : 'text-[#57534E] hover:text-[#1C1917]'
+                }`}
+              >
+                Phone OTP
+              </button>
+              <button
+                type="button"
+                data-testid="email-otp-tab-btn"
+                onClick={() => {
+                  setMode('EMAIL_OTP');
+                  setErrorMsg(null);
+                  setSuccessMsg(null);
+                }}
+                className={`py-2 px-1.5 rounded-lg transition-all min-h-[36px] ${
+                  mode === 'EMAIL_OTP' ? 'bg-white text-[#1C1917] shadow-xs' : 'text-[#57534E] hover:text-[#1C1917]'
+                }`}
+              >
+                Email OTP
               </button>
               <button
                 type="button"
@@ -575,11 +691,11 @@ export default function LoginPage() {
                   setErrorMsg(null);
                   setSuccessMsg(null);
                 }}
-                className={`flex-1 py-2 rounded-lg transition-all min-h-[36px] ${
+                className={`py-2 px-1.5 rounded-lg transition-all min-h-[36px] ${
                   mode === 'SIGN_UP' ? 'bg-white text-[#1C1917] shadow-xs' : 'text-[#57534E] hover:text-[#1C1917]'
                 }`}
               >
-                Register Agency
+                Register
               </button>
             </div>
           )}
@@ -588,12 +704,24 @@ export default function LoginPage() {
           <div className="space-y-1">
             <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#FFF0E6] border border-[#FED7AA] text-[#C2410C] text-[11px] font-bold tracking-wider uppercase">
               {mode === 'SIGN_IN' && 'AGENCY WORKSPACE'}
+              {mode === 'PHONE_OTP' && 'SMS PHONE OTP'}
+              {mode === 'EMAIL_OTP' && 'PASSWORDLESS EMAIL OTP'}
               {mode === 'SIGN_UP' && 'FREE TESTING ACCESS'}
               {mode === 'FORGOT_PASSWORD' && 'PASSWORD RECOVERY'}
               {mode === 'COMPLETE_PROFILE' && 'SETUP WORKSPACE'}
             </div>
             <h1 className="text-xl sm:text-2xl font-extrabold text-[#1C1917] tracking-tight">
               {mode === 'SIGN_IN' && 'Welcome back.'}
+              {mode === 'PHONE_OTP' && (
+                <>
+                  Sign in with Phone OTP<span className="text-[#EA580C]">.</span>
+                </>
+              )}
+              {mode === 'EMAIL_OTP' && (
+                <>
+                  Sign in with Email OTP<span className="text-[#EA580C]">.</span>
+                </>
+              )}
               {mode === 'SIGN_UP' && (
                 <>
                   Create your agency account<span className="text-[#EA580C]">.</span>
@@ -604,6 +732,8 @@ export default function LoginPage() {
             </h1>
             <p className="text-xs sm:text-sm text-[#44403C] leading-snug">
               {mode === 'SIGN_IN' && 'Log in to your VigilAMC workspace.'}
+              {mode === 'PHONE_OTP' && 'Enter your mobile number for a one-time 6-digit SMS login or signup code.'}
+              {mode === 'EMAIL_OTP' && 'Enter your email for a one-time 6-digit login or signup code.'}
               {mode === 'SIGN_UP' && 'VigilAMC is in active testing — full free access during the testing period.'}
               {mode === 'FORGOT_PASSWORD' && "Enter your registered email and we'll send a password reset link."}
               {mode === 'COMPLETE_PROFILE' && 'Specify your agency name and phone to initialize your workspace.'}
@@ -615,11 +745,13 @@ export default function LoginPage() {
             <div className="p-4 bg-[#FFF0E6] border border-[#FED7AA] rounded-2xl space-y-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-[#C2410C] text-white flex items-center justify-center font-bold text-sm shadow-sm">
-                  {currentUser.email?.[0]?.toUpperCase() || 'U'}
+                  {(currentUser.email?.[0] || currentUser.phone?.slice(-1) || 'U').toUpperCase()}
                 </div>
                 <div className="text-left flex-1 min-w-0">
                   <div className="text-xs text-[#57534E]">Logged in as</div>
-                  <div className="text-sm font-bold text-[#1C1917] truncate">{currentUser.email}</div>
+                  <div className="text-sm font-bold text-[#1C1917] truncate">
+                    {currentUser.email || currentUser.phone || 'Authenticated User'}
+                  </div>
                 </div>
               </div>
               <div className="flex gap-2 pt-2">
@@ -793,6 +925,23 @@ export default function LoginPage() {
                     )}
                   </button>
                 </form>
+              )}
+
+              {/* PHONE_OTP Two-Step SMS Login & Signup */}
+              {mode === 'PHONE_OTP' && (
+                <PhoneOtpAuth
+                  embedded
+                  onSuccess={handleOtpSuccess}
+                />
+              )}
+
+              {/* EMAIL_OTP Two-Step Passwordless Login & Signup */}
+              {mode === 'EMAIL_OTP' && (
+                <EmailOtpAuth
+                  embedded
+                  initialEmail={email.includes('@') ? email : ''}
+                  onSuccess={handleOtpSuccess}
+                />
               )}
 
               {/* 3, 4, 5, 6. SIGN_IN Form */}
