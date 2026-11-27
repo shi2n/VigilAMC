@@ -41,6 +41,7 @@ export function CorporateHeader({ onOpenDemoModal: _onOpenDemoModal }: Corporate
 
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const closeTimeoutRef = useRef<number | null>(null);
+  const openedByHoverAtRef = useRef<number>(0);
 
   const isFeaturesActive =
     pathname === '/features' || pathname === '/how-it-works';
@@ -88,7 +89,22 @@ export function CorporateHeader({ onOpenDemoModal: _onOpenDemoModal }: Corporate
       window.clearTimeout(closeTimeoutRef.current);
       closeTimeoutRef.current = null;
     }
-    setFeaturesOpen(true);
+    setFeaturesOpen((wasOpen) => {
+      if (!wasOpen) {
+        openedByHoverAtRef.current = Date.now();
+      }
+      return true;
+    });
+  };
+
+  const handleFeaturesTriggerClick = () => {
+    // Prevent hover-then-click race where mouseenter opens the menu and click immediately closes it
+    if (featuresOpen && Date.now() - openedByHoverAtRef.current < 400) {
+      openedByHoverAtRef.current = 0;
+      return;
+    }
+    openedByHoverAtRef.current = 0;
+    setFeaturesOpen((prev) => !prev);
   };
 
   const scheduleCloseFeaturesDropdown = () => {
@@ -153,7 +169,7 @@ export function CorporateHeader({ onOpenDemoModal: _onOpenDemoModal }: Corporate
               data-testid="nav-features-trigger"
               aria-expanded={featuresOpen}
               aria-haspopup="menu"
-              onClick={() => setFeaturesOpen((prev) => !prev)}
+              onClick={handleFeaturesTriggerClick}
               className={`min-h-[44px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm transition-colors cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA580C] ${
                 isFeaturesActive || featuresOpen
                   ? 'text-[#C2410C] bg-[#FFF4EC] font-semibold'
