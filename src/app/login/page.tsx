@@ -48,6 +48,9 @@ export default function LoginPage() {
   const [fullName, setFullName] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [phone, setPhone] = useState('');
+  const [city, setCity] = useState('');
+  const [stateName, setStateName] = useState('');
+  const [licenseNumber, setLicenseNumber] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -58,6 +61,15 @@ export default function LoginPage() {
   const [signupResendCooldown, setSignupResendCooldown] = useState(0);
   const [resendingSignupOtp, setResendingSignupOtp] = useState(false);
 
+  // Two-step Forgot Password state (supports both clickable reset link AND inline recovery OTP)
+  const [forgotStep, setForgotStep] = useState<'email' | 'verify_reset'>('email');
+  const [forgotNormalizedEmail, setForgotNormalizedEmail] = useState('');
+  const [forgotOtpCode, setForgotOtpCode] = useState('');
+  const [forgotNewPassword, setForgotNewPassword] = useState('');
+  const [forgotConfirmPassword, setForgotConfirmPassword] = useState('');
+  const [forgotResendCooldown, setForgotResendCooldown] = useState(0);
+  const [resendingForgotOtp, setResendingForgotOtp] = useState(false);
+
   useEffect(() => {
     if (signupResendCooldown <= 0) return;
     const timer = window.setInterval(() => {
@@ -67,35 +79,104 @@ export default function LoginPage() {
   }, [signupResendCooldown]);
 
   useEffect(() => {
+    if (forgotResendCooldown <= 0) return;
+    const timer = window.setInterval(() => {
+      setForgotResendCooldown((prev) => (prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [forgotResendCooldown]);
+
+  useEffect(() => {
     router.prefetch('/dashboard');
+    const urlParams =
+      typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const requestedMode = urlParams?.get('mode');
+
+    if (urlParams) {
+      if (urlParams.get('reset') === 'success') {
+        setSuccessMsg('Your password has been successfully updated! Please sign in with your new password.');
+        setMode('SIGN_IN');
+      } else if (urlParams.get('error') === 'technician_app_required') {
+        setErrorMsg('Technicians: get VigilAMC Field on Google Play (Apple App Store coming soon) to sign in.');
+        setMode('SIGN_IN');
+      } else if (requestedMode === 'signup') {
+        setMode('SIGN_UP');
+      } else if (requestedMode === 'otp') {
+        setMode('SIGN_IN');
+        setSignInMethod('EMAIL_OTP');
+      } else if (requestedMode === 'forgot') {
+        setMode('FORGOT_PASSWORD');
+        setForgotStep('email');
+      } else if (requestedMode === 'complete-profile') {
+        setMode('COMPLETE_PROFILE');
+      }
+    }
+
     async function checkUser() {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          setCurrentUser(session.user);
-          // Check if profile exists and has company
+        let activeSession = (await supabase.auth.getSession()).data?.session ?? null;
+        if (!activeSession) {
+          activeSession = (await otpSupabase.auth.getSession()).data?.session ?? null;
+        }
+
+        if (activeSession?.user) {
+          setCurrentUser(activeSession.user);
           const authHeaders: Record<string, string> = {};
-          if (session.access_token) {
-            authHeaders['Authorization'] = `Bearer ${session.access_token}`;
+          if (activeSession.access_token) {
+            authHeaders['Authorization'] = `Bearer ${activeSession.access_token}`;
           }
           const meRes = await fetch('/api/auth/me', { headers: authHeaders });
           if (meRes.ok) {
             const meData = await meRes.json();
             if (meData.authenticated) {
-              if (!meData.profile?.organizationId || !meData.profile?.phone) {
+              const isSuperOrFounder =
+                Boolean(meData.isPlatformOwner) || meData.profile?.role === 'SUPER_ADMIN';
+              const existingOrgName = String(meData.organization?.name || '').trim();
+              const existingPhone = String(meData.profile?.phone || '').trim();
+              const isAutoPlaceholderOrg =
+                !existingOrgName ||
+                existingOrgName.endsWith(' Fire Agency') ||
+                existingOrgName.endsWith("'s Fire Safety AMC");
+
+              const needsProfileCompletion =
+                !isSuperOrFounder &&
+                (requestedMode === 'complete-profile' ||
+                  !meData.profile?.organizationId ||
+                  !existingOrgName ||
+                  !existingPhone);
+
+              if (needsProfileCompletion) {
                 setMode('COMPLETE_PROFILE');
-                setEmail(session.user.email || '');
-                setFullName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || '');
+                setEmail(activeSession.user.email || '');
+                setFullName(
+                  meData.profile?.fullName?.trim() ||
+                    activeSession.user.user_metadata?.full_name ||
+                    activeSession.user.user_metadata?.name ||
+                    ''
+                );
+                if (existingOrgName && !isAutoPlaceholderOrg) {
+                  setCompanyName(existingOrgName);
+                }
+                if (existingPhone) {
+                  setPhone(existingPhone);
+                }
+                if (meData.organization?.city) setCity(meData.organization.city);
+                if (meData.organization?.state) setStateName(meData.organization.state);
+                if (meData.organization?.licenseNumber) {
+                  setLicenseNumber(meData.organization.licenseNumber);
+                }
                 return;
               }
+
               // Guard against redirect loops: only push to dashboard if login wasn't redirected from dashboard
-              const params = new URLSearchParams(window.location.search);
-              if (!params.get('redirect')) {
+              if (!urlParams?.get('redirect')) {
                 router.push('/dashboard');
                 return;
               }
             }
           }
+        } else if (requestedMode === 'complete-profile') {
+          setMode('SIGN_IN');
         }
       } catch (e) {
         console.error('Session check error:', e);
@@ -104,19 +185,6 @@ export default function LoginPage() {
       }
     }
     checkUser();
-
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('reset') === 'success') {
-        setSuccessMsg('Your password has been successfully updated! Please sign in with your new password.');
-        setMode('SIGN_IN');
-      } else if (params.get('mode') === 'signup') {
-        setMode('SIGN_UP');
-      } else if (params.get('mode') === 'otp') {
-        setMode('SIGN_IN');
-        setSignInMethod('EMAIL_OTP');
-      }
-    }
   }, [supabase, router]);
 
   const handleGoogleSignIn = async () => {
@@ -193,16 +261,39 @@ export default function LoginPage() {
 
   const handleCompleteProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!companyName.trim() || !phone.trim()) {
-      setErrorMsg('Agency/Company name and phone number are required.');
+    const cleanCompany = companyName.trim();
+    const cleanPhone = phone.trim();
+    const cleanFullName = fullName.trim();
+
+    if (!cleanFullName) {
+      const msg = 'Please enter your full name.';
+      setErrorMsg(msg);
+      toast.error(msg);
       return;
     }
+    if (!cleanCompany) {
+      const msg = 'Agency / Company name is required.';
+      setErrorMsg(msg);
+      toast.error(msg);
+      return;
+    }
+    if (!cleanPhone || cleanPhone.replace(/\D/g, '').length < 7) {
+      const msg = 'Please enter a valid contact phone number.';
+      setErrorMsg(msg);
+      toast.error(msg);
+      return;
+    }
+
     setErrorMsg(null);
+    setSuccessMsg(null);
     setLoading(true);
 
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData?.session?.access_token;
+      let sessionData = (await supabase.auth.getSession()).data?.session ?? null;
+      if (!sessionData) {
+        sessionData = (await otpSupabase.auth.getSession()).data?.session ?? null;
+      }
+      const accessToken = sessionData?.access_token;
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (accessToken) {
         headers['Authorization'] = `Bearer ${accessToken}`;
@@ -214,22 +305,51 @@ export default function LoginPage() {
         body: JSON.stringify({
           userId: currentUser?.id,
           email: currentUser?.email || email.trim().toLowerCase(),
-          fullName: fullName.trim() || currentUser?.user_metadata?.full_name || 'Agency Owner',
-          agencyName: companyName.trim(),
-          companyName: companyName.trim(),
-          phone: phone.trim(),
+          fullName: cleanFullName,
+          agencyName: cleanCompany,
+          companyName: cleanCompany,
+          phone: cleanPhone,
+          city: city.trim(),
+          state: stateName.trim(),
+          licenseNumber: licenseNumber.trim(),
+          completeProfile: true,
         }),
       });
 
-      const regData = await regRes.json();
+      const regData = await regRes.json().catch(() => ({}));
       if (!regRes.ok || !regData.success) {
-        throw new Error(regData.error || 'Failed to complete profile');
+        throw new Error(regData.error || 'Failed to save your agency profile.');
       }
 
+      // Clear any stale dashboard cache so /dashboard loads the newly saved agency details
+      if (typeof window !== 'undefined') {
+        try {
+          const lastOrg = sessionStorage.getItem('vigilamc_dash_last_org');
+          if (lastOrg) {
+            sessionStorage.removeItem(`vigilamc_dash_cache_${lastOrg}`);
+            sessionStorage.removeItem(`vigilamc_dash_cache_ts_${lastOrg}`);
+          }
+          sessionStorage.removeItem('vigilamc_dash_last_org');
+        } catch {
+          // Ignore storage errors
+        }
+      }
+
+      const redirectParam =
+        typeof window !== 'undefined'
+          ? new URLSearchParams(window.location.search).get('redirect')
+          : null;
+      const safeRedirect =
+        redirectParam && redirectParam.startsWith('/') && !redirectParam.startsWith('//')
+          ? redirectParam
+          : null;
+
       toast.success('Agency workspace configured successfully!');
-      router.push('/dashboard');
+      router.push(safeRedirect || '/dashboard');
     } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to complete profile. Please try again.');
+      const msg = err?.message || 'Failed to complete profile. Please try again.';
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -587,19 +707,167 @@ export default function LoginPage() {
     e.preventDefault();
     setErrorMsg(null);
     setSuccessMsg(null);
-    setLoading(true);
 
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      const msg = 'Please enter a valid registered email address.';
+      setErrorMsg(msg);
+      toast.error(msg);
+      return;
+    }
+
+    setLoading(true);
     try {
       const redirectUrl = getResetPasswordRedirectUrl();
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+      // Use implicit-flow client so recovery links (#access_token) work across browsers/domains
+      // AND recovery OTP codes ({{ .Token }}) work inline without PKCE verifier mismatch.
+      const { error } = await otpSupabase.auth.resetPasswordForEmail(cleanEmail, {
         redirectTo: redirectUrl,
       });
 
       if (error) throw error;
 
-      setSuccessMsg('Password reset instructions have been sent to your email. Click the link in the email to set a new password.');
+      setEmail(cleanEmail);
+      setForgotNormalizedEmail(cleanEmail);
+      setForgotOtpCode('');
+      setForgotNewPassword('');
+      setForgotConfirmPassword('');
+      setForgotStep('verify_reset');
+      setForgotResendCooldown(60);
+
+      const sentMsg = `Reset instructions sent to ${cleanEmail}. Enter the verification code below to set a new password right here, or click the reset link in your email.`;
+      setSuccessMsg(sentMsg);
+      toast.success(`Password reset email sent to ${cleanEmail}.`);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to send password reset email.');
+      const msg = err?.message || 'Failed to send password reset email. Please try again.';
+      setErrorMsg(msg);
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendForgotOtp = async () => {
+    if (forgotResendCooldown > 0 || resendingForgotOtp || loading || !forgotNormalizedEmail) {
+      return;
+    }
+    setErrorMsg(null);
+    setSuccessMsg(null);
+    setResendingForgotOtp(true);
+
+    try {
+      const cleanEmail = forgotNormalizedEmail.trim().toLowerCase();
+      const redirectUrl = getResetPasswordRedirectUrl();
+      const { error } = await otpSupabase.auth.resetPasswordForEmail(cleanEmail, {
+        redirectTo: redirectUrl,
+      });
+
+      if (error) throw error;
+
+      setForgotOtpCode('');
+      setForgotResendCooldown(60);
+      const resentMsg = `A new reset email has been sent to ${cleanEmail}. Use the latest code or link only.`;
+      setSuccessMsg(resentMsg);
+      toast.success('New password reset email sent.');
+    } catch (err: any) {
+      const msg = err?.message || 'Could not resend password reset email. Please try again.';
+      setErrorMsg(msg);
+      toast.error(msg);
+    } finally {
+      setResendingForgotOtp(false);
+    }
+  };
+
+  const handleCompleteForgotPasswordOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    const cleanCode = forgotOtpCode.replace(/\D/g, '').slice(0, 8);
+    if (cleanCode.length < 6 || cleanCode.length > 8) {
+      const msg = 'Please enter the 6 or 8-digit verification code from your reset email.';
+      setErrorMsg(msg);
+      toast.error(msg);
+      return;
+    }
+
+    if (forgotNewPassword.length < 6) {
+      const msg = 'New password must be at least 6 characters long.';
+      setErrorMsg(msg);
+      toast.error(msg);
+      return;
+    }
+
+    if (forgotNewPassword !== forgotConfirmPassword) {
+      const msg = 'Passwords do not match. Please re-enter.';
+      setErrorMsg(msg);
+      toast.error(msg);
+      return;
+    }
+
+    const cleanEmail = forgotNormalizedEmail.trim().toLowerCase();
+    if (!cleanEmail) {
+      setForgotStep('email');
+      const msg = 'Email address missing. Please re-enter your email.';
+      setErrorMsg(msg);
+      toast.error(msg);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      let verifyRes = await otpSupabase.auth.verifyOtp({
+        email: cleanEmail,
+        token: cleanCode,
+        type: 'recovery',
+      });
+
+      if (verifyRes.error) {
+        const lowerErr = (verifyRes.error.message || '').toLowerCase();
+        if (lowerErr.includes('expired') || lowerErr.includes('invalid')) {
+          const emailRetry = await otpSupabase.auth.verifyOtp({
+            email: cleanEmail,
+            token: cleanCode,
+            type: 'email',
+          });
+          if (!emailRetry.error && emailRetry.data?.session) {
+            verifyRes = emailRetry;
+          }
+        }
+      }
+
+      if (verifyRes.error) {
+        throw verifyRes.error;
+      }
+
+      if (!verifyRes.data?.session) {
+        throw new Error('Code verified, but no recovery session was created. Please request a new reset email.');
+      }
+
+      const { error: updateErr } = await otpSupabase.auth.updateUser({
+        password: forgotNewPassword,
+      });
+
+      if (updateErr) {
+        throw updateErr;
+      }
+
+      await Promise.allSettled([supabase.auth.signOut(), otpSupabase.auth.signOut()]);
+
+      setForgotStep('email');
+      setForgotOtpCode('');
+      setForgotNewPassword('');
+      setForgotConfirmPassword('');
+      setPassword('');
+      setMode('SIGN_IN');
+      setSignInMethod('PASSWORD');
+      const doneMsg = 'Your password has been updated! Please sign in with your new password.';
+      setSuccessMsg(doneMsg);
+      toast.success('Password updated successfully!');
+    } catch (err: any) {
+      const msg = err?.message || 'Invalid or expired reset code. Please check the latest email or resend.';
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -669,6 +937,24 @@ export default function LoginPage() {
       throw new Error('Technicians: get VigilAMC Field on Google Play (Apple App Store coming soon) to sign in.');
     }
 
+    const otpNeedsProfile =
+      regData.profile?.role !== 'SUPER_ADMIN' &&
+      (!regData.profile?.organizationId || !String(regData.profile?.phone || '').trim());
+
+    if (otpNeedsProfile) {
+      setCurrentUser(activeUser);
+      setEmail((activeUser.email || '').trim().toLowerCase());
+      setFullName(
+        regData.profile?.fullName?.trim() ||
+          activeUser.user_metadata?.full_name ||
+          activeUser.user_metadata?.name ||
+          ''
+      );
+      setMode('COMPLETE_PROFILE');
+      toast.info('Please complete your agency details to finish setup.');
+      return;
+    }
+
     const redirectParam =
       typeof window !== 'undefined'
         ? new URLSearchParams(window.location.search).get('redirect')
@@ -686,6 +972,9 @@ export default function LoginPage() {
     try {
       await Promise.allSettled([supabase.auth.signOut(), otpSupabase.auth.signOut()]);
       setCurrentUser(null);
+      if (mode === 'COMPLETE_PROFILE') {
+        setMode('SIGN_IN');
+      }
     } catch (err: any) {
       const msg = err?.message || 'Failed to sign out. Please try again.';
       setErrorMsg(msg);
@@ -916,8 +1205,8 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Authenticated State */}
-          {!checkingSession && currentUser ? (
+          {/* Authenticated State (hidden when profile completion is required) */}
+          {!checkingSession && currentUser && mode !== 'COMPLETE_PROFILE' ? (
             <div className="p-4 bg-[#FFF0E6] border border-[#FED7AA] rounded-2xl space-y-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-[#C2410C] text-white flex items-center justify-center font-bold text-sm shadow-sm">
@@ -1012,11 +1301,57 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {/* Complete Profile Form (for first-time Google sign-ins) */}
+              {/* Complete Profile Form (required for first-time Google / OTP sign-ins) */}
               {mode === 'COMPLETE_PROFILE' && (
-                <form onSubmit={handleCompleteProfile} className="space-y-4">
+                <form
+                  onSubmit={handleCompleteProfile}
+                  data-testid="complete-profile-form"
+                  className="space-y-3.5"
+                >
+                  {currentUser?.email && (
+                    <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-[#FFF8F2] border border-[#FED7AA]">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Mail className="w-4 h-4 text-[#EA580C] shrink-0" />
+                        <span className="text-xs font-semibold text-[#1C1917] truncate">
+                          {currentUser.email}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleSignOut}
+                        disabled={loading}
+                        className="shrink-0 text-xs font-bold text-[#C2410C] hover:text-[#9A3412] hover:underline disabled:opacity-50 cursor-pointer"
+                      >
+                        Switch account
+                      </button>
+                    </div>
+                  )}
+
                   <div className="p-3 bg-[#FFF0E6] border border-[#FED7AA] text-[#9A3412] text-xs rounded-xl leading-relaxed">
-                    <strong>Complete Your Agency Setup:</strong> Please enter your company name and contact phone number to initialize your workspace.
+                    <strong>One last step before entering your dashboard:</strong> Add your agency name, full name, and contact phone number to set up your workspace.
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="profile-name"
+                      className="block text-xs font-bold text-[#1C1917] uppercase tracking-wider mb-1.5"
+                    >
+                      Your Full Name *
+                    </label>
+                    <div className="relative">
+                      <User className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        id="profile-name"
+                        data-testid="complete-profile-name"
+                        type="text"
+                        required
+                        autoComplete="name"
+                        placeholder="e.g. Rajesh Sharma"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 text-sm text-[#1C1917] bg-white rounded-xl border border-[#DCE7F2] focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-transparent transition-all placeholder:text-stone-400"
+                      />
+                    </div>
                   </div>
 
                   <div>
@@ -1030,8 +1365,10 @@ export default function LoginPage() {
                       <Building2 className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                       <input
                         id="profile-company"
+                        data-testid="complete-profile-company"
                         type="text"
                         required
+                        autoComplete="organization"
                         placeholder="e.g. Apex Fire Protection Services"
                         value={companyName}
                         onChange={(e) => setCompanyName(e.target.value)}
@@ -1051,8 +1388,10 @@ export default function LoginPage() {
                       <Phone className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                       <input
                         id="profile-phone"
+                        data-testid="complete-profile-phone"
                         type="tel"
                         required
+                        autoComplete="tel"
                         placeholder="e.g. +91 98765 43210"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
@@ -1061,28 +1400,61 @@ export default function LoginPage() {
                     </div>
                   </div>
 
-                  <div>
-                    <label
-                      htmlFor="profile-name"
-                      className="block text-xs font-bold text-[#1C1917] uppercase tracking-wider mb-1.5"
-                    >
-                      Full Name
-                    </label>
-                    <div className="relative">
-                      <User className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label
+                        htmlFor="profile-city"
+                        className="block text-xs font-bold text-[#1C1917] uppercase tracking-wider mb-1.5"
+                      >
+                        City
+                      </label>
                       <input
-                        id="profile-name"
+                        id="profile-city"
                         type="text"
-                        placeholder="Your Name"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 text-sm text-[#1C1917] bg-white rounded-xl border border-[#DCE7F2] focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-transparent transition-all placeholder:text-stone-400"
+                        placeholder="e.g. Mumbai"
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        className="w-full min-h-[44px] px-3.5 py-2.5 text-sm text-[#1C1917] bg-white rounded-xl border border-[#DCE7F2] focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-transparent transition-all placeholder:text-stone-400"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="profile-state"
+                        className="block text-xs font-bold text-[#1C1917] uppercase tracking-wider mb-1.5"
+                      >
+                        State
+                      </label>
+                      <input
+                        id="profile-state"
+                        type="text"
+                        placeholder="e.g. Maharashtra"
+                        value={stateName}
+                        onChange={(e) => setStateName(e.target.value)}
+                        className="w-full min-h-[44px] px-3.5 py-2.5 text-sm text-[#1C1917] bg-white rounded-xl border border-[#DCE7F2] focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-transparent transition-all placeholder:text-stone-400"
                       />
                     </div>
                   </div>
 
+                  <div>
+                    <label
+                      htmlFor="profile-license"
+                      className="block text-xs font-bold text-[#1C1917] uppercase tracking-wider mb-1.5"
+                    >
+                      Fire Safety License No. <span className="text-stone-400 font-normal normal-case">(optional)</span>
+                    </label>
+                    <input
+                      id="profile-license"
+                      type="text"
+                      placeholder="e.g. MFS-LA-2026-0412"
+                      value={licenseNumber}
+                      onChange={(e) => setLicenseNumber(e.target.value)}
+                      className="w-full min-h-[44px] px-3.5 py-2.5 text-sm text-[#1C1917] bg-white rounded-xl border border-[#DCE7F2] focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-transparent transition-all placeholder:text-stone-400"
+                    />
+                  </div>
+
                   <button
                     type="submit"
+                    data-testid="complete-profile-submit-btn"
                     disabled={loading}
                     className="w-full min-h-[44px] h-11 sm:h-12 bg-[#EA580C] hover:bg-[#C2410C] active:bg-[#9A3412] disabled:opacity-60 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#EA580C]"
                   >
@@ -1219,8 +1591,10 @@ export default function LoginPage() {
                     </label>
                     <button
                       type="button"
+                      data-testid="forgot-password-link-btn"
                       onClick={() => {
                         setMode('FORGOT_PASSWORD');
+                        setForgotStep('email');
                         setErrorMsg(null);
                         setSuccessMsg(null);
                       }}
@@ -1534,9 +1908,9 @@ export default function LoginPage() {
                 </form>
               )}
 
-              {/* FORGOT_PASSWORD Form */}
-              {mode === 'FORGOT_PASSWORD' && (
-                <form onSubmit={handleForgotPassword} className="space-y-4">
+              {/* FORGOT_PASSWORD Form — Step 1 (Request Email) & Step 2 (Inline Recovery OTP + New Password) */}
+              {mode === 'FORGOT_PASSWORD' && forgotStep === 'email' && (
+                <form onSubmit={handleForgotPassword} className="space-y-4" data-testid="forgot-password-email-form" noValidate>
                   <div>
                     <label
                       htmlFor="reset-email"
@@ -1564,7 +1938,9 @@ export default function LoginPage() {
                       type="button"
                       onClick={() => {
                         setMode('SIGN_IN');
+                        setForgotStep('email');
                         setErrorMsg(null);
+                        setSuccessMsg(null);
                       }}
                       className="min-h-[44px] py-2.5 px-4 border border-stone-300 text-[#1C1917] text-xs font-bold rounded-xl hover:bg-stone-50 transition-colors"
                     >
@@ -1572,16 +1948,17 @@ export default function LoginPage() {
                     </button>
                     <button
                       type="submit"
-                      disabled={loading}
-                      className="flex-1 min-h-[44px] py-2.5 px-4 bg-[#EA580C] hover:bg-[#C2410C] active:bg-[#9A3412] disabled:opacity-60 text-white font-bold text-xs rounded-xl shadow-md transition-colors flex items-center justify-center gap-1.5"
+                      disabled={loading || !email.trim()}
+                      data-testid="forgot-send-btn"
+                      className="flex-1 min-h-[44px] py-2.5 px-4 bg-[#EA580C] hover:bg-[#C2410C] active:bg-[#9A3412] disabled:opacity-60 text-white font-bold text-xs rounded-xl shadow-md transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       {loading ? (
                         <>
                           <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                          <span>Sending Link...</span>
+                          <span>Sending Reset Email...</span>
                         </>
                       ) : (
-                        <span>Send Reset Link</span>
+                        <span>Send Reset Code / Link</span>
                       )}
                     </button>
                   </div>
@@ -1593,6 +1970,188 @@ export default function LoginPage() {
                     >
                       Need help? vigilamc@gmail.com
                     </a>
+                  </div>
+                </form>
+              )}
+
+              {mode === 'FORGOT_PASSWORD' && forgotStep === 'verify_reset' && (
+                <form
+                  onSubmit={handleCompleteForgotPasswordOtp}
+                  className="space-y-4"
+                  data-testid="forgot-password-otp-form"
+                  noValidate
+                >
+                  {/* Confirmed email pill + Change email button */}
+                  <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-[#FFF8F2] border border-[#FED7AA]">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Mail className="w-4 h-4 text-[#EA580C] shrink-0" />
+                      <span
+                        className="text-xs font-semibold text-[#1C1917] truncate"
+                        title={forgotNormalizedEmail}
+                      >
+                        {forgotNormalizedEmail}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setForgotStep('email');
+                        setForgotOtpCode('');
+                        setForgotResendCooldown(0);
+                        setErrorMsg(null);
+                        setSuccessMsg(null);
+                      }}
+                      disabled={loading}
+                      data-testid="forgot-change-email-btn"
+                      className="shrink-0 inline-flex items-center gap-1 text-xs font-bold text-[#C2410C] hover:text-[#9A3412] hover:underline disabled:opacity-50 rounded px-1 py-0.5 cursor-pointer"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5" />
+                      <span>Change email</span>
+                    </button>
+                  </div>
+
+                  {/* Recovery OTP Code Input */}
+                  <div>
+                    <label
+                      htmlFor="forgot-otp-code"
+                      className="block text-xs font-bold text-[#1C1917] uppercase tracking-wider mb-1.5"
+                    >
+                      Reset Verification Code
+                    </label>
+                    <div className="relative">
+                      <KeyRound className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        id="forgot-otp-code"
+                        name="otp"
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        maxLength={8}
+                        pattern="[0-9]{6,8}"
+                        required
+                        autoFocus
+                        disabled={loading}
+                        placeholder="Enter 6 or 8-digit code"
+                        value={forgotOtpCode}
+                        onChange={(e) => {
+                          setForgotOtpCode(e.target.value.replace(/\D/g, '').slice(0, 8));
+                          if (errorMsg) setErrorMsg(null);
+                        }}
+                        className="w-full min-h-[46px] pl-10 pr-4 py-2.5 text-center font-mono text-lg font-bold tracking-[0.35em] text-[#1C1917] bg-white rounded-xl border border-[#DCE7F2] focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-transparent disabled:opacity-60 placeholder:text-stone-300 placeholder:tracking-normal"
+                      />
+                    </div>
+                  </div>
+
+                  {/* New Password */}
+                  <div>
+                    <label
+                      htmlFor="forgot-new-password"
+                      className="block text-xs font-bold text-[#1C1917] uppercase tracking-wider mb-1.5"
+                    >
+                      New Password (min 6 chars)
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        id="forgot-new-password"
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        minLength={6}
+                        autoComplete="new-password"
+                        placeholder="Enter new password"
+                        value={forgotNewPassword}
+                        onChange={(e) => setForgotNewPassword(e.target.value)}
+                        className="w-full min-h-[44px] pl-10 pr-10 py-2.5 text-sm text-[#1C1917] bg-white rounded-xl border border-[#DCE7F2] focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-transparent placeholder:text-stone-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-[#1C1917] p-1 rounded-lg"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Confirm New Password */}
+                  <div>
+                    <label
+                      htmlFor="forgot-confirm-password"
+                      className="block text-xs font-bold text-[#1C1917] uppercase tracking-wider mb-1.5"
+                    >
+                      Confirm New Password
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        id="forgot-confirm-password"
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        minLength={6}
+                        autoComplete="new-password"
+                        placeholder="Re-enter new password"
+                        value={forgotConfirmPassword}
+                        onChange={(e) => setForgotConfirmPassword(e.target.value)}
+                        className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 text-sm text-[#1C1917] bg-white rounded-xl border border-[#DCE7F2] focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-transparent placeholder:text-stone-400"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading || forgotOtpCode.length < 6 || forgotNewPassword.length < 6}
+                    data-testid="forgot-update-password-btn"
+                    className="w-full min-h-[44px] h-11 bg-[#EA580C] hover:bg-[#C2410C] active:bg-[#9A3412] disabled:opacity-60 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    {loading ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Updating Password...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Verify Code &amp; Update Password</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+
+                  {/* 60-second Resend Cooldown + Back to Sign In */}
+                  <div className="flex items-center justify-between pt-1 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode('SIGN_IN');
+                        setForgotStep('email');
+                        setErrorMsg(null);
+                        setSuccessMsg(null);
+                      }}
+                      className="text-[#57534E] hover:text-[#1C1917] font-semibold"
+                    >
+                      ← Back to Sign In
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleResendForgotOtp}
+                      disabled={forgotResendCooldown > 0 || resendingForgotOtp || loading}
+                      data-testid="forgot-resend-btn"
+                      className="inline-flex items-center gap-1.5 font-bold text-[#C2410C] hover:text-[#9A3412] hover:underline disabled:text-stone-400 disabled:no-underline disabled:cursor-not-allowed rounded px-1 py-0.5 cursor-pointer"
+                    >
+                      {resendingForgotOtp ? (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          <span>Resending...</span>
+                        </>
+                      ) : forgotResendCooldown > 0 ? (
+                        <>
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>Resend in {forgotResendCooldown}s</span>
+                        </>
+                      ) : (
+                        <span>Resend Reset Email</span>
+                      )}
+                    </button>
                   </div>
                 </form>
               )}
