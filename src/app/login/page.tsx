@@ -34,7 +34,8 @@ export default function LoginPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  const [mode, setMode] = useState<'SIGN_IN' | 'EMAIL_OTP' | 'SIGN_UP' | 'FORGOT_PASSWORD' | 'COMPLETE_PROFILE'>('SIGN_IN');
+  const [mode, setMode] = useState<'SIGN_IN' | 'SIGN_UP' | 'FORGOT_PASSWORD' | 'COMPLETE_PROFILE'>('SIGN_IN');
+  const [signInMethod, setSignInMethod] = useState<'PASSWORD' | 'EMAIL_OTP'>('PASSWORD');
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
@@ -112,7 +113,8 @@ export default function LoginPage() {
       } else if (params.get('mode') === 'signup') {
         setMode('SIGN_UP');
       } else if (params.get('mode') === 'otp') {
-        setMode('EMAIL_OTP');
+        setMode('SIGN_IN');
+        setSignInMethod('EMAIL_OTP');
       }
     }
   }, [supabase, router]);
@@ -841,11 +843,12 @@ export default function LoginPage() {
           data-testid="login-glass-card"
           className="relative z-10 w-full max-w-md bg-white/95 backdrop-blur-xl border border-[#DCE7F2] rounded-3xl p-4 sm:p-6 shadow-xl shadow-stone-900/5 space-y-3.5"
         >
-          {/* Mode Switch Tabs at top of card so login option is immediately accessible */}
+          {/* Mode Switch Tabs at top of card (clean 2-tab layout: Sign In & Register Agency) */}
           {mode !== 'FORGOT_PASSWORD' && mode !== 'COMPLETE_PROFILE' && (
             <div className="flex rounded-xl bg-[#FFF0E6] p-1 border border-[#FED7AA] text-xs font-bold gap-1">
               <button
                 type="button"
+                data-testid="sign-in-tab-btn"
                 onClick={() => {
                   setMode('SIGN_IN');
                   setSignupStep('details');
@@ -857,21 +860,6 @@ export default function LoginPage() {
                 }`}
               >
                 Sign In
-              </button>
-              <button
-                type="button"
-                data-testid="email-otp-tab-btn"
-                onClick={() => {
-                  setMode('EMAIL_OTP');
-                  setSignupStep('details');
-                  setErrorMsg(null);
-                  setSuccessMsg(null);
-                }}
-                className={`flex-1 py-2 rounded-lg transition-all min-h-[36px] ${
-                  mode === 'EMAIL_OTP' ? 'bg-white text-[#1C1917] shadow-xs' : 'text-[#57534E] hover:text-[#1C1917]'
-                }`}
-              >
-                Email OTP
               </button>
               <button
                 type="button"
@@ -895,18 +883,12 @@ export default function LoginPage() {
           <div className="space-y-1">
             <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#FFF0E6] border border-[#FED7AA] text-[#C2410C] text-[11px] font-bold tracking-wider uppercase">
               {mode === 'SIGN_IN' && 'AGENCY WORKSPACE'}
-              {mode === 'EMAIL_OTP' && 'PASSWORDLESS EMAIL OTP'}
               {mode === 'SIGN_UP' && (signupStep === 'verify_otp' ? 'STEP 2 OF 2 · VERIFY EMAIL' : 'FREE TESTING ACCESS')}
               {mode === 'FORGOT_PASSWORD' && 'PASSWORD RECOVERY'}
               {mode === 'COMPLETE_PROFILE' && 'SETUP WORKSPACE'}
             </div>
             <h1 className="text-xl sm:text-2xl font-extrabold text-[#1C1917] tracking-tight">
               {mode === 'SIGN_IN' && 'Welcome back.'}
-              {mode === 'EMAIL_OTP' && (
-                <>
-                  Sign in with Email OTP<span className="text-[#EA580C]">.</span>
-                </>
-              )}
               {mode === 'SIGN_UP' &&
                 (signupStep === 'verify_otp' ? (
                   <>
@@ -921,8 +903,10 @@ export default function LoginPage() {
               {mode === 'COMPLETE_PROFILE' && 'Complete agency setup.'}
             </h1>
             <p className="text-xs sm:text-sm text-[#44403C] leading-snug">
-              {mode === 'SIGN_IN' && 'Log in to your VigilAMC workspace.'}
-              {mode === 'EMAIL_OTP' && 'Enter your email for a one-time login or signup verification code.'}
+              {mode === 'SIGN_IN' &&
+                (signInMethod === 'EMAIL_OTP'
+                  ? 'Sign in with a one-time verification code sent to your email.'
+                  : 'Log in to your VigilAMC workspace.')}
               {mode === 'SIGN_UP' &&
                 (signupStep === 'verify_otp'
                   ? `Enter the OTP sent to ${signupNormalizedEmail} to activate your agency account.`
@@ -1117,18 +1101,55 @@ export default function LoginPage() {
                 </form>
               )}
 
-              {/* EMAIL_OTP Two-Step Passwordless Login & Signup */}
-              {mode === 'EMAIL_OTP' && (
-                <EmailOtpAuth
-                  embedded
-                  initialEmail={email.includes('@') ? email : ''}
-                  onSuccess={handleOtpSuccess}
-                />
-              )}
-
-              {/* 3, 4, 5, 6. SIGN_IN Form */}
+              {/* 3, 4, 5, 6. SIGN_IN Form (Password or Email OTP inside Sign In) */}
               {mode === 'SIGN_IN' && (
-                <form onSubmit={handleSignIn} className="space-y-4">
+                <div className="space-y-4">
+                  {/* Inline Sign-In Method Toggle: Password vs Email OTP */}
+                  <div className="inline-flex w-full rounded-xl bg-[#FFF8F2] p-1 border border-[#DCE7F2] text-xs font-semibold">
+                    <button
+                      type="button"
+                      data-testid="signin-method-password-btn"
+                      onClick={() => {
+                        setSignInMethod('PASSWORD');
+                        setErrorMsg(null);
+                        setSuccessMsg(null);
+                      }}
+                      className={`flex-1 py-1.5 px-2.5 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                        signInMethod === 'PASSWORD'
+                          ? 'bg-white text-[#1C1917] shadow-xs font-bold'
+                          : 'text-[#57534E] hover:text-[#1C1917]'
+                      }`}
+                    >
+                      <Lock className="w-3.5 h-3.5" />
+                      <span>Password</span>
+                    </button>
+                    <button
+                      type="button"
+                      data-testid="signin-method-otp-btn"
+                      onClick={() => {
+                        setSignInMethod('EMAIL_OTP');
+                        setErrorMsg(null);
+                        setSuccessMsg(null);
+                      }}
+                      className={`flex-1 py-1.5 px-2.5 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                        signInMethod === 'EMAIL_OTP'
+                          ? 'bg-white text-[#1C1917] shadow-xs font-bold'
+                          : 'text-[#57534E] hover:text-[#1C1917]'
+                      }`}
+                    >
+                      <KeyRound className="w-3.5 h-3.5" />
+                      <span>Email OTP</span>
+                    </button>
+                  </div>
+
+                  {signInMethod === 'EMAIL_OTP' ? (
+                    <EmailOtpAuth
+                      embedded
+                      initialEmail={email.includes('@') ? email : ''}
+                      onSuccess={handleOtpSuccess}
+                    />
+                  ) : (
+                    <form onSubmit={handleSignIn} className="space-y-4">
                   {/* 3. Email Input */}
                   <div>
                     <label
@@ -1228,6 +1249,8 @@ export default function LoginPage() {
                     )}
                   </button>
                 </form>
+                  )}
+                </div>
               )}
 
               {/* SIGN_UP Form — Step 1 (Details) & Step 2 (Mandatory Email OTP Verification) */}
