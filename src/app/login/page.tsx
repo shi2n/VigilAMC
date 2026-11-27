@@ -425,7 +425,7 @@ export default function LoginPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: activeUser.id,
-          email: activeUser.email,
+          email: (activeUser.email || '').trim().toLowerCase(),
           fullName: activeUser.user_metadata?.full_name || '',
           companyName: activeUser.user_metadata?.company_name || '',
         }),

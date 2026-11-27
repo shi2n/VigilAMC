@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import type { Session, User } from '@supabase/supabase-js';
 import {
   Mail,
@@ -42,6 +43,7 @@ export function EmailOtpAuth({
   embedded = false,
   className = '',
 }: EmailOtpAuthProps) {
+  const router = useRouter();
   const [step, setStep] = useState<EmailOtpStep>('email');
   const [emailInput, setEmailInput] = useState<string>(initialEmail);
   const [normalizedEmail, setNormalizedEmail] = useState<string>('');
@@ -134,13 +136,18 @@ export function EmailOtpAuth({
       return;
     }
 
+    const cleanEmail = normalizeEmail(normalizedEmail);
+    if (!cleanEmail) {
+      return;
+    }
+
     setErrorMessage(null);
     setStatusMessage(null);
     setSendingOtp(true);
 
     try {
       const { error } = await supabase.auth.signInWithOtp({
-        email: normalizedEmail,
+        email: cleanEmail,
         options: {
           shouldCreateUser: true,
         },
@@ -181,7 +188,8 @@ export function EmailOtpAuth({
       return;
     }
 
-    if (!normalizedEmail) {
+    const cleanEmail = normalizeEmail(normalizedEmail);
+    if (!cleanEmail) {
       const msg = 'Email address is missing. Please go back and enter your email.';
       setErrorMessage(msg);
       toast.error(msg);
@@ -192,7 +200,7 @@ export function EmailOtpAuth({
     setVerifyingOtp(true);
     try {
       const { data, error } = await supabase.auth.verifyOtp({
-        email: normalizedEmail,
+        email: cleanEmail,
         token: cleanToken,
         type: 'email',
       });
@@ -207,11 +215,13 @@ export function EmailOtpAuth({
         );
       }
 
-      setStatusMessage('Email verified! Signing you in...');
+      setStatusMessage('Email verified! Redirecting to your dashboard...');
       toast.success('Email verified successfully.');
 
       if (onSuccess) {
         await onSuccess(data.session, data.user ?? data.session.user ?? null);
+      } else {
+        router.push('/dashboard');
       }
     } catch (err: unknown) {
       const msg =
@@ -330,11 +340,11 @@ export function EmailOtpAuth({
             {sendingOtp ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Sending Email OTP...</span>
+                <span>Sending OTP...</span>
               </>
             ) : (
               <>
-                <span>Send Email OTP</span>
+                <span>Send OTP</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
@@ -407,11 +417,11 @@ export function EmailOtpAuth({
             {verifyingOtp ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Verifying OTP...</span>
+                <span>Verifying Code...</span>
               </>
             ) : (
               <>
-                <span>Verify OTP</span>
+                <span>Verify Code</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
