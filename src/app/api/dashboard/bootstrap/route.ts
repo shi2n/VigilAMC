@@ -8,7 +8,7 @@ import { runAutoSchedulerForOrg } from '@/lib/autoScheduler';
 import { calendarDayDiff, fromDbDate, todayCalendarDateString } from '@/lib/dates';
 import {
   EVIDENCE_NO_STORE_HEADERS,
-  resolveSignedEvidenceUrlMap,
+  signEquipmentRecords,
   signInspectionRecords,
   signWorkOrderRecords,
 } from '@/lib/evidencePhotos';
@@ -166,6 +166,16 @@ export async function GET(request: Request) {
               longitude: true,
               photos: true,
               isImported: true,
+              inspectionPhotos: {
+                orderBy: { createdAt: 'desc' },
+                take: 4,
+                select: {
+                  id: true,
+                  photoUrl: true,
+                  capturedAt: true,
+                  dayOfWeek: true,
+                },
+              },
             },
           },
           serviceLogs: {
@@ -695,18 +705,30 @@ export async function GET(request: Request) {
     });
 
     // Sign all private evidence-photos URLs strictly scoped to this organization
-    const [signedInspections, signedWorkOrders, signedEqPhotoMap] = await Promise.all([
+    // (Covers Inspections, WorkOrders, Equipments, AND building-nested Equipments!)
+    const [signedInspections, signedWorkOrders, equipmentsWithSignedPhotos] = await Promise.all([
       signInspectionRecords(inspectionsRaw, organizationId),
       signWorkOrderRecords(workOrdersRaw, organizationId),
-      resolveSignedEvidenceUrlMap(
-        evaluatedEquipments.map((eq: any) => eq.photoUrl),
-        organizationId
-      ),
+      signEquipmentRecords(evaluatedEquipments, organizationId),
     ]);
 
-    const equipmentsWithSignedPhotos = evaluatedEquipments.map((eq: any) => ({
-      ...eq,
-      photoUrl: eq.photoUrl ? signedEqPhotoMap.get(String(eq.photoUrl).trim()) ?? null : null,
+    const signedEquipmentById = new Map<string, any>();
+    for (const eq of equipmentsWithSignedPhotos) {
+      signedEquipmentById.set(eq.id, eq);
+    }
+
+    const buildingsWithSignedEquipments = evaluatedBuildings.map((b: any) => ({
+      ...b,
+      equipments: (b.equipments || []).map((eq: any) => {
+        const signed = signedEquipmentById.get(eq.id);
+        return signed
+          ? {
+              ...eq,
+              photoUrl: signed.photoUrl,
+              inspections: signed.inspections,
+            }
+          : eq;
+      }),
     }));
 
     return NextResponse.json(
@@ -718,7 +740,7 @@ export async function GET(request: Request) {
         isPlatformOwner: isPlatformOwner(auth),
         summary,
         kpis,
-        buildings: evaluatedBuildings,
+        buildings: buildingsWithSignedEquipments,
         clients,
         equipments: equipmentsWithSignedPhotos,
         inspections: signedInspections,

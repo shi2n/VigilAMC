@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import { ensureR2PhotoUrl } from '@/lib/r2';
+import { EVIDENCE_NO_STORE_HEADERS, resolveSignedEvidenceUrlMap } from '@/lib/evidencePhotos';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +32,16 @@ export async function GET(request: Request) {
       orderBy: { reportedAt: 'desc' },
     });
 
-    return NextResponse.json({ defects });
+    const signedMap = await resolveSignedEvidenceUrlMap(
+      defects.map((d: any) => d.photoUrl),
+      auth.organization.id
+    );
+    const signedDefects = defects.map((d: any) => ({
+      ...d,
+      photoUrl: d.photoUrl ? signedMap.get(String(d.photoUrl).trim()) ?? null : null,
+    }));
+
+    return NextResponse.json({ defects: signedDefects }, { headers: EVIDENCE_NO_STORE_HEADERS });
   } catch (error: any) {
     console.error('Error fetching defects:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

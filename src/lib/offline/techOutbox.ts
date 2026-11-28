@@ -44,6 +44,7 @@ export interface QueuedPhotoItem {
   equipmentId?: string;
   folder: 'tasks' | 'inspections' | 'reports';
   blob: Blob;
+  bytes?: ArrayBuffer; // Structured-clone safe binary copy so photos survive iOS/Android WebView page reloads
   contentType: string;
   sizeBytes: number;
   width?: number;
@@ -227,17 +228,65 @@ export async function getSyncDiagnosticLogs(): Promise<SyncDiagnosticLog[]> {
 // PHOTO QUEUE STORE CRUD (DB v3)
 // ====================================================================================
 
+function normalizePhotoMime(raw?: string | null): 'image/jpeg' | 'image/webp' | 'image/png' {
+  const clean = (raw || '').toLowerCase().trim();
+  if (clean === 'image/webp') return 'image/webp';
+  if (clean === 'image/png') return 'image/png';
+  return 'image/jpeg';
+}
+
+function reconstructPhotoBlob(photo: QueuedPhotoItem): { blob: Blob; contentType: 'image/jpeg' | 'image/webp' | 'image/png' } | null {
+  const contentType = normalizePhotoMime(photo.contentType || photo.blob?.type);
+  if (photo.bytes instanceof ArrayBuffer && photo.bytes.byteLength > 0) {
+    return { blob: new Blob([photo.bytes], { type: contentType }), contentType };
+  }
+  if (ArrayBuffer.isView(photo.bytes) && photo.bytes.byteLength > 0) {
+    const copy = new Uint8Array(photo.bytes.byteLength);
+    copy.set(new Uint8Array(photo.bytes.buffer, photo.bytes.byteOffset, photo.bytes.byteLength));
+    return { blob: new Blob([copy], { type: contentType }), contentType };
+  }
+  if (photo.blob instanceof Blob && photo.blob.size > 0) {
+    return { blob: photo.blob.type ? photo.blob : new Blob([photo.blob], { type: contentType }), contentType };
+  }
+  return null;
+}
+
 export async function enqueuePhotoUpload(item: QueuedPhotoItem): Promise<void> {
-  if (item.sizeBytes > 2 * 1024 * 1024) {
+  const contentType = normalizePhotoMime(item.contentType || item.blob?.type);
+
+  // Materialize ArrayBuffer BEFORE opening IndexedDB transaction so async reads never abort the transaction
+  // and photos remain 100% intact across iOS Safari / Android WebView reloads.
+  let arrayBuffer: ArrayBuffer | null = null;
+  if (item.bytes instanceof ArrayBuffer && item.bytes.byteLength > 0) {
+    arrayBuffer = item.bytes;
+  } else if (item.blob instanceof Blob && item.blob.size > 0) {
+    arrayBuffer = await item.blob.arrayBuffer();
+  }
+
+  if (!arrayBuffer || arrayBuffer.byteLength === 0) {
+    throw new Error('Captured photo is empty (0 bytes) — please retake photo.');
+  }
+  if (arrayBuffer.byteLength > 2 * 1024 * 1024) {
     throw new Error('Photo exceeds 2 MB maximum allowed size.');
   }
+
+  const cleanBlob = new Blob([arrayBuffer], { type: contentType });
+  const recordToStore: QueuedPhotoItem = {
+    ...item,
+    blob: cleanBlob,
+    bytes: arrayBuffer,
+    contentType,
+    sizeBytes: arrayBuffer.byteLength,
+  };
+
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(PHOTO_QUEUE_STORE, 'readwrite');
     const store = tx.objectStore(PHOTO_QUEUE_STORE);
-    store.put(item);
+    store.put(recordToStore);
     tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
+    tx.onerror = () => reject(tx.error || new Error('Failed to save photo to offline storage'));
+    tx.onabort = () => reject(tx.error || new Error('Offline photo save transaction aborted'));
   });
 }
 
@@ -301,9 +350,11 @@ export async function updateQueuedPhoto(
       if (existing) {
         store.put({ ...existing, ...patch });
       }
-      resolve();
     };
     req.onerror = () => reject(req.error);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error || new Error('Failed to update queued photo'));
+    tx.onabort = () => reject(tx.error || new Error('Queued photo update transaction aborted'));
   });
 }
 
@@ -451,9 +502,11 @@ export async function markOutboxItemFailed(
         item.lastAttemptAt = Date.now();
         store.put(item);
       }
-      resolve();
     };
     getReq.onerror = () => reject(getReq.error);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error || new Error('Failed to update outbox item'));
+    tx.onabort = () => reject(tx.error || new Error('Outbox failure update transaction aborted'));
   });
 }
 
@@ -481,9 +534,11 @@ export async function resetOutboxItemForRetry(clientSyncId: string): Promise<voi
         item.lastAttemptAt = 0;
         store.put(item);
       }
-      resolve();
     };
     req.onerror = () => reject(req.error);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error || new Error('Failed to reset outbox item'));
+    tx.onabort = () => reject(tx.error || new Error('Outbox retry reset transaction aborted'));
   });
 }
 
@@ -627,11 +682,37 @@ async function uploadSinglePhotoItem(
   authRequired?: boolean;
   refreshedAuthHeader?: string | null;
 }> {
+  const reconstructed = reconstructPhotoBlob(photo);
+  if (!reconstructed || reconstructed.blob.size === 0) {
+    const errMsg = 'Saved photo data is empty or corrupted — please retake photo.';
+    await updateQueuedPhoto(photo.clientPhotoId, {
+      status: 'FAILED',
+      attempts: (photo.attempts || 0) + 1,
+      lastError: errMsg,
+      httpStatus: 400,
+      lastAttemptAt: Date.now(),
+    });
+    await recordSyncDiagnosticLog({
+      clientSyncId: photo.clientPhotoId,
+      actionType: 'PHOTO_UPLOAD',
+      status: 'FAILED',
+      httpStatus: 400,
+      message: errMsg,
+    });
+    return { ok: false, error: errMsg, httpStatus: 400 };
+  }
+
   const buildForm = () => {
     const fd = new FormData();
-    const ext = photo.contentType === 'image/png' ? 'png' : photo.contentType === 'image/webp' ? 'webp' : 'jpg';
-    const file = new File([photo.blob], `${photo.clientPhotoId}.${ext}`, {
-      type: photo.contentType || 'image/jpeg',
+    const ext =
+      reconstructed.contentType === 'image/png'
+        ? 'png'
+        : reconstructed.contentType === 'image/webp'
+        ? 'webp'
+        : 'jpg';
+    const file = new File([reconstructed.blob], `${photo.clientPhotoId}.${ext}`, {
+      type: reconstructed.contentType,
+      lastModified: photo.capturedAt || Date.now(),
     });
     fd.append('file', file);
     fd.append('clientPhotoId', photo.clientPhotoId);
@@ -779,6 +860,18 @@ export interface DrainResult {
 // Single-flight mutex so concurrent triggers NEVER silently drop newly queued photos/records
 let activeDrainPromise: Promise<DrainResult> | null = null;
 let queuedFollowUpForce = false;
+const recentlySyncedIds = new Map<string, number>();
+
+function recordRecentlySynced(clientSyncId: string) {
+  const now = Date.now();
+  recentlySyncedIds.set(clientSyncId, now);
+  // Prune entries older than 5 minutes
+  for (const [k, ts] of recentlySyncedIds.entries()) {
+    if (now - ts > 5 * 60 * 1000) {
+      recentlySyncedIds.delete(k);
+    }
+  }
+}
 
 export async function drainOutbox(options?: DrainOptions): Promise<DrainResult> {
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -796,6 +889,16 @@ export async function drainOutbox(options?: DrainOptions): Promise<DrainResult> 
   if (activeDrainPromise) {
     if (options?.force) queuedFollowUpForce = true;
     await activeDrainPromise.catch(() => {});
+    if (options?.targetSyncId && recentlySyncedIds.has(options.targetSyncId)) {
+      return {
+        success: true,
+        syncedCount: 1,
+        failedCount: 0,
+        uploadedPhotosCount: 0,
+        failedPhotosCount: 0,
+        errors: [],
+      };
+    }
     if (!options?.targetSyncId && !options?.targetPhotoId && !queuedFollowUpForce) {
       return {
         success: true,
@@ -851,11 +954,27 @@ async function performDrain(options?: DrainOptions): Promise<DrainResult> {
   // =========================================================================
   // PHASE 1: UPLOAD PENDING PHOTOS FIRST (OLDEST FIRST -> CONFIRMED https://)
   // =========================================================================
-  const allPendingPhotos = await getPendingQueuedPhotos();
+  const [allPendingPhotos, preOutboxItems] = await Promise.all([
+    getPendingQueuedPhotos(),
+    options?.targetSyncId ? getPendingOutboxItems() : Promise.resolve([] as OutboxItem[]),
+  ]);
+
+  const targetLinkedPhotoIds = new Set<string>();
+  if (options?.targetSyncId) {
+    const targetItem = preOutboxItems.find((i) => i.clientSyncId === options.targetSyncId);
+    if (Array.isArray(targetItem?.payload?.pendingPhotoIds)) {
+      for (const pid of targetItem.payload.pendingPhotoIds) {
+        if (typeof pid === 'string' && pid) targetLinkedPhotoIds.add(pid);
+      }
+    }
+  }
+
   let eligiblePhotos = options?.targetPhotoId
     ? allPendingPhotos.filter((p) => p.clientPhotoId === options.targetPhotoId)
     : options?.targetSyncId
-    ? allPendingPhotos.filter((p) => p.parentSyncId === options.targetSyncId)
+    ? allPendingPhotos.filter(
+        (p) => p.parentSyncId === options.targetSyncId || targetLinkedPhotoIds.has(p.clientPhotoId)
+      )
     : allPendingPhotos.filter((p) => isItemReadyForRetry(p, options?.force));
 
   // Strictly oldest first
@@ -1167,6 +1286,7 @@ async function performDrain(options?: DrainOptions): Promise<DrainResult> {
 
         if (perItemResult && perItemResult.status === 'SYNCED') {
           await markOutboxItemSynced(clientSyncId);
+          recordRecentlySynced(clientSyncId);
           // Clean up confirmed photo blobs ONLY AFTER parent record is confirmed synced
           for (const pid of confirmedPhotoIdsToClean) {
             await deleteQueuedPhoto(pid).catch(() => {});
@@ -1372,9 +1492,12 @@ export async function recoverUnsentPhotos(): Promise<{
     await migrateLegacyLocalStorageQueue();
     await repairOversizedOutboxItems();
 
-    const pendingPhotos = await getPendingQueuedPhotos();
+    const [pendingPhotos, pendingOutboxItems] = await Promise.all([
+      getPendingQueuedPhotos(),
+      getPendingOutboxItems(),
+    ]);
     const found = pendingPhotos.length;
-    if (found === 0) {
+    if (found === 0 && pendingOutboxItems.length === 0) {
       return { found: 0, uploaded: 0, failed: 0 };
     }
 
@@ -1382,10 +1505,15 @@ export async function recoverUnsentPhotos(): Promise<{
       return { found, uploaded: 0, failed: 0 };
     }
 
-    // Reset previously failed photos so recovery immediately tries them oldest-first
+    // Reset previously failed photos & outbox items whose photos already uploaded so recovery completes cleanly
     for (const p of pendingPhotos) {
       if (p.status === 'FAILED') {
         await resetQueuedPhotoForRetry(p.clientPhotoId);
+      }
+    }
+    for (const item of pendingOutboxItems) {
+      if (item.status === 'FAILED' && Array.isArray(item.payload?.pendingPhotoIds) && item.payload.pendingPhotoIds.length > 0) {
+        await resetOutboxItemForRetry(item.clientSyncId);
       }
     }
 

@@ -11,7 +11,7 @@ import {
 export const EVIDENCE_PHOTOS_BUCKET = 'evidence-photos';
 export const PRIVATE_R2_PREFIX = 'private-evidence';
 export const MAX_EVIDENCE_PHOTO_BYTES = 2 * 1024 * 1024; // 2 MB hard cap
-export const SIGNED_EVIDENCE_URL_TTL_SEC = 900; // 15 min short-lived read URLs
+export const SIGNED_EVIDENCE_URL_TTL_SEC = 3600; // 60 min presigned read URLs (prevents mid-session expiration on agency dashboard)
 
 export const ALLOWED_EVIDENCE_MIME_TO_EXT: Record<string, string> = {
   'image/jpeg': 'jpg',
@@ -139,10 +139,16 @@ export function validateStoredPhotoUrl(
   const trimmed = rawUrl.trim();
   const lower = trimmed.toLowerCase();
 
-  if (lower.startsWith('blob:') || lower.startsWith('data:')) {
+  if (
+    lower.startsWith('blob:') ||
+    lower.startsWith('data:') ||
+    lower.startsWith('file:') ||
+    lower.startsWith('content:') ||
+    lower.startsWith('capacitor:')
+  ) {
     return {
       valid: false,
-      error: 'Local blob:/data: URLs are rejected. Upload the photo to storage first.',
+      error: 'Local blob:/file:/data: URLs are rejected. Upload the photo to storage first.',
       status: 400,
     };
   }
@@ -361,7 +367,21 @@ export async function resolveSignedEvidenceUrlMap(
   );
 
   for (const raw of uniqueUrls) {
-    // 1. Private R2 S3 endpoint URL -> instant local SigV4 presigned GET URL
+    const lowerRaw = raw.toLowerCase();
+    // Explicitly reject local temporary/inline schemes
+    if (
+      lowerRaw.startsWith('blob:') ||
+      lowerRaw.startsWith('file:') ||
+      lowerRaw.startsWith('content:') ||
+      lowerRaw.startsWith('capacitor:') ||
+      lowerRaw.startsWith('data:') ||
+      lowerRaw.startsWith('javascript:')
+    ) {
+      result.set(raw, null);
+      continue;
+    }
+
+    // 1. Private R2 S3 endpoint URL or relative `private-evidence/...` key -> instant local SigV4 presigned GET URL
     const r2Key = extractR2PrivateKey(raw);
     if (r2Key) {
       const okPrefix1 = `${PRIVATE_R2_PREFIX}/orgs/${safeOrgId}/`;
@@ -374,7 +394,30 @@ export async function resolveSignedEvidenceUrlMap(
       continue;
     }
 
-    // 2. Private Supabase Storage `evidence-photos` URL
+    // 2. Relative `orgs/<orgId>/...` path (with or without leading slash)
+    const strippedRel = raw.replace(/^\/+/, '');
+    if (strippedRel.startsWith('orgs/') && !strippedRel.includes('..')) {
+      if (!safeOrgId || !strippedRel.startsWith(`orgs/${safeOrgId}/`)) {
+        result.set(raw, null);
+        continue;
+      }
+      // Prefer R2 presigned GET URL when R2 is configured (covers both public and private R2 objects)
+      if (isR2PrivateConfigured()) {
+        const signed = presignR2GetUrl(strippedRel, SIGNED_EVIDENCE_URL_TTL_SEC);
+        if (signed) {
+          result.set(raw, signed);
+          continue;
+        }
+      }
+      // Otherwise sign against private Supabase Storage `evidence-photos` bucket
+      rawToSbPath.set(raw, strippedRel);
+      if (!sbPathsToSign.includes(strippedRel)) {
+        sbPathsToSign.push(strippedRel);
+      }
+      continue;
+    }
+
+    // 3. Full Private Supabase Storage `evidence-photos` URL
     const sbPath = extractPrivateEvidencePath(raw);
     if (sbPath) {
       if (!safeOrgId || !sbPath.startsWith(`orgs/${safeOrgId}/`)) {
@@ -388,7 +431,7 @@ export async function resolveSignedEvidenceUrlMap(
       continue;
     }
 
-    // 3. Historic external https:// URLs (backward compatibility for pre-fix R2 photos)
+    // 4. Historic external https:// URLs (backward compatibility for pre-fix R2 public URLs)
     if (raw.startsWith('https://')) {
       result.set(raw, raw);
     } else {
@@ -539,6 +582,86 @@ export async function signWorkOrderRecords<T extends Record<string, any>>(
       ...wo,
       photoUrl: primarySigned,
       photos: signedPhotos,
+    };
+  });
+}
+
+/**
+ * Sign Equipment records including `equipment.photoUrl` and nested `inspections[].photos` / `inspectionPhotos[]`.
+ * Ensures every dashboard equipment list, building-nested equipment list, and edit modal receives valid read URLs.
+ */
+export async function signEquipmentRecords<T extends Record<string, any>>(
+  equipments: T[],
+  organizationId: string
+): Promise<T[]> {
+  if (!Array.isArray(equipments) || equipments.length === 0) return equipments;
+
+  const allUrls: string[] = [];
+  for (const eq of equipments) {
+    if (typeof eq?.photoUrl === 'string' && eq.photoUrl.trim()) {
+      allUrls.push(eq.photoUrl);
+    }
+    if (Array.isArray(eq?.inspections)) {
+      for (const ins of eq.inspections) {
+        if (Array.isArray(ins?.inspectionPhotos)) {
+          for (const p of ins.inspectionPhotos) {
+            if (p?.photoUrl) allUrls.push(p.photoUrl);
+          }
+        }
+        for (const u of parsePhotosField(ins?.photos)) {
+          allUrls.push(u);
+        }
+      }
+    }
+  }
+
+  const signedMap = await resolveSignedEvidenceUrlMap(allUrls, organizationId);
+
+  return equipments.map((eq) => {
+    const signedInspections = Array.isArray(eq.inspections)
+      ? eq.inspections.map((ins: any) => {
+          const signedRelPhotos = Array.isArray(ins.inspectionPhotos)
+            ? ins.inspectionPhotos.map((p: any) => {
+                const resolved = p?.photoUrl ? signedMap.get(String(p.photoUrl).trim()) ?? null : null;
+                return {
+                  ...p,
+                  storageUrl: p?.photoUrl || null,
+                  photoUrl: resolved,
+                  signedUrl: resolved,
+                };
+              })
+            : ins.inspectionPhotos;
+
+          const signedLegacy = parsePhotosField(ins.photos)
+            .map((u) => signedMap.get(u) ?? null)
+            .filter((u): u is string => Boolean(u));
+
+          return {
+            ...ins,
+            inspectionPhotos: signedRelPhotos,
+            photos:
+              signedLegacy.length > 0
+                ? JSON.stringify(signedLegacy)
+                : Array.isArray(signedRelPhotos) && signedRelPhotos.some((p: any) => p.photoUrl)
+                ? JSON.stringify(signedRelPhotos.map((p: any) => p.photoUrl).filter(Boolean))
+                : null,
+          };
+        })
+      : eq.inspections;
+
+    const latestInspPhoto =
+      signedInspections?.[0]?.inspectionPhotos?.find((p: any) => p?.photoUrl)?.photoUrl ||
+      parsePhotosField(signedInspections?.[0]?.photos)[0] ||
+      null;
+
+    const resolvedEqPhoto = eq.photoUrl
+      ? signedMap.get(String(eq.photoUrl).trim()) ?? null
+      : null;
+
+    return {
+      ...eq,
+      photoUrl: resolvedEqPhoto || latestInspPhoto,
+      inspections: signedInspections,
     };
   });
 }

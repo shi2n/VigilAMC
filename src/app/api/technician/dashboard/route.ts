@@ -2,6 +2,12 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getAuthenticatedActor } from '@/lib/techSession';
 import { calendarDayDiff, addCalendarDays, fromDbDate, todayCalendarDateString } from '@/lib/dates';
+import {
+  EVIDENCE_NO_STORE_HEADERS,
+  signEquipmentRecords,
+  signInspectionRecords,
+  signWorkOrderRecords,
+} from '@/lib/evidencePhotos';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,6 +52,11 @@ export async function GET(request: Request) {
           remarks: true,
           photos: true,
           technicianName: true,
+          inspectionPhotos: {
+            orderBy: { createdAt: 'desc' as const },
+            take: 4,
+            select: { id: true, photoUrl: true, capturedAt: true, dayOfWeek: true },
+          },
         },
       },
     };
@@ -111,6 +122,11 @@ export async function GET(request: Request) {
         include: {
           building: { select: { id: true, name: true, address: true } },
           equipment: { select: { id: true, qrCode: true, type: true, capacity: true, location: true } },
+          inspectionPhotos: {
+            orderBy: { createdAt: 'desc' },
+            take: 4,
+            select: { id: true, photoUrl: true, capturedAt: true, dayOfWeek: true },
+          },
         },
         orderBy: { date: 'desc' },
         take: 25,
@@ -228,18 +244,47 @@ export async function GET(request: Request) {
       },
     };
 
-    return NextResponse.json({
-      success: true,
-      profile: {
-        id: auth.profile.id,
-        fullName: auth.profile.fullName || 'Field Technician',
-        email: auth.profile.email,
-        phone: auth.profile.phone,
-        employeeId: auth.profile.employeeId,
-        role: auth.profile.role,
-        agencyName: auth.organization.name,
-        preferredLanguage: auth.profile.preferredLanguage || 'en',
-        hasPendingDeletion: !!pendingDeletion,
+    const allTechEquipments = evaluatedBuildings.flatMap((b: any) => b.equipments || []);
+    const [signedTechEquipments, signedWorkOrders, signedRecentServices] = await Promise.all([
+      signEquipmentRecords(allTechEquipments, organizationId),
+      signWorkOrderRecords(workOrders, organizationId),
+      signInspectionRecords(recentInspections, organizationId),
+    ]);
+
+    const signedTechEqById = new Map<string, any>();
+    for (const eq of signedTechEquipments) signedTechEqById.set(eq.id, eq);
+
+    const signedBuildings = evaluatedBuildings.map((b: any) => ({
+      ...b,
+      equipments: (b.equipments || []).map((eq: any) => {
+        const signed = signedTechEqById.get(eq.id);
+        return signed
+          ? { ...eq, photoUrl: signed.photoUrl, inspections: signed.inspections, latestInspection: signed.inspections?.[0] || eq.latestInspection }
+          : eq;
+      }),
+    }));
+
+    return NextResponse.json(
+      {
+        success: true,
+        profile: {
+          id: auth.profile.id,
+          fullName: auth.profile.fullName || 'Field Technician',
+          email: auth.profile.email,
+          phone: auth.profile.phone,
+          employeeId: auth.profile.employeeId,
+          role: auth.profile.role,
+          agencyName: auth.organization.name,
+          preferredLanguage: auth.profile.preferredLanguage || 'en',
+          hasPendingDeletion: !!pendingDeletion,
+          pendingDeletionRequest: pendingDeletion
+            ? {
+                id: pendingDeletion.id,
+                requestedAt: pendingDeletion.requestedAt,
+                status: pendingDeletion.status,
+              }
+            : null,
+        },
         pendingDeletionRequest: pendingDeletion
           ? {
               id: pendingDeletion.id,
@@ -247,21 +292,15 @@ export async function GET(request: Request) {
               status: pendingDeletion.status,
             }
           : null,
+        todayCounters: stats.todayCounters,
+        stats,
+        assignedBuildings: signedBuildings,
+        jobs,
+        workOrders: signedWorkOrders,
+        recentServices: signedRecentServices,
       },
-      pendingDeletionRequest: pendingDeletion
-        ? {
-            id: pendingDeletion.id,
-            requestedAt: pendingDeletion.requestedAt,
-            status: pendingDeletion.status,
-          }
-        : null,
-      todayCounters: stats.todayCounters,
-      stats,
-      assignedBuildings: evaluatedBuildings,
-      jobs,
-      workOrders,
-      recentServices: recentInspections,
-    });
+      { headers: EVIDENCE_NO_STORE_HEADERS }
+    );
   } catch (error: any) {
     console.error('Error fetching technician dashboard data:', error);
     const status = error.message?.startsWith('UNAUTHORIZED')

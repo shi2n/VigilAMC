@@ -4,6 +4,7 @@ import { addCalendarMonths, todayCalendarDateString, toDbDate } from '@/lib/date
 import { db } from '@/lib/db';
 import { getCurrentUser, logAuditActivity, isPlatformOwner } from '@/lib/auth';
 import { checkPlanLimit } from '@/lib/plans';
+import { EVIDENCE_NO_STORE_HEADERS, signEquipmentRecords } from '@/lib/evidencePhotos';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,6 +45,11 @@ export async function GET(request: Request) {
                 longitude: true,
                 photos: true,
                 isImported: true,
+                inspectionPhotos: {
+                  orderBy: { createdAt: 'desc' },
+                  take: 4,
+                  select: { id: true, photoUrl: true, capturedAt: true, dayOfWeek: true },
+                },
               },
             },
           },
@@ -129,15 +135,30 @@ export async function GET(request: Request) {
       notInspectedEquipments: evaluatedBuildings.reduce((sum: number, b: any) => sum + b.notInspectedCount, 0),
     };
 
-    return NextResponse.json({
-      authenticated: true,
-      user: auth.user,
-      profile: auth.profile,
-      company: organization,
-      isPlatformOwner: isPlatformOwner(auth),
-      summary,
-      buildings: evaluatedBuildings,
-    });
+    const allEquipmentsFlat = evaluatedBuildings.flatMap((b: any) => b.equipments || []);
+    const signedAllEquipments = organization?.id
+      ? await signEquipmentRecords(allEquipmentsFlat, organization.id)
+      : allEquipmentsFlat;
+    const signedEqMap = new Map<string, any>();
+    for (const eq of signedAllEquipments) signedEqMap.set(eq.id, eq);
+
+    const buildingsWithSignedPhotos = evaluatedBuildings.map((b: any) => ({
+      ...b,
+      equipments: (b.equipments || []).map((eq: any) => signedEqMap.get(eq.id) || eq),
+    }));
+
+    return NextResponse.json(
+      {
+        authenticated: true,
+        user: auth.user,
+        profile: auth.profile,
+        company: organization,
+        isPlatformOwner: isPlatformOwner(auth),
+        summary,
+        buildings: buildingsWithSignedPhotos,
+      },
+      { headers: EVIDENCE_NO_STORE_HEADERS }
+    );
   } catch (error: any) {
     console.error('Error fetching admin buildings:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

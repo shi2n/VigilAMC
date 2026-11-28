@@ -17,6 +17,7 @@ export interface CompressionResult {
 export interface StampedEvidencePhoto {
   clientPhotoId: string;
   blob: Blob;
+  file: File;
   previewUrl: string; // Local object URL for immediate preview ONLY — never sent to server
   contentType: 'image/jpeg';
   sizeBytes: number;
@@ -66,44 +67,117 @@ export function estimateDataUrlBytes(dataUrl: string): number {
   return Math.round((b64.length * 3) / 4);
 }
 
+function dataUrlToBlobSync(dataUrl: string, fallbackMime = 'image/jpeg'): Blob | null {
+  try {
+    const match = dataUrl.trim().match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,([\s\S]+)$/);
+    if (!match || !match[2]) return null;
+    const mime = match[1].toLowerCase() === 'image/jpg' ? 'image/jpeg' : match[1].toLowerCase();
+    const binStr = atob(match[2]);
+    if (binStr.length === 0) return null;
+    const bytes = new Uint8Array(binStr.length);
+    for (let i = 0; i < binStr.length; i++) {
+      bytes[i] = binStr.charCodeAt(i);
+    }
+    return new Blob([bytes], { type: mime || fallbackMime });
+  } catch {
+    return null;
+  }
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string' && reader.result.startsWith('data:')) {
+        resolve(reader.result);
+      } else {
+        reject(new Error('Failed to read captured photo'));
+      }
+    };
+    reader.onerror = () => reject(new Error('Failed to read captured photo'));
+    reader.readAsDataURL(file);
+  });
+}
+
 /**
- * Load an image from data URL, object URL, or File
+ * Load an image from data URL, object URL, or File.
+ * Avoids crossOrigin on local blob:/data: URLs and falls back to FileReader if object URL fails.
  */
 function loadImage(source: string | File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onerror = () => reject(new Error('Failed to load image for processing'));
 
     if (typeof source === 'string') {
-      img.onload = () => resolve(img);
+      if (source.startsWith('http://') || source.startsWith('https://')) {
+        img.crossOrigin = 'anonymous';
+      }
+      img.onload = () => {
+        if ((img.naturalWidth || img.width) > 0 && (img.naturalHeight || img.height) > 0) {
+          resolve(img);
+        } else {
+          reject(new Error('Decoded image has invalid zero dimensions'));
+        }
+      };
+      img.onerror = () => reject(new Error('Failed to load image for processing'));
       img.src = source;
     } else {
+      if (!source || source.size === 0) {
+        reject(new Error('Captured photo file is empty (0 bytes)'));
+        return;
+      }
       const url = URL.createObjectURL(source);
       img.onload = () => {
         URL.revokeObjectURL(url);
-        resolve(img);
+        if ((img.naturalWidth || img.width) > 0 && (img.naturalHeight || img.height) > 0) {
+          resolve(img);
+        } else {
+          reject(new Error('Captured photo has invalid zero dimensions'));
+        }
       };
       img.onerror = () => {
         URL.revokeObjectURL(url);
-        reject(new Error('Failed to load captured photo'));
+        // Fallback via FileReader (handles restricted WebViews where blob: URLs fail to decode)
+        readFileAsDataUrl(source)
+          .then((dataUrl) => loadImage(dataUrl))
+          .then(resolve)
+          .catch(() => reject(new Error('Failed to load captured photo')));
       };
       img.src = url;
     }
   });
 }
 
-function canvasToBlob(canvas: HTMLCanvasElement, mime: string, quality: number): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => {
-        if (blob) resolve(blob);
-        else reject(new Error('Canvas failed to encode JPEG blob'));
-      },
-      mime,
-      quality
-    );
-  });
+async function canvasToBlob(canvas: HTMLCanvasElement, mime: string, quality: number): Promise<Blob> {
+  const normalizedMime = mime === 'image/jpg' ? 'image/jpeg' : mime;
+
+  if (typeof canvas.toBlob === 'function') {
+    const nativeBlob = await new Promise<Blob | null>((resolve) => {
+      try {
+        canvas.toBlob((blob) => resolve(blob), normalizedMime, quality);
+      } catch {
+        resolve(null);
+      }
+    });
+    if (nativeBlob && nativeBlob.size > 0) {
+      if (nativeBlob.type === normalizedMime) {
+        return nativeBlob;
+      }
+      // Some WebViews emit an empty MIME type on toBlob; ensure proper MIME type
+      const buf = await nativeBlob.arrayBuffer();
+      if (buf.byteLength > 0) {
+        return new Blob([buf], { type: normalizedMime });
+      }
+    }
+  }
+
+  // Fallback to canvas.toDataURL when toBlob returns null/0-byte on constrained Android WebViews
+  const dataUrl = canvas.toDataURL(normalizedMime, quality);
+  const fallbackBlob = dataUrlToBlobSync(dataUrl, normalizedMime);
+  if (fallbackBlob && fallbackBlob.size > 0) {
+    return fallbackBlob;
+  }
+
+  throw new Error('Canvas failed to encode JPEG blob (0 bytes)');
 }
 
 /**
@@ -128,8 +202,11 @@ export async function stampAndNormalizeEvidencePhoto(
   } = options;
 
   const img = await loadImage(file);
-  const origW = img.naturalWidth || img.width || 1200;
-  const origH = img.naturalHeight || img.height || 900;
+  const origW = img.naturalWidth || img.width;
+  const origH = img.naturalHeight || img.height;
+  if (!origW || !origH) {
+    throw new Error('Captured photo could not be decoded (0x0 dimensions)');
+  }
 
   let width = origW;
   let height = origH;
@@ -238,6 +315,8 @@ export async function stampAndNormalizeEvidencePhoto(
     { scale: 1.0, quality: 0.76 },
     { scale: 0.85, quality: 0.74 },
     { scale: 0.7, quality: 0.72 },
+    { scale: 0.55, quality: 0.66 },
+    { scale: 0.45, quality: 0.6 },
   ];
 
   let finalBlob: Blob | null = null;
@@ -248,25 +327,45 @@ export async function stampAndNormalizeEvidencePhoto(
     const w = Math.max(480, Math.round(width * step.scale));
     const h = Math.max(360, Math.round(height * step.scale));
     const canvas = drawStampedCanvas(w, h);
-    const blob = await canvasToBlob(canvas, 'image/jpeg', step.quality);
-    finalBlob = blob;
-    finalW = w;
-    finalH = h;
-    if (blob.size <= maxBytes) {
-      break;
+    try {
+      const blob = await canvasToBlob(canvas, 'image/jpeg', step.quality);
+      if (blob.size > 0) {
+        finalBlob = blob;
+        finalW = w;
+        finalH = h;
+        if (blob.size <= maxBytes) {
+          break;
+        }
+      }
+    } finally {
+      // Release canvas backing store immediately to prevent OOM on low-RAM Android WebViews
+      canvas.width = 0;
+      canvas.height = 0;
     }
   }
 
-  if (!finalBlob) {
-    throw new Error('Failed to normalize captured photo');
+  if (!finalBlob || finalBlob.size === 0) {
+    throw new Error('Failed to normalize captured photo (empty image output)');
   }
 
+  if (finalBlob.size > maxBytes) {
+    throw new Error(
+      `Compressed photo is still ${(finalBlob.size / (1024 * 1024)).toFixed(2)} MB (limit ${(maxBytes / (1024 * 1024)).toFixed(1)} MB).`
+    );
+  }
+
+  const clientPhotoId = generateClientPhotoId();
+  const normalizedFile = new File([finalBlob], `${clientPhotoId}.jpg`, {
+    type: 'image/jpeg',
+    lastModified: capturedAt,
+  });
   const previewUrl = URL.createObjectURL(finalBlob);
   const effectiveBasement = Boolean(isBasementCached || gps?.isBasementCached);
 
   return {
-    clientPhotoId: generateClientPhotoId(),
+    clientPhotoId,
     blob: finalBlob,
+    file: normalizedFile,
     previewUrl,
     contentType: 'image/jpeg',
     sizeBytes: finalBlob.size,

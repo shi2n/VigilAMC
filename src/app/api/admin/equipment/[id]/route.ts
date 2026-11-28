@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import { ensureR2PhotoUrl, deleteFromR2 } from '@/lib/r2';
+import { EVIDENCE_NO_STORE_HEADERS, signEquipmentRecords } from '@/lib/evidencePhotos';
 import { getCalendarDayDiff, parseCalendarDateToUtc } from '@/lib/dateUtils';
 import { toDateInputString } from '@/lib/dates';
 import { logEquipmentHistory, FieldChange } from '@/lib/equipmentHistory';
@@ -45,7 +46,8 @@ export async function GET(
       return NextResponse.json({ error: 'Equipment not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ equipment });
+    const [signedEquipment] = await signEquipmentRecords([equipment], auth.organization.id);
+    return NextResponse.json({ equipment: signedEquipment }, { headers: EVIDENCE_NO_STORE_HEADERS });
   } catch (error: any) {
     console.error('Error fetching equipment:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -180,7 +182,11 @@ export async function PUT(
       console.warn('Failed to record equipment history:', histErr);
     }
 
-    return NextResponse.json({ success: true, equipment: updated });
+    const [signedUpdated] = await signEquipmentRecords([updated], auth.organization.id);
+    return NextResponse.json(
+      { success: true, equipment: signedUpdated },
+      { headers: EVIDENCE_NO_STORE_HEADERS }
+    );
   } catch (error: any) {
     console.error('Error updating equipment:', error);
     const status = error.message?.startsWith('FORBIDDEN') ? 403 : error.message?.startsWith('UNAUTHORIZED') ? 401 : 500;

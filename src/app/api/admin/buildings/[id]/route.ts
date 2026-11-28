@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { extractCalendarDateParts } from '@/lib/dateUtils';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { EVIDENCE_NO_STORE_HEADERS, signEquipmentRecords } from '@/lib/evidencePhotos';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,7 +36,15 @@ export async function GET(
       return NextResponse.json({ error: 'Building not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ building });
+    const signedEquipments = await signEquipmentRecords(
+      building.equipments || [],
+      auth.organization.id
+    );
+
+    return NextResponse.json(
+      { building: { ...building, equipments: signedEquipments } },
+      { headers: EVIDENCE_NO_STORE_HEADERS }
+    );
   } catch (error: any) {
     console.error('Error fetching building:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

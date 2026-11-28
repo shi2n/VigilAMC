@@ -13,7 +13,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import Link from 'next/link';
-import { compressImageToDataUrl, uploadCompressedPhoto } from '@/lib/compressImage';
+import { uploadCompressedPhoto } from '@/lib/compressImage';
 import { AdminDictionary } from '@/lib/i18n/admin';
 import { formatBuildingPickerLabel } from '@/lib/buildingUtils';
 import {
@@ -77,6 +77,8 @@ export function InspectionsView({
     technicianName: '',
     photoUrl: '',
   });
+  // Displayable signed/local preview URL for the modal thumbnail (inspectionForm.photoUrl holds the canonical storageUrl)
+  const [inspectionPhotoPreview, setInspectionPhotoPreview] = useState('');
 
   // Keep in sync with parent bootstrap state immediately
   useEffect(() => {
@@ -148,13 +150,16 @@ export function InspectionsView({
         throw new Error('Server did not return a confirmed photo URL');
       }
       setInspectionForm((prev) => ({ ...prev, photoUrl: uploaded.url }));
+      setInspectionPhotoPreview(uploaded.previewUrl || uploaded.signedUrl || uploaded.localPreviewUrl);
       showToast('Inspection photo uploaded successfully!');
     } catch (err: any) {
       console.error(err);
       setInspectionForm((prev) => ({ ...prev, photoUrl: '' }));
+      setInspectionPhotoPreview('');
       showToast(err?.message || 'Failed to upload inspection photo');
     } finally {
       setUploadingPhoto(false);
+      e.target.value = '';
     }
   };
 
@@ -184,6 +189,7 @@ export function InspectionsView({
           technicianName: '',
           photoUrl: '',
         });
+        setInspectionPhotoPreview('');
         await fetchInspections();
       } else {
         showToast(json.error || 'Failed to record inspection');
@@ -539,11 +545,11 @@ export function InspectionsView({
                       className="hidden"
                     />
                   </label>
-                  {inspectionForm.photoUrl && (
+                  {(inspectionPhotoPreview || inspectionForm.photoUrl) && (
                     <div className="flex items-center gap-2">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={inspectionForm.photoUrl}
+                        src={inspectionPhotoPreview || inspectionForm.photoUrl}
                         alt="Inspection preview"
                         className="w-9 h-9 rounded-lg object-cover border border-slate-300 shadow-xs"
                       />

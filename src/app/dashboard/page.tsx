@@ -888,38 +888,40 @@ export default function AdminDashboardPage() {
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const previousUrl =
+      mode === 'SINGLE_ADD' ? singleEquipForm.photoUrl : editEquipmentModal?.photoUrl || '';
     try {
       setCompressingPhoto(true);
-      const { compressImageToDataUrl, uploadCompressedPhoto } = await import('@/lib/compressImage');
-      // Show instant local WebP thumbnail preview while uploading to Cloudflare R2
-      const previewDataUrl = await compressImageToDataUrl(file, {
-        maxDimension: 1280,
-        quality: 0.75,
-        mimeType: 'image/webp',
-      });
-      if (mode === 'SINGLE_ADD') {
-        setSingleEquipForm((prev) => ({ ...prev, photoUrl: previewDataUrl }));
-      } else {
-        setEditEquipmentModal((prev: any) => (prev ? { ...prev, photoUrl: previewDataUrl } : prev));
-      }
-
+      const { uploadCompressedPhoto } = await import('@/lib/compressImage');
+      // Compress once, await confirmed HTTPS storage upload before updating form state (never leave unuploaded data:/blob: URLs)
       const uploaded = await uploadCompressedPhoto(file, 'equipment', {
         maxDimension: 1280,
         quality: 0.75,
         mimeType: 'image/webp',
       });
+      if (!uploaded?.url || !uploaded.url.startsWith('https://')) {
+        throw new Error('Server did not return a confirmed photo URL.');
+      }
 
+      const displayUrl = uploaded.signedUrl || uploaded.url;
       if (mode === 'SINGLE_ADD') {
-        setSingleEquipForm((prev) => ({ ...prev, photoUrl: uploaded.url }));
+        setSingleEquipForm((prev) => ({ ...prev, photoUrl: displayUrl }));
       } else {
-        setEditEquipmentModal((prev: any) => (prev ? { ...prev, photoUrl: uploaded.url } : prev));
+        setEditEquipmentModal((prev: any) => (prev ? { ...prev, photoUrl: displayUrl } : prev));
       }
       showToast('Equipment photo uploaded successfully!');
     } catch (err: any) {
       console.error('Photo upload failed:', err);
+      // Revert to previous confirmed URL on failure (no stale optimistic state)
+      if (mode === 'SINGLE_ADD') {
+        setSingleEquipForm((prev) => ({ ...prev, photoUrl: previousUrl }));
+      } else {
+        setEditEquipmentModal((prev: any) => (prev ? { ...prev, photoUrl: previousUrl } : prev));
+      }
       showToast(err?.message || 'Could not upload photo, please try another image.');
     } finally {
       setCompressingPhoto(false);
+      e.target.value = '';
     }
   };
 

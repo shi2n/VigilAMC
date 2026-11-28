@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { getCurrentUser, logAuditActivity } from '@/lib/auth';
 import { checkPlanLimit } from '@/lib/plans';
 import { ensureR2PhotoUrl } from '@/lib/r2';
+import { EVIDENCE_NO_STORE_HEADERS, signEquipmentRecords } from '@/lib/evidencePhotos';
 import { getCalendarDayDiff, parseCalendarDateToUtc, addCalendarMonths } from '@/lib/dateUtils';
 
 export const dynamic = 'force-dynamic';
@@ -66,6 +67,16 @@ export async function GET(request: Request) {
             longitude: true,
             photos: true,
             isImported: true,
+            inspectionPhotos: {
+              orderBy: { createdAt: 'desc' },
+              take: 4,
+              select: {
+                id: true,
+                photoUrl: true,
+                capturedAt: true,
+                dayOfWeek: true,
+              },
+            },
           },
         },
         serviceLogs: {
@@ -78,7 +89,7 @@ export async function GET(request: Request) {
 
     const { evaluateEquipmentStatus } = await import('@/lib/compliance');
     const now = new Date();
-    const evaluated = equipments.map((eq: any) => {
+    const evaluatedRaw = equipments.map((eq: any) => {
       const evalResult = evaluateEquipmentStatus(eq, now);
       return {
         ...eq,
@@ -93,7 +104,9 @@ export async function GET(request: Request) {
       };
     });
 
-    return NextResponse.json({ equipments: evaluated });
+    const evaluated = await signEquipmentRecords(evaluatedRaw, auth.organization.id);
+
+    return NextResponse.json({ equipments: evaluated }, { headers: EVIDENCE_NO_STORE_HEADERS });
   } catch (error: any) {
     console.error('Error querying equipments:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

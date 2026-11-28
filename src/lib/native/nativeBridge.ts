@@ -447,11 +447,24 @@ export async function capturePhotoNative(): Promise<File | null> {
     if (!image.webPath) return null;
 
     const res = await fetch(image.webPath);
+    if (!res.ok) {
+      throw new Error(`Native photo fetch failed (HTTP ${res.status})`);
+    }
     const blob = await res.blob();
-    const filename = `vigil_native_${Date.now()}.jpg`;
+    if (!blob || blob.size === 0) {
+      throw new Error('Native camera returned an empty photo (0 bytes)');
+    }
+    const mime =
+      blob.type && /^image\/(jpeg|jpg|png|webp)$/i.test(blob.type)
+        ? blob.type.toLowerCase() === 'image/jpg'
+          ? 'image/jpeg'
+          : blob.type.toLowerCase()
+        : 'image/jpeg';
+    const ext = mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg';
+    const filename = `vigil_native_${Date.now()}.${ext}`;
 
     return new File([blob], filename, {
-      type: 'image/jpeg',
+      type: mime,
       lastModified: Date.now(),
     });
   } catch (err: any) {

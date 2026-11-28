@@ -29,7 +29,19 @@ export function extractEvidencePhotos(record: any): EvidencePhotoItem[] {
 
   const pushIfValid = (item: EvidencePhotoItem) => {
     const url = typeof item.photoUrl === 'string' ? item.photoUrl.trim() : '';
-    if (!url || seenUrls.has(url)) return;
+    if (!url) return;
+    const lower = url.toLowerCase();
+    // Never render unuploaded local device/blob URLs or unsafe schemes on the dashboard
+    if (
+      lower.startsWith('blob:') ||
+      lower.startsWith('file:') ||
+      lower.startsWith('content:') ||
+      lower.startsWith('capacitor:') ||
+      lower.startsWith('javascript:')
+    ) {
+      return;
+    }
+    if (seenUrls.has(url)) return;
     seenUrls.add(url);
     items.push({ ...item, photoUrl: url });
   };
@@ -37,10 +49,11 @@ export function extractEvidencePhotos(record: any): EvidencePhotoItem[] {
   // 1. InspectionPhoto relation rows (authoritative full-res stamped photos)
   if (Array.isArray(record?.inspectionPhotos)) {
     for (const p of record.inspectionPhotos) {
-      if (p?.photoUrl) {
+      const candidateUrl = p?.signedUrl || p?.photoUrl;
+      if (candidateUrl) {
         pushIfValid({
           id: p.id,
-          photoUrl: p.photoUrl,
+          photoUrl: candidateUrl,
           caption: p.caption || record?.remarks || null,
           capturedAt: p.capturedAt || record?.date || p.createdAt || null,
           dayOfWeek: p.dayOfWeek || null,
@@ -69,10 +82,10 @@ export function extractEvidencePhotos(record: any): EvidencePhotoItem[] {
           assetTag: record?.equipment?.qrCode || null,
           buildingName: record?.building?.name || null,
         });
-      } else if (p && typeof p === 'object' && p.photoUrl) {
+      } else if (p && typeof p === 'object' && (p.signedUrl || p.photoUrl)) {
         pushIfValid({
           id: p.id,
-          photoUrl: p.photoUrl,
+          photoUrl: p.signedUrl || p.photoUrl,
           caption: p.caption || record?.notes || record?.title || null,
           capturedAt: p.capturedAt || record?.completedAt || p.createdAt || null,
           dayOfWeek: p.dayOfWeek || null,
@@ -106,9 +119,10 @@ export function extractEvidencePhotos(record: any): EvidencePhotoItem[] {
         }
       }
     } catch {
-      if (record.photos.startsWith('https://')) {
+      const trimmedPhotos = record.photos.trim();
+      if (trimmedPhotos.startsWith('https://') || trimmedPhotos.startsWith('http://')) {
         pushIfValid({
-          photoUrl: record.photos,
+          photoUrl: trimmedPhotos,
           caption: record?.remarks || null,
           capturedAt: record?.date || record?.createdAt || null,
           assetTag: record?.equipment?.qrCode || null,
@@ -206,6 +220,11 @@ export function EvidencePhotoThumb({
 }) {
   const [broken, setBroken] = useState(false);
   const photoT = getPhotoEvidenceDictionary(lang);
+
+  // Reset broken state whenever a fresh signed URL arrives on refresh
+  useEffect(() => {
+    setBroken(false);
+  }, [photo.photoUrl]);
 
   if (!photo.photoUrl || broken) {
     return <PhotoNotReceivedSlot lang={lang} compact={size === 'sm'} />;

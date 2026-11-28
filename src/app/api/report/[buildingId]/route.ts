@@ -362,7 +362,7 @@ export async function GET(
       const latestLog = eq.serviceLogs?.[0] || null;
       const rawResolvedPhoto = extractPhotoUrl(eq, latestInspection);
       const resolvedPhotoUrl = rawResolvedPhoto
-        ? eqSignedPhotoMap.get(rawResolvedPhoto.trim()) ?? rawResolvedPhoto
+        ? eqSignedPhotoMap.get(rawResolvedPhoto.trim()) ?? null
         : null;
 
       // Step 1 & 6: Never invent "Routine IS 2190 physical & pressure verification" when no inspection exists

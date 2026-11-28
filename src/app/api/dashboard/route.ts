@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import { calendarDayDiff, fromDbDate, todayCalendarDateString } from '@/lib/dates';
+import { EVIDENCE_NO_STORE_HEADERS, signEquipmentRecords } from '@/lib/evidencePhotos';
 
 export const dynamic = 'force-dynamic';
 
@@ -103,24 +104,37 @@ export async function GET(request: Request) {
     const complianceRate =
       equipments.length > 0 ? Math.round((compliantCount / equipments.length) * 100) : 100;
 
-    return NextResponse.json({
-      authenticated: true,
-      user: auth.user,
-      profile: auth.profile,
-      organization: auth.organization,
-      kpis: {
-        totalClients,
-        totalBuildings,
-        totalEquipments,
-        activeTechnicians,
-        openWorkOrders,
-        dueInspections: dueCount,
-        overdueInspections: overdueCount,
-        complianceRate,
+    const signedEquipments = await signEquipmentRecords(equipments, organizationId);
+    const signedEqById = new Map<string, any>();
+    for (const eq of signedEquipments) signedEqById.set(eq.id, eq);
+    const signedBuildings = buildings.map((b: any) => ({
+      ...b,
+      equipments: (b.equipments || []).map((eq: any) =>
+        signedEqById.has(eq.id) ? { ...eq, photoUrl: signedEqById.get(eq.id).photoUrl } : eq
+      ),
+    }));
+
+    return NextResponse.json(
+      {
+        authenticated: true,
+        user: auth.user,
+        profile: auth.profile,
+        organization: auth.organization,
+        kpis: {
+          totalClients,
+          totalBuildings,
+          totalEquipments,
+          activeTechnicians,
+          openWorkOrders,
+          dueInspections: dueCount,
+          overdueInspections: overdueCount,
+          complianceRate,
+        },
+        buildings: signedBuildings,
+        equipments: signedEquipments,
       },
-      buildings,
-      equipments,
-    });
+      { headers: EVIDENCE_NO_STORE_HEADERS }
+    );
   } catch (error: any) {
     console.error('Error in dashboard aggregation:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

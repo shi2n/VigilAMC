@@ -1127,7 +1127,7 @@ export default function TechnicianPWA() {
         if (document.visibilityState === 'visible') {
           loadDashboardData();
         }
-        if (pendingSyncCount > 0) {
+        if (pendingSyncCount > 0 || pendingPhotoCount > 0) {
           handleTriggerSync({ force: false });
         }
       }
@@ -1140,7 +1140,7 @@ export default function TechnicianPWA() {
       window.removeEventListener('focus', onFocus);
       clearInterval(interval);
     };
-  }, [handleTriggerSync, loadDashboardData, pendingSyncCount, isSyncing, t]);
+  }, [handleTriggerSync, loadDashboardData, pendingSyncCount, pendingPhotoCount, isSyncing, t]);
 
   // ----------------------------------------------------------------------------------
   // 5. LANGUAGE SWITCHER HANDLER (Feature D)
@@ -1553,8 +1553,13 @@ export default function TechnicianPWA() {
 
   const handlePhotoCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      await processPhotoFile(file);
+    try {
+      if (file) {
+        await processPhotoFile(file);
+      }
+    } finally {
+      // Reset file input so retaking a photo with the same camera filename always triggers onChange
+      e.target.value = '';
     }
   };
 
@@ -2043,17 +2048,18 @@ export default function TechnicianPWA() {
           return true;
         }
 
-        // Server rejected validation/state: revert optimistic UI, discard bad item, keep modal OPEN
-        await discardOutboxItem(clientSyncId).catch(() => {});
-        for (const pid of pendingPhotoIds) {
-          await deleteQueuedPhoto(pid).catch(() => {});
+        // Only discard outbox item on explicit client validation errors (HTTP 400/422).
+        // Never delete the queued photo on transient server errors so technician can tap Retry without retaking!
+        const isClientValidationError = /HTTP 400|HTTP 422|actionTaken|remarks required|not found/i.test(firstErr);
+        if (isClientValidationError) {
+          await discardOutboxItem(clientSyncId).catch(() => {});
+          activeTaskPendingSyncIdRef.current = null;
         }
-        activeTaskPendingSyncIdRef.current = null;
         await refreshOutboxCounts();
         setTaskList(prevTasks);
         await setLocalCache('technician_tasks', prevTasks).catch(() => {});
-        setTaskPhotoUploadError(firstErr || 'Failed to submit task. Please check inputs.');
-        triggerToast(firstErr || 'Failed to submit task. Please check inputs.');
+        setTaskPhotoUploadError(firstErr || 'Failed to submit task. Tap Retry to try again.');
+        triggerToast(firstErr || 'Failed to submit task. Tap Retry to try again.');
         return false;
       } catch (err: any) {
         setTaskList(prevTasks);

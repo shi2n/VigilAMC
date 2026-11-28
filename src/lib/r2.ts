@@ -36,11 +36,22 @@ export function buildR2PrivateObjectUrl(key: string): string {
 export function extractR2PrivateKey(rawUrl: string | null | undefined): string | null {
   if (!rawUrl || typeof rawUrl !== 'string') return null;
   const trimmed = rawUrl.trim();
-  if (!trimmed) return null;
+  if (!trimmed || trimmed.includes('..')) return null;
+
+  const { bucketName } = getR2Config();
+
+  // Support relative private R2 paths stored directly in DB (e.g. "private-evidence/orgs/..." or "/private-evidence/orgs/...")
+  const strippedLeading = trimmed.replace(/^\/+/, '');
+  if (strippedLeading.startsWith('private-evidence/')) {
+    return strippedLeading;
+  }
+  if (bucketName && strippedLeading.startsWith(`${bucketName}/private-evidence/`)) {
+    return strippedLeading.slice(bucketName.length + 1);
+  }
+
   try {
     const parsed = new URL(trimmed);
     if (!parsed.hostname.endsWith('.r2.cloudflarestorage.com')) return null;
-    const { bucketName } = getR2Config();
     const pathname = decodeURIComponent(parsed.pathname).replace(/^\/+/, '');
     if (bucketName && pathname.startsWith(`${bucketName}/`)) {
       const rel = pathname.slice(bucketName.length + 1).replace(/^\/+/, '');
@@ -404,13 +415,45 @@ export async function ensureR2PhotoUrl(params: {
   const trimmed = photoUrl.trim();
   if (!trimmed) return null;
 
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+  const lower = trimmed.toLowerCase();
+  // Never persist temporary local browser/device URLs to the database
+  if (
+    lower.startsWith('blob:') ||
+    lower.startsWith('file:') ||
+    lower.startsWith('content:') ||
+    lower.startsWith('capacitor:')
+  ) {
+    throw new Error('Local device/blob photo URLs cannot be saved. Upload the photo to storage first.');
+  }
+
+  // Strip expiring SigV4 signature query params from private R2 URLs so canonical permanent URLs are saved
+  const r2PrivateKey = extractR2PrivateKey(trimmed);
+  if (r2PrivateKey && isR2PrivateConfigured()) {
+    return buildR2PrivateObjectUrl(r2PrivateKey);
+  }
+
+  if (lower.startsWith('https://') || lower.startsWith('http://')) {
+    // Strip Supabase Storage expiring signed URL query params back to canonical object URL if applicable
+    try {
+      const parsed = new URL(trimmed);
+      if (parsed.pathname.includes('/storage/v1/object/sign/evidence-photos/')) {
+        const cleanPath = parsed.pathname.replace(
+          '/storage/v1/object/sign/evidence-photos/',
+          '/storage/v1/object/evidence-photos/'
+        );
+        return `${parsed.origin}${cleanPath}`;
+      }
+    } catch {
+      // ignore URL parse error
+    }
     return trimmed;
   }
 
   if (trimmed.startsWith('data:image/') && isR2Configured()) {
     const match = trimmed.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,([\s\S]+)$/);
-    if (!match) return trimmed;
+    if (!match) {
+      throw new Error('Invalid base64 image format.');
+    }
 
     const mimeType = match[1].toLowerCase();
     const ext = ALLOWED_MIME_EXT[mimeType];
@@ -419,6 +462,9 @@ export async function ensureR2PhotoUrl(params: {
     }
 
     const buffer = Buffer.from(match[2], 'base64');
+    if (buffer.byteLength === 0) {
+      throw new Error('Uploaded image is empty (0 bytes).');
+    }
     if (buffer.byteLength > 4 * 1024 * 1024) {
       throw new Error('Image exceeds maximum allowed size of 4 MB.');
     }
