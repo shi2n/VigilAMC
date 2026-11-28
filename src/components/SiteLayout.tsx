@@ -31,7 +31,7 @@ export function SiteLayout({ children }: SiteLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-white text-[#1C1917] font-sans selection:bg-[#EA580C] selection:text-white w-full max-w-full overflow-x-hidden">
+    <div className="min-h-screen flex flex-col bg-white text-[#1C1917] font-sans selection:bg-[#EA580C] selection:text-white w-full max-w-full overflow-x-clip">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-[#EA580C] focus:text-white focus:font-semibold focus:rounded-xl focus:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#EA580C]"
