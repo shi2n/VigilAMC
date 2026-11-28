@@ -62,8 +62,7 @@ export default function ProductsPage() {
             </h1>
 
             <p className="mt-4 sm:mt-5 text-[17px] sm:text-[19px] leading-[1.55] text-[#44403C] max-w-[640px] mx-auto">
-              Everything your agency needs — the field app, the office dashboard, and your
-              clients&apos; window into it all.
+              The field app, the office dashboard, and the client portal, all working from the same live inspection record.
             </p>
 
             {/* Quick Product Anchors */}

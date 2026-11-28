@@ -374,7 +374,7 @@ export default function PricingPage() {
             data.appliedCoupon.discountType === 'percentage'
               ? `${data.appliedCoupon.discountValue}% off`
               : `${formatInr(data.appliedCoupon.discountValue)} off`;
-          const successMsg = `Coupon ${data.appliedCoupon.code} applied (${discountLabel} — saving ${formatInr(data.discountAmount)}).`;
+          const successMsg = `Coupon ${data.appliedCoupon.code} applied (${discountLabel}, saving ${formatInr(data.discountAmount)}).`;
           setCouponSuccess(successMsg);
           setCouponError(null);
           if (params.intent === 'apply-coupon') {
@@ -1200,7 +1200,7 @@ export default function PricingPage() {
                 ) : (
                   <>
                     <span>
-                      {selectedPlan.ctaLabel} — {formatInr(selectedFinalAmount)}
+                      {selectedPlan.ctaLabel}: {formatInr(selectedFinalAmount)}
                     </span>
                     <ArrowRight className="w-4 h-4" />
                   </>

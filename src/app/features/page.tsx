@@ -145,7 +145,7 @@ const FEATURE_CLUSTERS: FeatureCluster[] = [
     id: 'platform',
     badge: 'Cluster 04 · Infrastructure',
     title: 'Platform',
-    subtitle: 'Scalable, secure, and ready for agencies running sites across multiple Indian states.',
+    subtitle: 'Built for agencies running client sites across multiple Indian states.',
     surface: 'tint',
     tiles: [
       {
@@ -161,7 +161,7 @@ const FEATURE_CLUSTERS: FeatureCluster[] = [
       {
         icon: Download,
         label: 'Data export',
-        detail: '1-click full export — your client records, asset logs, and history always stay yours.',
+        detail: 'Export your client records, asset logs, and inspection history in one click whenever you need them.',
       },
       {
         icon: Database,
@@ -254,7 +254,7 @@ export default function FeaturesPage() {
               Ready to run every building without Excel chaos?
             </h2>
             <p className="text-[15px] sm:text-[16px] text-orange-50 leading-relaxed">
-              Bring one building register to a 15-minute live walkthrough — see offline inspections and Form B export on your own data.
+              Bring one building register to a 15-minute live walkthrough to see offline inspections and Form B export on your own data.
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3 shrink-0">

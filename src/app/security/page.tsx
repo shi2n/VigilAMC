@@ -20,7 +20,7 @@ export default function SecurityPage() {
       title: 'Database Architecture & Multi-Tenant Isolation',
       status: 'LIVE' as const,
       description:
-        'All application data is hosted in dedicated PostgreSQL databases on Supabase cloud infrastructure. Records are strictly segregated by Organization ID, ensuring each AMC agency and contractor accesses only their own client rosters and service records.',
+        'All application data is hosted in dedicated PostgreSQL databases on Supabase cloud infrastructure. Records are separated by Organization ID, so each AMC agency and contractor can only access its own client rosters and service records.',
     },
     {
       icon: Lock,
@@ -82,7 +82,7 @@ export default function SecurityPage() {
         <div className="p-6 rounded-2xl bg-slate-900 text-white border border-slate-800 shadow-md space-y-3">
           <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
             <Lock className="w-5 h-5 shrink-0" />
-            <span>100% Built for AMC Contractors &mdash; Never Your Competitor</span>
+            <span>Software Only for AMC Contractors. We Never Compete With You.</span>
           </div>
           <p className="text-xs text-slate-300 leading-relaxed">
             VigilAMC is pure software. We do NOT provide physical fire AMC services, sell refills, or pitch buildings directly. Your client building list, pricing, and contract expiry dates belong strictly to your agency and are never shared or contacted by us.

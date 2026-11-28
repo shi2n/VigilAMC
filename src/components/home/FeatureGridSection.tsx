@@ -109,7 +109,7 @@ const FEATURE_CATEGORIES: FeatureCategory[] = [
       {
         icon: Download,
         title: 'Data export',
-        desc: '1-click full export — your client and inspection data stays yours.',
+        desc: 'Export all client records and inspection history in one click anytime.',
       },
     ],
   },
@@ -134,7 +134,7 @@ export function FeatureGridSection() {
             And yes, everything else.
           </h2>
           <p className="mt-4 text-[17px] sm:text-[18px] text-[#44403C] max-w-[560px] mx-auto leading-relaxed">
-            Every workflow a growing fire-safety agency asks for — included out of the box.
+            Every day-to-day workflow a growing fire-safety agency needs is included out of the box.
           </p>
           <div className="mt-4">
             <Link

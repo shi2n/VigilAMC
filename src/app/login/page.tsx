@@ -1208,7 +1208,7 @@ export default function LoginPage() {
             </h2>
 
             <p className="text-sm xl:text-base text-stone-200 leading-relaxed font-normal">
-              GPS-stamped inspections, offline checklists, and compliance reports — from basement plant rooms to boardrooms.
+              GPS-stamped inspections, offline checklists, and Form-B reports that stay synced from basement pump rooms to the office.
             </p>
 
             <div className="pt-2 flex items-center gap-4 text-xs text-stone-300">

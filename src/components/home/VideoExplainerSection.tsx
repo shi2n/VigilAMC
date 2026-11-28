@@ -22,7 +22,7 @@ export function VideoExplainerSection() {
   const videoSrc = '/videos/vigilamc-explainer.mp4';
 
   const transcript =
-    "Still chasing Excel sheets and WhatsApp messages for fire safety AMCs? Meet VigilAMC — built for Indian fire-safety agencies. Import your Excel asset register and automate monthly, quarterly, and annual AMC service cycles in minutes. Empower field technicians with our offline-ready mobile app: capture live rear-camera photo proof with GPS verification even in zero-signal basements, record voice-to-text remarks in 10 Indian languages, and collect digital guard or client sign-offs. Automatically generate 5-page audit-ready NBC 2016 / IS 2190 statutory Form B reports with 30/15/7-day due alerts. Go live in 24 hours with zero extra hardware.";
+    "Still chasing Excel sheets and WhatsApp messages for fire safety AMCs? VigilAMC is built for Indian fire-safety agencies. Import your Excel asset register and set up monthly, quarterly, and annual AMC service cycles in minutes. Field technicians use the offline mobile app to take rear-camera photos stamped with GPS coordinates even in basements with no signal, record voice-to-text remarks in 10 Indian languages, and collect digital guard or client sign-offs. From there, generate 5-page NBC 2016 and IS 2190 statutory Form B reports with 30, 15, and 7-day due alerts, with no extra hardware to buy.";
 
   return (
     <section
@@ -112,7 +112,7 @@ export function VideoExplainerSection() {
                 playsInline
                 preload="metadata"
                 data-testid="explainer-video-player"
-                aria-label="VigilAMC — Fire Safety Operations Walkthrough"
+                aria-label="VigilAMC Fire Safety Operations Walkthrough"
                 onError={() => setVideoError(true)}
                 className="w-full h-full object-contain bg-[#1C1917]"
               />

@@ -53,8 +53,7 @@ export function CorporateFooter() {
             </Link>
 
             <p className="text-sm text-[#44403C] leading-relaxed max-w-lg font-normal">
-              VigilAMC keeps residential societies, commercial towers, and industrial plants audit-ready —
-              streamlining scheduled fire inspections, statutory Form-B compliance certificates, and field technician dispatch in one unified platform.
+              VigilAMC helps fire-safety agencies manage scheduled inspections, field technician dispatch, and Form B compliance records for residential societies, offices, and factories.
             </p>
 
             {/* Mobile App Download Badges */}

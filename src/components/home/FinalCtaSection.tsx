@@ -28,7 +28,7 @@ export function FinalCtaSection() {
           id="final-cta-heading"
           className="font-sans font-bold text-[34px] sm:text-[44px] lg:text-[52px] leading-[1.08] tracking-[-0.03em] text-white"
         >
-          Your agency, audit-ready — every day.
+          Keep every building ready for inspection.
         </h2>
 
         <p className="mt-4 sm:mt-5 text-[17px] sm:text-[19px] text-white max-w-[600px] mx-auto leading-relaxed">

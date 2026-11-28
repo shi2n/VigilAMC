@@ -21,7 +21,7 @@ interface StepItem {
 const STEPS: StepItem[] = [
   {
     num: '01',
-    title: 'Add your buildings & equipment — or import the Excel',
+    title: 'Add your buildings or import from Excel',
     desc: 'Bring your existing client sites, floors, and asset registers in minutes without starting from scratch.',
     icon: FileSpreadsheet,
     photo: scenePump,
@@ -29,16 +29,16 @@ const STEPS: StepItem[] = [
   },
   {
     num: '02',
-    title: 'Your team inspects — offline, GPS-stamped',
-    desc: 'Technicians complete floor checklists and capture GPS-stamped camera photos even in zero-network basements.',
+    title: 'Your team inspects offline with GPS proof',
+    desc: 'Technicians complete floor checklists and take GPS-stamped photos even in basements with no mobile signal.',
     icon: Smartphone,
     photo: sceneGps,
     alt: 'Technician inspecting a red hydrant landing valve with smartphone GPS verification',
   },
   {
     num: '03',
-    title: 'Reports & alerts go out — automatically',
-    desc: '5-page white-label Form B PDFs, client portal receipts, and due-date reminders run like clockwork.',
+    title: 'Reports and alerts go out automatically',
+    desc: 'Generate 5-page white-label Form B PDFs, track client portal receipts, and send due-date reminders on schedule.',
     icon: FileCheck2,
     photo: sceneSignoff,
     alt: 'Facility manager signing digital inspection record in a building lobby',
@@ -64,7 +64,7 @@ export function HowItWorksSection() {
             Three steps from Excel to audit-ready.
           </h2>
           <p className="mt-4 text-[17px] sm:text-[18px] text-[#44403C] max-w-[560px] mx-auto leading-relaxed">
-            No extra hardware. No complex training. Your agency can go live in one afternoon.
+            You do not need extra hardware or long training sessions. Most agencies get their first sites live in one afternoon.
           </p>
           <div className="mt-4">
             <Link

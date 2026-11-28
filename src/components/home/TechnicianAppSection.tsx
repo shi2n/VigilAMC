@@ -42,17 +42,17 @@ const LEFT_CALLOUTS = [
   {
     icon: WifiOff,
     title: 'WORKS OFFLINE',
-    body: 'Full inspections, camera photos, and checklists work inside basements and pump rooms — queued in a local outbox and auto-synced the moment signal returns.',
+    body: 'Full inspections, camera photos, and checklists work inside basements and pump rooms. Records stay queued in a local outbox and sync as soon as signal returns.',
   },
   {
     icon: MapPin,
     title: 'GPS-STAMPED PROOF',
-    body: 'Every photo and inspection carries burned-in GPS coordinates, date, time, and Asset Tag ID — proving your technician was on site without fragile paper stickers.',
+    body: 'Every photo and inspection carries burned-in GPS coordinates, date, time, and Asset Tag ID, so you have verifiable site proof without fragile paper stickers.',
   },
   {
     icon: BellRing,
     title: 'INSTANT NOTIFICATIONS',
-    body: 'New building assigned? A lock-screen push alert tells your technician right away so urgent jobs never sit unread in WhatsApp.',
+    body: 'New building assigned? A lock-screen push alert notifies your technician right away so urgent jobs do not sit unread in WhatsApp.',
   },
 ];
 
@@ -60,12 +60,12 @@ const RIGHT_CALLOUTS = [
   {
     icon: Languages,
     title: '10 INDIAN LANGUAGES + VOICE INPUT',
-    body: 'Switch the app to Hindi, Marathi, Gujarati, Tamil, Telugu, Kannada, Malayalam, Bengali, Punjabi, or English — and speak inspection remarks via voice mic.',
+    body: 'Switch the app to Hindi, Marathi, Gujarati, Tamil, Telugu, Kannada, Malayalam, Bengali, Punjabi, or English, and speak inspection remarks using the voice mic.',
   },
   {
     icon: Camera,
     title: 'CAMERA PHOTO CAPTURE, CHECKLISTS & HISTORY',
-    body: 'Rear-camera live photo capture, floor/zone checklists, digital guard sign-offs, and full visit history right on the technician’s phone.',
+    body: 'Rear-camera live photo capture, floor and zone checklists, digital guard sign-offs, and full visit history right on the technician’s phone.',
   },
 ];
 
@@ -111,7 +111,7 @@ export function TechnicianAppSection({ showDemoCta = false }: { showDemoCta?: bo
           </h2>
 
           <p className="mt-4 text-[17px] sm:text-[18px] text-[#44403C] max-w-[620px] mx-auto leading-relaxed">
-            Purpose-built for field technicians across India — fast enough for 6-second extinguisher checks and tough enough for zero-network basements.
+            Built for field technicians across India, with 6-second extinguisher checks that save cleanly in basements with no network signal.
           </p>
         </AppleReveal>
 
@@ -216,10 +216,10 @@ export function TechnicianAppSection({ showDemoCta = false }: { showDemoCta?: bo
                 </div>
                 <p className="text-[13px] font-semibold text-[#1C1917] flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-[#059669] shrink-0" aria-hidden="true" />
-                  <span>Also on Android — same account (com.vigilamc)</span>
+                  <span>Also on Android with the same account (com.vigilamc)</span>
                 </p>
                 <p className="text-xs text-[#44403C]">
-                  Your technicians sign in with their Staff ID &amp; 6-digit PIN — every building and checklist loads automatically.
+                  Technicians sign in with their Staff ID and 6-digit PIN, and their assigned buildings and checklists load automatically.
                 </p>
               </div>
             </AppleReveal>
@@ -228,7 +228,7 @@ export function TechnicianAppSection({ showDemoCta = false }: { showDemoCta?: bo
 
         {/* Honest substantiation fine print */}
         <p className="mt-10 sm:mt-12 text-center text-xs text-[#44403C] max-w-[680px] mx-auto">
-          First = first fire-compliance field app purpose-built with offline + GPS-stamped inspections for Indian agencies.
+          First means the first fire-compliance field app built with offline sync and GPS-stamped inspections for Indian agencies.
         </p>
 
         {showDemoCta && (

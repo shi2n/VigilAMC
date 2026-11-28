@@ -55,13 +55,13 @@ export function HowItWorksContent({ embedded = false }: { embedded?: boolean }) 
         >
           <div className="max-w-[820px] mx-auto">
             <p className="text-xs sm:text-[13px] font-bold uppercase tracking-[0.12em] text-[#C2410C] mb-2.5">
-              How It Works · Zero Hardware · Zero Messy Onboarding
+              How It Works · Simple Agency Setup
             </p>
             <h2
               id="combined-how-it-works-heading"
               className="font-display text-[32px] sm:text-[46px] font-extrabold leading-[1.08] tracking-[-0.03em] text-[#1C1917] text-balance"
             >
-              Live in a day. <span className="text-[#C2410C]">Not a quarter.</span>
+              Get your agency live <span className="text-[#C2410C]">in one day.</span>
             </h2>
             <p className="mt-3.5 text-[16px] sm:text-[18px] leading-relaxed text-[#44403C] max-w-[640px] mx-auto">
               Three clear steps take your agency from scattered spreadsheets and WhatsApp updates to GPS-stamped proof and automated Form B compliance.
@@ -81,7 +81,7 @@ export function HowItWorksContent({ embedded = false }: { embedded?: boolean }) 
               Bring your buildings, equipment &amp; field team in minutes.
             </h2>
             <p className="text-[17px] text-[#44403C] leading-relaxed">
-              Add client buildings and assets manually or drop in your existing Excel register — then
+              Add client buildings and assets manually or upload your existing Excel register, then
               invite your technicians with Staff IDs and 6-digit PINs.
             </p>
             <div className="rounded-2xl bg-[#FFF8F2] border border-[#FED7AA] px-4 py-3 text-sm font-bold text-[#9A3412] flex items-center gap-2.5">
@@ -217,7 +217,7 @@ export function HowItWorksContent({ embedded = false }: { embedded?: boolean }) 
             </h2>
             <p className="text-[17px] text-[#44403C] leading-relaxed">
               Technicians follow guided floor and zone checklists in their preferred Indian language,
-              capture rear-camera photos with GPS coordinates, and record voice remarks — even with zero basement signal.
+              capture rear-camera photos with GPS coordinates, and record voice remarks even with no basement signal.
             </p>
             <ul className="space-y-2.5 pt-1 text-[15px] text-[#1C1917]">
               <li className="flex items-start gap-2.5">
@@ -331,7 +331,7 @@ export function HowItWorksContent({ embedded = false }: { embedded?: boolean }) 
               Your first week on VigilAMC.
             </h2>
             <p className="mt-3 text-[16px] sm:text-[18px] text-[#44403C]">
-              Honest day-by-day pace — no enterprise consulting required.
+              A realistic day-by-day rollout you can run without outside consultants.
             </p>
           </AppleReveal>
 

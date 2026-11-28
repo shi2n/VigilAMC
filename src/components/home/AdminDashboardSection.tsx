@@ -34,10 +34,10 @@ export function AdminDashboardSection({ showDemoCta = false }: { showDemoCta?: b
             id="admin-dashboard-heading"
             className="font-sans font-bold text-[32px] sm:text-[42px] lg:text-[48px] leading-[1.09] tracking-[-0.03em] text-[#1C1917] text-balance"
           >
-            Everything your office needs — nothing it doesn&apos;t.
+            Built for how fire-safety offices actually work.
           </h2>
           <p className="mt-4 text-[17px] sm:text-[18px] text-[#44403C] max-w-[600px] mx-auto leading-relaxed">
-            Replace scattered spreadsheets, missed service reminders, and manual Form B formatting with one calm, organized agency workspace.
+            Keep equipment registers, service reminders, repair jobs, and Form B reports in one workspace instead of scattered spreadsheets.
           </p>
         </AppleReveal>
 
@@ -53,7 +53,7 @@ export function AdminDashboardSection({ showDemoCta = false }: { showDemoCta?: b
                 Equipment registry, service cycles &amp; Run scheduling now.
               </h3>
               <p className="text-[16px] text-[#44403C] leading-relaxed">
-                Track every extinguisher, hydrant, sprinkler pump, and alarm panel with live status radar chips — EXPIRED, DUE SOON, or OK.
+                Track every extinguisher, hydrant, sprinkler pump, and alarm panel with live status chips: EXPIRED, DUE SOON, or OK.
               </p>
               <ul className="space-y-2.5 pt-1 text-[15px] text-[#1C1917]">
                 <li className="flex items-start gap-2.5">
@@ -138,7 +138,7 @@ export function AdminDashboardSection({ showDemoCta = false }: { showDemoCta?: b
                         <span className="font-bold text-[#C2410C]">WO-418 · Inspection</span>
                         <span className="px-2 py-0.5 rounded bg-[#D1FAE5] text-[#065F46] font-bold">COMPLETED</span>
                       </div>
-                      <div className="text-xs font-bold text-[#1C1917]">Apex Towers — Wing A</div>
+                      <div className="text-xs font-bold text-[#1C1917]">Apex Towers (Wing A)</div>
                       <div className="text-[11px] text-[#44403C] flex items-center gap-1">
                         <MapPin className="w-3 h-3 text-[#C2410C]" aria-hidden="true" />
                         <span>Assigned: Rahul Verma · 14m GPS</span>
@@ -195,10 +195,10 @@ export function AdminDashboardSection({ showDemoCta = false }: { showDemoCta?: b
                 <span>Zero Manual Re-Typing</span>
               </div>
               <h3 className="font-sans font-bold text-[26px] sm:text-[32px] leading-[1.15] tracking-[-0.02em] text-[#1C1917]">
-                Excel bulk import — bring your whole register in.
+                Bring your entire Excel register in at once.
               </h3>
               <p className="text-[16px] text-[#44403C] leading-relaxed">
-                Already managing hundreds of buildings in Excel? Upload your `.xlsx` sheets once and map columns cleanly — assets, floor notes, serial numbers, and next due dates go live immediately.
+                Already managing hundreds of buildings in Excel? Upload your `.xlsx` sheets once and map the columns. Your assets, floor notes, serial numbers, and next due dates go live right away.
               </p>
               <ul className="space-y-2.5 pt-1 text-[15px] text-[#1C1917]">
                 <li className="flex items-start gap-2.5">
@@ -324,7 +324,7 @@ export function AdminDashboardSection({ showDemoCta = false }: { showDemoCta?: b
                 5-page white-label Form B reports &amp; automatic client alerts.
               </h3>
               <p className="text-[16px] text-[#44403C] leading-relaxed">
-                Generate 5-page Form B compliance reports stamped with <strong>your</strong> agency logo, license number, and digital signature — and trigger due-date alerts and email digests to clients automatically.
+                Generate 5-page Form B compliance reports stamped with <strong>your</strong> agency logo, license number, and digital signature, and send due-date alerts and email digests to clients automatically.
               </p>
               <div className="pt-2">
                 <Link

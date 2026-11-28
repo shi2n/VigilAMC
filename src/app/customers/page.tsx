@@ -45,7 +45,7 @@ export default function CustomersPage() {
       building: 'Healthcare & Critical Care Campus (Representative)',
       auditDate: 'Monthly Hydraulic Flow & Pressure Verification',
       reading: 'Static 7.0 Bar / Dyn 3.5 Bar',
-      description: 'Systematic safety tracking with logging of wet risers, clean-agent suppression in server rooms, and digital records.',
+      description: 'Logs wet risers, clean-agent suppression in server rooms, and pressure readings in one digital record.',
     },
     {
       id: 'pumps',
@@ -186,7 +186,7 @@ export default function CustomersPage() {
               Representative Operational Scenarios
             </h2>
             <p className="text-sm text-slate-600 mt-2">
-              Representative facility profiles demonstrating how VigilAMC addresses common fire protection maintenance bottlenecks.
+              Example facility profiles showing how VigilAMC handles day-to-day fire maintenance work.
             </p>
           </div>
 

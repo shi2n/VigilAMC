@@ -36,8 +36,8 @@ export default function AboutUsPage() {
     },
     {
       period: 'Early 2026',
-      title: 'Core Architecture & Form-B Engine',
-      desc: 'Engineered the unified asset registry with equipment details and floor notes, mobile inspection form with GPS verification and photo proof (in beta), and statutory Form-B PDF generation engine compliant with NBC 2016 Part 4 and IS 2190.',
+      title: 'Core Registry & Form-B Engine',
+      desc: 'Built the asset registry with equipment details and floor notes, mobile inspection form with GPS verification and photo proof (in beta), and statutory Form-B PDF generator aligned with NBC 2016 Part 4 and IS 2190.',
     },
     {
       period: 'Current (2026)',
@@ -62,10 +62,10 @@ export default function AboutUsPage() {
             <span>New Delhi, India</span>
           </div>
           <h1 className="text-4xl sm:text-5xl font-black text-[#1C1917] tracking-tight">
-            Building the Digital Backbone for Fire Safety AMC Operations
+            Compliance Software Built for Fire-Safety AMC Agencies
           </h1>
           <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
-            VigilAMC is dedicated to helping fire protection contractors eliminate forgotten inspection cycles, replace broken paper logbooks, and deliver transparent compliance records to their clients.
+            VigilAMC helps fire protection contractors stay ahead of inspection cycles, replace paper logbooks, and hand clear compliance records to their clients.
           </p>
 
           {/* Startup India DPIIT Credibility Block */}
@@ -116,10 +116,10 @@ export default function AboutUsPage() {
                 My name is <strong>Shaizan</strong>. I founded VigilAMC in <strong>New Delhi</strong> after observing a persistent, costly problem in the fire protection industry: competent, hardworking AMC contractors losing multi-year contracts simply because manual paper record-keeping failed them.
               </p>
               <p>
-                In hundreds of high-rise commercial complexes, industrial plants, and hospitals, fire safety equipment is tracked on faded paper tags, clipboards, or scattered Excel spreadsheets. When an extinguisher loses pressure behind a stairwell or a hydrostatic pressure test deadline quietly expires, nobody notices until a municipal Fire Officer conducts a surprise inspection.
+                In hundreds of commercial complexes, factories, and hospitals, fire safety equipment is tracked on faded paper tags, clipboards, or scattered Excel spreadsheets. When an extinguisher loses pressure behind a stairwell or a hydrostatic test deadline slips past, nobody notices until a municipal Fire Officer conducts a surprise inspection.
               </p>
               <p>
-                The facility fails the audit, faces penalty notices, and the AMC contractor takes the blame. I built VigilAMC to put an end to this breakdown — replacing paper chaos with GPS-verified inspections, photo proof, floor location notes, and instant Form-B certification.
+                The facility fails the audit, faces penalty notices, and the AMC contractor takes the blame. I built VigilAMC to fix that gap with GPS-verified inspections, photo proof, floor location notes, and fast Form-B reports.
               </p>
             </div>
 
@@ -159,9 +159,9 @@ export default function AboutUsPage() {
                 <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center text-cyan-200">
                   <Target className="w-6 h-6" />
                 </div>
-                <h3 className="text-2xl font-bold tracking-tight">Our Guiding Purpose</h3>
+                <h3 className="text-2xl font-bold tracking-tight">Our Goal</h3>
                 <p className="text-cyan-100 text-sm sm:text-base leading-relaxed">
-                  &ldquo;To provide fire safety service agencies with reliable, modern digital tools that prevent missed inspection deadlines, protect contractor reputations, and raise the standard of life-safety documentation.&rdquo;
+                  &ldquo;Give fire-safety service agencies practical digital tools so they do not miss inspection deadlines, can back up every site visit with proof, and spend less time formatting reports.&rdquo;
                 </p>
                 <div className="pt-4 border-t border-white/20 grid grid-cols-2 gap-4 text-xs">
                   <div>

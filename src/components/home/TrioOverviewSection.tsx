@@ -26,7 +26,7 @@ export function TrioOverviewSection() {
             Three products. One platform.
           </h2>
           <p className="mt-4 text-[17px] sm:text-[18px] text-[#44403C] max-w-[580px] mx-auto leading-relaxed">
-            Your technicians in the field, your coordinators at the office, and your clients — all looking at the same live compliance record.
+            Your field technicians, office coordinators, and building clients all work from the same live compliance record.
           </p>
           <div className="mt-4">
             <Link
@@ -204,7 +204,7 @@ export function TrioOverviewSection() {
                   Client Portal
                 </h3>
                 <p className="mt-2 text-[15px] text-[#44403C] leading-relaxed">
-                  A clean portal for society committees and facility heads — zero PDF chaos.
+                  A shared login where society committees and facility heads check status and download reports themselves.
                 </p>
 
                 <div className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-[#C2410C] group-hover:translate-x-1 transition-transform">

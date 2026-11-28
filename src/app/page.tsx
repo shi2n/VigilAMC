@@ -14,16 +14,16 @@ import { VideoExplainerSection } from '@/components/home/VideoExplainerSection';
 import { FinalCtaSection } from '@/components/home/FinalCtaSection';
 
 export const metadata: Metadata = {
-  title: 'VigilAMC — Fire Safety Compliance Software for Agencies | Offline App, Dashboard & Form B',
+  title: 'VigilAMC | Fire Safety Compliance Software for Agencies | Offline App, Dashboard & Form B',
   description:
-    'Fire safety compliance software for agencies — offline technician app, admin dashboard, client portal, and 5-page Form B reports.',
+    'Fire safety compliance software for Indian agencies, with an offline technician app, admin dashboard, client portal, and 5-page Form B reports.',
   alternates: {
     canonical: '/',
   },
   openGraph: {
-    title: 'VigilAMC — Fire Safety Compliance Software for Agencies | Offline App, Dashboard & Form B',
+    title: 'VigilAMC | Fire Safety Compliance Software for Agencies | Offline App, Dashboard & Form B',
     description:
-      'Inspections, AMC schedules, compliance reports, your field team and your clients — connected. Online or offline.',
+      'Inspections, AMC schedules, compliance reports, your field team, and your clients in one place. Works online or offline.',
     url: SITE_CONFIG.SITE_URL,
     siteName: SITE_CONFIG.COMPANY_NAME,
     locale: 'en_IN',
@@ -39,9 +39,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'VigilAMC — Fire Safety Compliance Software for Agencies',
+    title: 'VigilAMC | Fire Safety Compliance Software for Agencies',
     description:
-      'Inspections, AMC schedules, Form B compliance reports, your field team and your clients — connected. Online or offline.',
+      'Inspections, AMC schedules, Form B compliance reports, your field team, and your clients in one place. Works online or offline.',
     creator: '@vigilamc',
     images: [`${SITE_CONFIG.SITE_URL}/images/hero-technician-v2.jpg`],
   },

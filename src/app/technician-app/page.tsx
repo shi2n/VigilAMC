@@ -32,7 +32,7 @@ const FIELD_PILLARS = [
     icon: MapPin,
     title: 'GPS + Asset Tag ID Proof',
     description:
-      'Every submitted inspection automatically stamps live GPS coordinates, date, timestamp, and Asset Tag ID — no fragile stickers or extra hardware required.',
+      'Every submitted inspection stamps live GPS coordinates, date, timestamp, and Asset Tag ID, without paper stickers or extra hardware.',
   },
   {
     icon: Mic,
@@ -55,6 +55,7 @@ const TECH_WORKFLOW_STEPS = [
     title: 'Open Assigned Building & Floor Checklist',
     description:
       'Technicians sign in with their Staff ID and PIN to view today’s assigned sites, floor-by-floor extinguisher lists, hydrants, and pending defects.',
+    highlight: 'Assigned floors and due units ready on open',
   },
   {
     step: '02',
@@ -62,6 +63,7 @@ const TECH_WORKFLOW_STEPS = [
     title: 'Inspect & Capture GPS Photo Proof',
     description:
       'Tap each asset tag, verify pressure gauge, seal, and nozzle condition, speak voice remarks if needed, and snap a live rear-camera photo.',
+    highlight: 'Saves locally in basements with no signal',
   },
   {
     step: '03',
@@ -69,6 +71,7 @@ const TECH_WORKFLOW_STEPS = [
     title: 'Auto-Sync to Office & Form B Reports',
     description:
       'Completed visits sync straight to the office dashboard, trigger defect work orders automatically, and feed directly into white-label 5-page Form B compliance PDFs.',
+    highlight: 'Feeds straight into client Form B reports',
   },
 ] as const;
 
@@ -97,7 +100,7 @@ export default function TechnicianAppPage() {
           </div>
 
           <h1 className="font-display text-[36px] sm:text-[52px] lg:text-[64px] font-extrabold leading-[1.06] tracking-[-0.035em] text-[#1C1917] max-w-[880px] mx-auto text-balance">
-            Built for fire technicians on site —{' '}
+            Built for fire technicians on site,{' '}
             <span className="text-[#C2410C]">online or offline.</span>
           </h1>
 
@@ -219,7 +222,7 @@ export default function TechnicianAppPage() {
                     </div>
                     <div className="pt-3 border-t border-[#FED7AA]/50 flex items-center gap-1.5 text-xs font-semibold text-[#059669]">
                       <CheckCircle2 className="w-4 h-4 shrink-0" aria-hidden="true" />
-                      <span>Zero paper registers or WhatsApp photo chaos</span>
+                      <span>{item.highlight}</span>
                     </div>
                   </div>
                 </AppleReveal>

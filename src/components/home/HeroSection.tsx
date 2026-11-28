@@ -51,7 +51,7 @@ export function HeroSection() {
           </h1>
 
           <p className="mt-5 sm:mt-6 text-[17px] sm:text-[19px] text-[#44403C] max-w-[640px] mx-auto leading-[1.55]">
-            Inspections, AMC schedules, compliance reports, your field team and your clients — connected. Online or OFFLINE.
+            Keep inspections, AMC schedules, Form B reports, field technicians, and clients in one connected system that works online or offline.
           </p>
 
           {/* Primary + Secondary CTAs */}

@@ -30,26 +30,26 @@ export function ClientPortalSection({ showDemoCta = false }: { showDemoCta?: boo
             </h2>
 
             <p className="text-[17px] text-[#44403C] leading-relaxed">
-              Clients log in and see their buildings&apos; live compliance status, verified assets, and Form B receipts — no more digging through lost WhatsApp PDFs.
+              Clients log in to see their buildings&apos; live compliance status, verified assets, and Form B receipts instead of asking your office to resend PDFs on WhatsApp.
             </p>
 
             <ul className="space-y-3 pt-1 text-[15px] text-[#1C1917]">
               <li className="flex items-start gap-2.5">
                 <CheckCircle2 className="w-4 h-4 text-[#047857] shrink-0 mt-1" aria-hidden="true" />
                 <span>
-                  <strong>Invite clients in seconds</strong> — one-click secure login for RWA secretaries &amp; facility heads
+                  Invite RWA secretaries and facility heads in seconds with a one-click secure login
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
                 <CheckCircle2 className="w-4 h-4 text-[#047857] shrink-0 mt-1" aria-hidden="true" />
                 <span>
-                  <strong>Form B delivery receipts</strong> — timestamped client acknowledgment when reports are received
+                  Record timestamped client acknowledgments whenever a Form B report is delivered
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
                 <CheckCircle2 className="w-4 h-4 text-[#047857] shrink-0 mt-1" aria-hidden="true" />
                 <span>
-                  <strong>White-label experience</strong> — branded with your agency name, logo, and contact details
+                  Show your own agency name, logo, and contact details across the portal
                 </span>
               </li>
             </ul>
@@ -98,7 +98,7 @@ export function ClientPortalSection({ showDemoCta = false }: { showDemoCta?: boo
                 <div className="space-y-3">
                   <div className="rounded-2xl bg-white border border-[#E7E5E4] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
-                      <div className="text-sm font-bold text-[#1C1917]">Tower A &amp; B — Main Complex</div>
+                      <div className="text-sm font-bold text-[#1C1917]">Tower A &amp; B (Main Complex)</div>
                       <div className="text-xs text-[#44403C] mt-0.5">
                         96 verified assets · Last inspection GPS-logged on site
                       </div>

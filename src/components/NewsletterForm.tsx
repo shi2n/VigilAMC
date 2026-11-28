@@ -20,7 +20,7 @@ export function NewsletterForm() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!trimmed || !emailRegex.test(trimmed)) {
       setStatus('error');
-      setMessage("That email didn't work — try again");
+      setMessage("That email didn't work. Please check it and try again.");
       return;
     }
 
@@ -43,7 +43,7 @@ export function NewsletterForm() {
 
       if (!res.ok) {
         setStatus('error');
-        setMessage(data.error || "That email didn't work — try again");
+        setMessage(data.error || "That email didn't work. Please check it and try again.");
         return;
       }
 
@@ -52,7 +52,7 @@ export function NewsletterForm() {
       setEmail('');
     } catch (err) {
       setStatus('error');
-      setMessage("That email didn't work — try again");
+      setMessage("That email didn't work. Please check it and try again.");
     }
   };
 
@@ -124,7 +124,7 @@ export function NewsletterForm() {
           {status === 'error' && (
             <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-700 bg-red-50 px-2.5 py-1 rounded-lg border border-red-200">
               <AlertCircle className="w-3.5 h-3.5 text-red-600 shrink-0" aria-hidden="true" />
-              <span>{message || "That email didn't work — try again"}</span>
+              <span>{message || "That email didn't work. Please check it and try again."}</span>
             </p>
           )}
 

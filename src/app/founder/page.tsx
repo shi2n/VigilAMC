@@ -72,7 +72,7 @@ export default function FounderDeskPage() {
                 Recognized by Startup India &bull; DPIIT Certified
               </span>
               <p className="text-xs text-slate-700 font-medium leading-relaxed">
-                VigilAMC is an officially recognized Indian deep-compliance tech initiative dedicated to life-safety infrastructure and building compliance automation.
+                VigilAMC is a DPIIT-recognized Indian startup building compliance software for fire-safety contractors and building teams.
               </p>
             </div>
           </div>
@@ -95,29 +95,29 @@ export default function FounderDeskPage() {
               </p>
 
               <p>
-                Fire safety in India is one of the most critical responsibilities in any commercial tower, industrial warehouse, or residential complex. Yet for years, the agencies entrusted with keeping these systems alive have been forced to run their field operations on handwritten logbooks, fragmented WhatsApp chats, and cumbersome Excel spreadsheets.
+                Fire-safety agencies keep extinguishers, hydrants, pumps, and alarms working across commercial towers, warehouses, and housing societies. Even so, most field teams still run on handwritten logbooks, scattered WhatsApp threads, and Excel sheets.
               </p>
 
               <p>
-                When an inspection visit is delayed or an extinguisher goes unserviced in a remote basement, the safety of human lives and property is at stake. When audit season arrives, compiling statutory Form-B reports takes days of manual transcription and guesswork.
+                When an inspection visit slips or an extinguisher goes unserviced in a basement pump room, people and property are put at risk. When audit season arrives, compiling statutory Form-B reports takes days of manual transcription.
               </p>
 
               <p>
-                We built <strong>VigilAMC</strong> to solve this exact bottleneck. Our platform gives fire safety service providers a complete digital operating system:
+                We built <strong>VigilAMC</strong> to replace that paperwork with one practical tool for service agencies:
               </p>
 
               <ul className="space-y-2 list-none pl-0">
                 <li className="flex items-start gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-1" />
-                  <span><strong>Total Asset Visibility:</strong> Map every extinguisher, hydrant, sprinkler valve, and alarm panel with location tags, zones, and serial records.</span>
+                  <span>Map every extinguisher, hydrant, sprinkler valve, and alarm panel with location tags, zones, and serial records.</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-1" />
-                  <span><strong>Field GPS &amp; Photo Proof:</strong> Technicians log inspections via our offline-capable field app with real-time GPS coordinates, pressure gauge photos, and client signatures.</span>
+                  <span>Log field inspections in the offline app with GPS coordinates, pressure gauge photos, and client signatures.</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-1" />
-                  <span><strong>1-Click Statutory Compliance:</strong> Generate client-ready Form-B and IS 2190 maintenance certificates in minutes instead of days.</span>
+                  <span>Generate client-ready Form-B and IS 2190 maintenance certificates in minutes instead of days.</span>
                 </li>
               </ul>
             </div>

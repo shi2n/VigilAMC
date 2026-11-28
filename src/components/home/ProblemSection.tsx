@@ -19,23 +19,23 @@ const PAIN_POINTS = [
   },
   {
     icon: MapPinOff,
-    sting: "Technicians say 'we were there' — no proof",
-    detail: 'Without GPS coordinates and live photos, you cannot defend a site visit.',
+    sting: "Technicians say they visited, with nothing to prove it",
+    detail: 'Without GPS coordinates and live photos, you cannot defend a site visit when a client questions a bill.',
   },
   {
     icon: FileWarning,
     sting: 'Clients ask for reports and you scramble',
-    detail: 'Hours spent digging through WhatsApp chats and paper registers.',
+    detail: 'Hours disappear digging through WhatsApp chats and paper registers.',
   },
   {
     icon: ClockAlert,
-    sting: 'Audit week = sleepless paperwork',
-    detail: 'Compiling Form B registers across buildings turns into late nights.',
+    sting: 'Audit week turns into late-night paperwork',
+    detail: 'Compiling Form B registers across dozens of buildings by hand takes all weekend.',
   },
   {
     icon: WifiOff,
     sting: 'Field network dies and work stops',
-    detail: 'Basements and pump rooms have zero signal when inspections happen.',
+    detail: 'Basements and pump rooms have no mobile signal when inspections happen.',
   },
 ];
 
@@ -97,7 +97,7 @@ export function ProblemSection() {
             href="#products"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white border border-[#FED7AA] text-[15px] sm:text-[16px] font-bold text-[#C2410C] hover:bg-[#FFF0E6] shadow-sm transition-colors"
           >
-            <span>VigilAMC fixes all five — here&apos;s how</span>
+            <span>See how VigilAMC handles all five</span>
             <ArrowDown className="w-4 h-4" aria-hidden="true" />
           </a>
         </AppleReveal>
